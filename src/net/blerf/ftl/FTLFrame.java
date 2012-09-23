@@ -1,6 +1,7 @@
 package net.blerf.ftl;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,6 +11,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +24,8 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JDialog;
+import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -28,6 +33,8 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 
 import net.blerf.ftl.model.Achievement;
@@ -48,15 +55,17 @@ public class FTLFrame extends JFrame {
 	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource("open.gif") );
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource("save.gif") );
 	private ImageIcon unlockIcon = new ImageIcon( ClassLoader.getSystemResource("unlock.png") );
+	private ImageIcon aboutIcon = new ImageIcon( ClassLoader.getSystemResource("about.gif") );
+	private URL aboutPage = ClassLoader.getSystemResource("about.html");
 	
 	public FTLFrame(int version) {
 		
 		// Create empty profile
 		profile = new Profile();
 		profile.setVersion(4);
-		boolean[] emptyUnlocks = new boolean[12];
+		boolean[] emptyUnlocks = new boolean[12]; // TODO magic number
 		emptyUnlocks[0] = true; // Kestrel starts unlocked
-		profile.setShipUnlocks( emptyUnlocks ); // TODO magic number
+		profile.setShipUnlocks( emptyUnlocks );
 		profile.setAchievements( new ArrayList<Achievement>() );
 		Stats stats = new Stats();
 		stats.setTopScores( new ArrayList<Score>() );
@@ -76,7 +85,7 @@ public class FTLFrame extends JFrame {
 		
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(800, 600);
-		setLocation(400, 300);
+		setLocationRelativeTo(null);
 		setTitle("FTL Profile Editor v" + version);
 		try {
 			setIconImage( ImageIO.read( ClassLoader.getSystemResource("unlock.png") ) );
@@ -232,6 +241,44 @@ public class FTLFrame extends JFrame {
 			}
 		});
 		toolbar.add( unlockShipAchsButton );
+		
+		final JDialog aboutDialog = new JDialog(this,"About",true);
+		JPanel aboutPanel = new JPanel();
+		aboutPanel.setLayout( new BoxLayout(aboutPanel, BoxLayout.Y_AXIS) );
+		aboutDialog.setContentPane(aboutPanel);
+		aboutDialog.setSize(300, 200);
+		aboutDialog.setLocationRelativeTo( this );
+				
+		JEditorPane editor = null;
+		try {
+			editor = new JEditorPane( aboutPage );
+			editor.setEditable(false);
+			editor.addHyperlinkListener(new HyperlinkListener() {
+			    public void hyperlinkUpdate(HyperlinkEvent e) {
+			        if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+			        	if(Desktop.isDesktopSupported()) {
+			        	    try {
+								Desktop.getDesktop().browse(e.getURL().toURI());
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+			        	}
+			        }
+			    }
+			});
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		aboutPanel.add(editor);
+		
+		JButton aboutButton = new JButton("About", aboutIcon);
+		aboutButton.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				aboutDialog.setVisible(true);
+			}
+		});
+		toolbar.add( aboutButton );
 		
 		
 	}
