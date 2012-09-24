@@ -9,40 +9,40 @@ public class Achievement implements Comparable<Achievement> {
 	public static final Achievement ACH_FULL_ARSENAL = new Achievement("ACH_FULL_ARSENAL", "Full Arsenal");
 	public static final Achievement ACH_TOUGH_SHIP = new Achievement("ACH_TOUGH_SHIP", "Tough Little Ship");
 	
+	// Zoltan
+	public static final Achievement ACH_ENERGY_SHIELDS = new Achievement("ACH_ENERGY_SHIELDS", "Shields Holding");
+	public static final Achievement ACH_ENERGY_POWER = new Achievement("ACH_ENERGY_POWER", "Givin' her all she's got, Captain!");
+	public static final Achievement ACH_ENERGY_MANPOWER = new Achievement("ACH_ENERGY_MANPOWER", "Manpower");
+	
 	// Stealth
 	public static final Achievement ACH_STEALTH_DESTROY = new Achievement("ACH_STEALTH_DESTROY", "Bird of Prey");
 	public static final Achievement ACH_STEALTH_AVOID = new Achievement("ACH_STEALTH_AVOID", "Phase Shift");
 	public static final Achievement ACH_STEALTH_TACTICAL = new Achievement("ACH_STEALTH_TACTICAL", "Tactical Approach");
-
-	// Mantis
-	public static final Achievement ACH_MANTIS_CREW_DEAD = new Achievement("ACH_MANTIS_CREW_DEAD", "Take no prisoners!");
-	public static final Achievement ACH_MANTIS_SLAUGHTER = new Achievement("ACH_MANTIS_SLAUGHTER", "Avast, ye scurvy dogs!");
-	public static final Achievement ACH_MANTIS_SURVIVOR = new Achievement("ACH_MANTIS_SURVIVOR", "Battle Royale");
 	
 	// Engi
 	public static final Achievement ACH_ROBOTIC = new Achievement("ACH_ROBOTIC", "Robotic Warfare");
 	public static final Achievement ACH_ONLY_DRONES = new Achievement("ACH_ONLY_DRONES", "I hardly lifted a finger");
 	public static final Achievement ACH_IONED = new Achievement("ACH_IONED", "The guns... They've stopped");
-	
-	// Fed
-	public static final Achievement ACH_FED_PATIENCE = new Achievement("ACH_FED_PATIENCE", "Master of Patience");
-	public static final Achievement ACH_FED_DIPLOMACY = new Achievement("ACH_FED_DIPLOMACY", "Diplomatic Immunity");
-	public static final Achievement ACH_FED_UPGRADE = new Achievement("ACH_FED_UPGRADE", "Artillery Mastery");
-
-	// Slug
-	public static final Achievement ACH_SLUG_VISION = new Achievement("ACH_SLUG_VISION", "We're in Position!");
-	public static final Achievement ACH_SLUG_NEBULA = new Achievement("ACH_SLUG_NEBULA", "Home Sweet Home");
-	public static final Achievement ACH_SLUG_BIO = new Achievement("ACH_SLUG_BIO", "Disintegration Ray");
 
 	// Rock
 	public static final Achievement ACH_ROCK_FIRE = new Achievement("ACH_ROCK_FIRE", "Is it warm in here?");
 	public static final Achievement ACH_ROCK_MISSILES = new Achievement("ACH_ROCK_MISSILES", "Defense Drones Don't Do D'anything!");
 	public static final Achievement ACH_ROCK_CRYSTAL = new Achievement("ACH_ROCK_CRYSTAL", "Ancestry");
 
-	// Zoltan
-	public static final Achievement ACH_ENERGY_SHIELDS = new Achievement("ACH_ENERGY_SHIELDS", "Shields Holding");
-	public static final Achievement ACH_ENERGY_POWER = new Achievement("ACH_ENERGY_POWER", "Givin' her all she's got, Captain!");
-	public static final Achievement ACH_ENERGY_MANPOWER = new Achievement("ACH_ENERGY_MANPOWER", "Manpower");
+	// Mantis
+	public static final Achievement ACH_MANTIS_CREW_DEAD = new Achievement("ACH_MANTIS_CREW_DEAD", "Take no prisoners!");
+	public static final Achievement ACH_MANTIS_SLAUGHTER = new Achievement("ACH_MANTIS_SLAUGHTER", "Avast, ye scurvy dogs!");
+	public static final Achievement ACH_MANTIS_SURVIVOR = new Achievement("ACH_MANTIS_SURVIVOR", "Battle Royale");
+
+	// Slug
+	public static final Achievement ACH_SLUG_VISION = new Achievement("ACH_SLUG_VISION", "We're in Position!");
+	public static final Achievement ACH_SLUG_NEBULA = new Achievement("ACH_SLUG_NEBULA", "Home Sweet Home");
+	public static final Achievement ACH_SLUG_BIO = new Achievement("ACH_SLUG_BIO", "Disintegration Ray");
+
+	// Fed
+	public static final Achievement ACH_FED_PATIENCE = new Achievement("ACH_FED_PATIENCE", "Master of Patience");
+	public static final Achievement ACH_FED_DIPLOMACY = new Achievement("ACH_FED_DIPLOMACY", "Diplomatic Immunity");
+	public static final Achievement ACH_FED_UPGRADE = new Achievement("ACH_FED_UPGRADE", "Artillery Mastery");
 
 	// Crystal
 	public static final Achievement ACH_CRYSTAL_SHARD = new Achievement("ACH_CRYSTAL_SHARD", "Sweet Revenge");
@@ -66,6 +66,8 @@ public class Achievement implements Comparable<Achievement> {
 				ACH_ENERGY_SHIELDS, ACH_ENERGY_POWER, ACH_ENERGY_MANPOWER,
 				ACH_CRYSTAL_SHARD, ACH_CRYSTAL_LOCKDOWN, ACH_CRYSTAL_CLASH
 		);
+		
+		maxId = -100; // TODO super hack to get general achs before ship ones
 		
 		//achs( ACH_SECTOR_5, ACH_SECTOR_8 );
 	}
