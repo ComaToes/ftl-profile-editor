@@ -2,7 +2,7 @@ package net.blerf.ftl.model;
 import java.util.HashMap;
 
 
-public class Achievement {
+public class Achievement implements Comparable<Achievement> {
 	
 	// Kestrel
 	public static final Achievement ACH_UNITED_FEDERATION = new Achievement("ACH_UNITED_FEDERATION", "The United Federation");
@@ -50,8 +50,8 @@ public class Achievement {
 	public static final Achievement ACH_CRYSTAL_CLASH = new Achievement("ACH_CRYSTAL_CLASH", "Clash of the Titans");
 
 	// General
-	public static final Achievement ACH_SECTOR_5 = new Achievement("ACH_SECTOR_5", "Reach Sector 5");
-	public static final Achievement ACH_SECTOR_8 = new Achievement("ACH_SECTOR_8", "Reach Sector 8");
+	//public static final Achievement ACH_SECTOR_5 = new Achievement("ACH_SECTOR_5", "Reach Sector 5");
+	//public static final Achievement ACH_SECTOR_8 = new Achievement("ACH_SECTOR_8", "Reach Sector 8");
 	
 	private static HashMap<String,Achievement> achievements = new HashMap<String, Achievement>();
 	
@@ -67,7 +67,7 @@ public class Achievement {
 				ACH_CRYSTAL_SHARD, ACH_CRYSTAL_LOCKDOWN, ACH_CRYSTAL_CLASH
 		);
 		
-		achs( ACH_SECTOR_5, ACH_SECTOR_8 );
+		//achs( ACH_SECTOR_5, ACH_SECTOR_8 );
 	}
 	
 	private static void achs(Achievement... achs) {
@@ -83,11 +83,18 @@ public class Achievement {
 		return ach;
 	}
 	
+	private static int maxId; // TODO super hacky way to order achievements. fix later
 	private String code, name, desc;
+	private int id;
 	
 	protected Achievement(String code, String name) {
 		this.code = code;
 		this.name = name;
+		id = maxId++;
+	}
+	
+	public int getId() {
+		return id;
 	}
 
 	public String getCode() {
@@ -111,5 +118,9 @@ public class Achievement {
 		return code + ": " + name;
 	}
 	
+	@Override
+	public int compareTo(Achievement o) {
+		return id > o.getId() ? 1 : -1;
+	}
 	
 }

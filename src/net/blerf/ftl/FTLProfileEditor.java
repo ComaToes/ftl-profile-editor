@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public class FTLProfileEditor {
 	
-	private static final int VERSION = 1;
+	private static final int VERSION = 2;
 
 	public static void main(String[] args) throws IOException {
 

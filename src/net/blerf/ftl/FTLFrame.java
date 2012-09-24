@@ -14,6 +14,7 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -315,21 +316,30 @@ public class FTLFrame extends JFrame {
 	
 	public void updateProfile( Profile p ) {
 		
-		boolean[] unlocks = p.getShipUnlocks();
-		for (int i = 0; i < shipUnlocks.size(); i++) {
-			unlocks[i] = shipUnlocks.get(i).isSelected();
-		}
-		p.setShipUnlocks(unlocks);
-		
 		List<Achievement> achievements = p.getAchievements();
 		for( Entry<Achievement, JCheckBox> e: this.shipAchievements.entrySet() ) {
 			Achievement a = e.getKey();
-			if( e.getValue().isSelected() && !achievements.contains( a ) )
-				achievements.add( a );
-			else
+			if( e.getValue().isSelected() ) {
+				if( !achievements.contains( a ) )
+					achievements.add( a );
+			} else
 				achievements.remove( a );
 		}
+		
+		boolean[] unlocks = p.getShipUnlocks();
+		for (int i = 0; i < shipUnlocks.size(); i++) {
+			unlocks[i] = shipUnlocks.get(i).isSelected();
+			// Remove ship achievements for locked ships
+			if( !unlocks[i] )
+				achievements.removeAll( Ship.ALL[i].getAchievements() ); // TODO reliance on matching index is hacky
+		}
+		p.setShipUnlocks(unlocks);
+		
+		Collections.sort( achievements );
+		
 		p.setAchievements(achievements);
+		
+		loadProfile(p);
 		
 	}
 
