@@ -183,10 +183,10 @@ public class FTLParser {
 			String shipType = readString(in);
 			int score = readInt(in);
 			int sector = readInt(in);
-			int unknownFlag = readInt(in); // Unknown. Always 0. 1 = completed the game?
+			boolean victory = readInt(in) == 1;
 			int difficulty = readInt(in); // Difficulty 0=normal, 1=easy
 
-			scores.add( new Score(shipName, shipType, score, sector, difficulty, unknownFlag) );
+			scores.add( new Score(shipName, shipType, score, sector, difficulty, victory) );
 			
 		}
 		
@@ -203,7 +203,7 @@ public class FTLParser {
 			writeString(out, score.getShipType());
 			writeInt(out, score.getScore());
 			writeInt(out, score.getSector());
-			writeInt(out, score.getUnknownFlag()); // TODO see above
+			writeInt(out, score.isVictory() ? 1 : 0 );
 			writeInt(out, score.getDifficulty());
 		}
 		

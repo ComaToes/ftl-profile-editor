@@ -7,15 +7,15 @@ public class Score {
 	private int score;
 	private int sector;
 	private int difficulty;
-	private int unknownFlag;
+	private boolean victory;
 
-	public Score(String shipName, String shipType, int score, int sector, int difficulty, int unknownFlag) {
+	public Score(String shipName, String shipType, int score, int sector, int difficulty, boolean victory) {
 		this.shipName = shipName;
 		this.shipType = shipType;
 		this.score = score;
 		this.sector = sector;
 		this.difficulty = difficulty;
-		this.unknownFlag = unknownFlag;
+		this.victory = victory;
 	}
 
 	public String getShipName() {
@@ -58,12 +58,12 @@ public class Score {
 		this.difficulty = difficulty;
 	}
 
-	public int getUnknownFlag() {
-		return unknownFlag;
+	public boolean isVictory() {
+		return victory;
 	}
 
-	public void setUnknownFlag(int unknownFlag) {
-		this.unknownFlag = unknownFlag;
+	public void setVictory(boolean victory) {
+		this.victory = victory;
 	}
 	
 }
