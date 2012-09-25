@@ -1,16 +1,22 @@
 package net.blerf.ftl;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,7 +36,9 @@ import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
@@ -57,9 +65,18 @@ public class FTLFrame extends JFrame {
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource("save.gif") );
 	private ImageIcon unlockIcon = new ImageIcon( ClassLoader.getSystemResource("unlock.png") );
 	private ImageIcon aboutIcon = new ImageIcon( ClassLoader.getSystemResource("about.gif") );
+	private ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource("update.gif") );
+	
 	private URL aboutPage = ClassLoader.getSystemResource("about.html");
 	
+	private String latestVersionUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/latest-version.txt";
+	private String downloadUrl = "https://github.com/ComaToes/ftl-profile-editor/downloads";
+	
+	private int version;
+	
 	public FTLFrame(int version) {
+		
+		this.version = version;
 		
 		// Create empty profile
 		profile = new Profile();
@@ -103,6 +120,7 @@ public class FTLFrame extends JFrame {
 		
 		JToolBar toolbar = new JToolBar();
 		contentPane.add(toolbar, BorderLayout.PAGE_START);
+		toolbar.setMargin( new Insets(5, 5, 5, 5) );
 		setupToolbar(toolbar);
 		
 		tabPane.add( "Unlocks" , createUnlocksPanel() );
@@ -281,6 +299,47 @@ public class FTLFrame extends JFrame {
 		});
 		toolbar.add( aboutButton );
 		
+		// Check for new version in seperate thread so we don't hang the UI
+		final JToolBar toolbarr = toolbar;
+		new Thread() {
+			@Override
+			public void run() {
+				
+				try {
+					
+					URL url = new URL(latestVersionUrl);
+					BufferedReader in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
+					int latestVersion = Integer.parseInt( in.readLine() );
+					
+					if( latestVersion > version ) {
+						JButton newVersionButton = new JButton("New Version Available!", updateIcon);
+						newVersionButton.addActionListener( new ActionListener() {
+							@Override
+							public void actionPerformed(ActionEvent e) {
+					        	if(Desktop.isDesktopSupported()) {
+					        	    try {
+										Desktop.getDesktop().browse( new URI(downloadUrl) );
+									} catch (Exception e1) {
+										e1.printStackTrace();
+										JOptionPane.showInputDialog( FTLFrame.this, "Unable to open browser. Visit the following URL to get the latest version:", "Browser Fail", JOptionPane.ERROR_MESSAGE, null, null, downloadUrl );
+									}
+					        	} else {
+					        		JOptionPane.showInputDialog( FTLFrame.this, "Unable to open browser. Visit the following URL to get the latest version:", "Browser Fail", JOptionPane.ERROR_MESSAGE, null, null, downloadUrl );
+					        	}
+							}
+						});
+						newVersionButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
+						toolbarr.add( newVersionButton );
+					}
+					
+				} catch (MalformedURLException e1) {
+					e1.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
+			}
+		}.start();
 		
 	}
 	
