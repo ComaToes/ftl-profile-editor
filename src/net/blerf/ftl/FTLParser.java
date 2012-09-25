@@ -168,7 +168,7 @@ public class FTLParser {
 		writeInt(out, rec.getScore());
 		writeString(out, rec.getName());
 		writeString(out, rec.getRace());
-		writeInt(out, 1);
+		writeInt(out, rec.getUnknownFlag());
 		
 	}
 	

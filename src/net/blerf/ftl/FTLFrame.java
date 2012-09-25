@@ -8,6 +8,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -19,6 +21,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,6 +75,7 @@ public class FTLFrame extends JFrame {
 	
 	private String latestVersionUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/latest-version.txt";
 	private String downloadUrl = "https://github.com/ComaToes/ftl-profile-editor/downloads";
+	private String forumUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=2877";
 	
 	private int version;
 	
@@ -198,18 +203,51 @@ public class FTLFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
-						
+
 						File f = fc.getSelectedFile();
-						FTLParser ftl = new FTLParser();
 						InputStream in = new FileInputStream( f );
+						
+						// Read whole file so we can hash it
+						byte[] data = new byte[(int)f.length()];
+						in.read(data);
+						in.close();
+						
+						MessageDigest md = MessageDigest.getInstance("MD5");
+						byte[] readHash = md.digest(data);
+						
+						in = new ByteArrayInputStream(data);
+						// Parse file data
+						FTLParser ftl = new FTLParser();
 						profile = ftl.readProfile(in);
 						in.close();
 						
 						FTLFrame.this.loadProfile(profile);
 						
+						// Perform mock write
+						ByteArrayOutputStream out = new ByteArrayOutputStream();
+						FTLFrame.this.updateProfile(profile);
+						ftl.writeProfile(out, profile);
+						out.close();
+						
+						// Hash result
+						byte[] outData = out.toByteArray();
+						md.reset();
+						byte[] writeHash = md.digest(outData);
+						
+						// Compare
+						for (int i = 0; i < readHash.length; i++) {
+							if( readHash[i] != writeHash[i] ) {
+								JOptionPane.showInputDialog( FTLFrame.this, "FTL Profile Editor has detected that it cannot interpret your profile correctly.\nUsing this app may result in loss of stats/achievements.\nPlease attach a copy of your original prof.sav to this forum thread so I can fix this:", "Parser Error Detected", JOptionPane.ERROR_MESSAGE, null, null, forumUrl );
+								break;
+							}
+						}
+						
 					} catch( IOException ex ) {
 						ex.printStackTrace();
 						// TODO report error
+					} catch (NoSuchAlgorithmException ex) {
+						// TODO Auto-generated catch block
+						ex.printStackTrace();
 					}
 				}
 			}
