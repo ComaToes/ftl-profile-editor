@@ -22,21 +22,20 @@ public class DataManager {
 	}
 	
 	// TODO handle exceptions better
-	public static void init() throws IOException, JAXBException {
-		instance = new DataManager();	
+	public static void init(File dataFolder) throws IOException, JAXBException {
+		instance = new DataManager(dataFolder);	
 	}
 
 	private List<Achievement> achievements;
 	private Blueprints blueprints;
 	
 	private Map<String, ShipBlueprint> ships;
-	private List<ShipBlueprint> playerShips; // Type As
+	private List<ShipBlueprint> playerShips; // Type A's
+	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
 	
-	private DataManager() throws IOException, JAXBException {
+	private DataManager(File dataFolder) throws IOException, JAXBException {
 		
 		DatParser datParser = new DatParser();
-		
-		File dataFolder = new File("ftldata");
 		
 		if( !dataFolder.exists() )
 			datParser.unpackDat( new File(".") , dataFolder ); // TODO locate data.dat via dialog (store loc somewhere)
@@ -59,6 +58,19 @@ public class DataManager {
 		playerShips.add( ships.get("PLAYER_SHIP_ENERGY") );
 		playerShips.add( ships.get("PLAYER_SHIP_CRYSTAL") );
 		
+		shipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
+		for(ShipBlueprint ship: playerShips) {
+			List<Achievement> shipAchs = new ArrayList<Achievement>();
+			for( Achievement ach: achievements )
+				if( ship.getId().equals( ach.getShipId() ) )
+					shipAchs.add(ach);
+			shipAchievements.put( ship, shipAchs );
+		}
+		
+	}
+	
+	public List<Achievement> getAchievements() {
+		return achievements;
 	}
 	
 	public ShipBlueprint getShip(String id) {
@@ -67,6 +79,10 @@ public class DataManager {
 	
 	public List<ShipBlueprint> getPlayerShips() {
 		return playerShips;
+	}
+	
+	public List<Achievement> getShipAchievements(ShipBlueprint ship) {
+		return shipAchievements.get(ship);
 	}
 	
 }

@@ -1,11 +1,10 @@
 package net.blerf.ftl.model;
 import java.util.List;
 
-
 public class Profile {
 
 	private int version;
-	private List<Achievement> achievements;
+	private List<String> achievements;
 	private boolean[] shipUnlocks;
 	private Stats stats;
 	
@@ -15,10 +14,10 @@ public class Profile {
 	public void setVersion(int version) {
 		this.version = version;
 	}
-	public List<Achievement> getAchievements() {
+	public List<String> getAchievements() {
 		return achievements;
 	}
-	public void setAchievements(List<Achievement> achievements) {
+	public void setAchievements(List<String> achievements) {
 		this.achievements = achievements;
 	}
 	public Stats getStats() {

@@ -19,7 +19,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,21 +41,22 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
+import javax.xml.bind.JAXBException;
 
-import net.blerf.ftl.model.Achievement;
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
-import net.blerf.ftl.model.Ship;
 import net.blerf.ftl.model.Stats;
+import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.ProfileParser;
+import net.blerf.ftl.xml.Achievement;
+import net.blerf.ftl.xml.ShipBlueprint;
 
 public class FTLFrame extends JFrame {
 	
@@ -84,13 +84,25 @@ public class FTLFrame extends JFrame {
 		
 		this.version = version;
 		
+		try {
+			
+			DataManager.init( new File("D:/ftldata") ); // TODO prompt user then read from ini
+			
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (JAXBException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		// Create empty profile
 		profile = new Profile();
 		profile.setVersion(4);
 		boolean[] emptyUnlocks = new boolean[12]; // TODO magic number
 		emptyUnlocks[0] = true; // Kestrel starts unlocked
 		profile.setShipUnlocks( emptyUnlocks );
-		profile.setAchievements( new ArrayList<Achievement>() );
+		profile.setAchievements( new ArrayList<String>() );
 		Stats stats = new Stats();
 		stats.setTopScores( new ArrayList<Score>() );
 		stats.setShipBest( new ArrayList<Score>() );
@@ -157,7 +169,7 @@ public class FTLFrame extends JFrame {
 		shipPanel.setBorder( BorderFactory.createTitledBorder("Ship Unlocks") );
 		shipPanel.setLayout( new GridLayout(0, 3) );
 
-		for( Ship ship: Ship.ALL ) {
+		for( ShipBlueprint ship: DataManager.get().getPlayerShips() ) {
 			JCheckBox shipUnlock = new JCheckBox( ship.getName() );
 			shipPanel.add(shipUnlock);
 			shipUnlocks.add(shipUnlock);
@@ -168,7 +180,7 @@ public class FTLFrame extends JFrame {
 		shipAchPanel.setBorder( BorderFactory.createTitledBorder("Ship Achievements") );
 		shipAchPanel.setLayout( new GridLayout(0, 3) );
 
-		for( Ship ship: Ship.ALL )
+		for( ShipBlueprint ship: DataManager.get().getPlayerShips() )
 			shipAchPanel.add( createShipPanel( ship ) );
 
 		JPanel generalAchPanel = new JPanel();
@@ -382,14 +394,14 @@ public class FTLFrame extends JFrame {
 		
 	}
 	
-	private JPanel createShipPanel( Ship ship ) {
+	private JPanel createShipPanel( ShipBlueprint ship ) {
 		
 		JPanel panel = new JPanel();
 		
 		panel.setBorder( BorderFactory.createTitledBorder( ship.getName() ) );
 		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
 		
-		for (Achievement ach : ship.getAchievements()) {
+		for (Achievement ach : DataManager.get().getShipAchievements(ship)) {
 			JCheckBox box = new JCheckBox( ach.getName() );
 			shipAchievements.put(ach, box);
 			panel.add( box );
@@ -414,28 +426,44 @@ public class FTLFrame extends JFrame {
 	
 	public void updateProfile( Profile p ) {
 		
-		List<Achievement> achievements = p.getAchievements();
+		List<Achievement> allAchs = DataManager.get().getAchievements();
+		List<String> achs = new ArrayList<String>();
+		List<String> existingAchs = p.getAchievements();
+		
+		for( Achievement ach: allAchs ) {
+			String id = ach.getId();
+			JCheckBox box = shipAchievements.get(ach);
+			if( box != null ) {
+				if( box.isSelected() )
+					achs.add(id);
+			} else if( existingAchs.contains(id) )
+					achs.add(id);
+		}
+		
+		/*List<String> achievements = p.getAchievements();
 		for( Entry<Achievement, JCheckBox> e: this.shipAchievements.entrySet() ) {
 			Achievement a = e.getKey();
+			String id = a.getId();
 			if( e.getValue().isSelected() ) {
-				if( !achievements.contains( a ) )
-					achievements.add( a );
+				if( !achievements.contains( id ) )
+					achievements.add( id );
 			} else
-				achievements.remove( a );
-		}
+				achievements.remove( id );
+		}*/
 		
 		boolean[] unlocks = p.getShipUnlocks();
 		for (int i = 0; i < shipUnlocks.size(); i++) {
 			unlocks[i] = shipUnlocks.get(i).isSelected();
 			// Remove ship achievements for locked ships
 			if( !unlocks[i] )
-				achievements.removeAll( Ship.ALL[i].getAchievements() ); // TODO reliance on matching index is hacky
+				for( Achievement ach : DataManager.get().getShipAchievements( DataManager.get().getPlayerShips().get(i) ) )
+						achs.remove( ach.getId() );
 		}
 		p.setShipUnlocks(unlocks);
 		
-		Collections.sort( achievements );
+		//Collections.sort( achievements );
 		
-		p.setAchievements(achievements);
+		p.setAchievements(achs);
 		
 		loadProfile(p);
 		

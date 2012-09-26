@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.blerf.ftl.model.Achievement;
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
@@ -46,28 +45,28 @@ public class ProfileParser extends Parser {
 		
 	}
 	
-	private List<Achievement> readAchievements(InputStream in) throws IOException {
+	private List<String> readAchievements(InputStream in) throws IOException {
 		
 		int achievementCount = readInt(in);
 		
-		List<Achievement> achievements = new ArrayList<Achievement>(achievementCount);
+		List<String> achievements = new ArrayList<String>(achievementCount);
 		
 		for (int i = 0; i < achievementCount; i++) {
 			String ach = readString(in);
 			readInt(in); // 4 byte tailer always 0
-			achievements.add( Achievement.get(ach) );
+			achievements.add( ach );
 		}
 		
 		return achievements;
 		
 	}
 	
-	private void writeAchievements(OutputStream out, List<Achievement> achievements) throws IOException {
+	private void writeAchievements(OutputStream out, List<String> achievements) throws IOException {
 		
 		writeInt(out, achievements.size());
 		
-		for (Achievement achievement : achievements) {
-			writeString(out, achievement.getCode());
+		for (String achievement : achievements) {
+			writeString(out, achievement);
 			writeInt(out, 0);
 		}
 		
