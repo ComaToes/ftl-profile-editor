@@ -3,10 +3,13 @@ package net.blerf.ftl;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
+import java.awt.Graphics;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,6 +44,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
@@ -77,6 +81,11 @@ public class FTLFrame extends JFrame {
 	private String latestVersionUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/latest-version.txt";
 	private String downloadUrl = "https://github.com/ComaToes/ftl-profile-editor/downloads";
 	private String forumUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=2877";
+	
+	// For checkbox icons
+	private static final int maxIconWidth = 64;
+	private static final int maxIconHeight = 64;
+	private BufferedImage iconShadeImage;
 	
 	private int version;
 	
@@ -120,7 +129,7 @@ public class FTLFrame extends JFrame {
 		}
 		
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setSize(800, 600);
+		setSize(800, 700);
 		setLocationRelativeTo(null);
 		setTitle("FTL Profile Editor v" + version);
 		try {
@@ -128,6 +137,8 @@ public class FTLFrame extends JFrame {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		initCheckboxIcons();
 		
 		JPanel contentPane = new JPanel();
 		contentPane.setLayout( new BorderLayout() );
@@ -141,7 +152,7 @@ public class FTLFrame extends JFrame {
 		toolbar.setMargin( new Insets(5, 5, 5, 5) );
 		setupToolbar(toolbar);
 		
-		tabPane.add( "Unlocks" , createUnlocksPanel() );
+		tabPane.add( "Unlocks" , new JScrollPane( createUnlocksPanel() ) );
 		tabPane.add( "Stats" , createStatsPanel() );
 		
 		// Load blank profile (sets Kestrel unlock)
@@ -158,6 +169,47 @@ public class FTLFrame extends JFrame {
 		return statsPanel;
 		
 	}
+
+	private void initCheckboxIcons() {
+		
+		iconShadeImage = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
+		Graphics g = iconShadeImage.getGraphics();
+		g.setColor( new Color(0, 0, 0, 150) );
+		g.fillRect(0, 0, maxIconWidth, maxIconHeight);
+		//g.fillOval(0, 0, maxWidth, maxHeight);
+		try {
+			BufferedImage lock = ImageIO.read( new File(DataManager.get().getDataFolder(), "img/customizeUI/box_lock_on.png") );
+			int x = (maxIconWidth-lock.getWidth()) / 2;
+			int y = (maxIconHeight-lock.getHeight()) / 2;
+			g.drawImage(lock, x, y, null);
+		} catch (IOException e1) {
+			e1.printStackTrace(); // On exception no lock
+		}
+		
+	}
+	
+	private void setCheckboxIcons( JCheckBox box, File baseImage ) {
+		
+		try {
+			BufferedImage img = ImageIO.read( baseImage );
+			
+			int scaledHeight = img.getHeight()/(img.getWidth()/maxIconWidth);
+			int scaledYoffset = (maxIconHeight-scaledHeight)/2;
+			
+			Image scaled = img.getScaledInstance(maxIconWidth, scaledHeight, Image.SCALE_SMOOTH);
+			BufferedImage unlocked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
+			unlocked.getGraphics().drawImage(scaled, 0, scaledYoffset, null);
+			BufferedImage locked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
+			locked.getGraphics().drawImage(scaled, 0, scaledYoffset, null);
+			locked.getGraphics().drawImage(iconShadeImage, 0, 0, null);
+			box.setSelectedIcon( new ImageIcon( unlocked ) );
+			box.setIcon( new ImageIcon( locked ) );
+			
+		} catch (IOException e) {
+			e.printStackTrace(); // on exception no image
+		}
+		
+	}
 	
 	private JPanel createUnlocksPanel() {
 		
@@ -170,7 +222,8 @@ public class FTLFrame extends JFrame {
 		shipPanel.setLayout( new GridLayout(0, 3) );
 
 		for( ShipBlueprint ship: DataManager.get().getPlayerShips() ) {
-			JCheckBox shipUnlock = new JCheckBox( ship.getName() );
+			JCheckBox shipUnlock = new JCheckBox( ship.getShipClass() );
+			setCheckboxIcons(shipUnlock, new File(DataManager.get().getDataFolder(), "img/ship/" + ship.getImg() + "_base.png") );
 			shipPanel.add(shipUnlock);
 			shipUnlocks.add(shipUnlock);
 		}
@@ -183,18 +236,11 @@ public class FTLFrame extends JFrame {
 		for( ShipBlueprint ship: DataManager.get().getPlayerShips() )
 			shipAchPanel.add( createShipPanel( ship ) );
 
-		JPanel generalAchPanel = new JPanel();
-		unlockAchPanel.add( generalAchPanel );
-		generalAchPanel.setBorder( BorderFactory.createTitledBorder("General Achievements") );
-		
-		generalAchPanel.add( new JLabel("General Achievements display not implemented yet") );
-		
 		return unlockAchPanel;
 		
 	}
 	
 	private void setupToolbar(JToolBar toolbar) {
-		
 		
 		final JFileChooser fc = new JFileChooser();
 		fc.addChoosableFileFilter( new FileFilter() {
@@ -398,11 +444,13 @@ public class FTLFrame extends JFrame {
 		
 		JPanel panel = new JPanel();
 		
-		panel.setBorder( BorderFactory.createTitledBorder( ship.getName() ) );
-		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
+		panel.setBorder( BorderFactory.createTitledBorder( ship.getShipClass() ) );
+		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
 		
 		for (Achievement ach : DataManager.get().getShipAchievements(ship)) {
-			JCheckBox box = new JCheckBox( ach.getName() );
+			JCheckBox box = new JCheckBox();
+			setCheckboxIcons(box, new File( DataManager.get().getDataFolder() , "img/" + ach.getImagePath() ) );
+			box.setToolTipText( ach.getName() );
 			shipAchievements.put(ach, box);
 			panel.add( box );
 		}
@@ -419,7 +467,7 @@ public class FTLFrame extends JFrame {
 		}
 
 		for( Entry<Achievement, JCheckBox> e: shipAchievements.entrySet() ) {
-			e.getValue().setSelected( p.getAchievements().contains( e.getKey() ) );
+			e.getValue().setSelected( p.getAchievements().contains( e.getKey().getId() ) );
 		}
 		
 	}
@@ -439,18 +487,7 @@ public class FTLFrame extends JFrame {
 			} else if( existingAchs.contains(id) )
 					achs.add(id);
 		}
-		
-		/*List<String> achievements = p.getAchievements();
-		for( Entry<Achievement, JCheckBox> e: this.shipAchievements.entrySet() ) {
-			Achievement a = e.getKey();
-			String id = a.getId();
-			if( e.getValue().isSelected() ) {
-				if( !achievements.contains( id ) )
-					achievements.add( id );
-			} else
-				achievements.remove( id );
-		}*/
-		
+
 		boolean[] unlocks = p.getShipUnlocks();
 		for (int i = 0; i < shipUnlocks.size(); i++) {
 			unlocks[i] = shipUnlocks.get(i).isSelected();
@@ -460,8 +497,6 @@ public class FTLFrame extends JFrame {
 						achs.remove( ach.getId() );
 		}
 		p.setShipUnlocks(unlocks);
-		
-		//Collections.sort( achievements );
 		
 		p.setAchievements(achs);
 		

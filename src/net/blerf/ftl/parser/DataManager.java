@@ -33,7 +33,11 @@ public class DataManager {
 	private List<ShipBlueprint> playerShips; // Type A's
 	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
 	
+	private File dataFolder;
+	
 	private DataManager(File dataFolder) throws IOException, JAXBException {
+		
+		this.dataFolder = dataFolder;
 		
 		DatParser datParser = new DatParser();
 		
@@ -67,6 +71,10 @@ public class DataManager {
 			shipAchievements.put( ship, shipAchs );
 		}
 		
+	}
+	
+	public File getDataFolder() {
+		return dataFolder;
 	}
 	
 	public List<Achievement> getAchievements() {
