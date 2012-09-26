@@ -1,4 +1,4 @@
-package net.blerf.ftl;
+package net.blerf.ftl.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,9 +12,7 @@ import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.Stats;
 
-public class FTLParser {
-
-	private byte[] intarr = new byte[4]; 
+public class ProfileParser extends Parser {
 	
 	public Profile readProfile(InputStream in) throws IOException {
 		
@@ -209,48 +207,6 @@ public class FTLParser {
 		
 	}
 	
-	private int readInt(InputStream in) throws IOException {
-		
-		in.read(intarr);
-		
-		int v = 0;
-		
-		for (int i = 0; i < intarr.length; i++) {
-			v |= (((int)intarr[i]) & 0xff) << (i*8);
-		}
-		
-		return v;
-		
-	}
-	
-	private void writeInt(OutputStream out, int value) throws IOException {
-		
-		for (int i = 0; i < intarr.length; i++) {
-			intarr[i] = (byte)(value >> (i*8));
-		}
-		
-		out.write(intarr);
-		
-	}
-	
-	private String readString(InputStream in) throws IOException {
-		
-		int length = readInt(in);
-		
-		byte[] strarr = new byte[length];
-		
-		in.read(strarr);
-		
-		return new String(strarr);
-		
-	}
-	
-	private void writeString(OutputStream out, String str) throws IOException {
-		
-		writeInt(out, str.length());
-		
-		out.write( str.getBytes() );
-		
-	}
+
 	
 }

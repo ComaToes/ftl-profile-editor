@@ -56,6 +56,7 @@ import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.Ship;
 import net.blerf.ftl.model.Stats;
+import net.blerf.ftl.parser.ProfileParser;
 
 public class FTLFrame extends JFrame {
 	
@@ -217,7 +218,7 @@ public class FTLFrame extends JFrame {
 						
 						in = new ByteArrayInputStream(data);
 						// Parse file data
-						FTLParser ftl = new FTLParser();
+						ProfileParser ftl = new ProfileParser();
 						profile = ftl.readProfile(in);
 						in.close();
 						
@@ -262,7 +263,7 @@ public class FTLFrame extends JFrame {
 					try {
 						
 						File f = fc.getSelectedFile();
-						FTLParser ftl = new FTLParser();
+						ProfileParser ftl = new ProfileParser();
 						OutputStream out = new FileOutputStream( f );
 						FTLFrame.this.updateProfile(profile);
 						ftl.writeProfile(out, profile);
