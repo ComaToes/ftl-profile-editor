@@ -3,7 +3,7 @@ package net.blerf.ftl;
 
 public class FTLProfileEditor {
 	
-	private static final int VERSION = 5;
+	private static final int VERSION = 6;
 
 	public static void main(String[] args) {
 
