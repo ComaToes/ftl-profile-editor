@@ -195,14 +195,15 @@ public class FTLFrame extends JFrame {
 	
 	private File promptForFtlPath() {
 		
-		System.out.println( System.getenv("ProgramFiles") );
-		System.out.println( System.getenv("ProgramFiles(x86)") );
-		
 		String steamPath = "Steam/steamapps/common/FTL Faster Than Light";
-		File[] paths = new File[] { 
+		String gogPath = "GOG.com/Faster Than Light";
+		File[] paths = new File[] {
 					// Windows - Steam
-					new File( new File(System.getenv("ProgramFiles(x86)")), steamPath ),
-					new File( new File(System.getenv("ProgramFiles")), steamPath )
+					new File( new File(""+System.getenv("ProgramFiles(x86)")), steamPath ),
+					new File( new File(""+System.getenv("ProgramFiles")), steamPath ),
+					// Windows - GOG
+					new File( new File(""+System.getenv("ProgramFiles(x86)")), gogPath ),
+					new File( new File(""+System.getenv("ProgramFiles")), gogPath )
 					// TODO add more
 				};
 		
