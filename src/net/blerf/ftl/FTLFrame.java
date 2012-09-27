@@ -199,12 +199,14 @@ public class FTLFrame extends JFrame {
 		System.out.println( System.getenv("ProgramFiles(x86)") );
 		
 		String steamPath = "Steam/steamapps/common/FTL Faster Than Light";
-		File[] paths = new File[] { 
-					// Windows - Steam
-					new File( new File(System.getenv("ProgramFiles(x86)")), steamPath ),
-					new File( new File(System.getenv("ProgramFiles")), steamPath )
-					// TODO add more
-				};
+		List<File> paths = new ArrayList<File>();
+		if (System.getenv("ProgramFiles") != null) {
+			paths.add(new File( new File(System.getenv("ProgramFiles(x86)")), steamPath ));
+		}
+		
+		if (System.getenv("ProgramFiles(x86)") != null) {
+			paths.add(new File( new File(System.getenv("ProgramFiles(x86)")), steamPath ));
+		}
 		
 		File ftlPath = null;
 		
