@@ -9,4 +9,7 @@
 bin/
 ftldata/
 ftl-editor.cfg
+ftl-profile-editor.log
 target/
+
+log4j2-test.xml

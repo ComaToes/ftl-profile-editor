@@ -61,7 +61,12 @@ import net.blerf.ftl.parser.ProfileParser;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.ShipBlueprint;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class FTLFrame extends JFrame {
+	
+	private static final Logger log = LogManager.getLogger(FTLFrame.class);
 	
 	private List<JCheckBox> shipUnlocks = new ArrayList<JCheckBox>();
 	
@@ -106,14 +111,18 @@ public class FTLFrame extends JFrame {
 			
 			Properties config = new Properties();
 			
-			if( propFile.exists() )
+			if( propFile.exists() ) {
+				log.trace("Loading properties from config file");
 				config.load( new FileInputStream(propFile) );
+			}
 			
 			String ftlPathString = config.getProperty("ftlPath");
 			
 			if( ftlPathString != null ) {
+				log.trace("Using FTL path from config: " + ftlPathString);
 				ftlPath = new File(ftlPathString);
 			} else {
+				log.trace("No FTL path available");
 				ftlPath = promptForFtlPath();
 				config.setProperty("ftlPath", ftlPath.getAbsolutePath());
 				config.store( new FileOutputStream(propFile) , "FTL Profile Editor - Config File" );
@@ -217,6 +226,9 @@ public class FTLFrame extends JFrame {
 		}
 		
 		if( ftlPath == null ) {
+			
+			log.trace("FTL path not located automatically. Prompting user for location.");
+			
 			JOptionPane.showMessageDialog(this, "FTL Profile Editor uses images and data from FTL but was unable to locate your FTL installation.\n" +
 												"You will now be prompted to locate FTL manually. (You will only need to do this once)", "FTL Not Found", JOptionPane.INFORMATION_MESSAGE);
 			
@@ -233,14 +245,19 @@ public class FTLFrame extends JFrame {
 			});
 			fc.setMultiSelectionEnabled(false);
 			
-			if( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION )
+			if( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
 				ftlPath = fc.getSelectedFile().getParentFile().getParentFile();
+				log.trace("User selected: " + ftlPath.getAbsolutePath());
+			} else
+				log.trace("User cancelled FTL path selection");
 
 		}
 		
-		if( ftlPath != null && ftlPath.exists() && ftlPath.isDirectory() && new File(ftlPath,"resources/data.dat").exists() )
+		if( ftlPath != null && ftlPath.exists() && ftlPath.isDirectory() && new File(ftlPath,"resources/data.dat").exists() ) {
+			log.trace("FTL located at: " + ftlPath.getAbsolutePath());
 			return ftlPath;
-		else {
+		} else {
+			log.trace("FTL not located");
 			showErrorDialog( "FTL data not found. FTL Profile Editor will now exit." );
 			System.exit(0);
 		}
@@ -260,25 +277,26 @@ public class FTLFrame extends JFrame {
 	}
 
 	private void initCheckboxIcons() {
-		
+
+		log.trace("Initialising checkbox locked icon");
 		iconShadeImage = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = iconShadeImage.getGraphics();
 		g.setColor( new Color(0, 0, 0, 150) );
 		g.fillRect(0, 0, maxIconWidth, maxIconHeight);
-		//g.fillOval(0, 0, maxWidth, maxHeight);
 		try {
 			BufferedImage lock = ImageIO.read( new File(DataManager.get().getDataFolder(), "img/customizeUI/box_lock_on.png") );
 			int x = (maxIconWidth-lock.getWidth()) / 2;
 			int y = (maxIconHeight-lock.getHeight()) / 2;
 			g.drawImage(lock, x, y, null);
-		} catch (IOException e1) {
-			e1.printStackTrace(); // On exception no lock
+		} catch (IOException e) {
+			log.error( "Error reading lock image" , e );
 		}
 		
 	}
 	
 	private void setCheckboxIcons( JCheckBox box, File baseImage ) {
 		
+		log.trace("Setting icons for checkbox. Base image: " + baseImage.getPath());
 		try {
 			BufferedImage img = ImageIO.read( baseImage );
 			
@@ -295,16 +313,18 @@ public class FTLFrame extends JFrame {
 			box.setIcon( new ImageIcon( locked ) );
 			
 		} catch (IOException e) {
-			e.printStackTrace(); // on exception no image
+			log.error( "Error reading checkbox image" , e );
 		}
 		
 	}
 	
 	private JPanel createUnlocksPanel() {
 		
+		log.trace("Creating unlocks panel");
 		JPanel unlockAchPanel = new JPanel();
 		unlockAchPanel.setLayout( new BoxLayout(unlockAchPanel, BoxLayout.Y_AXIS) );
-		
+
+		log.trace("Adding ship unlocks");
 		JPanel shipPanel = new JPanel();
 		unlockAchPanel.add( shipPanel );
 		shipPanel.setBorder( BorderFactory.createTitledBorder("Ship Unlocks") );
@@ -317,6 +337,7 @@ public class FTLFrame extends JFrame {
 			shipUnlocks.add(shipUnlock);
 		}
 
+		log.trace("Adding ship achievements");
 		JPanel shipAchPanel = new JPanel();
 		unlockAchPanel.add( shipAchPanel );
 		shipAchPanel.setBorder( BorderFactory.createTitledBorder("Ship Achievements") );
@@ -330,6 +351,8 @@ public class FTLFrame extends JFrame {
 	}
 	
 	private void setupToolbar(JToolBar toolbar) {
+		
+		log.trace("Initialising toolbar");
 		
 		final JFileChooser fc = new JFileChooser();
 		fc.addChoosableFileFilter( new FileFilter() {
@@ -349,10 +372,14 @@ public class FTLFrame extends JFrame {
 		openButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				log.trace("Open button clicked");
 				if( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 
 						File f = fc.getSelectedFile();
+						
+						log.trace("File selected: " + f.getAbsolutePath());
+						
 						InputStream in = new FileInputStream( f );
 						
 						// Read whole file so we can hash it
@@ -385,19 +412,22 @@ public class FTLFrame extends JFrame {
 						// Compare
 						for (int i = 0; i < readHash.length; i++) {
 							if( readHash[i] != writeHash[i] ) {
+								log.error("Hash fail on mock write - Unable to assure valid parsing");
 								JOptionPane.showInputDialog( FTLFrame.this, "FTL Profile Editor has detected that it cannot interpret your profile correctly.\nUsing this app may result in loss of stats/achievements.\nPlease attach a copy of your original prof.sav to this forum thread so I can fix this:", "Parser Error Detected", JOptionPane.ERROR_MESSAGE, null, null, forumUrl );
 								break;
 							}
 						}
 						
+						log.trace("Read completed successfully");
+						
 					} catch( IOException ex ) {
-						ex.printStackTrace();
+						log.error("Error reading profile",ex);
 						showErrorDialog("Error reading profile: " + ex.getMessage());
 					} catch (NoSuchAlgorithmException ex) {
-						// TODO Auto-generated catch block
-						ex.printStackTrace();
+						log.error("Error reading profile",ex);
 					}
-				}
+				} else
+					log.trace("Open dialog cancelled");
 			}
 		});
 		toolbar.add( openButton );
@@ -406,10 +436,12 @@ public class FTLFrame extends JFrame {
 		saveButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				log.trace("Save button clicked");
 				if( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 						
 						File f = fc.getSelectedFile();
+						log.trace("File selected: " + f.getAbsolutePath());
 						ProfileParser ftl = new ProfileParser();
 						OutputStream out = new FileOutputStream( f );
 						FTLFrame.this.updateProfile(profile);
@@ -417,10 +449,11 @@ public class FTLFrame extends JFrame {
 						out.close();
 						
 					} catch( IOException ex ) {
-						ex.printStackTrace();
+						log.error("Error writing profile",ex);
 						showErrorDialog("Error saving profile: " + ex.getMessage());
 					}
-				}
+				} else
+					log.trace("Save dialog cancelled");
 			}
 		});
 		toolbar.add( saveButton );
@@ -430,6 +463,7 @@ public class FTLFrame extends JFrame {
 		unlockShipsButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				log.trace("Unlock all ships button clicked");
 				for( JCheckBox box: shipUnlocks )
 					box.setSelected(true);
 			}
@@ -441,6 +475,7 @@ public class FTLFrame extends JFrame {
 		unlockShipAchsButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				log.trace("Unlock all ship achievements button clicked");
 				for( JCheckBox box: shipAchievements.values() )
 					box.setSelected(true);
 			}
@@ -461,12 +496,13 @@ public class FTLFrame extends JFrame {
 			editor.addHyperlinkListener(new HyperlinkListener() {
 			    public void hyperlinkUpdate(HyperlinkEvent e) {
 			        if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+			        	log.trace("About dialog link clicked: "+ e.getURL());
 			        	if(Desktop.isDesktopSupported()) {
 			        	    try {
 								Desktop.getDesktop().browse(e.getURL().toURI());
-							} catch (Exception e1) {
-								e1.printStackTrace();
-								// Nothing to do
+								log.trace("Link opened in external browser");
+							} catch (Exception ex) {
+								log.error("Unable to open link",ex);
 							}
 			        	}
 			        }
@@ -481,6 +517,7 @@ public class FTLFrame extends JFrame {
 		aboutButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				log.trace("About button clicked");
 				aboutDialog.setVisible(true);
 			}
 		});
@@ -488,39 +525,46 @@ public class FTLFrame extends JFrame {
 		
 		// Check for new version in seperate thread so we don't hang the UI
 		final JToolBar toolbarr = toolbar;
-		new Thread() {
+		new Thread("CheckVersion") {
 			@Override
 			public void run() {
 				
 				try {
+					
+					log.trace("Checking for latest version");
 					
 					URL url = new URL(latestVersionUrl);
 					BufferedReader in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
 					int latestVersion = Integer.parseInt( in.readLine() );
 					
 					if( latestVersion > version ) {
+						log.trace("New version available");
 						JButton newVersionButton = new JButton("New Version Available!", updateIcon);
 						newVersionButton.addActionListener( new ActionListener() {
 							@Override
 							public void actionPerformed(ActionEvent e) {
+								log.trace("New version button clicked");
 					        	if(Desktop.isDesktopSupported()) {
 					        	    try {
 										Desktop.getDesktop().browse( new URI(downloadUrl) );
+										log.trace("External browser opened");
 									} catch (Exception e1) {
-										e1.printStackTrace();
+										log.error("Unable to open browser",e1);
 										JOptionPane.showInputDialog( FTLFrame.this, "Unable to open browser. Visit the following URL to get the latest version:", "Browser Fail", JOptionPane.ERROR_MESSAGE, null, null, downloadUrl );
 									}
 					        	} else {
+					        		log.error("Unable to open browser");
 					        		JOptionPane.showInputDialog( FTLFrame.this, "Unable to open browser. Visit the following URL to get the latest version:", "Browser Fail", JOptionPane.ERROR_MESSAGE, null, null, downloadUrl );
 					        	}
 							}
 						});
 						newVersionButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
 						toolbarr.add( newVersionButton );
-					}
+					} else
+						log.trace("Already up-to-date");
 					
 				} catch (IOException e) {
-					e.printStackTrace();
+					log.error("Error checking for latest version",e);
 					showErrorDialog("Error checking for latest version\n(Use the About window to check the download page manually):\n" + e.getMessage());
 				}
 				
@@ -530,6 +574,8 @@ public class FTLFrame extends JFrame {
 	}
 	
 	private JPanel createShipPanel( ShipBlueprint ship ) {
+		
+		log.trace("Creating ship panel for: " + ship.getId());
 		
 		JPanel panel = new JPanel();
 		
@@ -550,6 +596,8 @@ public class FTLFrame extends JFrame {
 	
 	public void loadProfile( Profile p ) {
 		
+		log.trace("Loading profile data into UI");
+		
 		boolean[] unlocks = p.getShipUnlocks();
 		for (int i = 0; i < shipUnlocks.size(); i++) {
 			shipUnlocks.get(i).setSelected( unlocks[i] );
@@ -562,6 +610,8 @@ public class FTLFrame extends JFrame {
 	}
 	
 	public void updateProfile( Profile p ) {
+		
+		log.trace("Updating profile from UI selections");
 		
 		List<Achievement> allAchs = DataManager.get().getAchievements();
 		List<String> achs = new ArrayList<String>();

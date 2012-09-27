@@ -9,11 +9,17 @@ import java.util.Map;
 
 import javax.xml.bind.JAXBException;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import net.blerf.ftl.FTLFrame;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.ShipBlueprint;
 
 public class DataManager {
+	
+	private static final Logger log = LogManager.getLogger(DataManager.class);
 
 	private static DataManager instance;
 	
@@ -38,6 +44,8 @@ public class DataManager {
 	private DataManager(File ftlFolder, File dataFolder) throws IOException, JAXBException {
 		
 		this.dataFolder = dataFolder;
+		
+		log.trace("DataManager initialising");
 		
 		DatParser datParser = new DatParser();
 		

@@ -16,6 +16,9 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Achievements;
 import net.blerf.ftl.xml.Blueprints;
@@ -23,9 +26,13 @@ import net.blerf.ftl.xml.ShipBlueprint;
 
 public class DatParser extends Parser {
 	
+	private static final Logger log = LogManager.getLogger(DatParser.class);
+	
 	private byte[] buf = new byte[1024];
 	
 	public List<Achievement> readAchievements( File xmlFile ) throws IOException, JAXBException {
+		
+		log.trace("Reading achievements XML from: " + xmlFile.getPath());
 		
 		// Need to clean invalid XML and comments - write to temp file before JAXB parsing
 		File tempFile = File.createTempFile("ftledit", ".tmp");
@@ -59,6 +66,8 @@ public class DatParser extends Parser {
 	}
 	
 	public Blueprints readBlueprints( File xmlFile ) throws IOException, JAXBException {
+		
+		log.trace("Reading blueprints XML from: " + xmlFile.getPath());
 		
 		// Need to clean invalid XML and comments - write to temp file before JAXB parsing
 		File tempFile = File.createTempFile("ftledit", ".tmp");
@@ -124,6 +133,8 @@ public class DatParser extends Parser {
 
 	public void unpackDat( File datFile, File outFolder ) throws IOException {
 		
+		log.trace("Unpacking dat file " + datFile.getPath() + " into " + outFolder.getPath());
+		
 		InputStream in = new FileInputStream(datFile);
 		
 		outFolder.mkdirs();
@@ -140,6 +151,8 @@ public class DatParser extends Parser {
 	
 	private int[] readHeader(InputStream in) throws IOException {
 		
+		log.trace("Reading dat header");
+		
 		int headerSize = readInt(in);
 		
 		int[] header = new int[headerSize];
@@ -153,11 +166,13 @@ public class DatParser extends Parser {
 	}
 	
 	private void readFile(InputStream in, File outFolder) throws IOException {
+
+		log.trace("Reading packaged file");
 		
 		int dataSize = readInt(in);
 		String fileName = readString(in);
 		
-		System.out.println( fileName );
+		log.trace("Filename: " + fileName + " ("+dataSize+"b)");
 		
 		File outFile = new File( outFolder, fileName );
 		outFile.getParentFile().mkdirs();

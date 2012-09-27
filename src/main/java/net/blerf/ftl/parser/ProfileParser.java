@@ -6,12 +6,17 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.Stats;
 
 public class ProfileParser extends Parser {
+	
+	private static final Logger log = LogManager.getLogger(ProfileParser.class);
 	
 	public Profile readProfile(InputStream in) throws IOException {
 		
