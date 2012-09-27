@@ -20,16 +20,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -94,15 +93,48 @@ public class FTLFrame extends JFrame {
 		this.version = version;
 		
 		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		// Read config file and locate FTL install
+		File propFile = new File("ftl-editor.cfg");
+		File ftlPath;
+	
+		try {
 			
-			DataManager.init( new File("D:/ftldata") ); // TODO prompt user then read from ini
+			Properties config = new Properties();
 			
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (JAXBException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			if( propFile.exists() )
+				config.load( new FileInputStream(propFile) );
+			
+			String ftlPathString = config.getProperty("ftlPath");
+			
+			if( ftlPathString != null ) {
+				ftlPath = new File(ftlPathString);
+			} else {
+				ftlPath = promptForFtlPath();
+				config.setProperty("ftlPath", ftlPath.getAbsolutePath());
+				config.store( new FileOutputStream(propFile) , "FTL Profile Editor - Config File" );
+			}
+			
+		} catch (IOException e) {
+			showErrorDialog( "Error loading " + propFile.getPath() + " : " + e.getMessage() );
+			throw new RuntimeException("Error loading props", e);
+		}
+		
+		// Initialise data store
+		try {
+			
+			DataManager.init( ftlPath, new File("ftldata") );
+			
+		} catch (IOException e) {
+			showErrorDialog( "Error unpacking FTL data files: " + e.getMessage() );
+			throw new RuntimeException(e);
+		} catch (JAXBException e) {
+			showErrorDialog( "Error unpacking FTL data files: " + e.getMessage() );
+			throw new RuntimeException(e);
 		}
 		
 		// Create empty profile
@@ -121,13 +153,8 @@ public class FTLFrame extends JFrame {
 		stats.setMostRepairs( new CrewRecord("", "", 0, 0) );
 		stats.setMostSkills( new CrewRecord("", "", 0, 0) );
 		profile.setStats( stats );
-
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		
+		// GUI setup
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(800, 700);
 		setLocationRelativeTo(null);
@@ -160,6 +187,67 @@ public class FTLFrame extends JFrame {
 		
 	}
 	
+	private void showErrorDialog( String message ) {
+		
+		JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+		
+	}
+	
+	private File promptForFtlPath() {
+		
+		System.out.println( System.getenv("ProgramFiles") );
+		System.out.println( System.getenv("ProgramFiles(x86)") );
+		
+		String steamPath = "Steam/steamapps/common/FTL Faster Than Light";
+		File[] paths = new File[] { 
+					// Windows - Steam
+					new File( new File(System.getenv("ProgramFiles(x86)")), steamPath ),
+					new File( new File(System.getenv("ProgramFiles")), steamPath )
+					// TODO add more
+				};
+		
+		File ftlPath = null;
+		
+		for( File path: paths ) {
+			if( path.exists() ) {
+				ftlPath = path;
+				break;
+			}
+		}
+		
+		if( ftlPath == null ) {
+			JOptionPane.showMessageDialog(this, "FTL Profile Editor uses images and data from FTL but was unable to locate your FTL installation.\n" +
+												"You will now be prompted to locate FTL manually. (You will only need to do this once)", "FTL Not Found", JOptionPane.INFORMATION_MESSAGE);
+			
+			final JFileChooser fc = new JFileChooser();
+			fc.addChoosableFileFilter( new FileFilter() {
+				@Override
+				public String getDescription() {
+					return "FTL Data File - (FTLInstall)/resources/data.dat";
+				}
+				@Override
+				public boolean accept(File f) {
+					return f.isDirectory() || f.getName().equals("data.dat");
+				}
+			});
+			fc.setMultiSelectionEnabled(false);
+			
+			if( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION )
+				ftlPath = fc.getSelectedFile().getParentFile().getParentFile();
+
+		}
+		
+		if( ftlPath != null && ftlPath.exists() && ftlPath.isDirectory() && new File(ftlPath,"resources/data.dat").exists() )
+			return ftlPath;
+		else {
+			showErrorDialog( "FTL data not found. FTL Profile Editor will now exit." );
+			System.exit(0);
+		}
+		
+		return null;
+		
+	}
+
 	private JPanel createStatsPanel() {
 		
 		JPanel statsPanel = new JPanel();
@@ -303,7 +391,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( IOException ex ) {
 						ex.printStackTrace();
-						// TODO report error
+						showErrorDialog("Error reading profile: " + ex.getMessage());
 					} catch (NoSuchAlgorithmException ex) {
 						// TODO Auto-generated catch block
 						ex.printStackTrace();
@@ -329,7 +417,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( IOException ex ) {
 						ex.printStackTrace();
-						// TODO report error
+						showErrorDialog("Error saving profile: " + ex.getMessage());
 					}
 				}
 			}
@@ -377,6 +465,7 @@ public class FTLFrame extends JFrame {
 								Desktop.getDesktop().browse(e.getURL().toURI());
 							} catch (Exception e1) {
 								e1.printStackTrace();
+								// Nothing to do
 							}
 			        	}
 			        }
@@ -429,10 +518,9 @@ public class FTLFrame extends JFrame {
 						toolbarr.add( newVersionButton );
 					}
 					
-				} catch (MalformedURLException e1) {
-					e1.printStackTrace();
 				} catch (IOException e) {
 					e.printStackTrace();
+					showErrorDialog("Error checking for latest version\n(Use the About window to check the download page manually):\n" + e.getMessage());
 				}
 				
 			}

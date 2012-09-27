@@ -22,8 +22,8 @@ public class DataManager {
 	}
 	
 	// TODO handle exceptions better
-	public static void init(File dataFolder) throws IOException, JAXBException {
-		instance = new DataManager(dataFolder);	
+	public static void init(File ftlFolder, File dataFolder) throws IOException, JAXBException {
+		instance = new DataManager(ftlFolder, dataFolder);	
 	}
 
 	private List<Achievement> achievements;
@@ -35,14 +35,22 @@ public class DataManager {
 	
 	private File dataFolder;
 	
-	private DataManager(File dataFolder) throws IOException, JAXBException {
+	private DataManager(File ftlFolder, File dataFolder) throws IOException, JAXBException {
 		
 		this.dataFolder = dataFolder;
 		
 		DatParser datParser = new DatParser();
 		
-		if( !dataFolder.exists() )
-			datParser.unpackDat( new File(".") , dataFolder ); // TODO locate data.dat via dialog (store loc somewhere)
+		File datFolder = new File( dataFolder, "data" );
+		File imgFolder = new File( dataFolder, "img" );
+		
+		boolean unpackData = !dataFolder.exists() || !datFolder.exists();
+		boolean unpackRes = !dataFolder.exists() || !imgFolder.exists();
+		
+		if( unpackData )
+			datParser.unpackDat( new File(ftlFolder, "resources/data.dat") , dataFolder );
+		if( unpackRes )
+			datParser.unpackDat( new File(ftlFolder, "resources/resource.dat") , dataFolder );
 		
 		achievements = datParser.readAchievements( new File( dataFolder, "data/achievements.xml") );
 		blueprints = datParser.readBlueprints( new File( dataFolder, "data/blueprints.xml" ) );

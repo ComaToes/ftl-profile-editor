@@ -1,16 +1,19 @@
 package net.blerf.ftl;
 
-import java.io.IOException;
 
 public class FTLProfileEditor {
 	
 	private static final int VERSION = 5;
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) {
 
-		FTLFrame frame = new FTLFrame(VERSION);
-		
-		frame.setVisible(true);
+		try {
+			FTLFrame frame = new FTLFrame(VERSION);
+			frame.setVisible(true);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
 		
 	}
 	

@@ -52,6 +52,8 @@ public class DatParser extends Parser {
 	    Unmarshaller u = jc.createUnmarshaller();
 	    Achievements ach = (Achievements)u.unmarshal( cleanIn );
 	    
+	    tempFile.delete();
+	    
 	    return ach.getAchievements();
 
 	}
@@ -64,8 +66,6 @@ public class DatParser extends Parser {
 		
 		BufferedReader in = new BufferedReader( new InputStreamReader( new FileInputStream(xmlFile) ) );
 		PrintWriter out = new PrintWriter(tempFile);
-		
-		System.out.println( tempFile.getAbsolutePath() );
 		
 		String line;
 		out.println( "<blueprints>" ); // XML has multiple root nodes so need to wrap
@@ -115,6 +115,8 @@ public class DatParser extends Parser {
 		JAXBContext jc = JAXBContext.newInstance( Blueprints.class );
 	    Unmarshaller u = jc.createUnmarshaller();
 	    Blueprints bps = (Blueprints)u.unmarshal( cleanIn );
+	    
+	    tempFile.delete();
 	    
 	    return bps;
 
