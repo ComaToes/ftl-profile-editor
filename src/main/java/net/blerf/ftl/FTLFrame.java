@@ -335,16 +335,31 @@ public class FTLFrame extends JFrame {
 		
 	}
 	
+	private Image getScaledImage( File image ) throws IOException {
+		BufferedImage img = ImageIO.read( image );
+		int width = img.getWidth();
+		int height = img.getHeight();
+		
+		if( width <= maxIconWidth && height < maxIconHeight )
+			return img;
+		
+		if( width > height ) {
+			height /= width/maxIconWidth;
+			width = maxIconWidth;
+		} else {
+			width /= height/maxIconHeight;
+			height = maxIconHeight;
+		}
+		Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+		return scaled;
+	}
+	
 	private void setCheckboxIcons( JCheckBox box, File baseImage ) {
 		
 		log.trace("Setting icons for checkbox. Base image: " + baseImage.getPath());
 		try {
-			BufferedImage img = ImageIO.read( baseImage );
-			
-			int scaledHeight = img.getHeight()/(img.getWidth()/maxIconWidth);
-			int scaledYoffset = (maxIconHeight-scaledHeight)/2;
-			
-			Image scaled = img.getScaledInstance(maxIconWidth, scaledHeight, Image.SCALE_SMOOTH);
+			Image scaled = getScaledImage(baseImage);
+			int scaledYoffset = (maxIconHeight-scaled.getHeight(null))/2;
 			BufferedImage unlocked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
 			unlocked.getGraphics().drawImage(scaled, 0, scaledYoffset, null);
 			BufferedImage locked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
