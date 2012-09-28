@@ -420,11 +420,9 @@ public class FTLFrame extends JFrame {
 						
 						log.trace("Read completed successfully");
 						
-					} catch( IOException ex ) {
+					} catch( Exception ex ) {
 						log.error("Error reading profile",ex);
 						showErrorDialog("Error reading profile: " + ex.getMessage());
-					} catch (NoSuchAlgorithmException ex) {
-						log.error("Error reading profile",ex);
 					}
 				} else
 					log.trace("Open dialog cancelled");
