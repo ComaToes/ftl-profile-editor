@@ -1,0 +1,4 @@
+7
+Fixed Linux bug (thanks roostertech)
+Added error logging to file (ftl-profile-editor.log)
+Added default profile locations for MacOS and Linux

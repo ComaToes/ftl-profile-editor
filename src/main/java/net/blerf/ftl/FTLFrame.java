@@ -81,8 +81,10 @@ public class FTLFrame extends JFrame {
 	private ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource("update.gif") );
 	
 	private URL aboutPage = ClassLoader.getSystemResource("about.html");
+	private URL versionHistoryTemplate = ClassLoader.getSystemResource("update.html");
 	
 	private String latestVersionUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/latest-version.txt";
+	private String versionHistoryUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/release-notes.txt";
 	private String downloadUrl = "https://github.com/ComaToes/ftl-profile-editor/downloads";
 	private String forumUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=2877";
 	
@@ -350,7 +352,7 @@ public class FTLFrame extends JFrame {
 		
 	}
 	
-	private void setupToolbar(JToolBar toolbar) {
+	private void setupToolbar(final JToolBar toolbar) {
 		
 		log.trace("Initialising toolbar");
 		
@@ -500,29 +502,30 @@ public class FTLFrame extends JFrame {
 		aboutDialog.setSize(300, 200);
 		aboutDialog.setLocationRelativeTo( this );
 				
-		JEditorPane editor = null;
+		final HyperlinkListener linkListener = new HyperlinkListener() {
+		    public void hyperlinkUpdate(HyperlinkEvent e) {
+		        if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+		        	log.trace("Dialog link clicked: "+ e.getURL());
+		        	if(Desktop.isDesktopSupported()) {
+		        	    try {
+							Desktop.getDesktop().browse(e.getURL().toURI());
+							log.trace("Link opened in external browser");
+						} catch (Exception ex) {
+							log.error("Unable to open link",ex);
+						}
+		        	}
+		        }
+		    }
+		};
+		
 		try {
-			editor = new JEditorPane( aboutPage );
+			JEditorPane editor = new JEditorPane( aboutPage );
 			editor.setEditable(false);
-			editor.addHyperlinkListener(new HyperlinkListener() {
-			    public void hyperlinkUpdate(HyperlinkEvent e) {
-			        if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-			        	log.trace("About dialog link clicked: "+ e.getURL());
-			        	if(Desktop.isDesktopSupported()) {
-			        	    try {
-								Desktop.getDesktop().browse(e.getURL().toURI());
-								log.trace("Link opened in external browser");
-							} catch (Exception ex) {
-								log.error("Unable to open link",ex);
-							}
-			        	}
-			        }
-			    }
-			});
-		} catch (IOException e1) {
-			e1.printStackTrace();
+			editor.addHyperlinkListener(linkListener);
+			aboutPanel.add(editor);
+		} catch (IOException e) {
+			log.error(e);
 		}
-		aboutPanel.add(editor);
 		
 		JButton aboutButton = new JButton("About", aboutIcon);
 		aboutButton.addActionListener( new ActionListener() {
@@ -535,52 +538,89 @@ public class FTLFrame extends JFrame {
 		toolbar.add( aboutButton );
 		
 		// Check for new version in seperate thread so we don't hang the UI
-		final JToolBar toolbarr = toolbar;
 		new Thread("CheckVersion") {
 			@Override
 			public void run() {
-				
-				try {
-					
-					log.trace("Checking for latest version");
-					
-					URL url = new URL(latestVersionUrl);
-					BufferedReader in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
-					int latestVersion = Integer.parseInt( in.readLine() );
-					
-					if( latestVersion > version ) {
-						log.trace("New version available");
-						JButton newVersionButton = new JButton("New Version Available!", updateIcon);
-						newVersionButton.addActionListener( new ActionListener() {
-							@Override
-							public void actionPerformed(ActionEvent e) {
-								log.trace("New version button clicked");
-					        	if(Desktop.isDesktopSupported()) {
-					        	    try {
-										Desktop.getDesktop().browse( new URI(downloadUrl) );
-										log.trace("External browser opened");
-									} catch (Exception e1) {
-										log.error("Unable to open browser",e1);
-										JOptionPane.showInputDialog( FTLFrame.this, "Unable to open browser. Visit the following URL to get the latest version:", "Browser Fail", JOptionPane.ERROR_MESSAGE, null, null, downloadUrl );
-									}
-					        	} else {
-					        		log.error("Unable to open browser");
-					        		JOptionPane.showInputDialog( FTLFrame.this, "Unable to open browser. Visit the following URL to get the latest version:", "Browser Fail", JOptionPane.ERROR_MESSAGE, null, null, downloadUrl );
-					        	}
-							}
-						});
-						newVersionButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
-						toolbarr.add( newVersionButton );
-					} else
-						log.trace("Already up-to-date");
-					
-				} catch (IOException e) {
-					log.error("Error checking for latest version",e);
-					showErrorDialog("Error checking for latest version\n(Use the About window to check the download page manually):\n" + e.getMessage());
-				}
-				
+				checkForUpdate(toolbar, linkListener);
 			}
 		}.start();
+		
+	}
+	
+	private void checkForUpdate(final JToolBar toolbar, HyperlinkListener linkListener) {
+		
+		try {
+			
+			log.trace("Checking for latest version");
+			
+			URL url = new URL(latestVersionUrl);
+			BufferedReader in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
+			int latestVersion = Integer.parseInt( in.readLine() );
+			in.close();
+			
+			if( latestVersion > version ||true) {
+				log.trace("New version available");
+				
+				final JDialog updateDialog = new JDialog(this,"Update Available",true);
+				JPanel updatePanel = new JPanel();
+				updatePanel.setLayout( new BoxLayout(updatePanel, BoxLayout.Y_AXIS) );
+				updateDialog.setContentPane(updatePanel);
+				updateDialog.setSize(600, 400);
+				updateDialog.setLocationRelativeTo( this );
+				
+				// TODO Template idea nice but a bit messy
+				// Read history template
+				in = new BufferedReader( new InputStreamReader( (InputStream)versionHistoryTemplate.getContent() ) );
+				String historyTemplate = "";
+				String line;
+				while( (line = in.readLine()) != null )
+					historyTemplate += line;
+				in.close();
+				
+				String history = "";
+				
+				// Read remote history file
+				in = new BufferedReader( new InputStreamReader( (InputStream)new URL(versionHistoryUrl).getContent() ) );
+				line = in.readLine();
+				int version = Integer.parseInt( line );
+				String items = "";
+				// Render each history file section using the template
+				while( version > this.version && line != null ) {
+					while( !"".equals(line = in.readLine()) && line != null ) {
+						items += "<li>"+line+"</li>";
+					}
+					history += historyTemplate.replaceAll("\\{version\\}", "v"+version).replaceAll("\\{items\\}", items);
+					line = in.readLine();
+					if( line != null )
+						version = Integer.parseInt( line );
+				}
+				in.close();
+
+				// Create editor pane and populate with generated history html
+				JEditorPane editor = new JEditorPane("text/html", history);
+				editor.setEditable(false);
+				editor.addHyperlinkListener(linkListener);
+				updatePanel.add( new JScrollPane(editor) );
+
+				// Add button to toolbar
+				JButton newVersionButton = new JButton("New Version Available!", updateIcon);
+				newVersionButton.addActionListener( new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						log.trace("New version button clicked");
+						updateDialog.setVisible(true);
+					}
+				});
+				newVersionButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
+				toolbar.add( newVersionButton );
+				
+			} else
+				log.trace("Already up-to-date");
+			
+		} catch (IOException e) {
+			log.error("Error checking for latest version",e);
+			showErrorDialog("Error checking for latest version\n(Use the About window to check the download page manually)\n" + e);
+		}
 		
 	}
 	
