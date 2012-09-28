@@ -27,7 +27,6 @@ public class DataManager {
 		return instance;
 	}
 	
-	// TODO handle exceptions better
 	public static void init(File ftlFolder, File dataFolder) throws IOException, JAXBException {
 		instance = new DataManager(ftlFolder, dataFolder);	
 	}

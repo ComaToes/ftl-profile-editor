@@ -52,7 +52,7 @@
 	       <descriptorRefs>
 	         <descriptorRef>jar-with-dependencies</descriptorRef>
 	       </descriptorRefs>
-	       <finalName>FTLProfileEditor-${pom.version}</finalName>
+	       <finalName>FTLProfileEditor-${project.version}</finalName>
 	       <appendAssemblyId>false</appendAssemblyId>
 	     </configuration>
 	   </execution>

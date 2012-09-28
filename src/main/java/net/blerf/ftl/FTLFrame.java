@@ -365,7 +365,20 @@ public class FTLFrame extends JFrame {
 				return f.getName().equalsIgnoreCase("prof.sav");
 			}
 		});
-		fc.setSelectedFile( new File( System.getProperty("user.home") + "/Documents/My Games/FasterThanLight/prof.sav") ); // TODO make multi-platform
+		
+		File[] profileLocations = new File[] {
+				// Windows
+				new File( System.getProperty("user.home") + "/Documents/My Games/FasterThanLight/prof.sav"),
+				// Mac
+				new File( System.getProperty("user.home") + "/Library/Application Support/FasterThanLight/prof.sav"),
+				// Linux
+				new File( System.getProperty("user.home") + "/.local/share/FasterThanLight/prof.sav")
+		};
+		
+		for( File file: profileLocations )
+			if( file.exists() )
+				fc.setSelectedFile( file );
+		
 		fc.setMultiSelectionEnabled(false);
 		
 		JButton openButton = new JButton("Open", openIcon);

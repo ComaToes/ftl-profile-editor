@@ -1,6 +1,7 @@
 package net.blerf.ftl.parser;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -181,7 +182,7 @@ public class DatParser extends Parser {
 		while( dataSize > 0 ) {
 			int count = in.read(buf, 0, dataSize > buf.length ? buf.length : dataSize);
 			if( count < 0 )
-				throw new RuntimeException(); // TODO make checked
+				throw new EOFException("Unexpected end of stream");
 			dataSize -= count;
 			out.write(buf, 0, count);
 		}
