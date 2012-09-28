@@ -32,6 +32,7 @@ public class DataManager {
 	}
 
 	private List<Achievement> achievements;
+	private List<Achievement> generalAchievements;
 	private Blueprints blueprints;
 	
 	private Map<String, ShipBlueprint> ships;
@@ -61,6 +62,11 @@ public class DataManager {
 		
 		achievements = datParser.readAchievements( new File( dataFolder, "data/achievements.xml") );
 		blueprints = datParser.readBlueprints( new File( dataFolder, "data/blueprints.xml" ) );
+		
+		generalAchievements = new ArrayList<Achievement>();
+		for( Achievement ach: achievements )
+			if( ach.getShipId() == null )
+				generalAchievements.add(ach);
 		
 		ships = new HashMap<String, ShipBlueprint>();
 		for( ShipBlueprint ship: blueprints.getShipBlueprint() )
@@ -106,6 +112,10 @@ public class DataManager {
 	
 	public List<Achievement> getShipAchievements(ShipBlueprint ship) {
 		return shipAchievements.get(ship);
+	}
+	
+	public List<Achievement> getGeneralAchievements() {
+		return generalAchievements;
 	}
 	
 }

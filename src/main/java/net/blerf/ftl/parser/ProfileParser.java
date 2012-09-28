@@ -58,7 +58,7 @@ public class ProfileParser extends Parser {
 		
 		for (int i = 0; i < achievementCount; i++) {
 			String ach = readString(in);
-			readInt(in); // 4 byte tailer always 0
+			readInt(in); // TODO this is the difficulty mode that the achievement was obtained in
 			achievements.add( ach );
 		}
 		

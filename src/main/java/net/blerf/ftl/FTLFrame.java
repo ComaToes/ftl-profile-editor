@@ -71,6 +71,7 @@ public class FTLFrame extends JFrame {
 	private List<JCheckBox> shipUnlocks = new ArrayList<JCheckBox>();
 	
 	private HashMap<Achievement,JCheckBox> shipAchievements = new HashMap<Achievement, JCheckBox>();
+	private HashMap<Achievement,JCheckBox> generalAchievements = new HashMap<Achievement, JCheckBox>();
 	
 	private Profile profile;
 	
@@ -190,7 +191,8 @@ public class FTLFrame extends JFrame {
 		toolbar.setMargin( new Insets(5, 5, 5, 5) );
 		setupToolbar(toolbar);
 		
-		tabPane.add( "Unlocks" , new JScrollPane( createUnlocksPanel() ) );
+		tabPane.add( "Ship Unlocks & Achievements" , new JScrollPane( createUnlocksPanel() ) );
+		tabPane.add( "General Achievements" , new JScrollPane( createAchievementsPanel() ) );
 		tabPane.add( "Stats" , createStatsPanel() );
 		
 		// Load blank profile (sets Kestrel unlock)
@@ -265,6 +267,43 @@ public class FTLFrame extends JFrame {
 		}
 		
 		return null;
+		
+	}
+	
+	private JPanel createAchievementsPanel() {
+		
+		log.trace("Creating Achievements panel");
+		JPanel achPanel = new JPanel();
+		achPanel.setLayout( new BoxLayout(achPanel, BoxLayout.Y_AXIS) );
+		
+		List<Achievement> achievements = DataManager.get().getGeneralAchievements();
+		
+		// TODO magic offsets
+		achPanel.add( createAchievementsSubPanel( "General Progression", achievements, 0 ) );
+		achPanel.add( createAchievementsSubPanel( "Going the Distance", achievements, 7 ) );
+		achPanel.add( createAchievementsSubPanel( "Skill and Equipment Feats", achievements, 14 ) );
+		
+		return achPanel;
+		
+	}
+	
+	private JPanel createAchievementsSubPanel( String title, List<Achievement> achievements, int offset ) {
+		
+		JPanel panel = new JPanel();
+		panel.setBorder( BorderFactory.createTitledBorder(title) );
+		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
+		
+		// TODO magic number 7
+		for (int i = 0; i < 7; i++) {
+			Achievement ach = achievements.get(i+offset);
+			JCheckBox box = new JCheckBox();
+			setCheckboxIcons(box, new File( DataManager.get().getDataFolder() , "img/" + ach.getImagePath() ) );
+			box.setToolTipText( ach.getName() );
+			generalAchievements.put(ach, box);
+			panel.add( box );
+		}
+		
+		return panel;
 		
 	}
 
@@ -658,6 +697,10 @@ public class FTLFrame extends JFrame {
 			e.getValue().setSelected( p.getAchievements().contains( e.getKey().getId() ) );
 		}
 		
+		for( Entry<Achievement, JCheckBox> e: generalAchievements.entrySet() ) {
+			e.getValue().setSelected( p.getAchievements().contains( e.getKey().getId() ) );
+		}
+		
 	}
 	
 	public void updateProfile( Profile p ) {
@@ -671,6 +714,8 @@ public class FTLFrame extends JFrame {
 		for( Achievement ach: allAchs ) {
 			String id = ach.getId();
 			JCheckBox box = shipAchievements.get(ach);
+			if( box == null )
+				box = generalAchievements.get(ach);
 			if( box != null ) {
 				if( box.isSelected() )
 					achs.add(id);
