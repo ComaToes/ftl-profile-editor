@@ -558,7 +558,7 @@ public class FTLFrame extends JFrame {
 			int latestVersion = Integer.parseInt( in.readLine() );
 			in.close();
 			
-			if( latestVersion > version ||true) {
+			if( latestVersion > version ) {
 				log.trace("New version available");
 				
 				final JDialog updateDialog = new JDialog(this,"Update Available",true);
