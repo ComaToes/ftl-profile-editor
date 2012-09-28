@@ -1,15 +1,17 @@
 package net.blerf.ftl.model;
 
 public class Score {
+	
+	public enum Difficulty { EASY, NORMAL };
 
 	private String shipName;
 	private String shipType;
 	private int score;
 	private int sector;
-	private int difficulty;
+	private Difficulty difficulty;
 	private boolean victory;
 
-	public Score(String shipName, String shipType, int score, int sector, int difficulty, boolean victory) {
+	public Score(String shipName, String shipType, int score, int sector, Difficulty difficulty, boolean victory) {
 		this.shipName = shipName;
 		this.shipType = shipType;
 		this.score = score;
@@ -50,11 +52,11 @@ public class Score {
 		this.sector = sector;
 	}
 
-	public int getDifficulty() {
+	public Difficulty getDifficulty() {
 		return difficulty;
 	}
 
-	public void setDifficulty(int difficulty) {
+	public void setDifficulty(Difficulty difficulty) {
 		this.difficulty = difficulty;
 	}
 

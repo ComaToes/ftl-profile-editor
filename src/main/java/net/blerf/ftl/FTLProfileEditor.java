@@ -1,5 +1,7 @@
 package net.blerf.ftl;
 
+import net.blerf.ftl.ui.FTLFrame;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

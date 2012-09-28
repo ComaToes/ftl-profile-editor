@@ -1,4 +1,4 @@
-package net.blerf.ftl;
+package net.blerf.ftl.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -20,10 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.URI;
 import java.net.URL;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +38,6 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -93,6 +90,8 @@ public class FTLFrame extends JFrame {
 	private static final int maxIconWidth = 64;
 	private static final int maxIconHeight = 64;
 	private BufferedImage iconShadeImage;
+	
+	private JPanel topScoresPanel;
 	
 	private int version;
 	
@@ -193,7 +192,7 @@ public class FTLFrame extends JFrame {
 		
 		tabPane.add( "Ship Unlocks & Achievements" , new JScrollPane( createUnlocksPanel() ) );
 		tabPane.add( "General Achievements" , new JScrollPane( createAchievementsPanel() ) );
-		tabPane.add( "Stats" , createStatsPanel() );
+		tabPane.add( "Stats" , new JScrollPane( createStatsPanel() ) );
 		
 		// Load blank profile (sets Kestrel unlock)
 		loadProfile(profile);
@@ -310,9 +309,32 @@ public class FTLFrame extends JFrame {
 	private JPanel createStatsPanel() {
 		
 		JPanel statsPanel = new JPanel();
+		statsPanel.setLayout( new GridLayout(0, 2) );
+
+		topScoresPanel = new JPanel();
+		topScoresPanel.setLayout( new BoxLayout(topScoresPanel, BoxLayout.Y_AXIS ) );
+		topScoresPanel.setBorder( BorderFactory.createTitledBorder("Top Scores") );
+		statsPanel.add( topScoresPanel );
+
+		JPanel statsSubPanel = new JPanel();
+		statsSubPanel.setLayout( new BoxLayout(statsSubPanel, BoxLayout.Y_AXIS) );
+		statsPanel.add( statsSubPanel );
 		
-		statsPanel.add( new JLabel("Stats display not implemented yet") );
+		JPanel sessionRecordsPanel = new JPanel();
+		sessionRecordsPanel.setLayout( new GridLayout(0, 2) );
+		sessionRecordsPanel.setBorder( BorderFactory.createTitledBorder("Session Records") );
+		statsSubPanel.add( sessionRecordsPanel );
 		
+		JPanel crewRecordsPanel = new JPanel();
+		crewRecordsPanel.setLayout( new GridLayout(0, 2) );
+		crewRecordsPanel.setBorder( BorderFactory.createTitledBorder("Crew Records") );
+		statsSubPanel.add( crewRecordsPanel );
+
+		JPanel totalsPanel = new JPanel();
+		totalsPanel.setLayout( new GridLayout(0, 2) );
+		totalsPanel.setBorder( BorderFactory.createTitledBorder("Totals") );
+		statsSubPanel.add( totalsPanel );
+
 		return statsPanel;
 		
 	}
@@ -714,6 +736,20 @@ public class FTLFrame extends JFrame {
 		
 		for( Entry<Achievement, JCheckBox> e: generalAchievements.entrySet() ) {
 			e.getValue().setSelected( p.getAchievements().contains( e.getKey().getId() ) );
+		}
+		
+		topScoresPanel.removeAll();
+		int i = 0;
+		for( Score s : p.getStats().getTopScores() ) {
+			try {
+				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
+				Image img = getScaledImage( new File(DataManager.get().getDataFolder(), "img/ship/"+ship.getImg()+"_base.png") );
+				TopScorePanel tsp = new TopScorePanel( ++i, img, s.getShipName(), s.getScore(), s.getSector(), s.getDifficulty() );
+				topScoresPanel.add( tsp );
+			} catch (IOException e) {
+				log.error(e);
+				showErrorDialog("Error loading profile");
+			}
 		}
 		
 	}

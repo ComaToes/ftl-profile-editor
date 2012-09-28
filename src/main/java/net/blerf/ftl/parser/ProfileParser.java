@@ -13,6 +13,7 @@ import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.Stats;
+import net.blerf.ftl.model.Score.Difficulty;
 
 public class ProfileParser extends Parser {
 	
@@ -187,8 +188,15 @@ public class ProfileParser extends Parser {
 			int sector = readInt(in);
 			boolean victory = readInt(in) == 1;
 			int difficulty = readInt(in); // Difficulty 0=normal, 1=easy
+			
+			Difficulty diff;
+			switch( difficulty ) {
+				case 0: diff = Difficulty.NORMAL; break;
+				case 1: diff = Difficulty.EASY; break;
+				default: throw new IOException("Invalid difficulty value: " + difficulty);
+			}
 
-			scores.add( new Score(shipName, shipType, score, sector, difficulty, victory) );
+			scores.add( new Score(shipName, shipType, score, sector, diff, victory) );
 			
 		}
 		
@@ -206,7 +214,12 @@ public class ProfileParser extends Parser {
 			writeInt(out, score.getScore());
 			writeInt(out, score.getSector());
 			writeInt(out, score.isVictory() ? 1 : 0 );
-			writeInt(out, score.getDifficulty());
+			switch( score.getDifficulty() ) {
+				case NORMAL: writeInt(out, 0); break;
+				case EASY: writeInt(out, 1); break;
+				default: throw new IOException("Invalid difficulty value: " + score.getDifficulty());
+			}
+			
 		}
 		
 	}
