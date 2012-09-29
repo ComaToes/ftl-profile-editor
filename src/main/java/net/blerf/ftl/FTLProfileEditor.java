@@ -10,7 +10,7 @@ public class FTLProfileEditor {
 
 	private static final Logger log = LogManager.getLogger(FTLProfileEditor.class);
 	
-	private static final int VERSION = 8;
+	private static final int VERSION = 9;
 
 	public static void main(String[] args) {
 
