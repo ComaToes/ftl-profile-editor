@@ -6,14 +6,15 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import net.blerf.ftl.model.AchievementRecord;
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
-import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.model.Score.Difficulty;
+import net.blerf.ftl.model.Stats;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ProfileParser extends Parser {
 	
@@ -51,29 +52,39 @@ public class ProfileParser extends Parser {
 		
 	}
 	
-	private List<String> readAchievements(InputStream in) throws IOException {
+	private List<AchievementRecord> readAchievements(InputStream in) throws IOException {
 		
 		int achievementCount = readInt(in);
 		
-		List<String> achievements = new ArrayList<String>(achievementCount);
+		List<AchievementRecord> achievements = new ArrayList<AchievementRecord>(achievementCount);
 		
 		for (int i = 0; i < achievementCount; i++) {
-			String ach = readString(in);
-			readInt(in); // TODO this is the difficulty mode that the achievement was obtained in
-			achievements.add( ach );
+			String achName = readString(in);
+			int diffFlag = readInt(in);
+			Difficulty diff;
+			switch( diffFlag ) {
+				case 1: diff = Difficulty.NORMAL; break;
+				default: diff = Difficulty.EASY;
+			}
+			achievements.add( new AchievementRecord( achName , diff ) );
 		}
 		
 		return achievements;
 		
 	}
 	
-	private void writeAchievements(OutputStream out, List<String> achievements) throws IOException {
+	private void writeAchievements(OutputStream out, List<AchievementRecord> achievements) throws IOException {
 		
 		writeInt(out, achievements.size());
 		
-		for (String achievement : achievements) {
-			writeString(out, achievement);
-			writeInt(out, 0);
+		for (AchievementRecord rec : achievements) {
+			writeString(out, rec.getAchievementId());
+			int diff = 0;
+			switch(rec.getDifficulty()) {
+				case NORMAL: diff = 1; break;
+				case EASY: diff = 0; break;
+			}
+			writeInt(out, diff);
 		}
 		
 	}

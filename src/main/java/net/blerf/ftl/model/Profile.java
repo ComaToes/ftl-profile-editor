@@ -4,7 +4,7 @@ import java.util.List;
 public class Profile {
 
 	private int version;
-	private List<String> achievements;
+	private List<AchievementRecord> achievements;
 	private boolean[] shipUnlocks;
 	private Stats stats;
 	
@@ -14,10 +14,10 @@ public class Profile {
 	public void setVersion(int version) {
 		this.version = version;
 	}
-	public List<String> getAchievements() {
+	public List<AchievementRecord> getAchievements() {
 		return achievements;
 	}
-	public void setAchievements(List<String> achievements) {
+	public void setAchievements(List<AchievementRecord> achievements) {
 		this.achievements = achievements;
 	}
 	public Stats getStats() {

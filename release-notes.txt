@@ -1,3 +1,6 @@
+9
+Added correct parsing of achievement difficulty flag (this fixes a profile parser error where you had attained an achievement at normal difficulty)
+
 8
 Added general achievements and top scores
 Modified parser error dialog to contain text to copy/paste into bug report

@@ -3,7 +3,6 @@ package net.blerf.ftl.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Image;
@@ -12,8 +11,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -43,7 +40,6 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -55,9 +51,11 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 import javax.xml.bind.JAXBException;
 
+import net.blerf.ftl.model.AchievementRecord;
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
+import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.ProfileParser;
@@ -161,7 +159,7 @@ public class FTLFrame extends JFrame {
 		boolean[] emptyUnlocks = new boolean[12]; // TODO magic number
 		emptyUnlocks[0] = true; // Kestrel starts unlocked
 		profile.setShipUnlocks( emptyUnlocks );
-		profile.setAchievements( new ArrayList<String>() );
+		profile.setAchievements( new ArrayList<AchievementRecord>() );
 		Stats stats = new Stats();
 		stats.setTopScores( new ArrayList<Score>() );
 		stats.setShipBest( new ArrayList<Score>() );
@@ -782,11 +780,19 @@ public class FTLFrame extends JFrame {
 		}
 
 		for( Entry<Achievement, JCheckBox> e: shipAchievements.entrySet() ) {
-			e.getValue().setSelected( p.getAchievements().contains( e.getKey().getId() ) );
+			String achId = e.getKey().getId();
+			JCheckBox box = e.getValue();
+			for( AchievementRecord rec: p.getAchievements() )
+				if( rec.getAchievementId().equals( achId ) )
+					box.setSelected(true);
 		}
 		
 		for( Entry<Achievement, JCheckBox> e: generalAchievements.entrySet() ) {
-			e.getValue().setSelected( p.getAchievements().contains( e.getKey().getId() ) );
+			String achId = e.getKey().getId();
+			JCheckBox box = e.getValue();
+			for( AchievementRecord rec: p.getAchievements() )
+				if( rec.getAchievementId().equals( achId ) )
+					box.setSelected(true);
 		}
 		
 		topScoresPanel.removeAll();
@@ -810,19 +816,35 @@ public class FTLFrame extends JFrame {
 		log.trace("Updating profile from UI selections");
 		
 		List<Achievement> allAchs = DataManager.get().getAchievements();
-		List<String> achs = new ArrayList<String>();
-		List<String> existingAchs = p.getAchievements();
+		List<AchievementRecord> achs = new ArrayList<AchievementRecord>();
+		List<AchievementRecord> existingAchs = p.getAchievements();
 		
 		for( Achievement ach: allAchs ) {
 			String id = ach.getId();
 			JCheckBox box = shipAchievements.get(ach);
 			if( box == null )
 				box = generalAchievements.get(ach);
+			
 			if( box != null ) {
-				if( box.isSelected() )
-					achs.add(id);
-			} else if( existingAchs.contains(id) )
-					achs.add(id);
+				if( box.isSelected() ) {
+					
+					boolean existing = false;
+					for( AchievementRecord rec: existingAchs )
+						if( rec.getAchievementId().equals(id) ) {
+							achs.add(rec);
+							existing = true;
+						}
+					
+					if( !existing )
+						achs.add( new AchievementRecord(id, Difficulty.EASY) ); // TODO allow user selection of difficulty
+					
+				}
+			} else {
+				// Is an achievement we haven't created a checkbox for
+				for( AchievementRecord rec: existingAchs )
+					if( rec.getAchievementId().equals(id) )
+						achs.add(rec);
+			}
 		}
 
 		boolean[] unlocks = p.getShipUnlocks();
