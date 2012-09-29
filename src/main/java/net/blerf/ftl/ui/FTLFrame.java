@@ -3,12 +3,17 @@ package net.blerf.ftl.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -38,6 +43,7 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -83,8 +89,8 @@ public class FTLFrame extends JFrame {
 	
 	private String latestVersionUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/latest-version.txt";
 	private String versionHistoryUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/release-notes.txt";
-	private String downloadUrl = "https://github.com/ComaToes/ftl-profile-editor/downloads";
-	private String forumUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=2877";
+	private String bugReportUrl = "https://github.com/ComaToes/ftl-profile-editor/issues/new";
+	private String forumThreadUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=2877";
 	
 	// For checkbox icons
 	private static final int maxIconWidth = 64;
@@ -92,6 +98,7 @@ public class FTLFrame extends JFrame {
 	private BufferedImage iconShadeImage;
 	
 	private JPanel topScoresPanel;
+	private final HyperlinkListener linkListener;
 	
 	private int version;
 	
@@ -175,6 +182,22 @@ public class FTLFrame extends JFrame {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		linkListener = new HyperlinkListener() {
+		    public void hyperlinkUpdate(HyperlinkEvent e) {
+		        if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+		        	log.trace("Dialog link clicked: "+ e.getURL());
+		        	if(Desktop.isDesktopSupported()) {
+		        	    try {
+							Desktop.getDesktop().browse(e.getURL().toURI());
+							log.trace("Link opened in external browser");
+						} catch (Exception ex) {
+							log.error("Unable to open link",ex);
+						}
+		        	}
+		        }
+		    }
+		};
 		
 		initCheckboxIcons();
 		
@@ -459,6 +482,24 @@ public class FTLFrame extends JFrame {
 		
 		fc.setMultiSelectionEnabled(false);
 		
+		// Set up dialog in case of hash failure
+		
+		// By default the editor scrolls to the bottom of the text
+		// Making the dialog modal removes ability to programatically scroll to top
+		final JDialog hashFailDialog = new JDialog(FTLFrame.this, "Profile Parser Error", false);
+		JPanel failPanel = new JPanel();
+		failPanel.setLayout( new BoxLayout(failPanel, BoxLayout.Y_AXIS) );
+		hashFailDialog.setContentPane(failPanel);
+		hashFailDialog.setSize(600, 400);
+		hashFailDialog.setLocationRelativeTo( FTLFrame.this );
+		
+		final JEditorPane failEditorPane = new JEditorPane( "text/html", "" );
+		failEditorPane.setEditable(false);
+		failEditorPane.addHyperlinkListener(linkListener);
+		final JScrollPane scrollPane = new JScrollPane(failEditorPane);
+		failPanel.add( scrollPane );
+		
+		// Create open button
 		JButton openButton = new JButton("Open", openIcon);
 		openButton.addActionListener( new ActionListener() {
 			@Override
@@ -500,11 +541,37 @@ public class FTLFrame extends JFrame {
 						md.reset();
 						byte[] writeHash = md.digest(outData);
 						
+						String hex = "";
+						for (int i = 0; i < data.length; i++) {
+							hex += String.format("%02x", data[i]);
+							if( (i+1) % 32 == 0 )
+								hex +="\n";
+						}
+						
 						// Compare
 						for (int i = 0; i < readHash.length; i++) {
 							if( readHash[i] != writeHash[i] ) {
 								log.error("Hash fail on mock write - Unable to assure valid parsing");
-								JOptionPane.showInputDialog( FTLFrame.this, "FTL Profile Editor has detected that it cannot interpret your profile correctly.\nUsing this app may result in loss of stats/achievements.\nPlease attach a copy of your original prof.sav to this forum thread so I can fix this:", "Parser Error Detected", JOptionPane.ERROR_MESSAGE, null, null, forumUrl );
+								
+								String errText = "<b>FTL Profile Editor has detected that it cannot interpret your profile correctly.<br/>" +
+										"Using this app may result in loss of stats/achievements.</b>" +
+										"<br/><br/>" +
+										"Please copy (Ctrl-A, Ctrl-C) the following text and paste it into a new bug report <a href='"+bugReportUrl+"'>here</a> " +
+										"(GitHub signup is free) or post to the FLT forums <a href='"+forumThreadUrl+"'>here</a> (Signup also free)." +
+										"<br/>If using GitHub, set the issue title as \"Profile Parser Error\"<br/><br/>I will fix the problem and release a new version as soon as I can :)" +
+										"<br/><br/><pre>" + hex + "</pre>";
+								
+								failEditorPane.setText(errText);
+								hashFailDialog.setVisible(true);
+
+								// Try ALL the things to make it scroll to top
+								failEditorPane.setCaretPosition(0);
+								scrollPane.getVerticalScrollBar().setValue(0);
+								scrollPane.getViewport().setViewPosition(new Point());
+								scrollPane.scrollRectToVisible(new Rectangle());
+								failEditorPane.setSelectionStart(0);
+								failEditorPane.setSelectionEnd(0);
+
 								break;
 							}
 						}
@@ -578,22 +645,6 @@ public class FTLFrame extends JFrame {
 		aboutDialog.setSize(300, 200);
 		aboutDialog.setLocationRelativeTo( this );
 				
-		final HyperlinkListener linkListener = new HyperlinkListener() {
-		    public void hyperlinkUpdate(HyperlinkEvent e) {
-		        if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-		        	log.trace("Dialog link clicked: "+ e.getURL());
-		        	if(Desktop.isDesktopSupported()) {
-		        	    try {
-							Desktop.getDesktop().browse(e.getURL().toURI());
-							log.trace("Link opened in external browser");
-						} catch (Exception ex) {
-							log.error("Unable to open link",ex);
-						}
-		        	}
-		        }
-		    }
-		};
-		
 		try {
 			JEditorPane editor = new JEditorPane( aboutPage );
 			editor.setEditable(false);
