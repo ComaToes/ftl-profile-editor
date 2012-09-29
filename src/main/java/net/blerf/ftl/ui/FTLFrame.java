@@ -541,17 +541,17 @@ public class FTLFrame extends JFrame {
 						md.reset();
 						byte[] writeHash = md.digest(outData);
 						
-						String hex = "";
-						for (int i = 0; i < data.length; i++) {
-							hex += String.format("%02x", data[i]);
-							if( (i+1) % 32 == 0 )
-								hex +="\n";
-						}
-						
 						// Compare
 						for (int i = 0; i < readHash.length; i++) {
 							if( readHash[i] != writeHash[i] ) {
 								log.error("Hash fail on mock write - Unable to assure valid parsing");
+								
+								String hex = "";
+								for (int j = 0; j < data.length; j++) {
+									hex += String.format("%02x", data[j]);
+									if( (j+1) % 32 == 0 )
+										hex +="\n";
+								}
 								
 								String errText = "<b>FTL Profile Editor has detected that it cannot interpret your profile correctly.<br/>" +
 										"Using this app may result in loss of stats/achievements.</b>" +
