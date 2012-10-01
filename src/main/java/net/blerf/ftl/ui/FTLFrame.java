@@ -778,6 +778,11 @@ public class FTLFrame extends JFrame {
 		for (int i = 0; i < shipUnlocks.size(); i++) {
 			shipUnlocks.get(i).setSelected( unlocks[i] );
 		}
+		
+		for( JCheckBox box : shipAchievements.values() )
+			box.setSelected(false);
+		for( JCheckBox box : generalAchievements.values() )
+			box.setSelected(false);
 
 		for( Entry<Achievement, JCheckBox> e: shipAchievements.entrySet() ) {
 			String achId = e.getKey().getId();
