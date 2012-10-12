@@ -466,7 +466,9 @@ public class FTLFrame extends JFrame {
 		});
 		
 		File[] profileLocations = new File[] {
-				// Windows
+				// Windows XP
+				new File( System.getProperty("user.home") + "/My Documents/My Games/FasterThanLight/prof.sav"),
+				// Windows Vista/7
 				new File( System.getProperty("user.home") + "/Documents/My Games/FasterThanLight/prof.sav"),
 				// Mac
 				new File( System.getProperty("user.home") + "/Library/Application Support/FasterThanLight/prof.sav"),
