@@ -461,7 +461,7 @@ public class FTLFrame extends JFrame {
 			}
 			@Override
 			public boolean accept(File f) {
-				return f.getName().equalsIgnoreCase("prof.sav");
+				return f.isDirectory() || f.getName().equalsIgnoreCase("prof.sav");
 			}
 		});
 		
