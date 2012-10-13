@@ -104,13 +104,19 @@ public class DataManager {
 	}
 	
 	public InputStream getDataInputStream( String innerPath ) throws IOException {
-		if (dataParser == null) throw new IOException("FTL data parser was never instantiated.");
 		return dataParser.getInputStream( innerPath );
 	}
 	
 	public InputStream getResourceInputStream( String innerPath ) throws IOException {
-		if (resourceParser == null) throw new IOException("FTL resource parser was never instantiated.");
 		return resourceParser.getInputStream( innerPath );
+	}
+	
+	public void unpackData( File outFolder ) throws IOException {
+		dataParser.unpackDat( outFolder );
+	}
+
+	public void unpackResources( File outFolder ) throws IOException {
+		resourceParser.unpackDat( outFolder );
 	}
 	
 	public List<Achievement> getAchievements() {

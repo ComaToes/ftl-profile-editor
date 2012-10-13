@@ -5,6 +5,7 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -162,6 +164,41 @@ public class MappedDatParser extends Parser implements Closeable {
 		buf.load();
 		InputStream stream = new ByteBufferBackedInputStream(buf);
 		return stream;
+	}
+
+	public void unpackDat(File outFolder) throws IOException {
+		log.trace("Unpacking dat file " + datFile.getPath() + " into " + outFolder.getPath());
+
+		byte[] buffer = new byte[4096];
+		int bytesRead;
+
+		outFolder.mkdirs();
+		for (Map.Entry<String, InnerFileInfo> entry : innerFilesMap.entrySet()) {
+			String innerPath = entry.getKey();
+			InnerFileInfo info = entry.getValue();
+
+			log.trace("Unpacking: " + innerPath + " ("+ info.dataSize +"b)");
+
+			File outFile = new File(outFolder, innerPath);
+			outFile.getParentFile().mkdirs();
+			InputStream in = null;
+			FileOutputStream out = null;
+			try {
+				in = getInputStream(innerPath);
+				out = new FileOutputStream(outFile);
+
+				while ((bytesRead = in.read(buffer)) != -1) {
+					out.write(buffer, 0, bytesRead);
+				}
+
+			} finally {
+				try {if (in != null) in.close();}
+				catch (IOException e) {}
+
+				try {if (out != null) out.close();}
+				catch (IOException e) {}
+			}
+		}
 	}
 
 	public void close() throws IOException {
