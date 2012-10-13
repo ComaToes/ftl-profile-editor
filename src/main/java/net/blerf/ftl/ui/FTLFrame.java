@@ -2,7 +2,9 @@ package net.blerf.ftl.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Desktop;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.Image;
@@ -11,6 +13,9 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -41,6 +46,7 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -97,6 +103,7 @@ public class FTLFrame extends JFrame {
 	private BufferedImage iconShadeImage;
 	
 	private JPanel topScoresPanel;
+	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
 	private int version;
@@ -216,6 +223,16 @@ public class FTLFrame extends JFrame {
 		tabPane.add( "General Achievements" , new JScrollPane( createAchievementsPanel() ) );
 		tabPane.add( "Stats" , new JScrollPane( createStatsPanel() ) );
 		
+		JPanel statusPanel = new JPanel();
+		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
+		statusPanel.setBorder( BorderFactory.createLoweredBevelBorder() );
+		statusLbl = new JLabel(" ");
+		statusLbl.setFont( statusLbl.getFont().deriveFont(Font.PLAIN) );
+		statusLbl.setBorder( BorderFactory.createEmptyBorder(2, 4, 2, 4) );
+		statusLbl.setAlignmentX( Component.LEFT_ALIGNMENT );
+		statusPanel.add( statusLbl );
+		contentPane.add( statusPanel, BorderLayout.SOUTH );
+
 		// Load blank profile (sets Kestrel unlock)
 		loadProfile(profile);
 		
@@ -321,6 +338,10 @@ public class FTLFrame extends JFrame {
 			JCheckBox box = new JCheckBox();
 			setCheckboxIcons(box, "img/" + ach.getImagePath());
 			box.setToolTipText( ach.getName() );
+
+			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
+			box.addMouseListener( new StatusbarMouseListener(this, achDesc) );
+
 			generalAchievements.put(ach, box);
 			panel.add( box );
 		}
@@ -597,6 +618,7 @@ public class FTLFrame extends JFrame {
 					log.trace("Open dialog cancelled");
 			}
 		});
+		openButton.addMouseListener( new StatusbarMouseListener(this, "Open a new profile.") );
 		toolbar.add( openButton );
 		
 		JButton saveButton = new JButton("Save", saveIcon);
@@ -623,6 +645,7 @@ public class FTLFrame extends JFrame {
 					log.trace("Save dialog cancelled");
 			}
 		});
+		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current profile.") );
 		toolbar.add( saveButton );
 		
 
@@ -635,6 +658,7 @@ public class FTLFrame extends JFrame {
 					box.setSelected(true);
 			}
 		});
+		unlockShipsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ships.") );
 		toolbar.add( unlockShipsButton );
 
 		
@@ -647,6 +671,7 @@ public class FTLFrame extends JFrame {
 					box.setSelected(true);
 			}
 		});
+		unlockShipAchsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements.") );
 		toolbar.add( unlockShipAchsButton );
 		
 		final JDialog aboutDialog = new JDialog(this,"About",true);
@@ -699,6 +724,7 @@ public class FTLFrame extends JFrame {
 					log.trace("Extract dialog cancelled");
 			}
 		});
+		extractButton.addMouseListener( new StatusbarMouseListener(this, "Extract dat content to a directory.") );
 		toolbar.add( extractButton );
 
 		toolbar.add( Box.createHorizontalGlue() );
@@ -711,6 +737,7 @@ public class FTLFrame extends JFrame {
 				aboutDialog.setVisible(true);
 			}
 		});
+		aboutButton.addMouseListener( new StatusbarMouseListener(this, "Show the about dialog.") );
 		toolbar.add( aboutButton );
 		
 		// Check for new version in seperate thread so we don't hang the UI
@@ -813,6 +840,10 @@ public class FTLFrame extends JFrame {
 			JCheckBox box = new JCheckBox();
 			setCheckboxIcons(box, "img/" + ach.getImagePath() );
 			box.setToolTipText( ach.getName() );
+
+			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
+			box.addMouseListener( new StatusbarMouseListener(this, achDesc) );
+
 			shipAchievements.put(ach, box);
 			panel.add( box );
 		}
@@ -924,4 +955,29 @@ public class FTLFrame extends JFrame {
 		
 	}
 
+	public void setStatusText( String text ) {
+		if (text.length() > 0)
+			statusLbl.setText(text);
+		else
+			statusLbl.setText(" ");
+	}
+
+
+
+	private class StatusbarMouseListener extends MouseAdapter {
+		private FTLFrame frame = null;
+		private String text = null;
+
+		public StatusbarMouseListener( FTLFrame frame, String text ) {
+			this.frame = frame;
+			this.text = text;
+		}
+
+		public void mouseEntered( MouseEvent e ) {
+			frame.setStatusText( text );
+		}
+		public void mouseExited( MouseEvent e ) {
+			frame.setStatusText("");
+		}
+	}
 }
