@@ -143,7 +143,7 @@ public class FTLFrame extends JFrame {
 		// Initialise data store
 		try {
 			
-			DataManager.init( ftlPath, new File("ftldata") );
+			DataManager.init( ftlPath );
 			
 		} catch (IOException e) {
 			showErrorDialog( "Error unpacking FTL data files: " + e.getMessage() );
@@ -316,8 +316,9 @@ public class FTLFrame extends JFrame {
 		// TODO magic number 7
 		for (int i = 0; i < 7; i++) {
 			Achievement ach = achievements.get(i+offset);
+			log.trace("Setting icons for checkbox. Base image: " + "img/" + ach.getImagePath());
 			JCheckBox box = new JCheckBox();
-			setCheckboxIcons(box, new File( DataManager.get().getDataFolder() , "img/" + ach.getImagePath() ) );
+			setCheckboxIcons(box, "img/" + ach.getImagePath());
 			box.setToolTipText( ach.getName() );
 			generalAchievements.put(ach, box);
 			panel.add( box );
@@ -367,19 +368,24 @@ public class FTLFrame extends JFrame {
 		Graphics g = iconShadeImage.getGraphics();
 		g.setColor( new Color(0, 0, 0, 150) );
 		g.fillRect(0, 0, maxIconWidth, maxIconHeight);
+		InputStream stream = null;
 		try {
-			BufferedImage lock = ImageIO.read( new File(DataManager.get().getDataFolder(), "img/customizeUI/box_lock_on.png") );
+			stream = DataManager.get().getResourceInputStream("img/customizeUI/box_lock_on.png");
+			BufferedImage lock = ImageIO.read( stream );
 			int x = (maxIconWidth-lock.getWidth()) / 2;
 			int y = (maxIconHeight-lock.getHeight()) / 2;
 			g.drawImage(lock, x, y, null);
 		} catch (IOException e) {
 			log.error( "Error reading lock image" , e );
+		}	finally {
+			try {if (stream != null) stream.close();}
+			catch (IOException f) {}
 		}
 		
 	}
 	
-	private Image getScaledImage( File image ) throws IOException {
-		BufferedImage img = ImageIO.read( image );
+	private Image getScaledImage( InputStream in ) throws IOException {
+		BufferedImage img = ImageIO.read( in );
 		int width = img.getWidth();
 		int height = img.getHeight();
 		
@@ -397,11 +403,11 @@ public class FTLFrame extends JFrame {
 		return scaled;
 	}
 	
-	private void setCheckboxIcons( JCheckBox box, File baseImage ) {
-		
-		log.trace("Setting icons for checkbox. Base image: " + baseImage.getPath());
+	private void setCheckboxIcons( JCheckBox box, String baseImagePath ) {
+		InputStream stream = null;
 		try {
-			Image scaled = getScaledImage(baseImage);
+			stream = DataManager.get().getResourceInputStream(baseImagePath);
+			Image scaled = getScaledImage(stream);
 			int scaledYoffset = (maxIconHeight-scaled.getHeight(null))/2;
 			BufferedImage unlocked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
 			unlocked.getGraphics().drawImage(scaled, 0, scaledYoffset, null);
@@ -412,7 +418,11 @@ public class FTLFrame extends JFrame {
 			box.setIcon( new ImageIcon( locked ) );
 			
 		} catch (IOException e) {
-			log.error( "Error reading checkbox image" , e );
+			log.error( "Error reading checkbox image (" + baseImagePath + ")" , e );
+
+		}	finally {
+			try {if (stream != null) stream.close();}
+			catch (IOException f) {}
 		}
 		
 	}
@@ -431,7 +441,7 @@ public class FTLFrame extends JFrame {
 
 		for( ShipBlueprint ship: DataManager.get().getPlayerShips() ) {
 			JCheckBox shipUnlock = new JCheckBox( ship.getShipClass() );
-			setCheckboxIcons(shipUnlock, new File(DataManager.get().getDataFolder(), "img/ship/" + ship.getImg() + "_base.png") );
+			setCheckboxIcons(shipUnlock, "img/ship/" + ship.getImg() + "_base.png");
 			shipPanel.add(shipUnlock);
 			shipUnlocks.add(shipUnlock);
 		}
@@ -762,7 +772,7 @@ public class FTLFrame extends JFrame {
 		
 		for (Achievement ach : DataManager.get().getShipAchievements(ship)) {
 			JCheckBox box = new JCheckBox();
-			setCheckboxIcons(box, new File( DataManager.get().getDataFolder() , "img/" + ach.getImagePath() ) );
+			setCheckboxIcons(box, "img/" + ach.getImagePath() );
 			box.setToolTipText( ach.getName() );
 			shipAchievements.put(ach, box);
 			panel.add( box );
@@ -805,14 +815,19 @@ public class FTLFrame extends JFrame {
 		topScoresPanel.removeAll();
 		int i = 0;
 		for( Score s : p.getStats().getTopScores() ) {
+			InputStream stream = null;
 			try {
 				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
-				Image img = getScaledImage( new File(DataManager.get().getDataFolder(), "img/ship/"+ship.getImg()+"_base.png") );
+				stream = DataManager.get().getResourceInputStream("img/ship/"+ship.getImg()+"_base.png");
+				Image img = getScaledImage( stream );
 				TopScorePanel tsp = new TopScorePanel( ++i, img, s.getShipName(), s.getScore(), s.getSector(), s.getDifficulty() );
 				topScoresPanel.add( tsp );
 			} catch (IOException e) {
 				log.error(e);
 				showErrorDialog("Error loading profile");
+			}	finally {
+				try {if (stream != null) stream.close();}
+				catch (IOException f) {}
 			}
 		}
 		
