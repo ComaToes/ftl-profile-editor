@@ -32,6 +32,7 @@ import java.util.Properties;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -663,6 +664,44 @@ public class FTLFrame extends JFrame {
 		} catch (IOException e) {
 			log.error(e);
 		}
+
+		toolbar.add( Box.createHorizontalGlue() );
+
+		JButton extractButton = new JButton("Extract Dats", saveIcon);
+		extractButton.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.trace("Extract button clicked");
+
+				JFileChooser extractChooser = new JFileChooser();
+				extractChooser.setDialogTitle("Choose a dir to extract into");
+				extractChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				extractChooser.setMultiSelectionEnabled(false);
+
+				if( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					try {
+						
+						File f = extractChooser.getSelectedFile();
+						log.trace("Dir selected: " + f.getAbsolutePath());
+
+						JOptionPane.showMessageDialog(FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE);
+
+						DataManager.get().unpackData(f);
+						DataManager.get().unpackResources(f);
+
+						JOptionPane.showMessageDialog(FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE);
+						
+					} catch( IOException ex ) {
+						log.error("Error extracting dat",ex);
+						showErrorDialog("Error extracting dat: " + ex.getMessage());
+					}
+				} else
+					log.trace("Extract dialog cancelled");
+			}
+		});
+		toolbar.add( extractButton );
+
+		toolbar.add( Box.createHorizontalGlue() );
 		
 		JButton aboutButton = new JButton("About", aboutIcon);
 		aboutButton.addActionListener( new ActionListener() {
