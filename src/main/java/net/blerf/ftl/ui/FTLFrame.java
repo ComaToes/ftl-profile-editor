@@ -560,8 +560,10 @@ public class FTLFrame extends JFrame {
 		};
 		
 		for( File file: profileLocations )
-			if( file.exists() )
+			if( file.exists() ) {
 				fc.setSelectedFile( file );
+				break;
+			}
 		
 		fc.setMultiSelectionEnabled(false);
 		
@@ -729,7 +731,7 @@ public class FTLFrame extends JFrame {
 		JPanel aboutPanel = new JPanel();
 		aboutPanel.setLayout( new BoxLayout(aboutPanel, BoxLayout.Y_AXIS) );
 		aboutDialog.setContentPane(aboutPanel);
-		aboutDialog.setSize(300, 200);
+		aboutDialog.setSize(300, 250);
 		aboutDialog.setLocationRelativeTo( this );
 				
 		try {
