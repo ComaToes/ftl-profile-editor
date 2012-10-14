@@ -2,8 +2,12 @@ package net.blerf.ftl.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Desktop;
+import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
@@ -11,6 +15,9 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -32,6 +39,7 @@ import java.util.Properties;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -40,11 +48,13 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
@@ -96,6 +106,10 @@ public class FTLFrame extends JFrame {
 	private BufferedImage iconShadeImage;
 	
 	private JPanel topScoresPanel;
+	private StatsSubPanel sessionRecordsPanel;
+	private StatsSubPanel crewRecordsPanel;
+	private StatsSubPanel totalStatsPanel;
+	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
 	private int version;
@@ -143,7 +157,7 @@ public class FTLFrame extends JFrame {
 		// Initialise data store
 		try {
 			
-			DataManager.init( ftlPath, new File("ftldata") );
+			DataManager.init( ftlPath );
 			
 		} catch (IOException e) {
 			showErrorDialog( "Error unpacking FTL data files: " + e.getMessage() );
@@ -215,6 +229,16 @@ public class FTLFrame extends JFrame {
 		tabPane.add( "General Achievements" , new JScrollPane( createAchievementsPanel() ) );
 		tabPane.add( "Stats" , new JScrollPane( createStatsPanel() ) );
 		
+		JPanel statusPanel = new JPanel();
+		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
+		statusPanel.setBorder( BorderFactory.createLoweredBevelBorder() );
+		statusLbl = new JLabel(" ");
+		//statusLbl.setFont( statusLbl.getFont().deriveFont(Font.PLAIN) );
+		statusLbl.setBorder( BorderFactory.createEmptyBorder(2, 4, 2, 4) );
+		statusLbl.setAlignmentX( Component.LEFT_ALIGNMENT );
+		statusPanel.add( statusLbl );
+		contentPane.add( statusPanel, BorderLayout.SOUTH );
+
 		// Load blank profile (sets Kestrel unlock)
 		loadProfile(profile);
 		
@@ -316,9 +340,14 @@ public class FTLFrame extends JFrame {
 		// TODO magic number 7
 		for (int i = 0; i < 7; i++) {
 			Achievement ach = achievements.get(i+offset);
+			log.trace("Setting icons for checkbox. Base image: " + "img/" + ach.getImagePath());
 			JCheckBox box = new JCheckBox();
-			setCheckboxIcons(box, new File( DataManager.get().getDataFolder() , "img/" + ach.getImagePath() ) );
+			setCheckboxIcons(box, "img/" + ach.getImagePath());
 			box.setToolTipText( ach.getName() );
+
+			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
+			box.addMouseListener( new StatusbarMouseListener(this, achDesc) );
+
 			generalAchievements.put(ach, box);
 			panel.add( box );
 		}
@@ -337,24 +366,24 @@ public class FTLFrame extends JFrame {
 		topScoresPanel.setBorder( BorderFactory.createTitledBorder("Top Scores") );
 		statsPanel.add( topScoresPanel );
 
-		JPanel statsSubPanel = new JPanel();
-		statsSubPanel.setLayout( new BoxLayout(statsSubPanel, BoxLayout.Y_AXIS) );
-		statsPanel.add( statsSubPanel );
+		JPanel statsSubPanelsHolder = new JPanel();
+		statsSubPanelsHolder.setLayout( new BoxLayout(statsSubPanelsHolder, BoxLayout.Y_AXIS) );
+		statsPanel.add( statsSubPanelsHolder );
 		
-		JPanel sessionRecordsPanel = new JPanel();
-		sessionRecordsPanel.setLayout( new GridLayout(0, 2) );
+		sessionRecordsPanel = new StatsSubPanel();
+		sessionRecordsPanel.addFillRow();
 		sessionRecordsPanel.setBorder( BorderFactory.createTitledBorder("Session Records") );
-		statsSubPanel.add( sessionRecordsPanel );
+		statsSubPanelsHolder.add( sessionRecordsPanel );
 		
-		JPanel crewRecordsPanel = new JPanel();
-		crewRecordsPanel.setLayout( new GridLayout(0, 2) );
+		crewRecordsPanel = new StatsSubPanel();
+		crewRecordsPanel.addFillRow();
 		crewRecordsPanel.setBorder( BorderFactory.createTitledBorder("Crew Records") );
-		statsSubPanel.add( crewRecordsPanel );
+		statsSubPanelsHolder.add( crewRecordsPanel );
 
-		JPanel totalsPanel = new JPanel();
-		totalsPanel.setLayout( new GridLayout(0, 2) );
-		totalsPanel.setBorder( BorderFactory.createTitledBorder("Totals") );
-		statsSubPanel.add( totalsPanel );
+		totalStatsPanel = new StatsSubPanel();
+		totalStatsPanel.addFillRow();
+		totalStatsPanel.setBorder( BorderFactory.createTitledBorder("Totals") );
+		statsSubPanelsHolder.add( totalStatsPanel );
 
 		return statsPanel;
 		
@@ -367,19 +396,24 @@ public class FTLFrame extends JFrame {
 		Graphics g = iconShadeImage.getGraphics();
 		g.setColor( new Color(0, 0, 0, 150) );
 		g.fillRect(0, 0, maxIconWidth, maxIconHeight);
+		InputStream stream = null;
 		try {
-			BufferedImage lock = ImageIO.read( new File(DataManager.get().getDataFolder(), "img/customizeUI/box_lock_on.png") );
+			stream = DataManager.get().getResourceInputStream("img/customizeUI/box_lock_on.png");
+			BufferedImage lock = ImageIO.read( stream );
 			int x = (maxIconWidth-lock.getWidth()) / 2;
 			int y = (maxIconHeight-lock.getHeight()) / 2;
 			g.drawImage(lock, x, y, null);
 		} catch (IOException e) {
 			log.error( "Error reading lock image" , e );
+		}	finally {
+			try {if (stream != null) stream.close();}
+			catch (IOException f) {}
 		}
 		
 	}
 	
-	private Image getScaledImage( File image ) throws IOException {
-		BufferedImage img = ImageIO.read( image );
+	private Image getScaledImage( InputStream in ) throws IOException {
+		BufferedImage img = ImageIO.read( in );
 		int width = img.getWidth();
 		int height = img.getHeight();
 		
@@ -396,12 +430,57 @@ public class FTLFrame extends JFrame {
 		Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 		return scaled;
 	}
-	
-	private void setCheckboxIcons( JCheckBox box, File baseImage ) {
-		
-		log.trace("Setting icons for checkbox. Base image: " + baseImage.getPath());
+
+	public ImageIcon getCrewIcon(String race) {
+		if (race == null || race.length() == 0) return null;
+
+		ImageIcon result = null;
+		int offsetX = 0, offsetY = 0, w = 36, h = 36;
+		InputStream in = null;
 		try {
-			Image scaled = getScaledImage(baseImage);
+			in = DataManager.get().getResourceInputStream("img/people/"+ race +"_player_yellow.png");
+			BufferedImage big = ImageIO.read( in );
+			if (offsetX+w <= big.getWidth() || offsetY+h <= big.getHeight()) {
+				BufferedImage cropped = big.getSubimage(offsetX, offsetY, w, h);
+
+				// Shrink the crop area until non-transparent pixels are hit.
+				int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
+				int highX = -1, highY = -1;
+				for (int testY=0; testY < h; testY++) {
+					for (int testX=0; testX < w; testX++) {
+						int pixel = cropped.getRGB(testX, testY);
+						int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
+						if (alpha != 0) {
+							if (testX > highX) highX = testX;
+							if (testY > highY) highY = testY;
+							if (testX < lowX) lowX = testX;
+							if (testY < lowY) lowY = testY;
+						}
+					}
+				}
+				log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
+				if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
+					cropped = cropped.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
+				}
+				result = new ImageIcon(cropped);
+			}
+
+		} catch (IOException e) {
+			log.error( "Failed to load and crop race ("+ race +")", e );
+
+		} finally {
+			try {if (in != null) in.close();}
+			catch (IOException f) {}
+    }
+		return result;
+	}
+
+	
+	private void setCheckboxIcons( JCheckBox box, String baseImagePath ) {
+		InputStream stream = null;
+		try {
+			stream = DataManager.get().getResourceInputStream(baseImagePath);
+			Image scaled = getScaledImage(stream);
 			int scaledYoffset = (maxIconHeight-scaled.getHeight(null))/2;
 			BufferedImage unlocked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
 			unlocked.getGraphics().drawImage(scaled, 0, scaledYoffset, null);
@@ -412,7 +491,11 @@ public class FTLFrame extends JFrame {
 			box.setIcon( new ImageIcon( locked ) );
 			
 		} catch (IOException e) {
-			log.error( "Error reading checkbox image" , e );
+			log.error( "Error reading checkbox image (" + baseImagePath + ")" , e );
+
+		}	finally {
+			try {if (stream != null) stream.close();}
+			catch (IOException f) {}
 		}
 		
 	}
@@ -431,7 +514,7 @@ public class FTLFrame extends JFrame {
 
 		for( ShipBlueprint ship: DataManager.get().getPlayerShips() ) {
 			JCheckBox shipUnlock = new JCheckBox( ship.getShipClass() );
-			setCheckboxIcons(shipUnlock, new File(DataManager.get().getDataFolder(), "img/ship/" + ship.getImg() + "_base.png") );
+			setCheckboxIcons(shipUnlock, "img/ship/" + ship.getImg() + "_base.png");
 			shipPanel.add(shipUnlock);
 			shipUnlocks.add(shipUnlock);
 		}
@@ -461,12 +544,14 @@ public class FTLFrame extends JFrame {
 			}
 			@Override
 			public boolean accept(File f) {
-				return f.getName().equalsIgnoreCase("prof.sav");
+				return f.isDirectory() || f.getName().equalsIgnoreCase("prof.sav");
 			}
 		});
 		
 		File[] profileLocations = new File[] {
-				// Windows
+				// Windows XP
+				new File( System.getProperty("user.home") + "/My Documents/My Games/FasterThanLight/prof.sav"),
+				// Windows Vista/7
 				new File( System.getProperty("user.home") + "/Documents/My Games/FasterThanLight/prof.sav"),
 				// Mac
 				new File( System.getProperty("user.home") + "/Library/Application Support/FasterThanLight/prof.sav"),
@@ -584,6 +669,7 @@ public class FTLFrame extends JFrame {
 					log.trace("Open dialog cancelled");
 			}
 		});
+		openButton.addMouseListener( new StatusbarMouseListener(this, "Open a new profile.") );
 		toolbar.add( openButton );
 		
 		JButton saveButton = new JButton("Save", saveIcon);
@@ -610,6 +696,7 @@ public class FTLFrame extends JFrame {
 					log.trace("Save dialog cancelled");
 			}
 		});
+		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current profile.") );
 		toolbar.add( saveButton );
 		
 
@@ -622,6 +709,7 @@ public class FTLFrame extends JFrame {
 					box.setSelected(true);
 			}
 		});
+		unlockShipsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ships.") );
 		toolbar.add( unlockShipsButton );
 
 		
@@ -634,6 +722,7 @@ public class FTLFrame extends JFrame {
 					box.setSelected(true);
 			}
 		});
+		unlockShipAchsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements.") );
 		toolbar.add( unlockShipAchsButton );
 		
 		final JDialog aboutDialog = new JDialog(this,"About",true);
@@ -651,6 +740,45 @@ public class FTLFrame extends JFrame {
 		} catch (IOException e) {
 			log.error(e);
 		}
+
+		toolbar.add( Box.createHorizontalGlue() );
+
+		JButton extractButton = new JButton("Extract Dats", saveIcon);
+		extractButton.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.trace("Extract button clicked");
+
+				JFileChooser extractChooser = new JFileChooser();
+				extractChooser.setDialogTitle("Choose a dir to extract into");
+				extractChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				extractChooser.setMultiSelectionEnabled(false);
+
+				if( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					try {
+						
+						File f = extractChooser.getSelectedFile();
+						log.trace("Dir selected: " + f.getAbsolutePath());
+
+						JOptionPane.showMessageDialog(FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE);
+
+						DataManager.get().unpackData(f);
+						DataManager.get().unpackResources(f);
+
+						JOptionPane.showMessageDialog(FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE);
+						
+					} catch( IOException ex ) {
+						log.error("Error extracting dat",ex);
+						showErrorDialog("Error extracting dat: " + ex.getMessage());
+					}
+				} else
+					log.trace("Extract dialog cancelled");
+			}
+		});
+		extractButton.addMouseListener( new StatusbarMouseListener(this, "Extract dat content to a directory.") );
+		toolbar.add( extractButton );
+
+		toolbar.add( Box.createHorizontalGlue() );
 		
 		JButton aboutButton = new JButton("About", aboutIcon);
 		aboutButton.addActionListener( new ActionListener() {
@@ -660,6 +788,7 @@ public class FTLFrame extends JFrame {
 				aboutDialog.setVisible(true);
 			}
 		});
+		aboutButton.addMouseListener( new StatusbarMouseListener(this, "Show the about dialog.") );
 		toolbar.add( aboutButton );
 		
 		// Check for new version in seperate thread so we don't hang the UI
@@ -760,8 +889,12 @@ public class FTLFrame extends JFrame {
 		
 		for (Achievement ach : DataManager.get().getShipAchievements(ship)) {
 			JCheckBox box = new JCheckBox();
-			setCheckboxIcons(box, new File( DataManager.get().getDataFolder() , "img/" + ach.getImagePath() ) );
+			setCheckboxIcons(box, "img/" + ach.getImagePath() );
 			box.setToolTipText( ach.getName() );
+
+			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
+			box.addMouseListener( new StatusbarMouseListener(this, achDesc) );
+
 			shipAchievements.put(ach, box);
 			panel.add( box );
 		}
@@ -803,17 +936,56 @@ public class FTLFrame extends JFrame {
 		topScoresPanel.removeAll();
 		int i = 0;
 		for( Score s : p.getStats().getTopScores() ) {
+			InputStream stream = null;
 			try {
 				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
-				Image img = getScaledImage( new File(DataManager.get().getDataFolder(), "img/ship/"+ship.getImg()+"_base.png") );
+				stream = DataManager.get().getResourceInputStream("img/ship/"+ship.getImg()+"_base.png");
+				Image img = getScaledImage( stream );
 				TopScorePanel tsp = new TopScorePanel( ++i, img, s.getShipName(), s.getScore(), s.getSector(), s.getDifficulty() );
 				topScoresPanel.add( tsp );
 			} catch (IOException e) {
 				log.error(e);
 				showErrorDialog("Error loading profile");
+			}	finally {
+				try {if (stream != null) stream.close();}
+				catch (IOException f) {}
 			}
 		}
-		
+
+		Stats stats = p.getStats();
+
+		sessionRecordsPanel.removeAll();
+		sessionRecordsPanel.addRow("Most Ships Defeated", null, null, stats.getMostShipsDefeated());
+		sessionRecordsPanel.addRow("Most Beacons Explored", null, null, stats.getMostBeaconsExplored());
+		sessionRecordsPanel.addRow("Most Scrap Collected", null, null, stats.getMostScrapCollected());
+		sessionRecordsPanel.addRow("Most Crew Hired", null, null, stats.getMostCrewHired());
+		sessionRecordsPanel.addFillRow();
+
+		crewRecordsPanel.removeAll();
+		CrewRecord repairCrewRecord = stats.getMostRepairs();
+		CrewRecord killsCrewRecord = stats.getMostKills();
+		CrewRecord evasionsCrewRecord = stats.getMostEvasions();
+		CrewRecord jumpsCrewRecord = stats.getMostJumps();
+		CrewRecord skillsCrewRecord = stats.getMostSkills();
+
+		crewRecordsPanel.addRow("Most Repairs", getCrewIcon(repairCrewRecord.getRace()), repairCrewRecord.getName(), repairCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Combat Kills", getCrewIcon(killsCrewRecord.getRace()), killsCrewRecord.getName(), killsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Piloted Evasions", getCrewIcon(evasionsCrewRecord.getRace()), evasionsCrewRecord.getName(), evasionsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Jumps Survived", getCrewIcon(jumpsCrewRecord.getRace()), jumpsCrewRecord.getName(), jumpsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Skill Masteries", getCrewIcon(skillsCrewRecord.getRace()), skillsCrewRecord.getName(), skillsCrewRecord.getScore());
+		crewRecordsPanel.addFillRow();
+
+		totalStatsPanel.removeAll();
+		totalStatsPanel.addRow("Total Ships Defeated", null, null, stats.getTotalShipsDefeated());
+		totalStatsPanel.addRow("Total Beacons Explored", null, null, stats.getTotalBeaconsExplored());
+		totalStatsPanel.addRow("Total Scrap Collected", null, null, stats.getTotalScrapCollected());
+		totalStatsPanel.addRow("Total Crew Hired", null, null, stats.getTotalCrewHired());
+		totalStatsPanel.addBlankRow();
+		totalStatsPanel.addRow("Total Games Played", null, null, stats.getTotalGamesPlayed());
+		totalStatsPanel.addRow("Total Victories", null, null, stats.getTotalVictories());
+		totalStatsPanel.addFillRow();
+
+		this.repaint();
 	}
 	
 	public void updateProfile( Profile p ) {
@@ -868,4 +1040,108 @@ public class FTLFrame extends JFrame {
 		
 	}
 
+	public void setStatusText( String text ) {
+		if (text.length() > 0)
+			statusLbl.setText(text);
+		else
+			statusLbl.setText(" ");
+	}
+
+
+
+	private class StatusbarMouseListener extends MouseAdapter {
+		private FTLFrame frame = null;
+		private String text = null;
+
+		public StatusbarMouseListener( FTLFrame frame, String text ) {
+			this.frame = frame;
+			this.text = text;
+		}
+
+		public void mouseEntered( MouseEvent e ) {
+			frame.setStatusText( text );
+		}
+		public void mouseExited( MouseEvent e ) {
+			frame.setStatusText("");
+		}
+	}
+
+
+
+	private class StatsSubPanel extends JPanel {
+		private int COLUMN_COUNT = 0;
+		private final int NAME_COL = COLUMN_COUNT++;
+		private final int RECIPIENT_COL = COLUMN_COUNT++;
+		private final int VALUE_COL = COLUMN_COUNT++;
+
+		GridBagConstraints gridC = null;
+
+		public StatsSubPanel() {
+			super(new GridBagLayout());
+			removeAll();
+		}
+
+		@Override
+		public void removeAll() {
+			super.removeAll();
+			gridC = new GridBagConstraints();
+			gridC.anchor = GridBagConstraints.WEST;
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weightx = 1.0;
+			gridC.weighty = 0.0;
+			gridC.insets = new Insets(2, 4, 2, 4);
+			gridC.gridwidth = 1;
+			gridC.gridx = 0;
+			gridC.gridy = 0;
+		}
+
+		public void addRow(String name, ImageIcon icon, String recipient, int value) {
+			gridC.gridx = NAME_COL;
+			gridC.anchor = GridBagConstraints.WEST;
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weightx = 1.0;
+			JLabel nameLbl = new JLabel(name);
+			this.add(nameLbl, gridC);
+
+			gridC.gridx = RECIPIENT_COL;
+			gridC.anchor = GridBagConstraints.CENTER;
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weightx = 1.0;
+			JLabel recipientLbl = new JLabel();
+			recipientLbl.setHorizontalTextPosition(SwingConstants.RIGHT);
+			if (recipient != null)
+				recipientLbl.setText(recipient);
+			if (icon != null)
+				recipientLbl.setIcon(icon);
+			this.add(recipientLbl, gridC);
+
+			gridC.gridx = VALUE_COL;
+			gridC.anchor = GridBagConstraints.CENTER;
+			gridC.weightx = 0.0;
+			JLabel valueLbl = new JLabel(Integer.toString(value));
+			this.add(valueLbl, gridC);
+
+			gridC.gridy++;
+		}
+
+		public void addBlankRow() {
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weighty = 0.0;
+			gridC.gridwidth = GridBagConstraints.REMAINDER;
+			gridC.gridx = 0;
+
+			this.add(Box.createVerticalStrut(12), gridC);
+			gridC.gridy++;
+		}
+
+		public void addFillRow() {
+			gridC.fill = GridBagConstraints.VERTICAL;
+			gridC.weighty = 1.0;
+			gridC.gridwidth = GridBagConstraints.REMAINDER;
+			gridC.gridx = 0;
+
+			this.add(Box.createVerticalGlue(), gridC);
+			gridC.gridy++;
+		}
+	}
 }
