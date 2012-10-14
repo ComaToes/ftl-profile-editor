@@ -894,8 +894,10 @@ public class FTLFrame extends JFrame {
 			}
 			history += historyTemplate.replaceAll("\\{version\\}", "v"+version).replaceAll("\\{items\\}", items);
 			line = in.readLine();
-			if( line != null )
+			if( line != null ) {
 				version = Integer.parseInt( line );
+				items = "";
+			}
 		}
 		in.close();
 
