@@ -6,6 +6,8 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
@@ -52,6 +54,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
@@ -103,6 +106,9 @@ public class FTLFrame extends JFrame {
 	private BufferedImage iconShadeImage;
 	
 	private JPanel topScoresPanel;
+	private StatsSubPanel sessionRecordsPanel;
+	private StatsSubPanel crewRecordsPanel;
+	private StatsSubPanel totalStatsPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -227,7 +233,7 @@ public class FTLFrame extends JFrame {
 		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
 		statusPanel.setBorder( BorderFactory.createLoweredBevelBorder() );
 		statusLbl = new JLabel(" ");
-		statusLbl.setFont( statusLbl.getFont().deriveFont(Font.PLAIN) );
+		//statusLbl.setFont( statusLbl.getFont().deriveFont(Font.PLAIN) );
 		statusLbl.setBorder( BorderFactory.createEmptyBorder(2, 4, 2, 4) );
 		statusLbl.setAlignmentX( Component.LEFT_ALIGNMENT );
 		statusPanel.add( statusLbl );
@@ -360,24 +366,24 @@ public class FTLFrame extends JFrame {
 		topScoresPanel.setBorder( BorderFactory.createTitledBorder("Top Scores") );
 		statsPanel.add( topScoresPanel );
 
-		JPanel statsSubPanel = new JPanel();
-		statsSubPanel.setLayout( new BoxLayout(statsSubPanel, BoxLayout.Y_AXIS) );
-		statsPanel.add( statsSubPanel );
+		JPanel statsSubPanelsHolder = new JPanel();
+		statsSubPanelsHolder.setLayout( new BoxLayout(statsSubPanelsHolder, BoxLayout.Y_AXIS) );
+		statsPanel.add( statsSubPanelsHolder );
 		
-		JPanel sessionRecordsPanel = new JPanel();
-		sessionRecordsPanel.setLayout( new GridLayout(0, 2) );
+		sessionRecordsPanel = new StatsSubPanel();
+		sessionRecordsPanel.addFillRow();
 		sessionRecordsPanel.setBorder( BorderFactory.createTitledBorder("Session Records") );
-		statsSubPanel.add( sessionRecordsPanel );
+		statsSubPanelsHolder.add( sessionRecordsPanel );
 		
-		JPanel crewRecordsPanel = new JPanel();
-		crewRecordsPanel.setLayout( new GridLayout(0, 2) );
+		crewRecordsPanel = new StatsSubPanel();
+		crewRecordsPanel.addFillRow();
 		crewRecordsPanel.setBorder( BorderFactory.createTitledBorder("Crew Records") );
-		statsSubPanel.add( crewRecordsPanel );
+		statsSubPanelsHolder.add( crewRecordsPanel );
 
-		JPanel totalsPanel = new JPanel();
-		totalsPanel.setLayout( new GridLayout(0, 2) );
-		totalsPanel.setBorder( BorderFactory.createTitledBorder("Totals") );
-		statsSubPanel.add( totalsPanel );
+		totalStatsPanel = new StatsSubPanel();
+		totalStatsPanel.addFillRow();
+		totalStatsPanel.setBorder( BorderFactory.createTitledBorder("Totals") );
+		statsSubPanelsHolder.add( totalStatsPanel );
 
 		return statsPanel;
 		
@@ -424,6 +430,51 @@ public class FTLFrame extends JFrame {
 		Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
 		return scaled;
 	}
+
+	public ImageIcon getCrewIcon(String race) {
+		if (race == null || race.length() == 0) return null;
+
+		ImageIcon result = null;
+		int offsetX = 0, offsetY = 0, w = 36, h = 36;
+		InputStream in = null;
+		try {
+			in = DataManager.get().getResourceInputStream("img/people/"+ race +"_player_yellow.png");
+			BufferedImage big = ImageIO.read( in );
+			if (offsetX+w <= big.getWidth() || offsetY+h <= big.getHeight()) {
+				BufferedImage cropped = big.getSubimage(offsetX, offsetY, w, h);
+
+				// Shrink the crop area until non-transparent pixels are hit.
+				int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
+				int highX = -1, highY = -1;
+				for (int testY=0; testY < h; testY++) {
+					for (int testX=0; testX < w; testX++) {
+						int pixel = cropped.getRGB(testX, testY);
+						int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
+						if (alpha != 0) {
+							if (testX > highX) highX = testX;
+							if (testY > highY) highY = testY;
+							if (testX < lowX) lowX = testX;
+							if (testY < lowY) lowY = testY;
+						}
+					}
+				}
+				log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
+				if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
+					cropped = cropped.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
+				}
+				result = new ImageIcon(cropped);
+			}
+
+		} catch (IOException e) {
+			log.error( "Failed to load and crop race ("+ race +")", e );
+
+		} finally {
+			try {if (in != null) in.close();}
+			catch (IOException f) {}
+    }
+		return result;
+	}
+
 	
 	private void setCheckboxIcons( JCheckBox box, String baseImagePath ) {
 		InputStream stream = null;
@@ -900,7 +951,41 @@ public class FTLFrame extends JFrame {
 				catch (IOException f) {}
 			}
 		}
-		
+
+		Stats stats = p.getStats();
+
+		sessionRecordsPanel.removeAll();
+		sessionRecordsPanel.addRow("Most Ships Defeated", null, null, stats.getMostShipsDefeated());
+		sessionRecordsPanel.addRow("Most Beacons Explored", null, null, stats.getMostBeaconsExplored());
+		sessionRecordsPanel.addRow("Most Scrap Collected", null, null, stats.getMostScrapCollected());
+		sessionRecordsPanel.addRow("Most Crew Hired", null, null, stats.getMostCrewHired());
+		sessionRecordsPanel.addFillRow();
+
+		crewRecordsPanel.removeAll();
+		CrewRecord repairCrewRecord = stats.getMostRepairs();
+		CrewRecord killsCrewRecord = stats.getMostKills();
+		CrewRecord evasionsCrewRecord = stats.getMostEvasions();
+		CrewRecord jumpsCrewRecord = stats.getMostJumps();
+		CrewRecord skillsCrewRecord = stats.getMostSkills();
+
+		crewRecordsPanel.addRow("Most Repairs", getCrewIcon(repairCrewRecord.getRace()), repairCrewRecord.getName(), repairCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Combat Kills", getCrewIcon(killsCrewRecord.getRace()), killsCrewRecord.getName(), killsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Piloted Evasions", getCrewIcon(evasionsCrewRecord.getRace()), evasionsCrewRecord.getName(), evasionsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Jumps Survived", getCrewIcon(jumpsCrewRecord.getRace()), jumpsCrewRecord.getName(), jumpsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Skill Masteries", getCrewIcon(skillsCrewRecord.getRace()), skillsCrewRecord.getName(), skillsCrewRecord.getScore());
+		crewRecordsPanel.addFillRow();
+
+		totalStatsPanel.removeAll();
+		totalStatsPanel.addRow("Total Ships Defeated", null, null, stats.getTotalShipsDefeated());
+		totalStatsPanel.addRow("Total Beacons Explored", null, null, stats.getTotalBeaconsExplored());
+		totalStatsPanel.addRow("Total Scrap Collected", null, null, stats.getTotalScrapCollected());
+		totalStatsPanel.addRow("Total Crew Hired", null, null, stats.getTotalCrewHired());
+		totalStatsPanel.addBlankRow();
+		totalStatsPanel.addRow("Total Games Played", null, null, stats.getTotalGamesPlayed());
+		totalStatsPanel.addRow("Total Victories", null, null, stats.getTotalVictories());
+		totalStatsPanel.addFillRow();
+
+		this.repaint();
 	}
 	
 	public void updateProfile( Profile p ) {
@@ -978,6 +1063,85 @@ public class FTLFrame extends JFrame {
 		}
 		public void mouseExited( MouseEvent e ) {
 			frame.setStatusText("");
+		}
+	}
+
+
+
+	private class StatsSubPanel extends JPanel {
+		private int COLUMN_COUNT = 0;
+		private final int NAME_COL = COLUMN_COUNT++;
+		private final int RECIPIENT_COL = COLUMN_COUNT++;
+		private final int VALUE_COL = COLUMN_COUNT++;
+
+		GridBagConstraints gridC = null;
+
+		public StatsSubPanel() {
+			super(new GridBagLayout());
+			removeAll();
+		}
+
+		@Override
+		public void removeAll() {
+			super.removeAll();
+			gridC = new GridBagConstraints();
+			gridC.anchor = GridBagConstraints.WEST;
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weightx = 1.0;
+			gridC.weighty = 0.0;
+			gridC.insets = new Insets(2, 4, 2, 4);
+			gridC.gridwidth = 1;
+			gridC.gridx = 0;
+			gridC.gridy = 0;
+		}
+
+		public void addRow(String name, ImageIcon icon, String recipient, int value) {
+			gridC.gridx = NAME_COL;
+			gridC.anchor = GridBagConstraints.WEST;
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weightx = 1.0;
+			JLabel nameLbl = new JLabel(name);
+			this.add(nameLbl, gridC);
+
+			gridC.gridx = RECIPIENT_COL;
+			gridC.anchor = GridBagConstraints.CENTER;
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weightx = 1.0;
+			JLabel recipientLbl = new JLabel();
+			recipientLbl.setHorizontalTextPosition(SwingConstants.RIGHT);
+			if (recipient != null)
+				recipientLbl.setText(recipient);
+			if (icon != null)
+				recipientLbl.setIcon(icon);
+			this.add(recipientLbl, gridC);
+
+			gridC.gridx = VALUE_COL;
+			gridC.anchor = GridBagConstraints.CENTER;
+			gridC.weightx = 0.0;
+			JLabel valueLbl = new JLabel(Integer.toString(value));
+			this.add(valueLbl, gridC);
+
+			gridC.gridy++;
+		}
+
+		public void addBlankRow() {
+			gridC.fill = GridBagConstraints.NONE;
+			gridC.weighty = 0.0;
+			gridC.gridwidth = GridBagConstraints.REMAINDER;
+			gridC.gridx = 0;
+
+			this.add(Box.createVerticalStrut(12), gridC);
+			gridC.gridy++;
+		}
+
+		public void addFillRow() {
+			gridC.fill = GridBagConstraints.VERTICAL;
+			gridC.weighty = 1.0;
+			gridC.gridwidth = GridBagConstraints.REMAINDER;
+			gridC.gridx = 0;
+
+			this.add(Box.createVerticalGlue(), gridC);
+			gridC.gridy++;
 		}
 	}
 }
