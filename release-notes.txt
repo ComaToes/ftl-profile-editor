@@ -1,3 +1,9 @@
+10
+Stats tab now shows all stats (Session/Crew/Totals areas were previously blank)
+FTL data is now accessed without needing to unpack the data files - Older versions of this tool will have unpacked to a folder called "ftldata". You should delete this to free up disk space
+Data files can be unpacked if desired - A new button has been added to the toolbar for this
+Added release notes viewer
+
 9
 Added correct parsing of achievement difficulty flag (this fixes a profile parser error where you had attained an achievement at normal difficulty)
 
@@ -9,3 +15,21 @@ Modified parser error dialog to contain text to copy/paste into bug report
 Fixed Linux bug (thanks roostertech)
 Added error logging to file (ftl-profile-editor.log)
 Added default profile locations for MacOS and Linux
+
+6
+Now uses FTL data files to extract ship/achievement data and images.
+
+5
+Added a check when opening a profile to ensure the app can read and write it without losing data
+
+4
+Added automatic version check so you don't need to manually check this thread or the download page for updates. More actual features coming soon 
+
+3
+Bug fixes
+
+2
+Bug fixes
+
+1
+Initial release

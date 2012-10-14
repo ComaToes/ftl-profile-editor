@@ -91,9 +91,11 @@ public class FTLFrame extends JFrame {
 	private ImageIcon unlockIcon = new ImageIcon( ClassLoader.getSystemResource("unlock.png") );
 	private ImageIcon aboutIcon = new ImageIcon( ClassLoader.getSystemResource("about.gif") );
 	private ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource("update.gif") );
+	private ImageIcon releaseNotesIcon = new ImageIcon( ClassLoader.getSystemResource("release-notes.png") );
 	
 	private URL aboutPage = ClassLoader.getSystemResource("about.html");
-	private URL versionHistoryTemplate = ClassLoader.getSystemResource("update.html");
+	private URL latestVersionTemplate = ClassLoader.getSystemResource("update.html");
+	private URL releaseNotesTemplate = ClassLoader.getSystemResource("release-notes.html");
 	
 	private String latestVersionUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/latest-version.txt";
 	private String versionHistoryUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/release-notes.txt";
@@ -671,7 +673,7 @@ public class FTLFrame extends JFrame {
 					log.trace("Open dialog cancelled");
 			}
 		});
-		openButton.addMouseListener( new StatusbarMouseListener(this, "Open a new profile.") );
+		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing profile.") );
 		toolbar.add( openButton );
 		
 		JButton saveButton = new JButton("Save", saveIcon);
@@ -790,7 +792,7 @@ public class FTLFrame extends JFrame {
 				aboutDialog.setVisible(true);
 			}
 		});
-		aboutButton.addMouseListener( new StatusbarMouseListener(this, "Show the about dialog.") );
+		aboutButton.addMouseListener( new StatusbarMouseListener(this, "View information about this tool and links for information/bug reports") );
 		toolbar.add( aboutButton );
 		
 		// Check for new version in seperate thread so we don't hang the UI
@@ -815,48 +817,10 @@ public class FTLFrame extends JFrame {
 			in.close();
 			
 			if( latestVersion > version ) {
+				
 				log.trace("New version available");
 				
-				final JDialog updateDialog = new JDialog(this,"Update Available",true);
-				JPanel updatePanel = new JPanel();
-				updatePanel.setLayout( new BoxLayout(updatePanel, BoxLayout.Y_AXIS) );
-				updateDialog.setContentPane(updatePanel);
-				updateDialog.setSize(600, 400);
-				updateDialog.setLocationRelativeTo( this );
-				
-				// TODO Template idea nice but a bit messy
-				// Read history template
-				in = new BufferedReader( new InputStreamReader( (InputStream)versionHistoryTemplate.getContent() ) );
-				String historyTemplate = "";
-				String line;
-				while( (line = in.readLine()) != null )
-					historyTemplate += line;
-				in.close();
-				
-				String history = "";
-				
-				// Read remote history file
-				in = new BufferedReader( new InputStreamReader( (InputStream)new URL(versionHistoryUrl).getContent() ) );
-				line = in.readLine();
-				int version = Integer.parseInt( line );
-				String items = "";
-				// Render each history file section using the template
-				while( version > this.version && line != null ) {
-					while( !"".equals(line = in.readLine()) && line != null ) {
-						items += "<li>"+line+"</li>";
-					}
-					history += historyTemplate.replaceAll("\\{version\\}", "v"+version).replaceAll("\\{items\\}", items);
-					line = in.readLine();
-					if( line != null )
-						version = Integer.parseInt( line );
-				}
-				in.close();
-
-				// Create editor pane and populate with generated history html
-				JEditorPane editor = new JEditorPane("text/html", history);
-				editor.setEditable(false);
-				editor.addHyperlinkListener(linkListener);
-				updatePanel.add( new JScrollPane(editor) );
+				final JDialog updateDialog = createVersionHistoryDialog( "Update Available", latestVersionTemplate, version );
 
 				// Add button to toolbar
 				JButton newVersionButton = new JButton("New Version Available!", updateIcon);
@@ -868,15 +832,80 @@ public class FTLFrame extends JFrame {
 					}
 				});
 				newVersionButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
+				newVersionButton.addMouseListener( new StatusbarMouseListener(this, "Update to the latest version of the tool.") );
 				toolbar.add( newVersionButton );
 				
-			} else
+			} else {
+				
 				log.trace("Already up-to-date");
+				
+				final JDialog releaseNotesDialog = createVersionHistoryDialog( "Release Notes", releaseNotesTemplate, 0 );
+				
+				// Add button to toolbar
+				JButton releaseNotesButton = new JButton("Release Notes", releaseNotesIcon);
+				releaseNotesButton.addActionListener( new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						log.trace("Release notes button clicked");
+						releaseNotesDialog.setVisible(true);
+					}
+				});
+				releaseNotesButton.addMouseListener( new StatusbarMouseListener(this, "View a list of changes for each release.") );
+				toolbar.add( releaseNotesButton );
+				
+			}
 			
 		} catch (IOException e) {
 			log.error("Error checking for latest version",e);
 			showErrorDialog("Error checking for latest version\n(Use the About window to check the download page manually)\n" + e);
 		}
+		
+	}
+	
+	private JDialog createVersionHistoryDialog(String title, URL template, int sinceVersion) throws IOException {
+		
+		final JDialog updateDialog = new JDialog(this,title,true);
+		JPanel updatePanel = new JPanel();
+		updatePanel.setLayout( new BoxLayout(updatePanel, BoxLayout.Y_AXIS) );
+		updateDialog.setContentPane(updatePanel);
+		updateDialog.setSize(600, 400);
+		updateDialog.setLocationRelativeTo( this );
+		
+		// TODO Template idea nice but a bit messy
+		// Read history template
+		BufferedReader in = new BufferedReader( new InputStreamReader( (InputStream)template.getContent() ) );
+		String historyTemplate = "";
+		String line;
+		while( (line = in.readLine()) != null )
+			historyTemplate += line;
+		in.close();
+		
+		String history = "";
+		
+		// Read remote history file
+		in = new BufferedReader( new InputStreamReader( (InputStream)new URL(versionHistoryUrl).getContent() ) );
+		line = in.readLine();
+		int version = Integer.parseInt( line );
+		String items = "";
+		// Render each history file section using the template
+		while( version > sinceVersion && line != null ) {
+			while( !"".equals(line = in.readLine()) && line != null ) {
+				items += "<li>"+line+"</li>";
+			}
+			history += historyTemplate.replaceAll("\\{version\\}", "v"+version).replaceAll("\\{items\\}", items);
+			line = in.readLine();
+			if( line != null )
+				version = Integer.parseInt( line );
+		}
+		in.close();
+
+		// Create editor pane and populate with generated history html
+		JEditorPane editor = new JEditorPane("text/html", history);
+		editor.setEditable(false);
+		editor.addHyperlinkListener(linkListener);
+		updatePanel.add( new JScrollPane(editor) );
+		
+		return updateDialog;
 		
 	}
 	
