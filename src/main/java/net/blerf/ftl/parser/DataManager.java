@@ -1,6 +1,7 @@
 package net.blerf.ftl.parser;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,8 +27,8 @@ public class DataManager {
 		return instance;
 	}
 	
-	public static void init(File ftlFolder, File dataFolder) throws IOException, JAXBException {
-		instance = new DataManager(ftlFolder, dataFolder);	
+	public static void init(File ftlFolder) throws IOException, JAXBException {
+		instance = new DataManager(ftlFolder);	
 	}
 
 	private List<Achievement> achievements;
@@ -38,63 +39,84 @@ public class DataManager {
 	private List<ShipBlueprint> playerShips; // Type A's
 	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
 	
-	private File dataFolder;
+	private	MappedDatParser dataParser = null;
+	private	MappedDatParser resourceParser = null;
 	
-	private DataManager(File ftlFolder, File dataFolder) throws IOException, JAXBException {
-		
-		this.dataFolder = dataFolder;
+	private DataManager(File ftlFolder) throws IOException, JAXBException {
 		
 		log.trace("DataManager initialising");
 		
-		DatParser datParser = new DatParser();
+		InputStream ach_stream = null;
+		InputStream blue_stream = null;
 		
-		File datFolder = new File( dataFolder, "data" );
-		File imgFolder = new File( dataFolder, "img" );
+		try {
+			dataParser = new MappedDatParser( new File(ftlFolder, "resources/data.dat") );
+	 		resourceParser = new MappedDatParser( new File(ftlFolder, "resources/resource.dat") );
 		
-		boolean unpackData = !dataFolder.exists() || !datFolder.exists();
-		boolean unpackRes = !dataFolder.exists() || !imgFolder.exists();
+			ach_stream = dataParser.getInputStream( "data/achievements.xml" );
+			achievements = dataParser.readAchievements( ach_stream );
+			blue_stream = dataParser.getInputStream( "data/blueprints.xml" );
+			blueprints = dataParser.readBlueprints( blue_stream );
 		
-		if( unpackData )
-			datParser.unpackDat( new File(ftlFolder, "resources/data.dat") , dataFolder );
-		if( unpackRes )
-			datParser.unpackDat( new File(ftlFolder, "resources/resource.dat") , dataFolder );
-		
-		achievements = datParser.readAchievements( new File( dataFolder, "data/achievements.xml") );
-		blueprints = datParser.readBlueprints( new File( dataFolder, "data/blueprints.xml" ) );
-		
-		generalAchievements = new ArrayList<Achievement>();
-		for( Achievement ach: achievements )
-			if( ach.getShipId() == null )
-				generalAchievements.add(ach);
-		
-		ships = new HashMap<String, ShipBlueprint>();
-		for( ShipBlueprint ship: blueprints.getShipBlueprint() )
-			ships.put( ship.getId() , ship );
-		
-		playerShips = new ArrayList<ShipBlueprint>();
-		playerShips.add( ships.get("PLAYER_SHIP_HARD") );
-		playerShips.add( ships.get("PLAYER_SHIP_STEALTH") );
-		playerShips.add( ships.get("PLAYER_SHIP_MANTIS") );
-		playerShips.add( ships.get("PLAYER_SHIP_CIRCLE") );
-		playerShips.add( ships.get("PLAYER_SHIP_FED") );
-		playerShips.add( ships.get("PLAYER_SHIP_JELLY") );
-		playerShips.add( ships.get("PLAYER_SHIP_ROCK") );
-		playerShips.add( ships.get("PLAYER_SHIP_ENERGY") );
-		playerShips.add( ships.get("PLAYER_SHIP_CRYSTAL") );
-		
-		shipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
-		for(ShipBlueprint ship: playerShips) {
-			List<Achievement> shipAchs = new ArrayList<Achievement>();
+			generalAchievements = new ArrayList<Achievement>();
 			for( Achievement ach: achievements )
-				if( ship.getId().equals( ach.getShipId() ) )
-					shipAchs.add(ach);
-			shipAchievements.put( ship, shipAchs );
-		}
+				if( ach.getShipId() == null )
+					generalAchievements.add(ach);
 		
+			ships = new HashMap<String, ShipBlueprint>();
+			for( ShipBlueprint ship: blueprints.getShipBlueprint() )
+				ships.put( ship.getId() , ship );
+		
+			playerShips = new ArrayList<ShipBlueprint>();
+			playerShips.add( ships.get("PLAYER_SHIP_HARD") );
+			playerShips.add( ships.get("PLAYER_SHIP_STEALTH") );
+			playerShips.add( ships.get("PLAYER_SHIP_MANTIS") );
+			playerShips.add( ships.get("PLAYER_SHIP_CIRCLE") );
+			playerShips.add( ships.get("PLAYER_SHIP_FED") );
+			playerShips.add( ships.get("PLAYER_SHIP_JELLY") );
+			playerShips.add( ships.get("PLAYER_SHIP_ROCK") );
+			playerShips.add( ships.get("PLAYER_SHIP_ENERGY") );
+			playerShips.add( ships.get("PLAYER_SHIP_CRYSTAL") );
+		
+			shipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
+			for(ShipBlueprint ship: playerShips) {
+				List<Achievement> shipAchs = new ArrayList<Achievement>();
+				for( Achievement ach: achievements )
+					if( ship.getId().equals( ach.getShipId() ) )
+						shipAchs.add(ach);
+				shipAchievements.put( ship, shipAchs );
+			}
+		
+		} catch (IOException e) {
+			log.error( "Error while constructing DataManager", e );
+
+			try {if (dataParser != null) dataParser.close();}
+			catch (IOException f) {}
+			try {if (resourceParser != null) resourceParser.close();}
+			catch (IOException f) {}
+
+		} finally {
+			try {if (ach_stream != null) ach_stream.close();}
+			catch (IOException f) {}
+			try {if (blue_stream != null) blue_stream.close();}
+			catch (IOException f) {}
+		}
 	}
 	
-	public File getDataFolder() {
-		return dataFolder;
+	public InputStream getDataInputStream( String innerPath ) throws IOException {
+		return dataParser.getInputStream( innerPath );
+	}
+	
+	public InputStream getResourceInputStream( String innerPath ) throws IOException {
+		return resourceParser.getInputStream( innerPath );
+	}
+	
+	public void unpackData( File outFolder ) throws IOException {
+		dataParser.unpackDat( outFolder );
+	}
+
+	public void unpackResources( File outFolder ) throws IOException {
+		resourceParser.unpackDat( outFolder );
 	}
 	
 	public List<Achievement> getAchievements() {
