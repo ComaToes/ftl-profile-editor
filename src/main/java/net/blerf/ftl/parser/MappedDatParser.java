@@ -113,6 +113,7 @@ public class MappedDatParser extends Parser implements Closeable {
 		sb.append("<blueprints>").append("\n");  // XML has multiple root nodes so need to wrap
 		boolean comment = false, inShipShields = false, inSlot = false;
 		while( (line = in.readLine()) != null ) {
+			line = line.replaceAll("<!-- sardonyx", "<!-- sardonyx -->");  // Error above one shipBlueprint
 			line = line.replaceAll("<!--.*-->", "");
 			line = line.replaceAll("<\\?xml[^>]*>", "");
 			line = line.replaceAll("<title>([^<]*)</[^>]*>", "<title>$1</title>");  // Error present in systemBlueprint and itemBlueprint
