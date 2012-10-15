@@ -124,7 +124,10 @@ public class DataManager {
 	}
 	
 	public ShipBlueprint getShip(String id) {
-		return ships.get(id);
+		ShipBlueprint result = ships.get(id);
+		if ( result == null )
+			log.error( "No ShipBlueprint found for id: "+ id );
+		return result;
 	}
 	
 	public List<ShipBlueprint> getPlayerShips() {
