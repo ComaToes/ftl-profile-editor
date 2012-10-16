@@ -55,7 +55,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
@@ -119,12 +118,6 @@ public class FTLFrame extends JFrame {
 	public FTLFrame(int version) {
 		
 		this.version = version;
-		
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 
 		// Read config file and locate FTL install
 		File propFile = new File("ftl-editor.cfg");
