@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -55,6 +57,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
@@ -107,6 +110,9 @@ public class FTLFrame extends JFrame {
 	private static final int maxIconHeight = 64;
 	private BufferedImage iconShadeImage;
 	
+	private JButton updatesButton;
+	private Runnable updatesCallback;
+
 	private JPanel topScoresPanel;
 	private StatsSubPanel sessionRecordsPanel;
 	private StatsSubPanel crewRecordsPanel;
@@ -194,7 +200,17 @@ public class FTLFrame extends JFrame {
 
 		// Load blank profile (sets Kestrel unlock)
 		loadProfile(profile);
-		
+
+		// Check for updates in a seperate thread.
+		setStatusText( "Checking for updates..." );
+		Thread t = new Thread("CheckVersion") {
+			@Override
+			public void run() {
+				checkForUpdate();
+			}
+		};
+		t.setDaemon(true);
+		t.start();
 	}
 	
 	private void showErrorDialog( String message ) {
@@ -682,120 +698,172 @@ public class FTLFrame extends JFrame {
 		aboutButton.addMouseListener( new StatusbarMouseListener(this, "View information about this tool and links for information/bug reports") );
 		toolbar.add( aboutButton );
 		
-		// Check for new version in seperate thread so we don't hang the UI
-		new Thread("CheckVersion") {
+		updatesButton = new JButton("Updates");
+		updatesButton.setEnabled(false);
+		updatesButton.addActionListener( new ActionListener() {
 			@Override
-			public void run() {
-				checkForUpdate(toolbar, linkListener);
+			public void actionPerformed(ActionEvent e) {
+				if ( updatesCallback != null )
+					updatesCallback.run();
 			}
-		}.start();
-		
+		});
+		updatesButton.addMouseListener( new StatusbarMouseListener(this, "Update this tool or review past changes.") );
+		toolbar.add( updatesButton );
 	}
 	
-	private void checkForUpdate(final JToolBar toolbar, HyperlinkListener linkListener) {
-		
+	private void checkForUpdate() {
+		URL url = null;
+		BufferedReader in = null;
+		String line = null;
 		try {
 			
 			log.trace("Checking for latest version");
 			
-			URL url = new URL(latestVersionUrl);
-			BufferedReader in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
+			url = new URL(latestVersionUrl);
+			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
 			int latestVersion = Integer.parseInt( in.readLine() );
 			in.close();
 			
-			if( latestVersion > version ) {
+			if ( latestVersion > version ) {
 				
 				log.trace("New version available");
 				
-				final JDialog updateDialog = createVersionHistoryDialog( "Update Available", latestVersionTemplate, version );
+				final String historyHtml = getVersionHistoryHtml( latestVersionTemplate, version );
 
-				// Add button to toolbar
-				JButton newVersionButton = new JButton("New Version Available!", updateIcon);
-				newVersionButton.addActionListener( new ActionListener() {
+				final Runnable newCallback = new Runnable() {
 					@Override
-					public void actionPerformed(ActionEvent e) {
-						log.trace("New version button clicked");
-						updateDialog.setVisible(true);
+					public void run() {
+						log.trace("Updates button clicked (new version)");
+						JDialog updatesDialog = createHtmlDialog( "Update Available", historyHtml );
+						updatesDialog.setVisible(true);
 					}
-				});
-				newVersionButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
-				newVersionButton.addMouseListener( new StatusbarMouseListener(this, "Update to the latest version of the tool.") );
-				toolbar.add( newVersionButton );
+				};
+				// Make changes from the GUI thread.
+				Runnable r = new Runnable() {
+					@Override
+					public void run() {
+						updatesCallback = newCallback;
+						updatesButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
+						updatesButton.setIcon(updateIcon);
+						updatesButton.setEnabled(true);
+						setStatusText( "A new version has been released." );
+					}
+				};
+				SwingUtilities.invokeLater(r);
 				
 			} else {
 				
 				log.trace("Already up-to-date");
+
+				final String historyHtml = getVersionHistoryHtml( releaseNotesTemplate, 0 );
 				
-				final JDialog releaseNotesDialog = createVersionHistoryDialog( "Release Notes", releaseNotesTemplate, 0 );
-				
-				// Add button to toolbar
-				JButton releaseNotesButton = new JButton("Release Notes", releaseNotesIcon);
-				releaseNotesButton.addActionListener( new ActionListener() {
+				// Replacement behavior for the updates button.
+				final Runnable newCallback = new Runnable() {
 					@Override
-					public void actionPerformed(ActionEvent e) {
-						log.trace("Release notes button clicked");
-						releaseNotesDialog.setVisible(true);
+					public void run() {
+						log.trace("Updates button clicked (release notes)");
+						JDialog updatesDialog = createHtmlDialog( "Release Notes", historyHtml );
+						updatesDialog.setVisible(true);
 					}
-				});
-				releaseNotesButton.addMouseListener( new StatusbarMouseListener(this, "View a list of changes for each release.") );
-				toolbar.add( releaseNotesButton );
-				
+				};
+				// Make changes from the GUI thread.
+				Runnable r = new Runnable() {
+					@Override
+					public void run() {
+						updatesCallback = newCallback;
+						Color defaultColor = UIManager.getColor("Button.background");
+						if ( defaultColor != null )
+							updatesButton.setBackground(defaultColor);
+						updatesButton.setIcon(releaseNotesIcon);
+						updatesButton.setEnabled(true);
+						setStatusText( "No new updates." );
+					}
+				};
+				SwingUtilities.invokeLater(r);
 			}
 			
-		} catch (IOException e) {
-			log.error("Error checking for latest version",e);
-			showErrorDialog("Error checking for latest version\n(Use the About window to check the download page manually)\n" + e);
+		} catch (Exception e) {
+			log.error( "Error checking for latest version", e );
+			showErrorDialog( "Error checking for latest version\n(Use the About window to check the download page manually)\n"+ e );
+
+		} finally {
+			try {if (in != null) in.close();}
+			catch (IOException e) {}
 		}
 		
 	}
 	
-	private JDialog createVersionHistoryDialog(String title, URL template, int sinceVersion) throws IOException {
-		
-		final JDialog updateDialog = new JDialog(this,title,true);
+	private String getVersionHistoryHtml(URL templateUrl, int sinceVersion) throws IOException {
+
+		// Buffer for presentation-ready html.
+		StringBuilder historyBuf = new StringBuilder();
+
+		URL url = null;
+		BufferedReader in = null;
+		String line = null;
+		try {
+			// Fetch the template.
+			StringBuilder templateBuf = new StringBuilder();
+			url = templateUrl;
+			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
+			while ( (line = in.readLine()) != null ) {
+				templateBuf.append(line).append("\n");
+			}
+			in.close();
+			String historyTemplate = templateBuf.toString();
+
+			// Fetch the changelog, templating each revision.
+			url = new URL(versionHistoryUrl);
+			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
+
+			int releaseVersion = 0;
+			StringBuilder releaseBuf = new StringBuilder();
+			String releaseDesc = null;
+			while ( (line = in.readLine()) != null ) {
+				releaseVersion = Integer.parseInt( line );
+				if ( releaseVersion <= sinceVersion ) break;
+
+				releaseBuf.setLength(0);
+				while ( (line = in.readLine()) != null && !line.equals("") ) {
+					releaseBuf.append("<li>").append(line).append("</li>\n");
+				}
+				// Must've either hit a blank or done.
+
+				if (releaseBuf.length() > 0) {
+					String[] placeholders = new String[] { "{version}", "{items}" };
+					String[] values = new String[] { "v"+releaseVersion, releaseBuf.toString() };
+					releaseDesc = historyTemplate;
+					for (int i=0; i < placeholders.length; i++)
+						releaseDesc = releaseDesc.replaceAll(Pattern.quote(placeholders[i]), Matcher.quoteReplacement(values[i]) );
+					historyBuf.append(releaseDesc);
+				}
+			}
+			in.close();
+
+		} finally {
+			try {if (in != null) in.close();}
+			catch (IOException e) {}
+		}
+
+		return historyBuf.toString();
+	}
+
+	private JDialog createHtmlDialog(String title, String content) {
+
+		final JDialog updateDialog = new JDialog(this, title, true);
 		JPanel updatePanel = new JPanel();
 		updatePanel.setLayout( new BoxLayout(updatePanel, BoxLayout.Y_AXIS) );
 		updateDialog.setContentPane(updatePanel);
 		updateDialog.setSize(600, 400);
 		updateDialog.setLocationRelativeTo( this );
 		
-		// TODO Template idea nice but a bit messy
-		// Read history template
-		BufferedReader in = new BufferedReader( new InputStreamReader( (InputStream)template.getContent() ) );
-		String historyTemplate = "";
-		String line;
-		while( (line = in.readLine()) != null )
-			historyTemplate += line;
-		in.close();
-		
-		String history = "";
-		
-		// Read remote history file
-		in = new BufferedReader( new InputStreamReader( (InputStream)new URL(versionHistoryUrl).getContent() ) );
-		line = in.readLine();
-		int version = Integer.parseInt( line );
-		String items = "";
-		// Render each history file section using the template
-		while( version > sinceVersion && line != null ) {
-			while( !"".equals(line = in.readLine()) && line != null ) {
-				items += "<li>"+line+"</li>";
-			}
-			history += historyTemplate.replaceAll("\\{version\\}", "v"+version).replaceAll("\\{items\\}", items);
-			line = in.readLine();
-			if( line != null ) {
-				version = Integer.parseInt( line );
-				items = "";
-			}
-		}
-		in.close();
-
-		// Create editor pane and populate with generated history html
-		JEditorPane editor = new JEditorPane("text/html", history);
+		JEditorPane editor = new JEditorPane("text/html", content);
 		editor.setEditable(false);
+		editor.setCaretPosition(0);
 		editor.addHyperlinkListener(linkListener);
 		updatePanel.add( new JScrollPane(editor) );
 		
 		return updateDialog;
-		
 	}
 	
 	private JPanel createShipPanel( ShipBlueprint ship ) {
