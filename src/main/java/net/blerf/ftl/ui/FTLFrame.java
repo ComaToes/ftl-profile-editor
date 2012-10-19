@@ -409,7 +409,7 @@ public class FTLFrame extends JFrame {
 						
 						log.trace("Read completed successfully");
 						
-					} catch( Exception e ) {
+					} catch( Exception f ) {
 						log.error( "Error reading profile", f );
 						showErrorDialog( "Error reading profile: " + f.getMessage() );
 					} finally {
