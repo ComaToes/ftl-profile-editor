@@ -585,11 +585,11 @@ public class FTLFrame extends JFrame {
 						SavedGameParser.SavedGameState gs = parser.readSavedGame( fc.getSelectedFile() );
 						loadGameState( gs );
 
-						log.trace("Read completed successfully");
+						log.trace( "Read completed successfully" );
 						
 					} catch( Exception f ) {
 						log.error( "Error reading saved game", f );
-						showErrorDialog("Error reading saved game: " + f.getMessage());
+						showErrorDialog( "Error reading saved game: " + f.getMessage() );
 					}
 				} else {
 					log.trace( "Open dialog cancelled" );
@@ -628,8 +628,8 @@ public class FTLFrame extends JFrame {
 						out.close();
 						
 					} catch( IOException f ) {
-						log.error( "Error writing profile", f );
-						showErrorDialog( "Error saving profile: "+ f.getMessage() );
+						log.error( "Error dumping saved game", f );
+						showErrorDialog( "Error dumping saved game: "+ f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
