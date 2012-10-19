@@ -340,23 +340,6 @@ public class FTLFrame extends JFrame {
 		
 		fc.setMultiSelectionEnabled(false);
 		
-		// Set up dialog in case of hash failure
-		
-		// By default the editor scrolls to the bottom of the text
-		// Making the dialog modal removes ability to programatically scroll to top
-		final JDialog hashFailDialog = new JDialog(FTLFrame.this, "Profile Parser Error", false);
-		JPanel failPanel = new JPanel();
-		failPanel.setLayout( new BoxLayout(failPanel, BoxLayout.Y_AXIS) );
-		hashFailDialog.setContentPane(failPanel);
-		hashFailDialog.setSize(600, 400);
-		hashFailDialog.setLocationRelativeTo( FTLFrame.this );
-		
-		final JEditorPane failEditorPane = new JEditorPane( "text/html", "" );
-		failEditorPane.setEditable(false);
-		failEditorPane.addHyperlinkListener(linkListener);
-		final JScrollPane scrollPane = new JScrollPane(failEditorPane);
-		failPanel.add( scrollPane );
-		
 		// Create open button
 		JButton openButton = new JButton("Open", openIcon);
 		openButton.addActionListener( new ActionListener() {
@@ -419,16 +402,8 @@ public class FTLFrame extends JFrame {
 										"<br/>If using GitHub, set the issue title as \"Profile Parser Error\"<br/><br/>I will fix the problem and release a new version as soon as I can :)" +
 										"<br/><br/><pre>" + hex + "</pre>";
 								
-								failEditorPane.setText(errText);
-								hashFailDialog.setVisible(true);
-
-								// Try ALL the things to make it scroll to top
-								failEditorPane.setCaretPosition(0);
-								scrollPane.getVerticalScrollBar().setValue(0);
-								scrollPane.getViewport().setViewPosition(new Point());
-								scrollPane.scrollRectToVisible(new Rectangle());
-								failEditorPane.setSelectionStart(0);
-								failEditorPane.setSelectionEnd(0);
+								JDialog failDialog = createHtmlDialog( "Profile Parser Error", errText );
+								failDialog.setVisible(true);
 
 								break;
 							}
@@ -716,20 +691,20 @@ public class FTLFrame extends JFrame {
 
 	private JDialog createHtmlDialog(String title, String content) {
 
-		final JDialog updateDialog = new JDialog(this, title, true);
-		JPanel updatePanel = new JPanel();
-		updatePanel.setLayout( new BoxLayout(updatePanel, BoxLayout.Y_AXIS) );
-		updateDialog.setContentPane(updatePanel);
-		updateDialog.setSize(600, 400);
-		updateDialog.setLocationRelativeTo( this );
+		final JDialog dlg = new JDialog(this, title, true);
+		JPanel panel = new JPanel();
+		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
+		dlg.setContentPane(panel);
+		dlg.setSize(600, 400);
+		dlg.setLocationRelativeTo( this );
 		
 		JEditorPane editor = new JEditorPane("text/html", content);
 		editor.setEditable(false);
 		editor.setCaretPosition(0);
 		editor.addHyperlinkListener(linkListener);
-		updatePanel.add( new JScrollPane(editor) );
+		panel.add( new JScrollPane(editor) );
 		
-		return updateDialog;
+		return dlg;
 	}
 	
 	public void loadProfile( Profile p ) {
