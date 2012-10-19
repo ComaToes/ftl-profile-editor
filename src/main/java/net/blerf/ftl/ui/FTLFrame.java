@@ -97,7 +97,7 @@ public class FTLFrame extends JFrame {
 	private static final int maxIconHeight = 64;
 	private BufferedImage iconShadeImage;
 	
-	private JButton updatesButton;
+	private ArrayList<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
 
 	private ShipUnlockPanel shipUnlockPanel;
@@ -470,22 +470,6 @@ public class FTLFrame extends JFrame {
 		unlockShipAchsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements.") );
 		toolbar.add( unlockShipAchsButton );
 		
-		final JDialog aboutDialog = new JDialog(this,"About",true);
-		JPanel aboutPanel = new JPanel();
-		aboutPanel.setLayout( new BoxLayout(aboutPanel, BoxLayout.Y_AXIS) );
-		aboutDialog.setContentPane(aboutPanel);
-		aboutDialog.setSize(300, 250);
-		aboutDialog.setLocationRelativeTo( this );
-				
-		try {
-			JEditorPane editor = new JEditorPane( aboutPage );
-			editor.setEditable(false);
-			editor.addHyperlinkListener(linkListener);
-			aboutPanel.add(editor);
-		} catch (IOException e) {
-			log.error(e);
-		}
-
 		toolbar.add( Box.createHorizontalGlue() );
 
 		JButton extractButton = new JButton("Extract Dats", saveIcon);
@@ -524,7 +508,32 @@ public class FTLFrame extends JFrame {
 		toolbar.add( extractButton );
 
 		toolbar.add( Box.createHorizontalGlue() );
-		
+
+		JButton aboutButton = createAboutButton();
+		toolbar.add( aboutButton );
+
+		JButton updatesButton = createUpdatesButton();
+		updatesButtonList.add( updatesButton );
+		toolbar.add( updatesButton );
+	}
+
+	public JButton createAboutButton() {
+		final JDialog aboutDialog = new JDialog(this,"About",true);
+		JPanel aboutPanel = new JPanel();
+		aboutPanel.setLayout( new BoxLayout(aboutPanel, BoxLayout.Y_AXIS) );
+		aboutDialog.setContentPane(aboutPanel);
+		aboutDialog.setSize(300, 250);
+		aboutDialog.setLocationRelativeTo( this );
+				
+		try {
+			JEditorPane editor = new JEditorPane( aboutPage );
+			editor.setEditable(false);
+			editor.addHyperlinkListener(linkListener);
+			aboutPanel.add(editor);
+		} catch (IOException e) {
+			log.error(e);
+		}
+
 		JButton aboutButton = new JButton("About", aboutIcon);
 		aboutButton.addActionListener( new ActionListener() {
 			@Override
@@ -534,9 +543,11 @@ public class FTLFrame extends JFrame {
 			}
 		});
 		aboutButton.addMouseListener( new StatusbarMouseListener(this, "View information about this tool and links for information/bug reports") );
-		toolbar.add( aboutButton );
-		
-		updatesButton = new JButton("Updates");
+		return aboutButton;
+	}
+
+	public JButton createUpdatesButton() {
+		JButton updatesButton = new JButton("Updates");
 		updatesButton.setEnabled(false);
 		updatesButton.addActionListener( new ActionListener() {
 			@Override
@@ -546,7 +557,7 @@ public class FTLFrame extends JFrame {
 			}
 		});
 		updatesButton.addMouseListener( new StatusbarMouseListener(this, "Update this tool or review past changes.") );
-		toolbar.add( updatesButton );
+		return updatesButton;
 	}
 	
 	private void checkForUpdate() {
@@ -581,9 +592,11 @@ public class FTLFrame extends JFrame {
 					@Override
 					public void run() {
 						updatesCallback = newCallback;
-						updatesButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
-						updatesButton.setIcon(updateIcon);
-						updatesButton.setEnabled(true);
+						for ( JButton updatesButton : updatesButtonList ) {
+							updatesButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
+							updatesButton.setIcon(updateIcon);
+							updatesButton.setEnabled(true);
+						}
 						setStatusText( "A new version has been released." );
 					}
 				};
@@ -610,10 +623,12 @@ public class FTLFrame extends JFrame {
 					public void run() {
 						updatesCallback = newCallback;
 						Color defaultColor = UIManager.getColor("Button.background");
-						if ( defaultColor != null )
-							updatesButton.setBackground(defaultColor);
-						updatesButton.setIcon(releaseNotesIcon);
-						updatesButton.setEnabled(true);
+						for ( JButton updatesButton : updatesButtonList ) {
+							if ( defaultColor != null )
+								updatesButton.setBackground(defaultColor);
+							updatesButton.setIcon(releaseNotesIcon);
+							updatesButton.setEnabled(true);
+						}
 						setStatusText( "No new updates." );
 					}
 				};
