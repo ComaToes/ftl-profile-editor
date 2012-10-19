@@ -107,7 +107,7 @@ public class FTLFrame extends JFrame {
 	
 	private int version;
 	
-	public FTLFrame(int version) {
+	public FTLFrame( int version ) {
 		
 		this.version = version;
 		
@@ -115,7 +115,7 @@ public class FTLFrame extends JFrame {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(800, 700);
 		setLocationRelativeTo(null);
-		setTitle("FTL Profile Editor v" + version);
+		setTitle( "FTL Profile Editor v" + version );
 		try {
 			setIconImage( ImageIO.read( ClassLoader.getSystemResource("unlock.png") ) );
 		} catch (IOException e) {
@@ -123,19 +123,19 @@ public class FTLFrame extends JFrame {
 		}
 		
 		linkListener = new HyperlinkListener() {
-		    public void hyperlinkUpdate(HyperlinkEvent e) {
-		        if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-		        	log.trace("Dialog link clicked: "+ e.getURL());
-		        	if(Desktop.isDesktopSupported()) {
-		        	    try {
-							Desktop.getDesktop().browse(e.getURL().toURI());
-							log.trace("Link opened in external browser");
-						} catch (Exception ex) {
-							log.error("Unable to open link",ex);
+			public void hyperlinkUpdate(HyperlinkEvent e) {
+				if ( e.getEventType() == HyperlinkEvent.EventType.ACTIVATED ) {
+					log.trace( "Dialog link clicked: "+ e.getURL() );
+					if ( Desktop.isDesktopSupported() ) {
+						try {
+							Desktop.getDesktop().browse( e.getURL().toURI() );
+							log.trace( "Link opened in external browser" );
+						} catch (Exception f) {
+							log.error( "Unable to open link", f );
 						}
-		        	}
-		        }
-		    }
+					}
+				}
+			}
 		};
 		
 		initCheckboxIcons();
@@ -197,7 +197,7 @@ public class FTLFrame extends JFrame {
 
 	private void initCheckboxIcons() {
 
-		log.trace("Initialising checkbox locked icon");
+		log.trace( "Initialising checkbox locked icon" );
 		iconShadeImage = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = iconShadeImage.getGraphics();
 		g.setColor( new Color(0, 0, 0, 150) );
@@ -215,7 +215,6 @@ public class FTLFrame extends JFrame {
 			try {if (stream != null) stream.close();}
 			catch (IOException f) {}
 		}
-		
 	}
 	
 	public Image getScaledImage( InputStream in ) throws IOException {
@@ -223,10 +222,10 @@ public class FTLFrame extends JFrame {
 		int width = img.getWidth();
 		int height = img.getHeight();
 		
-		if( width <= maxIconWidth && height < maxIconHeight )
+		if ( width <= maxIconWidth && height < maxIconHeight )
 			return img;
 		
-		if( width > height ) {
+		if ( width > height ) {
 			height /= width/maxIconWidth;
 			width = maxIconWidth;
 		} else {
@@ -332,8 +331,8 @@ public class FTLFrame extends JFrame {
 				new File( System.getProperty("user.home") + "/.local/share/FasterThanLight/prof.sav")
 		};
 		
-		for( File file: profileLocations )
-			if( file.exists() ) {
+		for ( File file : profileLocations )
+			if ( file.exists() ) {
 				fc.setSelectedFile( file );
 				break;
 			}
@@ -345,13 +344,13 @@ public class FTLFrame extends JFrame {
 		openButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace("Open button clicked");
-				if( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+				log.trace( "Open button clicked" );
+				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 
 						File f = fc.getSelectedFile();
 						
-						log.trace("File selected: " + f.getAbsolutePath());
+						log.trace( "File selected: " + f.getAbsolutePath() );
 						
 						InputStream in = new FileInputStream( f );
 						
@@ -384,13 +383,13 @@ public class FTLFrame extends JFrame {
 						
 						// Compare
 						for (int i = 0; i < readHash.length; i++) {
-							if( readHash[i] != writeHash[i] ) {
+							if ( readHash[i] != writeHash[i] ) {
 								log.error("Hash fail on mock write - Unable to assure valid parsing");
 								
 								String hex = "";
 								for (int j = 0; j < data.length; j++) {
 									hex += String.format("%02x", data[j]);
-									if( (j+1) % 32 == 0 )
+									if ( (j+1) % 32 == 0 )
 										hex +="\n";
 								}
 								
@@ -427,7 +426,7 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				log.trace("Save button clicked");
-				if( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 						
 						File f = fc.getSelectedFile();
@@ -502,7 +501,7 @@ public class FTLFrame extends JFrame {
 				extractChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				extractChooser.setMultiSelectionEnabled(false);
 
-				if( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+				if ( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 						
 						File f = extractChooser.getSelectedFile();
