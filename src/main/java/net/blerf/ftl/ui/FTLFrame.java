@@ -321,22 +321,12 @@ public class FTLFrame extends JFrame {
 			}
 		});
 		
-		File[] profileLocations = new File[] {
-				// Windows XP
-				new File( System.getProperty("user.home") + "/My Documents/My Games/FasterThanLight/prof.sav"),
-				// Windows Vista/7
-				new File( System.getProperty("user.home") + "/Documents/My Games/FasterThanLight/prof.sav"),
-				// Mac
-				new File( System.getProperty("user.home") + "/Library/Application Support/FasterThanLight/prof.sav"),
-				// Linux
-				new File( System.getProperty("user.home") + "/.local/share/FasterThanLight/prof.sav")
-		};
-		
-		for ( File file : profileLocations )
+		for ( File file : getPossibleUserDataLocations("prof.sav") ) {
 			if ( file.exists() ) {
 				fc.setSelectedFile( file );
 				break;
 			}
+		}
 		
 		fc.setMultiSelectionEnabled(false);
 		
@@ -757,5 +747,22 @@ public class FTLFrame extends JFrame {
 			statusLbl.setText(text);
 		else
 			statusLbl.setText(" ");
+	}
+
+	public File[] getPossibleUserDataLocations( String fileName ) {
+		if ( fileName == null ) fileName = "";
+
+		File[] locations = new File[] {
+			// Windows XP
+			new File( System.getProperty("user.home") +"/My Documents/My Games/FasterThanLight/"+ fileName),
+			// Windows Vista/7
+			new File( System.getProperty("user.home") +"/Documents/My Games/FasterThanLight/"+ fileName),
+			// Mac
+			new File( System.getProperty("user.home") +"/Library/Application Support/FasterThanLight/"+ fileName),
+			// Linux
+			new File( System.getProperty("user.home") +"/.local/share/FasterThanLight/"+ fileName)
+		};
+
+		return locations;
 	}
 }
