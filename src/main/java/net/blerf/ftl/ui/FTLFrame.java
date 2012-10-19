@@ -103,6 +103,7 @@ public class FTLFrame extends JFrame {
 	private ShipUnlockPanel shipUnlockPanel;
 	private GeneralAchievementsPanel generalAchievementsPanel;
 	private ProfileStatsPanel statsPanel;
+	private SavedGameDumpPanel savedGameDumpPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -150,11 +151,9 @@ public class FTLFrame extends JFrame {
 		JPanel profilePane = new JPanel( new BorderLayout() );
 		tasksPane.add( "Profile", profilePane );
 
-		JToolBar toolbar = new JToolBar();
-		profilePane.add(toolbar, BorderLayout.NORTH);
-		toolbar.setMargin( new Insets(5, 5, 5, 5) );
-		toolbar.setFloatable(false);
-		setupToolbar(toolbar);
+		JToolBar profileToolbar = new JToolBar();
+		setupProfileToolbar(profileToolbar);
+		profilePane.add(profileToolbar, BorderLayout.NORTH);
 		
 		JTabbedPane profileTabsPane = new JTabbedPane();
 		profilePane.add( profileTabsPane, BorderLayout.CENTER );
@@ -166,7 +165,23 @@ public class FTLFrame extends JFrame {
 		profileTabsPane.add( "Ship Unlocks & Achievements" , new JScrollPane( shipUnlockPanel ) );
 		profileTabsPane.add( "General Achievements" , new JScrollPane( generalAchievementsPanel ) );
 		profileTabsPane.add( "Stats" , new JScrollPane( statsPanel ) );
+
 		
+		JPanel savedGamePane = new JPanel( new BorderLayout() );
+		tasksPane.add( "Saved Game", savedGamePane );
+
+		JToolBar savedGameToolbar = new JToolBar();
+		setupSavedGameToolbar(savedGameToolbar);
+		savedGamePane.add(savedGameToolbar, BorderLayout.NORTH);
+
+		JTabbedPane savedGameTabsPane = new JTabbedPane();
+		savedGamePane.add( savedGameTabsPane, BorderLayout.CENTER );
+
+		savedGameDumpPanel = new SavedGameDumpPanel(this);
+
+		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
+
+
 		JPanel statusPanel = new JPanel();
 		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
 		statusPanel.setBorder( BorderFactory.createLoweredBevelBorder() );
@@ -305,10 +320,12 @@ public class FTLFrame extends JFrame {
 		}
 	}
 	
-	private void setupToolbar(final JToolBar toolbar) {
-		
-		log.trace("Initialising toolbar");
-		
+	private void setupProfileToolbar( JToolBar toolbar ) {
+		log.trace( "Initialising Profile toolbar" );
+
+		toolbar.setMargin( new Insets(5, 5, 5, 5) );
+		toolbar.setFloatable(false);
+
 		final JFileChooser fc = new JFileChooser();
 		fc.addChoosableFileFilter( new FileFilter() {
 			@Override
@@ -335,7 +352,7 @@ public class FTLFrame extends JFrame {
 		openButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Open button clicked" );
+				log.trace( "Open profile button clicked" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					RandomAccessFile raf = null;
 					InputStream in = null;
@@ -420,7 +437,7 @@ public class FTLFrame extends JFrame {
 		saveButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace("Save button clicked");
+				log.trace( "Save profile button clicked" );
 				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					FileOutputStream out = null;
 					try {
@@ -506,6 +523,22 @@ public class FTLFrame extends JFrame {
 		});
 		extractButton.addMouseListener( new StatusbarMouseListener(this, "Extract dat content to a directory.") );
 		toolbar.add( extractButton );
+
+		toolbar.add( Box.createHorizontalGlue() );
+
+		JButton aboutButton = createAboutButton();
+		toolbar.add( aboutButton );
+
+		JButton updatesButton = createUpdatesButton();
+		updatesButtonList.add( updatesButton );
+		toolbar.add( updatesButton );
+	}
+
+	private void setupSavedGameToolbar( JToolBar toolbar ) {
+		log.trace( "Initialising SavedGame toolbar" );
+
+		toolbar.setMargin( new Insets(5, 5, 5, 5) );
+		toolbar.setFloatable(false);
 
 		toolbar.add( Box.createHorizontalGlue() );
 
