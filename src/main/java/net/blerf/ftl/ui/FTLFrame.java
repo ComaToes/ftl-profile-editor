@@ -1016,9 +1016,12 @@ public class FTLFrame extends JFrame {
 		for (int i = 0; i < shipUnlocks.size(); i++) {
 			unlocks[i] = shipUnlocks.get(i).isSelected();
 			// Remove ship achievements for locked ships
-			if( !unlocks[i] )
-				for( Achievement ach : DataManager.get().getShipAchievements( DataManager.get().getPlayerShips().get(i) ) )
-						achs.remove( ach.getId() );
+			if ( !unlocks[i] ) {
+				for ( Achievement ach : DataManager.get().getShipAchievements( DataManager.get().getPlayerShips().get(i) ) ) {
+					// Search for records with the doomed id.
+					AchievementRecord.removeFromListById(achs, ach.getId());
+				}
+			}
 		}
 		p.setShipUnlocks(unlocks);
 		
