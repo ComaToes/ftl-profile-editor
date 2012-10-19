@@ -410,13 +410,13 @@ public class FTLFrame extends JFrame {
 						log.trace("Read completed successfully");
 						
 					} catch( Exception e ) {
-						log.error( "Error reading profile", e );
-						showErrorDialog( "Error reading profile: " + e.getMessage() );
+						log.error( "Error reading profile", f );
+						showErrorDialog( "Error reading profile: " + f.getMessage() );
 					} finally {
 						try {if (raf != null) raf.close();}
-						catch (IOException f) {}
+						catch (IOException g) {}
 						try {if (in != null) in.close();}
-						catch (IOException f) {}
+						catch (IOException g) {}
 					}
 				} else {
 					log.trace("Open dialog cancelled");
