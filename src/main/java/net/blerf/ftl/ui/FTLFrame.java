@@ -6,18 +6,10 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -34,7 +26,6 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,12 +72,7 @@ import org.apache.logging.log4j.Logger;
 public class FTLFrame extends JFrame {
 	
 	private static final Logger log = LogManager.getLogger(FTLFrame.class);
-	
-	private List<JCheckBox> shipUnlocks = new ArrayList<JCheckBox>();
-	
-	private HashMap<Achievement,JCheckBox> shipAchievements = new HashMap<Achievement, JCheckBox>();
-	private HashMap<Achievement,JCheckBox> generalAchievements = new HashMap<Achievement, JCheckBox>();
-	
+
 	private Profile profile;
 	
 	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource("open.gif") );
@@ -113,10 +99,9 @@ public class FTLFrame extends JFrame {
 	private JButton updatesButton;
 	private Runnable updatesCallback;
 
-	private JPanel topScoresPanel;
-	private StatsSubPanel sessionRecordsPanel;
-	private StatsSubPanel crewRecordsPanel;
-	private StatsSubPanel totalStatsPanel;
+	private ShipUnlockPanel shipUnlockPanel;
+	private GeneralAchievementsPanel generalAchievementsPanel;
+	private ProfileStatsPanel statsPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -125,23 +110,6 @@ public class FTLFrame extends JFrame {
 	public FTLFrame(int version) {
 		
 		this.version = version;
-		
-		// Create empty profile
-		profile = new Profile();
-		profile.setVersion(4);
-		boolean[] emptyUnlocks = new boolean[12]; // TODO magic number
-		emptyUnlocks[0] = true; // Kestrel starts unlocked
-		profile.setShipUnlocks( emptyUnlocks );
-		profile.setAchievements( new ArrayList<AchievementRecord>() );
-		Stats stats = new Stats();
-		stats.setTopScores( new ArrayList<Score>() );
-		stats.setShipBest( new ArrayList<Score>() );
-		stats.setMostEvasions( new CrewRecord("", "", 0, 0) );
-		stats.setMostJumps( new CrewRecord("", "", 0, 0) );
-		stats.setMostKills( new CrewRecord("", "", 0, 0) );
-		stats.setMostRepairs( new CrewRecord("", "", 0, 0) );
-		stats.setMostSkills( new CrewRecord("", "", 0, 0) );
-		profile.setStats( stats );
 		
 		// GUI setup
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -172,21 +140,31 @@ public class FTLFrame extends JFrame {
 		
 		initCheckboxIcons();
 		
-		JPanel contentPane = new JPanel();
-		contentPane.setLayout( new BorderLayout() );
+		JPanel contentPane = new JPanel( new BorderLayout() );
 		setContentPane(contentPane);
 		
-		JTabbedPane tabPane = new JTabbedPane();
-		contentPane.add( tabPane );
-		
+		JTabbedPane tasksPane = new JTabbedPane();
+		contentPane.add( tasksPane, BorderLayout.CENTER );
+
+		JPanel profilePane = new JPanel( new BorderLayout() );
+		tasksPane.add( "Profile", profilePane );
+
 		JToolBar toolbar = new JToolBar();
-		contentPane.add(toolbar, BorderLayout.PAGE_START);
+		profilePane.add(toolbar, BorderLayout.NORTH);
 		toolbar.setMargin( new Insets(5, 5, 5, 5) );
+		toolbar.setFloatable(false);
 		setupToolbar(toolbar);
 		
-		tabPane.add( "Ship Unlocks & Achievements" , new JScrollPane( createUnlocksPanel() ) );
-		tabPane.add( "General Achievements" , new JScrollPane( createAchievementsPanel() ) );
-		tabPane.add( "Stats" , new JScrollPane( createStatsPanel() ) );
+		JTabbedPane profileTabsPane = new JTabbedPane();
+		profilePane.add( profileTabsPane, BorderLayout.CENTER );
+
+		shipUnlockPanel = new ShipUnlockPanel(this);
+		generalAchievementsPanel = new GeneralAchievementsPanel(this);
+		statsPanel = new ProfileStatsPanel(this);
+
+		profileTabsPane.add( "Ship Unlocks & Achievements" , new JScrollPane( shipUnlockPanel ) );
+		profileTabsPane.add( "General Achievements" , new JScrollPane( generalAchievementsPanel ) );
+		profileTabsPane.add( "Stats" , new JScrollPane( statsPanel ) );
 		
 		JPanel statusPanel = new JPanel();
 		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
@@ -199,7 +177,7 @@ public class FTLFrame extends JFrame {
 		contentPane.add( statusPanel, BorderLayout.SOUTH );
 
 		// Load blank profile (sets Kestrel unlock)
-		loadProfile(profile);
+		loadProfile( Profile.createEmptyProfile() );
 
 		// Check for updates in a seperate thread.
 		setStatusText( "Checking for updates..." );
@@ -214,84 +192,7 @@ public class FTLFrame extends JFrame {
 	}
 	
 	private void showErrorDialog( String message ) {
-		
 		JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
-		
-	}
-	
-	private JPanel createAchievementsPanel() {
-		
-		log.trace("Creating Achievements panel");
-		JPanel achPanel = new JPanel();
-		achPanel.setLayout( new BoxLayout(achPanel, BoxLayout.Y_AXIS) );
-		
-		List<Achievement> achievements = DataManager.get().getGeneralAchievements();
-		
-		// TODO magic offsets
-		achPanel.add( createAchievementsSubPanel( "General Progression", achievements, 0 ) );
-		achPanel.add( createAchievementsSubPanel( "Going the Distance", achievements, 7 ) );
-		achPanel.add( createAchievementsSubPanel( "Skill and Equipment Feats", achievements, 14 ) );
-		
-		return achPanel;
-		
-	}
-	
-	private JPanel createAchievementsSubPanel( String title, List<Achievement> achievements, int offset ) {
-		
-		JPanel panel = new JPanel();
-		panel.setBorder( BorderFactory.createTitledBorder(title) );
-		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
-		
-		// TODO magic number 7
-		for (int i = 0; i < 7; i++) {
-			Achievement ach = achievements.get(i+offset);
-			log.trace("Setting icons for checkbox. Base image: " + "img/" + ach.getImagePath());
-			JCheckBox box = new JCheckBox();
-			setCheckboxIcons(box, "img/" + ach.getImagePath());
-			box.setToolTipText( ach.getName() );
-
-			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
-			box.addMouseListener( new StatusbarMouseListener(this, achDesc) );
-
-			generalAchievements.put(ach, box);
-			panel.add( box );
-		}
-		
-		return panel;
-		
-	}
-
-	private JPanel createStatsPanel() {
-		
-		JPanel statsPanel = new JPanel();
-		statsPanel.setLayout( new GridLayout(0, 2) );
-
-		topScoresPanel = new JPanel();
-		topScoresPanel.setLayout( new BoxLayout(topScoresPanel, BoxLayout.Y_AXIS ) );
-		topScoresPanel.setBorder( BorderFactory.createTitledBorder("Top Scores") );
-		statsPanel.add( topScoresPanel );
-
-		JPanel statsSubPanelsHolder = new JPanel();
-		statsSubPanelsHolder.setLayout( new BoxLayout(statsSubPanelsHolder, BoxLayout.Y_AXIS) );
-		statsPanel.add( statsSubPanelsHolder );
-		
-		sessionRecordsPanel = new StatsSubPanel();
-		sessionRecordsPanel.addFillRow();
-		sessionRecordsPanel.setBorder( BorderFactory.createTitledBorder("Session Records") );
-		statsSubPanelsHolder.add( sessionRecordsPanel );
-		
-		crewRecordsPanel = new StatsSubPanel();
-		crewRecordsPanel.addFillRow();
-		crewRecordsPanel.setBorder( BorderFactory.createTitledBorder("Crew Records") );
-		statsSubPanelsHolder.add( crewRecordsPanel );
-
-		totalStatsPanel = new StatsSubPanel();
-		totalStatsPanel.addFillRow();
-		totalStatsPanel.setBorder( BorderFactory.createTitledBorder("Totals") );
-		statsSubPanelsHolder.add( totalStatsPanel );
-
-		return statsPanel;
-		
 	}
 
 	private void initCheckboxIcons() {
@@ -317,7 +218,7 @@ public class FTLFrame extends JFrame {
 		
 	}
 	
-	private Image getScaledImage( InputStream in ) throws IOException {
+	public Image getScaledImage( InputStream in ) throws IOException {
 		BufferedImage img = ImageIO.read( in );
 		int width = img.getWidth();
 		int height = img.getHeight();
@@ -381,7 +282,7 @@ public class FTLFrame extends JFrame {
 	}
 
 	
-	private void setCheckboxIcons( JCheckBox box, String baseImagePath ) {
+	public void setCheckboxIcons( JCheckBox box, String baseImagePath ) {
 		InputStream stream = null;
 		try {
 			stream = DataManager.get().getResourceInputStream(baseImagePath);
@@ -402,39 +303,6 @@ public class FTLFrame extends JFrame {
 			try {if (stream != null) stream.close();}
 			catch (IOException f) {}
 		}
-		
-	}
-	
-	private JPanel createUnlocksPanel() {
-		
-		log.trace("Creating unlocks panel");
-		JPanel unlockAchPanel = new JPanel();
-		unlockAchPanel.setLayout( new BoxLayout(unlockAchPanel, BoxLayout.Y_AXIS) );
-
-		log.trace("Adding ship unlocks");
-		JPanel shipPanel = new JPanel();
-		unlockAchPanel.add( shipPanel );
-		shipPanel.setBorder( BorderFactory.createTitledBorder("Ship Unlocks") );
-		shipPanel.setLayout( new GridLayout(0, 3) );
-
-		for( ShipBlueprint ship: DataManager.get().getPlayerShips() ) {
-			JCheckBox shipUnlock = new JCheckBox( ship.getShipClass() );
-			setCheckboxIcons(shipUnlock, "img/ship/" + ship.getImg() + "_base.png");
-			shipPanel.add(shipUnlock);
-			shipUnlocks.add(shipUnlock);
-		}
-
-		log.trace("Adding ship achievements");
-		JPanel shipAchPanel = new JPanel();
-		unlockAchPanel.add( shipAchPanel );
-		shipAchPanel.setBorder( BorderFactory.createTitledBorder("Ship Achievements") );
-		shipAchPanel.setLayout( new GridLayout(0, 3) );
-
-		for( ShipBlueprint ship: DataManager.get().getPlayerShips() )
-			shipAchPanel.add( createShipPanel( ship ) );
-
-		return unlockAchPanel;
-		
 	}
 	
 	private void setupToolbar(final JToolBar toolbar) {
@@ -515,10 +383,10 @@ public class FTLFrame extends JFrame {
 						in = new ByteArrayInputStream(data);
 						// Parse file data
 						ProfileParser ftl = new ProfileParser();
-						profile = ftl.readProfile(in);
+						Profile p = ftl.readProfile(in);
 						in.close();
 						
-						FTLFrame.this.loadProfile(profile);
+						FTLFrame.this.loadProfile(p);
 						
 						// Perform mock write
 						ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -612,8 +480,7 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				log.trace("Unlock all ships button clicked");
-				for( JCheckBox box: shipUnlocks )
-					box.setSelected(true);
+				shipUnlockPanel.unlockAllShips();
 			}
 		});
 		unlockShipsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ships.") );
@@ -625,8 +492,7 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				log.trace("Unlock all ship achievements button clicked");
-				for( JCheckBox box: shipAchievements.values() )
-					box.setSelected(true);
+				shipUnlockPanel.unlockAllShipAchievements();
 			}
 		});
 		unlockShipAchsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements.") );
@@ -866,112 +732,28 @@ public class FTLFrame extends JFrame {
 		return updateDialog;
 	}
 	
-	private JPanel createShipPanel( ShipBlueprint ship ) {
-		
-		log.trace("Creating ship panel for: " + ship.getId());
-		
-		JPanel panel = new JPanel();
-		
-		panel.setBorder( BorderFactory.createTitledBorder( ship.getShipClass() ) );
-		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
-		
-		for (Achievement ach : DataManager.get().getShipAchievements(ship)) {
-			JCheckBox box = new JCheckBox();
-			setCheckboxIcons(box, "img/" + ach.getImagePath() );
-			box.setToolTipText( ach.getName() );
-
-			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
-			box.addMouseListener( new StatusbarMouseListener(this, achDesc) );
-
-			shipAchievements.put(ach, box);
-			panel.add( box );
-		}
-		
-		return panel;
-		
-	}
-	
 	public void loadProfile( Profile p ) {
-		
-		log.trace("Loading profile data into UI");
-		
-		boolean[] unlocks = p.getShipUnlocks();
-		for (int i = 0; i < shipUnlocks.size(); i++) {
-			shipUnlocks.get(i).setSelected( unlocks[i] );
-		}
-		
-		for( JCheckBox box : shipAchievements.values() )
-			box.setSelected(false);
-		for( JCheckBox box : generalAchievements.values() )
-			box.setSelected(false);
 
-		for( Entry<Achievement, JCheckBox> e: shipAchievements.entrySet() ) {
-			String achId = e.getKey().getId();
-			JCheckBox box = e.getValue();
-			for( AchievementRecord rec: p.getAchievements() )
-				if( rec.getAchievementId().equals( achId ) )
-					box.setSelected(true);
-		}
-		
-		for( Entry<Achievement, JCheckBox> e: generalAchievements.entrySet() ) {
-			String achId = e.getKey().getId();
-			JCheckBox box = e.getValue();
-			for( AchievementRecord rec: p.getAchievements() )
-				if( rec.getAchievementId().equals( achId ) )
-					box.setSelected(true);
-		}
-		
-		topScoresPanel.removeAll();
-		int i = 0;
-		for( Score s : p.getStats().getTopScores() ) {
-			InputStream stream = null;
-			try {
-				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
-				stream = DataManager.get().getResourceInputStream("img/ship/"+ship.getImg()+"_base.png");
-				Image img = getScaledImage( stream );
-				TopScorePanel tsp = new TopScorePanel( ++i, img, s.getShipName(), s.getScore(), s.getSector(), s.getDifficulty() );
-				topScoresPanel.add( tsp );
-			} catch (IOException e) {
-				log.error(e);
-				showErrorDialog("Error loading profile");
-			}	finally {
-				try {if (stream != null) stream.close();}
-				catch (IOException f) {}
+		try {
+			log.trace("Loading profile data into UI");
+
+			shipUnlockPanel.setProfile(p);
+			generalAchievementsPanel.setProfile(p);
+			statsPanel.setProfile(p);
+
+			profile = p;
+
+		} catch (IOException e) {
+			log.error( "Error while loading profile", e );
+
+			if ( profile != null && profile != p ) {
+				log.info( "Attempting to revert GUI to the previous profile..." );
+				showErrorDialog("Error loading profile.\nAttempting to return to the previous profile...");
+				loadProfile(profile);
+			} else {
+				showErrorDialog("Error loading profile.\nThis has left the GUI in an ambiguous state.\nSaving is not recommended until another profile has successfully loaded.");
 			}
 		}
-
-		Stats stats = p.getStats();
-
-		sessionRecordsPanel.removeAll();
-		sessionRecordsPanel.addRow("Most Ships Defeated", null, null, stats.getMostShipsDefeated());
-		sessionRecordsPanel.addRow("Most Beacons Explored", null, null, stats.getMostBeaconsExplored());
-		sessionRecordsPanel.addRow("Most Scrap Collected", null, null, stats.getMostScrapCollected());
-		sessionRecordsPanel.addRow("Most Crew Hired", null, null, stats.getMostCrewHired());
-		sessionRecordsPanel.addFillRow();
-
-		crewRecordsPanel.removeAll();
-		CrewRecord repairCrewRecord = stats.getMostRepairs();
-		CrewRecord killsCrewRecord = stats.getMostKills();
-		CrewRecord evasionsCrewRecord = stats.getMostEvasions();
-		CrewRecord jumpsCrewRecord = stats.getMostJumps();
-		CrewRecord skillsCrewRecord = stats.getMostSkills();
-
-		crewRecordsPanel.addRow("Most Repairs", getCrewIcon(repairCrewRecord.getRace()), repairCrewRecord.getName(), repairCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Combat Kills", getCrewIcon(killsCrewRecord.getRace()), killsCrewRecord.getName(), killsCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Piloted Evasions", getCrewIcon(evasionsCrewRecord.getRace()), evasionsCrewRecord.getName(), evasionsCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Jumps Survived", getCrewIcon(jumpsCrewRecord.getRace()), jumpsCrewRecord.getName(), jumpsCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Skill Masteries", getCrewIcon(skillsCrewRecord.getRace()), skillsCrewRecord.getName(), skillsCrewRecord.getScore());
-		crewRecordsPanel.addFillRow();
-
-		totalStatsPanel.removeAll();
-		totalStatsPanel.addRow("Total Ships Defeated", null, null, stats.getTotalShipsDefeated());
-		totalStatsPanel.addRow("Total Beacons Explored", null, null, stats.getTotalBeaconsExplored());
-		totalStatsPanel.addRow("Total Scrap Collected", null, null, stats.getTotalScrapCollected());
-		totalStatsPanel.addRow("Total Crew Hired", null, null, stats.getTotalCrewHired());
-		totalStatsPanel.addBlankRow();
-		totalStatsPanel.addRow("Total Games Played", null, null, stats.getTotalGamesPlayed());
-		totalStatsPanel.addRow("Total Victories", null, null, stats.getTotalVictories());
-		totalStatsPanel.addFillRow();
 
 		this.repaint();
 	}
@@ -980,53 +762,10 @@ public class FTLFrame extends JFrame {
 		
 		log.trace("Updating profile from UI selections");
 		
-		List<Achievement> allAchs = DataManager.get().getAchievements();
-		List<AchievementRecord> achs = new ArrayList<AchievementRecord>();
-		List<AchievementRecord> existingAchs = p.getAchievements();
-		
-		for( Achievement ach: allAchs ) {
-			String id = ach.getId();
-			JCheckBox box = shipAchievements.get(ach);
-			if( box == null )
-				box = generalAchievements.get(ach);
-			
-			if( box != null ) {
-				if( box.isSelected() ) {
-					
-					boolean existing = false;
-					for( AchievementRecord rec: existingAchs )
-						if( rec.getAchievementId().equals(id) ) {
-							achs.add(rec);
-							existing = true;
-						}
-					
-					if( !existing )
-						achs.add( new AchievementRecord(id, Difficulty.EASY) ); // TODO allow user selection of difficulty
-					
-				}
-			} else {
-				// Is an achievement we haven't created a checkbox for
-				for( AchievementRecord rec: existingAchs )
-					if( rec.getAchievementId().equals(id) )
-						achs.add(rec);
-			}
-		}
+		shipUnlockPanel.updateProfile(p);		
+		generalAchievementsPanel.updateProfile(p);
+		// profileStatsPanel doesn't modify anything.
 
-		boolean[] unlocks = p.getShipUnlocks();
-		for (int i = 0; i < shipUnlocks.size(); i++) {
-			unlocks[i] = shipUnlocks.get(i).isSelected();
-			// Remove ship achievements for locked ships
-			if ( !unlocks[i] ) {
-				for ( Achievement ach : DataManager.get().getShipAchievements( DataManager.get().getPlayerShips().get(i) ) ) {
-					// Search for records with the doomed id.
-					AchievementRecord.removeFromListById(achs, ach.getId());
-				}
-			}
-		}
-		p.setShipUnlocks(unlocks);
-		
-		p.setAchievements(achs);
-		
 		loadProfile(p);
 		
 	}
@@ -1036,103 +775,5 @@ public class FTLFrame extends JFrame {
 			statusLbl.setText(text);
 		else
 			statusLbl.setText(" ");
-	}
-
-
-
-	private class StatusbarMouseListener extends MouseAdapter {
-		private FTLFrame frame = null;
-		private String text = null;
-
-		public StatusbarMouseListener( FTLFrame frame, String text ) {
-			this.frame = frame;
-			this.text = text;
-		}
-
-		public void mouseEntered( MouseEvent e ) {
-			frame.setStatusText( text );
-		}
-		public void mouseExited( MouseEvent e ) {
-			frame.setStatusText("");
-		}
-	}
-
-
-
-	private class StatsSubPanel extends JPanel {
-		private int COLUMN_COUNT = 0;
-		private final int NAME_COL = COLUMN_COUNT++;
-		private final int RECIPIENT_COL = COLUMN_COUNT++;
-		private final int VALUE_COL = COLUMN_COUNT++;
-
-		GridBagConstraints gridC = null;
-
-		public StatsSubPanel() {
-			super(new GridBagLayout());
-			removeAll();
-		}
-
-		@Override
-		public void removeAll() {
-			super.removeAll();
-			gridC = new GridBagConstraints();
-			gridC.anchor = GridBagConstraints.WEST;
-			gridC.fill = GridBagConstraints.NONE;
-			gridC.weightx = 1.0;
-			gridC.weighty = 0.0;
-			gridC.insets = new Insets(2, 4, 2, 4);
-			gridC.gridwidth = 1;
-			gridC.gridx = 0;
-			gridC.gridy = 0;
-		}
-
-		public void addRow(String name, ImageIcon icon, String recipient, int value) {
-			gridC.gridx = NAME_COL;
-			gridC.anchor = GridBagConstraints.WEST;
-			gridC.fill = GridBagConstraints.NONE;
-			gridC.weightx = 1.0;
-			JLabel nameLbl = new JLabel(name);
-			this.add(nameLbl, gridC);
-
-			gridC.gridx = RECIPIENT_COL;
-			gridC.anchor = GridBagConstraints.CENTER;
-			gridC.fill = GridBagConstraints.NONE;
-			gridC.weightx = 1.0;
-			JLabel recipientLbl = new JLabel();
-			recipientLbl.setHorizontalTextPosition(SwingConstants.RIGHT);
-			if (recipient != null)
-				recipientLbl.setText(recipient);
-			if (icon != null)
-				recipientLbl.setIcon(icon);
-			this.add(recipientLbl, gridC);
-
-			gridC.gridx = VALUE_COL;
-			gridC.anchor = GridBagConstraints.CENTER;
-			gridC.weightx = 0.0;
-			JLabel valueLbl = new JLabel(Integer.toString(value));
-			this.add(valueLbl, gridC);
-
-			gridC.gridy++;
-		}
-
-		public void addBlankRow() {
-			gridC.fill = GridBagConstraints.NONE;
-			gridC.weighty = 0.0;
-			gridC.gridwidth = GridBagConstraints.REMAINDER;
-			gridC.gridx = 0;
-
-			this.add(Box.createVerticalStrut(12), gridC);
-			gridC.gridy++;
-		}
-
-		public void addFillRow() {
-			gridC.fill = GridBagConstraints.VERTICAL;
-			gridC.weighty = 1.0;
-			gridC.gridwidth = GridBagConstraints.REMAINDER;
-			gridC.gridx = 0;
-
-			this.add(Box.createVerticalGlue(), gridC);
-			gridC.gridy++;
-		}
 	}
 }
