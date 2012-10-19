@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -64,6 +66,13 @@ import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.ProfileParser;
+import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.ui.ExtensionFileFilter;
+import net.blerf.ftl.ui.GeneralAchievementsPanel;
+import net.blerf.ftl.ui.ProfileStatsPanel;
+import net.blerf.ftl.ui.SavedGameDumpPanel;
+import net.blerf.ftl.ui.ShipUnlockPanel;
+import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.ShipBlueprint;
 
@@ -75,6 +84,7 @@ public class FTLFrame extends JFrame {
 	private static final Logger log = LogManager.getLogger(FTLFrame.class);
 
 	private Profile profile;
+	SavedGameParser.SavedGameState gameState = null;  // Can't make an empty one yet.
 	
 	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource("open.gif") );
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource("save.gif") );
@@ -540,6 +550,97 @@ public class FTLFrame extends JFrame {
 		toolbar.setMargin( new Insets(5, 5, 5, 5) );
 		toolbar.setFloatable(false);
 
+		final JFileChooser fc = new JFileChooser();
+		fc.addChoosableFileFilter( new FileFilter() {
+			@Override
+			public String getDescription() {
+				return "FTL Saved Game (continue.sav)";
+			}
+			@Override
+			public boolean accept(File f) {
+				return f.isDirectory() || f.getName().equalsIgnoreCase("continue.sav");
+			}
+		});
+		
+		for ( File file : getPossibleUserDataLocations("continue.sav") ) {
+			if ( file.exists() ) {
+				fc.setSelectedFile( file );
+				break;
+			}
+		}
+		
+		fc.setMultiSelectionEnabled(false);
+
+		// Create open button
+		JButton openButton = new JButton("Open", openIcon);
+		openButton.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.trace( "Open saved game button clicked" );
+				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					try {
+						log.trace( "File selected: " + fc.getSelectedFile().getAbsolutePath() );
+
+						SavedGameParser parser = new SavedGameParser();
+						SavedGameParser.SavedGameState gs = parser.readSavedGame( fc.getSelectedFile() );
+						loadGameState( gs );
+
+						log.trace("Read completed successfully");
+						
+					} catch( Exception f ) {
+						log.error( "Error reading saved game", f );
+						showErrorDialog("Error reading saved game: " + f.getMessage());
+					}
+				} else {
+					log.trace( "Open dialog cancelled" );
+				}
+			}
+		});
+		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing saved game.") );
+		toolbar.add( openButton );
+
+		JButton dumpButton = new JButton("Dump", saveIcon);
+		dumpButton.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.trace( "Dump saved game button clicked" );
+
+				if ( gameState == null ) return;  // No default empty state yet.
+
+				JFileChooser dumpChooser = new JFileChooser();
+				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
+
+				ExtensionFileFilter txtFilter = new ExtensionFileFilter("Text Files (*.txt)", new String[] {".txt"});
+				dumpChooser.addChoosableFileFilter( txtFilter );
+
+				if ( dumpChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					BufferedWriter out = null;
+					try {
+						log.trace( "File selected: " + dumpChooser.getSelectedFile().getAbsolutePath() );
+
+						File file = dumpChooser.getSelectedFile();
+						if ( !file.exists() && dumpChooser.getFileFilter() == txtFilter && !txtFilter.accept(file) ) {
+							file = new File( file.getAbsolutePath() + txtFilter.getPrimarySuffix() );
+						}
+
+						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( file ) ) );
+						out.write(gameState.toString());
+						out.close();
+						
+					} catch( IOException f ) {
+						log.error( "Error writing profile", f );
+						showErrorDialog( "Error saving profile: "+ f.getMessage() );
+					} finally {
+						try {if (out != null) out.close();}
+						catch (IOException g) {}
+					}
+				} else
+					log.trace( "Dump dialog cancelled" );
+			}
+		});
+		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump saved game info to a text file.") );
+		toolbar.add( dumpButton );
+
 		toolbar.add( Box.createHorizontalGlue() );
 
 		JButton aboutButton = createAboutButton();
@@ -787,7 +888,13 @@ public class FTLFrame extends JFrame {
 		// profileStatsPanel doesn't modify anything.
 
 		loadProfile(p);
-		
+	}
+
+	public void loadGameState( SavedGameParser.SavedGameState gs ) {
+
+		savedGameDumpPanel.setGameState( gs );
+
+		gameState = gs;
 	}
 
 	public void setStatusText( String text ) {
