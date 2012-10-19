@@ -432,22 +432,25 @@ public class FTLFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				log.trace("Save button clicked");
 				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					FileOutputStream out = null;
 					try {
-						
-						File f = fc.getSelectedFile();
-						log.trace("File selected: " + f.getAbsolutePath());
+						File file = fc.getSelectedFile();
+						log.trace("File selected: " + file.getAbsolutePath());
 						ProfileParser ftl = new ProfileParser();
-						OutputStream out = new FileOutputStream( f );
+						out = new FileOutputStream( file );
 						FTLFrame.this.updateProfile(profile);
 						ftl.writeProfile(out, profile);
-						out.close();
 						
-					} catch( IOException ex ) {
-						log.error("Error writing profile",ex);
-						showErrorDialog("Error saving profile: " + ex.getMessage());
+					} catch( IOException f ) {
+						log.error( "Error writing profile", f );
+						showErrorDialog( "Error saving profile: " + f.getMessage() );
+					} finally {
+						try {if (out != null) out.close();}
+						catch (IOException g) {}
 					}
-				} else
-					log.trace("Save dialog cancelled");
+				} else {
+					log.trace( "Save dialog cancelled" );
+				}
 			}
 		});
 		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current profile.") );
