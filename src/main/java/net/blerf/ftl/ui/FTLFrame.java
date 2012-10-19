@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.ArrayList;
@@ -346,18 +347,16 @@ public class FTLFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				log.trace( "Open button clicked" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					RandomAccessFile raf = null;
+					InputStream in = null;
 					try {
-
-						File f = fc.getSelectedFile();
-						
-						log.trace( "File selected: " + f.getAbsolutePath() );
-						
-						InputStream in = new FileInputStream( f );
+						log.trace( "File selected: " + fc.getSelectedFile().getAbsolutePath() );
 						
 						// Read whole file so we can hash it
-						byte[] data = new byte[(int)f.length()];
-						in.read(data);
-						in.close();
+						raf = new RandomAccessFile( fc.getSelectedFile(), "r" );
+						byte[] data = new byte[(int)raf.length()];
+						raf.readFully(data);
+						raf.close();
 						
 						MessageDigest md = MessageDigest.getInstance("MD5");
 						byte[] readHash = md.digest(data);
@@ -410,12 +409,18 @@ public class FTLFrame extends JFrame {
 						
 						log.trace("Read completed successfully");
 						
-					} catch( Exception ex ) {
-						log.error("Error reading profile",ex);
-						showErrorDialog("Error reading profile: " + ex.getMessage());
+					} catch( Exception e ) {
+						log.error( "Error reading profile", e );
+						showErrorDialog( "Error reading profile: " + e.getMessage() );
+					} finally {
+						try {if (raf != null) raf.close();}
+						catch (IOException f) {}
+						try {if (in != null) in.close();}
+						catch (IOException f) {}
 					}
-				} else
+				} else {
 					log.trace("Open dialog cancelled");
+				}
 			}
 		});
 		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing profile.") );
