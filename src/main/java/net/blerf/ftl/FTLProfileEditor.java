@@ -38,8 +38,8 @@ public class FTLProfileEditor {
 			
 			Properties config = new Properties();
 			
-			if( propFile.exists() ) {
-				log.trace("Loading properties from config file");
+			if ( propFile.exists() ) {
+				log.trace( "Loading properties from config file" );
 				in = new FileInputStream(propFile);
 				config.load( in );
 			}
@@ -47,40 +47,41 @@ public class FTLProfileEditor {
 			// FTL path
 			String ftlPathString = config.getProperty("ftlPath");
 			
-			if( ftlPathString != null ) {
-				log.trace("Using FTL path from config: " + ftlPathString);
+			if ( ftlPathString != null ) {
+				log.trace( "Using FTL path from config: " + ftlPathString );
 				ftlPath = new File(ftlPathString);
 			} else {
-				log.trace("No FTL path available");
+				log.trace( "No FTL path available" );
 				ftlPath = promptForFtlPath();
-				if( ftlPath == null )
+				if ( ftlPath == null )
 					return; // User cancelled, exit
-				config.setProperty("ftlPath", ftlPath.getAbsolutePath());
+				config.setProperty( "ftlPath", ftlPath.getAbsolutePath() );
 				out = new FileOutputStream(propFile);
-				config.store( out , "FTL Profile Editor - Config File" );
+				config.store( out, "FTL Profile Editor - Config File" );
 			}
 			
 			// LnF
 			String useDefaultUI = config.getProperty("useDefaultUI");
 			
-			if( useDefaultUI == null || !useDefaultUI.equals("true") ) {
+			if ( useDefaultUI == null || !useDefaultUI.equals("true") ) {
 				try {
 					log.trace( "Using system Look and Feel" );
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 				} catch (Exception e) {
 					log.error( "Error setting system Look and Feel", e );
 				}
-			} else
+			} else {
 				log.trace( "Using default Look and Feel" );
+			}
 			
 		} catch (IOException e) {
 			showErrorDialog( "Error loading config from " + propFile.getPath() );
-			log.error("Error loading props", e);
+			log.error( "Error loading props", e );
 			return;
 			
 		} finally {
-			if( in != null ) { try { in.close(); } catch(IOException e) {} }
-			if( out != null ) { try { out.close(); } catch(IOException e) {} }
+			if ( in != null ) { try { in.close(); } catch (IOException e) {} }
+			if ( out != null ) { try { out.close(); } catch (IOException e) {} }
 		}
 		
 		// Initialise data store
@@ -89,13 +90,14 @@ public class FTLProfileEditor {
 			DataManager.init( ftlPath );
 			
 		} catch (Exception e) {
-			showErrorDialog( "Error unpacking FTL data files" );
-			log.error( "Error unpacking FTL data files", e );
+			showErrorDialog( "Error parsing FTL data files" );
+			log.error( "Error parsing FTL data files", e );
 		}
 
 		try {
 			FTLFrame frame = new FTLFrame(VERSION);
 			frame.setVisible(true);
+
 		} catch (Exception e) {
 			log.error( "Exception while creating FTLFrame", e );
 			// Required to kill Swing or process will remain active
@@ -109,25 +111,25 @@ public class FTLProfileEditor {
 		String steamPath = "Steam/steamapps/common/FTL Faster Than Light";
 		String gogPath = "GOG.com/Faster Than Light";
 		File[] paths = new File[] {
-					// Windows - Steam
-					new File( new File(""+System.getenv("ProgramFiles(x86)")), steamPath ),
-					new File( new File(""+System.getenv("ProgramFiles")), steamPath ),
-					// Windows - GOG
-					new File( new File(""+System.getenv("ProgramFiles(x86)")), gogPath ),
-					new File( new File(""+System.getenv("ProgramFiles")), gogPath )
-					// TODO add more
-				};
+			// Windows - Steam
+			new File( new File(""+System.getenv("ProgramFiles(x86)")), steamPath ),
+			new File( new File(""+System.getenv("ProgramFiles")), steamPath ),
+			// Windows - GOG
+			new File( new File(""+System.getenv("ProgramFiles(x86)")), gogPath ),
+			new File( new File(""+System.getenv("ProgramFiles")), gogPath )
+			// TODO add more
+		};
 		
 		File ftlPath = null;
 		
-		for( File path: paths ) {
-			if( path.exists() ) {
+		for ( File path: paths ) {
+			if ( path.exists() ) {
 				ftlPath = path;
 				break;
 			}
 		}
 		
-		if( ftlPath == null ) {
+		if ( ftlPath == null ) {
 			
 			log.trace("FTL path not located automatically. Prompting user for location.");
 			
@@ -149,19 +151,19 @@ public class FTLProfileEditor {
 			
 			// TODO Store full data file path - Mac install is packaged and does not have the resources dir
 			// (Will need to add something to convert existing config files)
-			if( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
+			if ( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
 				ftlPath = fc.getSelectedFile().getParentFile().getParentFile();
-				log.trace("User selected: " + ftlPath.getAbsolutePath());
+				log.trace( "User selected: " + ftlPath.getAbsolutePath() );
 			} else
-				log.trace("User cancelled FTL path selection");
+				log.trace( "User cancelled FTL path selection" );
 
 		}
 		
-		if( ftlPath != null && ftlPath.exists() && ftlPath.isDirectory() && new File(ftlPath,"resources/data.dat").exists() ) {
-			log.trace("FTL located at: " + ftlPath.getAbsolutePath());
+		if ( ftlPath != null && ftlPath.exists() && ftlPath.isDirectory() && new File(ftlPath,"resources/data.dat").exists() ) {
+			log.trace( "FTL located at: " + ftlPath.getAbsolutePath() );
 			return ftlPath;
 		} else {
-			log.trace("FTL not located");
+			log.trace( "FTL not located" );
 			showErrorDialog( "FTL data not found. FTL Profile Editor will now exit." );
 			System.exit(0);
 		}

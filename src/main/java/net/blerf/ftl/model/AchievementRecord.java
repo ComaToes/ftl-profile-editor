@@ -1,6 +1,10 @@
 package net.blerf.ftl.model;
 
+import java.util.List;
+import java.util.ListIterator;
+
 import net.blerf.ftl.model.Score.Difficulty;
+
 
 public class AchievementRecord {
 	
@@ -29,5 +33,23 @@ public class AchievementRecord {
 	}
 
 	
-	
+	public static boolean listContainsId(List<AchievementRecord> achList, String achievementId) {
+		boolean found = false;
+		for ( AchievementRecord rec : achList ) {
+			if ( rec.getAchievementId().equals(achievementId) ) {
+				found = true;
+				break;
+			}
+		}
+		return found;
+	}
+
+	public static void removeFromListById(List<AchievementRecord> achList, String achievementId) {
+		for ( ListIterator<AchievementRecord> it = achList.listIterator(); it.hasNext(); ) {
+			AchievementRecord rec = it.next();
+			if ( rec.getAchievementId().equals(achievementId) ) {
+				it.remove();
+			}
+		}
+	}
 }

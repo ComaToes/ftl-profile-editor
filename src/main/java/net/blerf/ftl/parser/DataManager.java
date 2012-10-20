@@ -1,6 +1,7 @@
 package net.blerf.ftl.parser;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 import javax.xml.bind.JAXBException;
 
+import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.ShipBlueprint;
@@ -38,6 +40,7 @@ public class DataManager {
 	private Map<String, ShipBlueprint> ships;
 	private List<ShipBlueprint> playerShips; // Type A's
 	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
+	private Map<String, ShipLayout> shipLayouts;
 	
 	private	MappedDatParser dataParser = null;
 	private	MappedDatParser resourceParser = null;
@@ -59,12 +62,12 @@ public class DataManager {
 			blueprints = dataParser.readBlueprints( blue_stream );
 		
 			generalAchievements = new ArrayList<Achievement>();
-			for( Achievement ach: achievements )
-				if( ach.getShipId() == null )
+			for( Achievement ach : achievements )
+				if ( ach.getShipId() == null )
 					generalAchievements.add(ach);
 		
 			ships = new HashMap<String, ShipBlueprint>();
-			for( ShipBlueprint ship: blueprints.getShipBlueprint() )
+			for ( ShipBlueprint ship : blueprints.getShipBlueprint() )
 				ships.put( ship.getId() , ship );
 		
 			playerShips = new ArrayList<ShipBlueprint>();
@@ -79,13 +82,16 @@ public class DataManager {
 			playerShips.add( ships.get("PLAYER_SHIP_CRYSTAL") );
 		
 			shipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
-			for(ShipBlueprint ship: playerShips) {
+			for (ShipBlueprint ship: playerShips) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
-				for( Achievement ach: achievements )
-					if( ship.getId().equals( ach.getShipId() ) )
+				for ( Achievement ach : achievements )
+					if ( ship.getId().equals( ach.getShipId() ) )
 						shipAchs.add(ach);
 				shipAchievements.put( ship, shipAchs );
 			}
+
+			// This'll populate as layouts are requested.
+			shipLayouts = new HashMap<String, ShipLayout>();
 		
 		} catch (IOException e) {
 			log.error( "Error while constructing DataManager", e );
@@ -141,5 +147,29 @@ public class DataManager {
 	public List<Achievement> getGeneralAchievements() {
 		return generalAchievements;
 	}
-	
+
+	public ShipLayout getShipLayout(String id) {
+		ShipLayout result = shipLayouts.get(id);
+
+		if ( result == null ) {  // Wasn't cached; try parsing it.
+			InputStream in = null;
+			try {
+				in = getDataInputStream("data/"+ id +".txt");
+				result = dataParser.readLayout(in);
+				shipLayouts.put( id, result );
+
+			} catch (FileNotFoundException e) {
+				log.error( "No ShipLayout found for id: "+ id );
+
+			} catch (IOException e) {
+				log.error( "An error occurred while parsing ShipLayout: "+ id, e );
+
+			} finally {
+				try {if (in != null) in.close();}
+				catch (IOException f) {}
+			}
+		}
+
+		return result;
+	}
 }
