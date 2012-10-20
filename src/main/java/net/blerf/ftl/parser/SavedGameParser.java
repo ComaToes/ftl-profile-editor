@@ -188,7 +188,7 @@ public class SavedGameParser extends DatParser {
 		crew.setWeaponSkill( readInt(in) );  // Maybe
 		crew.setRepairSkill( readInt(in) );
 		crew.setDigamma( readInt(in) );      // ?
-		crew.setZeta( readInt(in) );         // Always 1?
+		crew.setGender( readInt(in) );       // 1 == male, 0 == female (only human females are 0, prob because other races don't have female gfx)
 		crew.setEta( readInt(in) );          // Matches repair?
 		crew.setTheta( readInt(in) );        // Matches digamma?
 		crew.setCombatSkill( readInt(in) );  // Maybe
@@ -638,9 +638,10 @@ public class SavedGameParser extends DatParser {
 		private int weaponSkill, repairSkill, combatSkill;
 		private int jumpsSurvived;
 		private int x, y;
+		private int gender;
 
 		private int unknownAlpha;
-		private int unknownEpsilon, unknownDigamma, unknownZeta, unknownEta;
+		private int unknownEpsilon, unknownDigamma, unknownEta;
 		private int unknownTheta, unknownIota;
 
 		public CrewState() {
@@ -660,11 +661,11 @@ public class SavedGameParser extends DatParser {
 		public void setJumpsSurvived( int n ) {jumpsSurvived = n; }
 		public void setX( int x ) { this.x = x; };
 		public void setY( int y ) { this.y = x; };
+		public void setGender( int gender ) { this.gender = gender; }
 
 		public void setAlpha( int n ) { unknownAlpha = n; }
 		public void setEpsilon( int n ) { unknownEpsilon = n; }
 		public void setDigamma( int n ) { unknownDigamma = n; }
-		public void setZeta( int n ) { unknownZeta = n; }
 		public void setEta( int n ) { unknownEta = n; }
 		public void setTheta( int n ) { unknownTheta = n; }
 		public void setIota( int n ) { unknownIota = n; }
@@ -684,11 +685,11 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Combat Skill?:  %3d\n", combatSkill));
 			result.append(String.format("Jumps Survived: %3d\n", jumpsSurvived));
 			result.append(String.format("Position:       (%d,%d)\n", x, y));
+			result.append(String.format("Gender:         %s\n", gender == 1 ? "Male" : "Female" ));
 			result.append("/ / / Unknowns / / /\n");
 			result.append(String.format("Alpha:          %3d\n", unknownAlpha));
 			result.append(String.format("Epsilon:        %3d\n", unknownEpsilon));
 			result.append(String.format("Digamma:        %3d\n", unknownDigamma));
-			result.append(String.format("Zeta:           %3d\n", unknownZeta));
 			result.append(String.format("Eta:            %3d\n", unknownEta));
 			result.append(String.format("Theta:          %3d\n", unknownTheta));
 			result.append(String.format("Iota:           %3d\n", unknownIota));
