@@ -42,7 +42,9 @@ public class SavedGameParser extends DatParser {
 			String playerShipBlueprintId = readString(in);  // Redundant.
 			gameState.setPlayerShipInfo( playerShipName, playerShipBlueprintId );
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+			gameState.setSectorNumber( readInt(in) );
+
+			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 
 			int stateVarCount = readInt(in);
 			for (int i=0; i < stateVarCount; i++) {
@@ -264,9 +266,12 @@ public class SavedGameParser extends DatParser {
 	public class SavedGameState {
 		public String playerShipName = "";
 		public String playerShipBlueprintId = "";
+		public int sectorNumber = 1;
 		public HashMap<String,Integer> stateVars = new HashMap<String,Integer>();
 		public ShipState playerShipState = null;
 		public ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+
+		public void setSectorNumber( int n ) { sectorNumber = n; }
 
 		/**
 		 * Sets a state var.
@@ -314,6 +319,7 @@ public class SavedGameParser extends DatParser {
 			boolean first = true;
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
+			result.append(String.format("Sector: %d\n", sectorNumber));
 
 			result.append("\nState Vars...\n");
 			for (Map.Entry<String, Integer> entry : stateVars.entrySet()) {
