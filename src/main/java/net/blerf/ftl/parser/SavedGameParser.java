@@ -202,11 +202,11 @@ public class SavedGameParser extends DatParser {
 		RoomState room = new RoomState();
 		room.setOxygen( readInt(in) );
 
-		// TODO: Find out if this should loop v first instead.
 		for (int h=0; h < squaresH; h++) {
 			for (int v=0; v < squaresV; v++) {
-				// Dunno what these ints are. One of em's likely for fire.
-				// Values in the wild: 0 / 0 / -1.
+				// Dunno what the third int is. The others are for fire.
+				// Values in the wild: 0-100 / 0-100 / -1.
+				// Probably the health of a breach.
 				room.addSquare( readInt(in), readInt(in), readInt(in) );
 			}
 		}
@@ -701,8 +701,20 @@ public class SavedGameParser extends DatParser {
 
 		public void setOxygen( int n ) { oxygen = n; }
 
-		public void addSquare( int alpha, int beta, int gamma ) {
-			squareList.add( new int[] {alpha, beta, gamma} );
+		/**
+		 * Adds a floor square to the room.
+		 * Squares are indexed horizontally, left-to-right, wrapping
+		 * into the next row down.
+		 *
+		 * Squares adjacent to a fire grow closer to igniting as
+		 * time passes. Then a new fire spawns in them at full health.
+		 *
+		 * @param fireHealth 0 to 100.
+		 * @param ignitionProgress 0 to 100.
+		 * @param gamma -1?
+		 */
+		public void addSquare( int fireHealth, int ignitionProgress, int gamma ) {
+			squareList.add( new int[] {fireHealth, ignitionProgress, gamma} );
 		}
 
 		public String toString() {
@@ -710,7 +722,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
 			result.append("/ / / Unknowns / / /\n");
 			for (int[] square : squareList) {
-				result.append(String.format("Square: %2d? %2d? %2d?\n", square[0], square[1], square[2]));
+				result.append(String.format("Square: Fire HP: %3d%%, Ignition: %3d%% %2d?\n", square[0], square[1], square[2]));
 			}
 			return result.toString();
 		}
