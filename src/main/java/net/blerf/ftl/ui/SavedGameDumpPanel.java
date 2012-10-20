@@ -2,6 +2,7 @@ package net.blerf.ftl.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ public class SavedGameDumpPanel extends JPanel {
 
 		dumpArea = new JTextArea("");
 		dumpArea.setEditable(false);
+		dumpArea.setFont( new Font( "Monospaced", Font.PLAIN, dumpArea.getFont().getSize() ) );
 		//dumpArea.setOpaque(false);
 		dumpArea.setBackground( new Color(212, 208, 200) );
 		JScrollPane dumpScrollPane = new JScrollPane( dumpArea );
