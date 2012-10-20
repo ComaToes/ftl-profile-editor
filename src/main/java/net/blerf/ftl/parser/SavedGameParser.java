@@ -177,8 +177,8 @@ public class SavedGameParser extends DatParser {
 		crew.setRace( readString(in) );
 		crew.setAlpha( readInt(in) );        // Always 0?
 		crew.setHealth( readInt(in) );
-		crew.setBeta( readInt(in) );         // 52,507,192,262,297,192?
-		crew.setGamma( readInt(in) );        // 192,157,157,262,122,192?
+		crew.setX( readInt(in) );
+		crew.setY( readInt(in) );
 		crew.setRoomId( readInt(in) );
 		crew.setRoomSquare( readInt(in) );   // 0-based, as a wrapped H row.
 		crew.setEpsilon( readInt(in) );      // Always 1?
@@ -637,8 +637,9 @@ public class SavedGameParser extends DatParser {
 		private int pilotSkill, engineSkill, shieldSkill;
 		private int weaponSkill, repairSkill, combatSkill;
 		private int jumpsSurvived;
+		private int x, y;
 
-		private int unknownAlpha, unknownBeta, unknownGamma;
+		private int unknownAlpha;
 		private int unknownEpsilon, unknownDigamma, unknownZeta, unknownEta;
 		private int unknownTheta, unknownIota;
 
@@ -657,10 +658,10 @@ public class SavedGameParser extends DatParser {
 		public void setRepairSkill( int n ) {repairSkill = n; }
 		public void setCombatSkill( int n ) {combatSkill = n; }
 		public void setJumpsSurvived( int n ) {jumpsSurvived = n; }
+		public void setX( int x ) { this.x = x; };
+		public void setY( int y ) { this.y = x; };
 
 		public void setAlpha( int n ) { unknownAlpha = n; }
-		public void setBeta( int n ) { unknownBeta = n; }
-		public void setGamma( int n ) { unknownGamma = n; }
 		public void setEpsilon( int n ) { unknownEpsilon = n; }
 		public void setDigamma( int n ) { unknownDigamma = n; }
 		public void setZeta( int n ) { unknownZeta = n; }
@@ -682,10 +683,9 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Repair Skill:   %3d\n", repairSkill));
 			result.append(String.format("Combat Skill?:  %3d\n", combatSkill));
 			result.append(String.format("Jumps Survived: %3d\n", jumpsSurvived));
+			result.append(String.format("Position:       (%d,%d)\n", x, y));
 			result.append("/ / / Unknowns / / /\n");
 			result.append(String.format("Alpha:          %3d\n", unknownAlpha));
-			result.append(String.format("Beta:           %3d\n", unknownBeta));
-			result.append(String.format("Gamma:          %3d\n", unknownGamma));
 			result.append(String.format("Epsilon:        %3d\n", unknownEpsilon));
 			result.append(String.format("Digamma:        %3d\n", unknownDigamma));
 			result.append(String.format("Zeta:           %3d\n", unknownZeta));
