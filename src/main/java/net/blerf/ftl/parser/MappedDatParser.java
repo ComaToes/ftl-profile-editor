@@ -26,6 +26,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Achievements;
 import net.blerf.ftl.xml.Blueprints;
@@ -155,6 +156,53 @@ public class MappedDatParser extends Parser implements Closeable {
 		Blueprints bps = (Blueprints)u.unmarshal( new StreamSource(new StringReader(sb.toString())) );
 
 		return bps;
+	}
+
+	public ShipLayout readLayout( InputStream stream ) throws IOException {
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		ShipLayout shipLayout = new ShipLayout();
+
+		String line = null;
+		while ( (line = in.readLine()) != null ) {
+			if ( line.length() == 0 ) break;
+
+			if ( line.equals("X_OFFSET") ) {
+				shipLayout.setOffsetX( Integer.parseInt( in.readLine() ) );
+			}
+			else if ( line.equals("Y_OFFSET") ) {
+				shipLayout.setOffsetY( Integer.parseInt( in.readLine() ) );
+			}
+			else if ( line.equals("HORIZONTAL") ) {
+				shipLayout.setHorizontal( Integer.parseInt( in.readLine() ) );
+			}
+			else if ( line.equals("VERTICAL") ) {
+				shipLayout.setVertical( Integer.parseInt( in.readLine() ) );
+			}
+			else if ( line.equals("ELLIPSE") ) {
+				int w = Integer.parseInt( in.readLine() );
+				int h = Integer.parseInt( in.readLine() );
+				int x = Integer.parseInt( in.readLine() );
+				int y = Integer.parseInt( in.readLine() );
+				shipLayout.setShieldEllipse( w, h, x, y );
+			}
+			else if ( line.equals("ROOM") ) {
+				int roomId = Integer.parseInt( in.readLine() );
+				int alpha = Integer.parseInt( in.readLine() );
+				int beta = Integer.parseInt( in.readLine() );
+				int hSquares = Integer.parseInt( in.readLine() );
+				int vSquares = Integer.parseInt( in.readLine() );
+				shipLayout.setRoom( roomId, alpha, beta, hSquares, vSquares );
+			}
+			else if ( line.equals("DOOR") ) {
+				int wallX = Integer.parseInt( in.readLine() );
+				int wallY = Integer.parseInt( in.readLine() );
+				int roomIdA = Integer.parseInt( in.readLine() );
+				int roomIdB = Integer.parseInt( in.readLine() );
+				int vertical = Integer.parseInt( in.readLine() );
+				shipLayout.setDoor( wallX, wallY, vertical, roomIdA, roomIdB );
+			}
+		}
+		return shipLayout;
 	}
 
 	public InputStream getInputStream(String innerPath) throws FileNotFoundException, IOException {
