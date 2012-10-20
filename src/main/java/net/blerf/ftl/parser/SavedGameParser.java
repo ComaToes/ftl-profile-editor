@@ -669,8 +669,8 @@ public class SavedGameParser extends DatParser {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
 				result.append(String.format("%s: %d/%d Power\n", name, power, capacity));
-				result.append("/ / / Unknowns / / /\n");
 				result.append(String.format("Repair Progress: %d%%\n", repairProgress));
+				result.append("/ / / Unknowns / / /\n");
 				result.append(String.format("Alpha:           %d\n", unknownAlpha));
 				if ( mysteryList.size() > 0 ) {
 					result.append("Mystery Bytes...\n");
