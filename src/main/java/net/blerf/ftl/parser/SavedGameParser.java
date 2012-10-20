@@ -56,6 +56,30 @@ public class SavedGameParser extends DatParser {
 			ShipState playerShipState = readShip( in, true );
 			gameState.setPlayerShipState( playerShipState );
 
+			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			
+			gameState.sectorLayoutSeed = readInt(in);
+			
+			// Pixel offset from far right of sector map
+			gameState.rebelFleetOffset = readInt(in);
+			
+			gameState.addMysteryBytes( new MysteryBytes(in, 24) );
+			
+			// Variable length unknown list. Need to read to get to the right position for beacon list
+			int unknownCount = readInt(in);
+			List<Integer> mil = new ArrayList<Integer>();
+			for (int i = 0; i < unknownCount; i++) {
+				mil.add( readInt(in) );
+			}
+			gameState.mysteryIntList = mil;
+			
+			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+			
+			int beaconCount = readInt(in);
+			for (int i = 0; i < beaconCount; i++) {
+				gameState.addBeacon( readBeacon(in) );
+			}
+
 			// Mystery bytes (including recent beacon info)...
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
 			gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
@@ -142,7 +166,10 @@ public class SavedGameParser extends DatParser {
 			shipState.addAugmentId( readString(in) );
 		}
 
-		// The next 8 bytes might belong in the ship. Dunno.
+		int cargoCount = readInt(in);
+		for (int i=0; i < cargoCount; i++) {
+			shipState.addCargoItemId( readString(in) );
+		}
 
 		return shipState;
 	}
@@ -234,29 +261,80 @@ public class SavedGameParser extends DatParser {
 	}
 
 	private BeaconState readBeacon( InputStream in ) throws IOException {
-		// This func won't work because it doesn't account for all bytes.
-		// And the BeaconState class isn't fully defined yet.
 
 		BeaconState beacon = new BeaconState();
 
-		String bgStarscapeImageInnerPath = readString(in);
-		String bgSpriteImageInnerPath = readString(in);
-		int bgSpritePosX = readInt(in);
-		int bgSpritePosY = readInt(in);
-		beacon.setBackground(bgStarscapeImageInnerPath, bgSpriteImageInnerPath, bgSpritePosX, bgSpritePosY);
-
-		readInt(in);  // ?
-		readInt(in);  // ?
-		readInt(in);  // A 1 might mean event info follows?
-
-		// These are sometimes present (e.g., beacons covered by the fleet).
-		String eventShipName = readString(in);
-		String eventAutoBlueprintId = readString(in);
-		readInt(in);  // ?
-
-		// Mystery bytes...
+		boolean visited = readBool(in);
+		beacon.setVisited(visited);
+		if( visited ) {
+			beacon.setBgStarscapeImageInnerPath( readString(in) );
+			beacon.setBgSpriteImageInnerPath( readString(in) );
+			beacon.setBgSpritePosX( readInt(in) );
+			beacon.setBgSpritePosY( readInt(in) );
+			beacon.setUnknownVisitedAlpha( readInt(in) );
+		}
+		
+		beacon.setSeen( readBool(in) );
+		
+		boolean enemyPresent = readBool(in);
+		beacon.setEnemyPresent(enemyPresent);
+		if( enemyPresent ) {
+			beacon.setShipEventId( readString(in) );
+			beacon.setShipBlueprintListId( readString(in) );
+			beacon.setUnknownEnemyPresentAlpha( readInt(in) );
+		}
+		
+		int fleetPresence = readInt(in);
+		switch( fleetPresence ) {
+			case 0: beacon.setFleetPresence( FleetPresence.NONE ); break;
+			case 1: beacon.setFleetPresence( FleetPresence.REBEL ); break;
+			case 2: beacon.setFleetPresence( FleetPresence.FEDERATION ); break;
+			case 3: beacon.setFleetPresence( FleetPresence.BOTH ); break;
+			default: throw new RuntimeException( "Unknown fleet presence: " + fleetPresence );
+		}
+	
+		beacon.setUnderAttack( readBool(in) );
+		
+		boolean storePresent = readBool(in);
+		beacon.setStorePresent(storePresent);
+		if( storePresent ) {
+			StoreState store = new StoreState();
+			store.setTopShelf( readStoreShelf(in) );
+			store.setBottomShelf( readStoreShelf(in) );
+			store.setFuel( readInt(in) );
+			store.setMissiles( readInt(in) );
+			store.setDroneParts( readInt(in) );
+			beacon.setStore(store);
+		}
 
 		return beacon;
+		
+	}
+	
+	private StoreShelf readStoreShelf( InputStream in ) throws IOException {
+		
+		StoreShelf shelf = new StoreShelf();
+		
+		int itemType = readInt(in);
+		switch( itemType ) {
+			case 0: shelf.setItemType( StoreItemType.WEAPON ); break;
+			case 1: shelf.setItemType( StoreItemType.DRONE ); break;
+			case 2: shelf.setItemType( StoreItemType.AUGMENT ); break;
+			case 3: shelf.setItemType( StoreItemType.CREW ); break; // TODO: this is a guess. no sample save to verify
+			case 4: shelf.setItemType( StoreItemType.SYSTEM ); break;
+			default: throw new RuntimeException( "Unknown store item type: " + itemType );
+		}
+		
+		for (int i = 0; i < 3; i++) {
+			int available = readInt(in);
+			if( available < 0 )
+				continue; // -1 means no item
+			String itemId = readString(in);
+			shelf.addItem( new StoreItem(available > 0, itemId) );
+		}
+		
+		return shelf;
+		
 	}
 
 
@@ -269,6 +347,9 @@ public class SavedGameParser extends DatParser {
 		public int sectorNumber = 1;
 		public HashMap<String,Integer> stateVars = new HashMap<String,Integer>();
 		public ShipState playerShipState = null;
+		public int sectorLayoutSeed, rebelFleetOffset;
+		public List<Integer> mysteryIntList;
+		public List<BeaconState> beacons = new ArrayList<BeaconState>();
 		public ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public void setSectorNumber( int n ) { sectorNumber = n; }
@@ -310,10 +391,15 @@ public class SavedGameParser extends DatParser {
 			this.playerShipState = shipState;
 		}
 
+		public void addBeacon( BeaconState beacon ) {
+			beacons.add( beacon );
+		}
+
 		public void addMysteryBytes( MysteryBytes m ) {
 			mysteryList.add(m);
 		}
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
@@ -329,7 +415,20 @@ public class SavedGameParser extends DatParser {
 			result.append("\nPlayer Ship...\n");
 			result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
-			result.append("\n");
+			result.append("\nSector Data...\n");
+			result.append( String.format("Sector Layout Seed: %d\n", sectorLayoutSeed) );
+			result.append( String.format("Rebel Fleet Offset: %d\n", rebelFleetOffset) );
+			result.append( String.format("Mystery Int List: %s\n", mysteryIntList) );
+			
+			result.append("\nSector Beacons...\n");
+			int beaconId = 0;
+			first = true;
+			for( BeaconState beacon: beacons ) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+				result.append( String.format("BeaconId: %2d\n", beaconId++) );
+				result.append( beacon.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			}
 
 			result.append("\nMystery Bytes...\n");
 			first = true;
@@ -358,6 +457,7 @@ public class SavedGameParser extends DatParser {
 		public ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
 		public ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		public ArrayList<String> augmentIdList = new ArrayList<String>();
+		public ArrayList<String> cargoIdList = new ArrayList<String>();
 		public ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean playerControlled) {
@@ -413,11 +513,16 @@ public class SavedGameParser extends DatParser {
 		public void addAugmentId( String augmentId ) {
 			augmentIdList.add(augmentId);
 		}
-
+		
+		public void addCargoItemId( String cargoItemId ) {
+			cargoIdList.add( cargoItemId );
+		}
+		
 		public void addMysteryBytes( MysteryBytes m ) {
 			mysteryList.add(m);
 		}
 
+		@Override
 		public String toString() {
 			// The blueprint fetching might vary if !playerControlled.
 			// See autoBlueprints.xml vs blueprints.xml.
@@ -540,7 +645,11 @@ public class SavedGameParser extends DatParser {
 			for (String augmentId : augmentIdList) {
 				result.append(String.format("AugmentId: %s\n", augmentId));
 			}
-			result.append("\n");
+			
+			result.append("\nCargo...\n");
+			for (String cargoItemId : cargoIdList) {
+				result.append(String.format("CargoItemId: %s\n", cargoItemId));
+			}
 
 			result.append("\nMystery Bytes...\n");
 			first = true;
@@ -572,6 +681,7 @@ public class SavedGameParser extends DatParser {
 			return race;
 		}
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Name: %s\n", name));
@@ -620,6 +730,7 @@ public class SavedGameParser extends DatParser {
 		public void setTheta( int n ) { unknownTheta = n; }
 		public void setIota( int n ) { unknownIota = n; }
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Name: %s\n", name));
@@ -670,6 +781,7 @@ public class SavedGameParser extends DatParser {
 
 		public void addMysteryBytes( MysteryBytes m ) { mysteryList.add(m); }
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
@@ -717,6 +829,7 @@ public class SavedGameParser extends DatParser {
 			squareList.add( new int[] {fireHealth, ignitionProgress, gamma} );
 		}
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
@@ -740,6 +853,7 @@ public class SavedGameParser extends DatParser {
 			this.open = open;
 		}
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Open: %d, Alpha?: %d\n", open, unknownAlpha));
@@ -760,6 +874,7 @@ public class SavedGameParser extends DatParser {
 			this.unknownAlpha = alpha;
 		}
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("WeaponId: %s\n", weaponId));
@@ -790,6 +905,7 @@ public class SavedGameParser extends DatParser {
 		public void setEpsilon( int n ) { unknownEpsilon = n; }
 		public void setDigamma( int n ) { unknownDigamma = n; }
 
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("DroneId: %s\n", droneId));
@@ -806,25 +922,261 @@ public class SavedGameParser extends DatParser {
 	}
 
 
-
 	public class BeaconState {
+		
+		private boolean visited;
 		private String bgStarscapeImageInnerPath;
 		private String bgSpriteImageInnerPath;
 		private int bgSpritePosX, bgSpritePosY;
+		private int unknownVisitedAlpha; // Sprite rotation in degrees? (observed values: 0, 180)
+		
+		private boolean seen; // True if player has been within one hop of beacon
+		
+		private boolean enemyPresent;
+		private String shipEventId; // <ship> event from events_ships.xml
+		private String shipBlueprintListId; // <blueprintList> to choose enemy ship from
+		private int unknownEnemyPresentAlpha;
+		
+		private FleetPresence fleetPresence; // Determines which fleet image to use
+		
+		private boolean underAttack; // True if under attack by rebels (flashing red) in boss sector
+		
+		private boolean storePresent; // True if beacon contains a store (may require beacon to have been seen first)
+		private StoreState store;
 
-		public void setBackground( String starscapeInnerPath, String spriteInnerPath, int spriteX, int spriteY ) {
-			bgStarscapeImageInnerPath = starscapeInnerPath;
-			bgSpriteImageInnerPath = spriteInnerPath;
-			bgSpritePosX = spriteX;
-			bgSpritePosY = spriteY;
-		}
-
+		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Bkg Starscape: %s\n", bgStarscapeImageInnerPath));
-			result.append(String.format("Bkg Sprite: %s\n", bgSpriteImageInnerPath));
-			result.append(String.format("Bkg Sprite Coords: %d,%d\n", bgSpritePosX, bgSpritePosY));
+			
+			result.append(String.format("Visited:           %b\n", visited));
+			if( visited ) {
+				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
+				result.append(String.format("Bkg Sprite:        %s\n", bgSpriteImageInnerPath));
+				result.append(String.format("Bkg Sprite Coords: %d,%d\n", bgSpritePosX, bgSpritePosY));
+				result.append(String.format("Unknown:           %d\n", unknownVisitedAlpha));
+			}
+			
+			result.append(String.format("Seen:              %b\n", seen));
+			
+			result.append(String.format("Enemy Present:     %b\n", enemyPresent));
+			if ( enemyPresent ) {
+				result.append(String.format("  Ship Event ID:          %s\n", shipEventId));
+				result.append(String.format("  Ship Blueprint List ID: %s\n", shipBlueprintListId));
+				result.append(String.format("  Unknown:                %d\n", unknownEnemyPresentAlpha));
+			}
+			
+			result.append(String.format("Fleets Present:    %s\n", fleetPresence));
+			
+			result.append(String.format("Under Attack:      %b\n", underAttack));
+			
+			result.append(String.format("Store Present:     %b\n", storePresent));
+			if ( storePresent ) {
+				result.append( store.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			}
+
 			return result.toString();
+		}
+		
+		public String getBgSpriteImageInnerPath() {
+			return bgSpriteImageInnerPath;
+		}
+		public void setBgSpriteImageInnerPath(String bgSpriteImageInnerPath) {
+			this.bgSpriteImageInnerPath = bgSpriteImageInnerPath;
+		}
+		public boolean isVisited() {
+			return visited;
+		}
+		public void setVisited(boolean visited) {
+			this.visited = visited;
+		}
+		public String getBgStarscapeImageInnerPath() {
+			return bgStarscapeImageInnerPath;
+		}
+		public void setBgStarscapeImageInnerPath(String bgStarscapeImageInnerPath) {
+			this.bgStarscapeImageInnerPath = bgStarscapeImageInnerPath;
+		}
+		public int getBgSpritePosX() {
+			return bgSpritePosX;
+		}
+		public void setBgSpritePosX(int bgSpritePosX) {
+			this.bgSpritePosX = bgSpritePosX;
+		}
+		public int getBgSpritePosY() {
+			return bgSpritePosY;
+		}
+		public void setBgSpritePosY(int bgSpritePosY) {
+			this.bgSpritePosY = bgSpritePosY;
+		}
+		public int getUnknownVisitedAlpha() {
+			return unknownVisitedAlpha;
+		}
+		public void setUnknownVisitedAlpha(int unknownVisitedAlpha) {
+			this.unknownVisitedAlpha = unknownVisitedAlpha;
+		}
+		public boolean isSeen() {
+			return seen;
+		}
+		public void setSeen(boolean seen) {
+			this.seen = seen;
+		}
+		public boolean isEnemyPresent() {
+			return enemyPresent;
+		}
+		public void setEnemyPresent(boolean enemyPresent) {
+			this.enemyPresent = enemyPresent;
+		}
+		public String getShipEventId() {
+			return shipEventId;
+		}
+		public void setShipEventId(String shipEventId) {
+			this.shipEventId = shipEventId;
+		}
+		public String getShipBlueprintListId() {
+			return shipBlueprintListId;
+		}
+		public void setShipBlueprintListId(String shipBlueprintListId) {
+			this.shipBlueprintListId = shipBlueprintListId;
+		}
+		public int getUnknownEnemyPresentAlpha() {
+			return unknownEnemyPresentAlpha;
+		}
+		public void setUnknownEnemyPresentAlpha(int unknownEnemyPresentAlpha) {
+			this.unknownEnemyPresentAlpha = unknownEnemyPresentAlpha;
+		}
+		public FleetPresence getFleetPresence() {
+			return fleetPresence;
+		}
+		public void setFleetPresence(FleetPresence fleetPresence) {
+			this.fleetPresence = fleetPresence;
+		}
+		public boolean isUnderAttack() {
+			return underAttack;
+		}
+		public void setUnderAttack(boolean underAttack) {
+			this.underAttack = underAttack;
+		}
+		public boolean isStorePresent() {
+			return storePresent;
+		}
+		public void setStorePresent(boolean storePresent) {
+			this.storePresent = storePresent;
+		}
+		public StoreState getStore() {
+			return store;
+		}
+		public void setStore(StoreState store) {
+			this.store = store;
+		}
+	}
+	
+	public enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
+	
+	public class StoreState {
+		
+		private int fuel, missiles, droneParts;
+		private StoreShelf topShelf, bottomShelf;
+		
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+			
+			result.append( String.format("Fuel: %d\n" , fuel) );
+			result.append( String.format("Missiles: %d\n" , missiles) );
+			result.append( String.format("Drone Parts: %d\n" , droneParts) );
+			
+			result.append( "\nTop Shelf:..." );
+			result.append( topShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+
+			result.append( "\nBottom Shelf...\n" );
+			result.append( bottomShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			
+			return result.toString();
+		}
+		
+		public int getFuel() {
+			return fuel;
+		}
+		public void setFuel(int fuel) {
+			this.fuel = fuel;
+		}
+		public int getMissiles() {
+			return missiles;
+		}
+		public void setMissiles(int missiles) {
+			this.missiles = missiles;
+		}
+		public int getDroneParts() {
+			return droneParts;
+		}
+		public void setDroneParts(int droneParts) {
+			this.droneParts = droneParts;
+		}
+		public StoreShelf getTopShelf() {
+			return topShelf;
+		}
+		public void setTopShelf(StoreShelf topShelf) {
+			this.topShelf = topShelf;
+		}
+		public StoreShelf getBottomShelf() {
+			return bottomShelf;
+		}
+		public void setBottomShelf(StoreShelf bottomShelf) {
+			this.bottomShelf = bottomShelf;
+		}
+		
+	}
+	
+	public enum StoreItemType { WEAPON, DRONE, AUGMENT, CREW, SYSTEM };
+	
+	public class StoreShelf {
+		
+		private StoreItemType itemType;
+		
+		private List<StoreItem> items;
+		
+		public StoreShelf() {
+			items = new ArrayList<StoreItem>(3);
+		}
+		
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+			boolean first = true;
+
+			result.append( String.format("Item Type: %s\n", itemType) );
+			for (StoreItem item : items) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+				result.append( item.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			}
+			
+			return result.toString();
+		}
+
+		public StoreItemType getItemType() {
+			return itemType;
+		}
+		public void setItemType(StoreItemType itemType) {
+			this.itemType = itemType;
+		}
+		public void addItem( StoreItem item ) {
+			items.add( item );
+		}
+		
+	}
+	
+	public class StoreItem {
+		private boolean available;
+		private String itemId;
+
+		public StoreItem(boolean available, String itemId) {
+			this.available = available;
+			this.itemId = itemId;
+		}
+
+		@Override
+		public String toString() {
+			return String.format("%s (%s)\n" , itemId, (available ? "Available" : "Sold Out"));
 		}
 	}
 

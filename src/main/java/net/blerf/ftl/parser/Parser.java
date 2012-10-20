@@ -7,6 +7,17 @@ import java.io.OutputStream;
 public class Parser {
 	
 	private byte[] intbuf = new byte[4];
+	
+	protected boolean readBool(InputStream in) throws IOException {
+		
+		int i = readInt(in);
+		
+		if( !(i==1 || i==0) )
+			throw new RuntimeException("Not a bool: " + i);
+		
+		return i == 1;
+		
+	}
 
 	protected int readInt(InputStream in) throws IOException {
 		
