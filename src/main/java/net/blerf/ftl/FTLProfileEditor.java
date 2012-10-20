@@ -30,58 +30,77 @@ public class FTLProfileEditor {
 		
 		// Read config file and locate FTL install
 		File propFile = new File("ftl-editor.cfg");
-		File ftlPath;
+		File ftlPath = null;
+
+		boolean writeConfig = false;
+		Properties config = new Properties();
+		config.setProperty( "useDefaultUI", "false" );
 	
 		InputStream in = null;
-		OutputStream out = null;
 		try {
-			
-			Properties config = new Properties();
-			
 			if ( propFile.exists() ) {
 				log.trace( "Loading properties from config file" );
 				in = new FileInputStream(propFile);
 				config.load( in );
-			}
-
-			// FTL path
-			String ftlPathString = config.getProperty("ftlPath");
-			
-			if ( ftlPathString != null ) {
-				log.trace( "Using FTL path from config: " + ftlPathString );
-				ftlPath = new File(ftlPathString);
 			} else {
-				log.trace( "No FTL path available" );
-				ftlPath = promptForFtlPath();
-				if ( ftlPath == null )
-					return; // User cancelled, exit
-				config.setProperty( "ftlPath", ftlPath.getAbsolutePath() );
-				out = new FileOutputStream(propFile);
-				config.store( out, "FTL Profile Editor - Config File" );
+				writeConfig = true;  // Create a new cfg, but only if necessary.
 			}
-			
-			// LnF
-			String useDefaultUI = config.getProperty("useDefaultUI");
-			
-			if ( useDefaultUI == null || !useDefaultUI.equals("true") ) {
-				try {
-					log.trace( "Using system Look and Feel" );
-					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-				} catch (Exception e) {
-					log.error( "Error setting system Look and Feel", e );
-				}
-			} else {
-				log.trace( "Using default Look and Feel" );
-			}
-			
 		} catch (IOException e) {
 			showErrorDialog( "Error loading config from " + propFile.getPath() );
-			log.error( "Error loading props", e );
-			return;
-			
+			log.error( "Error loading config", e );
 		} finally {
 			if ( in != null ) { try { in.close(); } catch (IOException e) {} }
-			if ( out != null ) { try { out.close(); } catch (IOException e) {} }
+		}
+
+		// LnF
+		String useDefaultUI = config.getProperty("useDefaultUI");
+
+		if ( useDefaultUI == null || !useDefaultUI.equals("true") ) {
+			try {
+				log.trace( "Using system Look and Feel" );
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (Exception e) {
+				log.error( "Error setting system Look and Feel", e );
+				log.info( "Setting 'useDefaultUI=true' in the config file will prevent this error." );
+			}
+		} else {
+			log.debug( "Using default Look and Feel" );
+		}
+
+		// FTL path
+		String ftlPathString = config.getProperty("ftlPath");
+			
+		if ( ftlPathString != null ) {
+			log.info( "Using FTL path from config: " + ftlPathString );
+			ftlPath = new File(ftlPathString);
+			if ( !ftlPath.exists() ) {
+				log.error( "The config's FTL path does not exist" );
+				ftlPath = null;
+			}
+		} else {
+			log.trace( "No FTL path available" );
+		}
+		if ( ftlPath == null ) {
+			ftlPath = promptForFtlPath();
+			if ( ftlPath == null )
+				System.exit(1); // User cancelled, exit
+			config.setProperty( "ftlPath", ftlPath.getAbsolutePath() );
+			writeConfig = true;
+		}
+
+		OutputStream out = null;
+		if ( writeConfig ) {
+			try {
+				out = new FileOutputStream(propFile);
+				config.store( out, "FTL Profile Editor - Config File" );
+
+			} catch (IOException e) {
+				showErrorDialog( "Error saving config to " + propFile.getPath() );
+				log.error( "Error saving config to " + propFile.getPath(), e );
+
+			} finally {
+				if ( out != null ) { try { out.close(); } catch (IOException e) {} }
+			}
 		}
 		
 		// Initialise data store
@@ -101,7 +120,7 @@ public class FTLProfileEditor {
 		} catch (Exception e) {
 			log.error( "Exception while creating FTLFrame", e );
 			// Required to kill Swing or process will remain active
-			System.exit(0);
+			System.exit(1);
 		}
 		
 	}
@@ -160,12 +179,12 @@ public class FTLProfileEditor {
 		}
 		
 		if ( ftlPath != null && ftlPath.exists() && ftlPath.isDirectory() && new File(ftlPath,"resources/data.dat").exists() ) {
-			log.trace( "FTL located at: " + ftlPath.getAbsolutePath() );
+			log.info( "FTL located at: " + ftlPath.getAbsolutePath() );
 			return ftlPath;
 		} else {
-			log.trace( "FTL not located" );
-			showErrorDialog( "FTL data not found. FTL Profile Editor will now exit." );
-			System.exit(0);
+			log.error( "FTL was not found" );
+			showErrorDialog( "FTL data was not found.\nFTL Profile Editor will now exit." );
+			System.exit(1);
 		}
 		
 		return null;
