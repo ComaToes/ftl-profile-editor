@@ -193,7 +193,7 @@ public class SavedGameParser extends DatParser {
 			system.setPower( readInt(in) );
 			system.addMysteryBytes( new MysteryBytes(in, 12) );
 			system.setRepairProgress( readInt(in) );
-			system.setAlpha( readInt(in) );
+			system.setBurnProgress( readInt(in) );
 		}
 		return system;
 	}
@@ -654,9 +654,8 @@ public class SavedGameParser extends DatParser {
 		private String name;
 		private int capacity = 0;
 		private int power = 0;
-		private int repairProgress = 0;
-
-		private int unknownAlpha = 0;
+		private int repairProgress = 0;  // Turns bar yellow.
+		private int burnProgress = 0;    // Turns bar red.
 
 		public ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
@@ -667,7 +666,7 @@ public class SavedGameParser extends DatParser {
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
 		public void setRepairProgress( int n ) { repairProgress = n; }
-		public void setAlpha( int n ) { unknownAlpha = n; }
+		public void setBurnProgress( int n ) { burnProgress = n; }
 
 		public void addMysteryBytes( MysteryBytes m ) { mysteryList.add(m); }
 
@@ -676,8 +675,8 @@ public class SavedGameParser extends DatParser {
 			if (capacity > 0) {
 				result.append(String.format("%s: %d/%d Power\n", name, power, capacity));
 				result.append(String.format("Repair Progress: %d%%\n", repairProgress));
+				result.append(String.format("Burn Progress: %d%%\n", burnProgress));
 				result.append("/ / / Unknowns / / /\n");
-				result.append(String.format("Alpha:           %d\n", unknownAlpha));
 				if ( mysteryList.size() > 0 ) {
 					result.append("Mystery Bytes...\n");
 					boolean first = true;
