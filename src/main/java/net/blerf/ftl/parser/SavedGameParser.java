@@ -219,7 +219,8 @@ public class SavedGameParser extends DatParser {
 		if (capacity > 0) {
 			system.setCapacity( capacity );
 			system.setPower( readInt(in) );
-			system.addMysteryBytes( new MysteryBytes(in, 12) );
+			system.setDamagedBars( readInt(in) );
+			system.addMysteryBytes( new MysteryBytes(in, 8) );
 			system.setRepairProgress( readInt(in) );
 			system.setBurnProgress( readInt(in) );
 		}
@@ -767,6 +768,7 @@ public class SavedGameParser extends DatParser {
 		private String name;
 		private int capacity = 0;
 		private int power = 0;
+		private int damagedBars = 0;     // Number of unusable power bars.
 		private int repairProgress = 0;  // Turns bar yellow.
 		private int burnProgress = 0;    // Turns bar red.
 
@@ -778,6 +780,7 @@ public class SavedGameParser extends DatParser {
 
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
+		public void setDamagedBars( int n ) { damagedBars = n; }
 		public void setRepairProgress( int n ) { repairProgress = n; }
 		public void setBurnProgress( int n ) { burnProgress = n; }
 
@@ -788,8 +791,9 @@ public class SavedGameParser extends DatParser {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
 				result.append(String.format("%s: %d/%d Power\n", name, power, capacity));
+				result.append(String.format("Damaged Bars:    %d\n", damagedBars));
 				result.append(String.format("Repair Progress: %d%%\n", repairProgress));
-				result.append(String.format("Burn Progress: %d%%\n", burnProgress));
+				result.append(String.format("Burn Progress:   %d%%\n", burnProgress));
 				result.append("/ / / Unknowns / / /\n");
 				if ( mysteryList.size() > 0 ) {
 					result.append("Mystery Bytes...\n");
