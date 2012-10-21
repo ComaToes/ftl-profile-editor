@@ -200,13 +200,13 @@ public class SavedGameParser extends DatParser {
 		crew.setPilotSkill( readInt(in) );
 		crew.setEngineSkill( readInt(in) );
 		crew.setShieldSkill( readInt(in) );
-		crew.setWeaponSkill( readInt(in) );  // Maybe
+		crew.setWeaponSkill( readInt(in) );
 		crew.setRepairSkill( readInt(in) );
-		crew.setDigamma( readInt(in) );      // ?
+		crew.setCombatSkill( readInt(in) );  // Maybe
 		crew.setGender( readInt(in) );       // 1 == male, 0 == female (only human females are 0, prob because other races don't have female gfx)
 		crew.setEta( readInt(in) );          // Matches repair?
-		crew.setTheta( readInt(in) );        // Matches digamma?
-		crew.setCombatSkill( readInt(in) );  // Maybe
+		crew.setTheta( readInt(in) );        // Matches combat, sometimes less?
+		crew.setKappa( readInt(in) );
 		crew.setJumpsSurvived( readInt(in) );
 		crew.setIota( readInt(in) );         // ?
 		return crew;
@@ -741,7 +741,7 @@ public class SavedGameParser extends DatParser {
 
 		private int unknownAlpha;
 		private int unknownEpsilon, unknownDigamma, unknownEta;
-		private int unknownTheta, unknownIota;
+		private int unknownTheta, unknownKappa, unknownIota;
 
 		public CrewState() {
 		}
@@ -764,9 +764,9 @@ public class SavedGameParser extends DatParser {
 
 		public void setAlpha( int n ) { unknownAlpha = n; }
 		public void setEpsilon( int n ) { unknownEpsilon = n; }
-		public void setDigamma( int n ) { unknownDigamma = n; }
 		public void setEta( int n ) { unknownEta = n; }
 		public void setTheta( int n ) { unknownTheta = n; }
+		public void setKappa( int n ) { unknownKappa = n; }
 		public void setIota( int n ) { unknownIota = n; }
 
 		@Override
@@ -780,7 +780,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Pilot Skill:    %3d\n", pilotSkill));
 			result.append(String.format("Engine Skill:   %3d\n", engineSkill));
 			result.append(String.format("Shield Skill:   %3d\n", shieldSkill));
-			result.append(String.format("Weapon Skill?:  %3d\n", weaponSkill));
+			result.append(String.format("Weapon Skill:   %3d\n", weaponSkill));
 			result.append(String.format("Repair Skill:   %3d\n", repairSkill));
 			result.append(String.format("Combat Skill?:  %3d\n", combatSkill));
 			result.append(String.format("Jumps Survived: %3d\n", jumpsSurvived));
@@ -789,9 +789,9 @@ public class SavedGameParser extends DatParser {
 			result.append("/ / / Unknowns / / /\n");
 			result.append(String.format("Alpha:          %3d\n", unknownAlpha));
 			result.append(String.format("Epsilon:        %3d\n", unknownEpsilon));
-			result.append(String.format("Digamma:        %3d\n", unknownDigamma));
 			result.append(String.format("Eta:            %3d\n", unknownEta));
 			result.append(String.format("Theta:          %3d\n", unknownTheta));
+			result.append(String.format("Kappa:          %3d\n", unknownKappa));
 			result.append(String.format("Iota:           %3d\n", unknownIota));
 			return result.toString();
 		}
