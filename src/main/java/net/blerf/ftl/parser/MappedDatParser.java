@@ -273,14 +273,17 @@ public class MappedDatParser extends Parser implements Closeable {
 		public ByteBufferBackedInputStream(ByteBuffer buf) {
 			this.buf = buf;
 		}
-		public synchronized int remaining() throws IOException {
+		@Override
+		public synchronized int available() throws IOException {
 			if (!buf.hasRemaining()) return 0;
 			return buf.remaining();
 		}
+		@Override
 		public synchronized int read() throws IOException {
 			if (!buf.hasRemaining()) return -1;
 			return buf.get() & 0xFF;
 		}
+		@Override
 		public synchronized int read(byte[] bytes, int off, int len) throws IOException {
 			if (!buf.hasRemaining()) return -1;
 			len = Math.min(len, buf.remaining());

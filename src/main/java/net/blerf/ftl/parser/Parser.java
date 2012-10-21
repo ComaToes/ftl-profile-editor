@@ -1,5 +1,6 @@
 package net.blerf.ftl.parser;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,9 +68,16 @@ public class Parser {
 			if ( length > fin.getChannel().size() - position)
 				throw new RuntimeException( "Expected string length ("+ length +") would extend beyond the end of the stream, from current position ("+ position +")" );
 		}
-		else if ( in instanceof MappedDatParser.ByteBufferBackedInputStream ) {
-			int remaining = ((MappedDatParser.ByteBufferBackedInputStream)in).remaining();
-			if (length > remaining )
+		else {
+			// Call available on streams that really end.
+			int remaining = -1;
+			if ( in instanceof MappedDatParser.ByteBufferBackedInputStream ) {
+				remaining = ((MappedDatParser.ByteBufferBackedInputStream)in).available();
+			}
+			else if ( in instanceof ByteArrayInputStream ) {
+				remaining = ((ByteArrayInputStream)in).available();
+			}
+			if (remaining != -1 && length > remaining )
 				throw new RuntimeException( "Expected string length ("+ length +") would extend beyond the end of the stream" );
 		}
 		
