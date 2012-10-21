@@ -18,6 +18,7 @@ import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -867,21 +868,24 @@ public class SavedGameParser extends DatParser {
 	public class WeaponState {
 		private String weaponId;
 		private int armed;
-		private int unknownAlpha;
+		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown.
 
-		public WeaponState( String weaponId, int armed, int alpha ) {
+		public WeaponState( String weaponId, int armed, int cooldownTicks ) {
 			this.weaponId = weaponId;
 			this.armed = armed;
-			this.unknownAlpha = alpha;
+			this.cooldownTicks = cooldownTicks;
 		}
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("WeaponId: %s\n", weaponId));
-			result.append(String.format("Armed: %d\n", armed));
-			result.append("/ / / Unknowns / / /\n");
-			result.append(String.format("Alpha: %d\n", unknownAlpha));
+
+			WeaponBlueprint weaponBlueprint = DataManager.get().getWeapon(weaponId);
+			String cooldownString = ( weaponBlueprint!=null ? weaponBlueprint.getCooldown()+"" : "?" );
+
+			result.append(String.format("WeaponId:       %s\n", weaponId));
+			result.append(String.format("Armed:          %d\n", armed));
+			result.append(String.format("Cooldown Ticks: %d (max: %s)\n", cooldownTicks, cooldownString));
 			return result.toString();
 		}
 	}

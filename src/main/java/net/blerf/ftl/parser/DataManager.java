@@ -15,6 +15,7 @@ import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,7 +37,8 @@ public class DataManager {
 	private List<Achievement> achievements;
 	private List<Achievement> generalAchievements;
 	private Blueprints blueprints;
-	
+
+	private Map<String, WeaponBlueprint> weapons;	
 	private Map<String, ShipBlueprint> ships;
 	private List<ShipBlueprint> playerShips; // Type A's
 	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
@@ -65,10 +67,14 @@ public class DataManager {
 			for( Achievement ach : achievements )
 				if ( ach.getShipId() == null )
 					generalAchievements.add(ach);
-		
+
+			weapons = new HashMap<String, WeaponBlueprint>();
+			for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprint() )
+				weapons.put( weapon.getId(), weapon );
+
 			ships = new HashMap<String, ShipBlueprint>();
 			for ( ShipBlueprint ship : blueprints.getShipBlueprint() )
-				ships.put( ship.getId() , ship );
+				ships.put( ship.getId(), ship );
 		
 			playerShips = new ArrayList<ShipBlueprint>();
 			playerShips.add( ships.get("PLAYER_SHIP_HARD") );
@@ -129,7 +135,14 @@ public class DataManager {
 		return achievements;
 	}
 	
-	public ShipBlueprint getShip(String id) {
+	public WeaponBlueprint getWeapon( String id ) {
+		WeaponBlueprint result = weapons.get(id);
+		if ( result == null )
+			log.error( "No WeaponBlueprint found for id: "+ id );
+		return result;
+	}
+
+	public ShipBlueprint getShip( String id ) {
 		ShipBlueprint result = ships.get(id);
 		if ( result == null )
 			log.error( "No ShipBlueprint found for id: "+ id );
