@@ -348,15 +348,15 @@ public class SavedGameParser extends DatParser {
 	// Stash state classes here until they're finalized.
 
 	public class SavedGameState {
-		public String playerShipName = "";
-		public String playerShipBlueprintId = "";
-		public int sectorNumber = 1;
-		public HashMap<String,Integer> stateVars = new HashMap<String,Integer>();
-		public ShipState playerShipState = null;
-		public int sectorLayoutSeed, rebelFleetOffset;
-		public List<Integer> mysteryIntList;
-		public List<BeaconState> beacons = new ArrayList<BeaconState>();
-		public ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+		private String playerShipName = "";
+		private String playerShipBlueprintId = "";
+		private int sectorNumber = 1;
+		private HashMap<String,Integer> stateVars = new HashMap<String,Integer>();
+		private ShipState playerShipState = null;
+		private int sectorLayoutSeed, rebelFleetOffset;
+		private List<Integer> mysteryIntList;
+		private List<BeaconState> beacons = new ArrayList<BeaconState>();
+		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public void setSectorNumber( int n ) { sectorNumber = n; }
 
@@ -451,21 +451,21 @@ public class SavedGameParser extends DatParser {
 
 
 	public class ShipState {
-		public boolean playerControlled = false;
-		public String shipName, shipBlueprintId, shipLayoutId;
-		public ArrayList<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
-		public int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
-		public ArrayList<CrewState> crewList = new ArrayList<CrewState>();
-		public int reservePowerCapacity;
-		public ArrayList<SystemState> systemList = new ArrayList<SystemState>();
-		public ArrayList<RoomState> roomList = new ArrayList<RoomState>();
-		public LinkedHashMap<Point, Integer> warningLightMap = new LinkedHashMap<Point, Integer>();
-		public LinkedHashMap<int[], DoorState> doorMap = new LinkedHashMap<int[], DoorState>();
-		public ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
-		public ArrayList<DroneState> droneList = new ArrayList<DroneState>();
-		public ArrayList<String> augmentIdList = new ArrayList<String>();
-		public ArrayList<String> cargoIdList = new ArrayList<String>();
-		public ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+		private boolean playerControlled = false;
+		private String shipName, shipBlueprintId, shipLayoutId;
+		private ArrayList<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
+		private int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
+		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
+		private int reservePowerCapacity;
+		private ArrayList<SystemState> systemList = new ArrayList<SystemState>();
+		private ArrayList<RoomState> roomList = new ArrayList<RoomState>();
+		private LinkedHashMap<Point, Integer> warningLightMap = new LinkedHashMap<Point, Integer>();
+		private LinkedHashMap<int[], DoorState> doorMap = new LinkedHashMap<int[], DoorState>();
+		private ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
+		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
+		private ArrayList<String> augmentIdList = new ArrayList<String>();
+		private ArrayList<String> cargoIdList = new ArrayList<String>();
+		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean playerControlled) {
 			this.shipName = shipName;
@@ -807,7 +807,7 @@ public class SavedGameParser extends DatParser {
 		private int repairProgress = 0;  // Turns bar yellow.
 		private int burnProgress = 0;    // Turns bar red.
 
-		public ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public SystemState( String name ) {
 			this.name = name;
@@ -850,7 +850,7 @@ public class SavedGameParser extends DatParser {
 
 	public class RoomState {
 		private int oxygen = 100;
-		public ArrayList<int[]> squareList = new ArrayList<int[]>();
+		private ArrayList<int[]> squareList = new ArrayList<int[]>();
 
 		public void setOxygen( int n ) { oxygen = n; }
 
