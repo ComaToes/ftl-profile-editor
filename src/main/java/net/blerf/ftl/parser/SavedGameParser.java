@@ -157,8 +157,8 @@ public class SavedGameParser extends DatParser {
 		for (int i=0; i < weaponCount; i++) {
 			String weaponId = readString(in);
 			int weaponArmed = readInt(in);
-			int weaponAlpha = readInt(in);  // ? (0 when not armed)
-			shipState.addWeapon( new WeaponState(weaponId, weaponArmed, weaponAlpha) );
+			int weaponCooldownTicks = readInt(in);
+			shipState.addWeapon( new WeaponState(weaponId, weaponArmed, weaponCooldownTicks) );
 		}
 
 		int droneCount = readInt(in);
