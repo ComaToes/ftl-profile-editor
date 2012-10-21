@@ -1,5 +1,6 @@
 package net.blerf.ftl.parser;
 
+import java.awt.Point;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -142,12 +143,15 @@ public class SavedGameParser extends DatParser {
 			shipState.addRoom( readRoom(in, squaresH, squaresV) );
 		}
 
-		LinkedHashMap<int[], EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for (int[] doorCoord : layoutDoorMap.keySet()) {
-			shipState.addDoor( doorCoord, readDoor(in) );
+		int warningLightCount = readInt(in);
+		for (int i=0; i < warningLightCount; i++) {
+			shipState.setWarningLight( readInt(in), readInt(in), readInt(in) );
 		}
 
-		shipState.addMysteryBytes( new MysteryBytes(in, 4) );
+		LinkedHashMap<int[], EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
+		for (int[] doorCoord : layoutDoorMap.keySet()) {
+			shipState.setDoor( doorCoord[0], doorCoord[1], doorCoord[2], readDoor(in) );
+		}
 
 		int weaponCount = readInt(in);
 		for (int i=0; i < weaponCount; i++) {
@@ -235,7 +239,7 @@ public class SavedGameParser extends DatParser {
 			for (int v=0; v < squaresV; v++) {
 				// Dunno what the third int is. The others are for fire.
 				// Values in the wild: 0-100 / 0-100 / -1.
-				// Probably the health of a breach.
+				// It is not related to hull breaches.
 				room.addSquare( readInt(in), readInt(in), readInt(in) );
 			}
 		}
@@ -455,6 +459,7 @@ public class SavedGameParser extends DatParser {
 		public int reservePowerCapacity;
 		public ArrayList<SystemState> systemList = new ArrayList<SystemState>();
 		public ArrayList<RoomState> roomList = new ArrayList<RoomState>();
+		public LinkedHashMap<Point, Integer> warningLightMap = new LinkedHashMap<Point, Integer>();
 		public LinkedHashMap<int[], DoorState> doorMap = new LinkedHashMap<int[], DoorState>();
 		public ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
 		public ArrayList<DroneState> droneList = new ArrayList<DroneState>();
@@ -496,11 +501,27 @@ public class SavedGameParser extends DatParser {
 		}
 
 		/**
+		 * Adds a flashing red light.
+		 * These are associated with hull breaches.
+		 *
+		 * @param x the 0-based Nth floor-square corner from the left
+		 * @param y the 0-based Nth floor-square corner from the top
+		 * @param breachHealth 0 to 100.
+		 */
+		public void setWarningLight( int x, int y, int breachHealth ) {
+			warningLightMap.put( new Point(x, y), new Integer(breachHealth) );
+		}
+
+		/**
 		 * Adds a door.
 		 *
-		 * @param WallXY+Vertical coordinates, as in ShipLayout's setDoor().
+		 * @param wallX the 0-based Nth wall from the left
+		 * @param wallY the 0-based Nth wall from the top
+		 * @param vertical 1 for vertical wall coords, 0 for horizontal
+		 * @see net.blerf.ftl.model.ShipLayout
 		 */
-		public void addDoor( int[] doorCoord, DoorState d ) {
+		public void setDoor( int wallX, int wallY, int vertical, DoorState d ) {
+			int[] doorCoord = new int[] { wallX, wallY, vertical };
 			doorMap.put(doorCoord, d);
 		}
 
@@ -612,6 +633,20 @@ public class SavedGameParser extends DatParser {
 				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
+			result.append("\nWarning Lights...\n");
+			int warningLightId = -1;
+			first = true;
+			for (Map.Entry<Point, Integer> entry : warningLightMap.entrySet()) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+
+				Point lightCoord = entry.getKey();
+				int breachHealth = entry.getValue().intValue();
+
+				result.append(String.format("LightId: %2d (%2d,%2d)\n", ++warningLightId, lightCoord.x, lightCoord.y));
+				result.append(String.format("  Breach HP: %3d\n", breachHealth));
+			}
+
 			result.append("\nDoors...\n");
 			int doorId = -1;
 			first = true;
@@ -623,7 +658,7 @@ public class SavedGameParser extends DatParser {
 				DoorState d = entry.getValue();
 				String orientation = (doorCoord[2]==1 ? "V" : "H");
 
-				result.append(String.format("DoorId: %2d (%d,%d,%s)\n", ++doorId, doorCoord[0], doorCoord[1], orientation));
+				result.append(String.format("DoorId: %2d (%2d,%2d,%2s)\n", ++doorId, doorCoord[0], doorCoord[1], orientation));
 				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
@@ -841,7 +876,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
 			result.append("/ / / Unknowns / / /\n");
 			for (int[] square : squareList) {
-				result.append(String.format("Square: Fire HP: %3d%%, Ignition: %3d%% %2d?\n", square[0], square[1], square[2]));
+				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%% %2d?\n", square[0], square[1], square[2]));
 			}
 			return result.toString();
 		}
