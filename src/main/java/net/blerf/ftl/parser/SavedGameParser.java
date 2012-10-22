@@ -785,7 +785,7 @@ public class SavedGameParser extends DatParser {
 		public void setCombatSkill( int n ) {combatSkill = n; }
 		public void setJumpsSurvived( int n ) {jumpsSurvived = n; }
 		public void setX( int x ) { this.x = x; };
-		public void setY( int y ) { this.y = x; };
+		public void setY( int y ) { this.y = y; };
 		public void setGender( int gender ) { this.gender = gender; }
 
 		public void setAlpha( int n ) { unknownAlpha = n; }
