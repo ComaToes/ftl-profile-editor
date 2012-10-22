@@ -428,7 +428,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( Exception f ) {
 						log.error( "Error reading profile", f );
-						showErrorDialog( "Error reading profile: " + f.getMessage() );
+						showErrorDialog( "Error reading profile:\n" + f.getMessage() );
 					} finally {
 						try {if (raf != null) raf.close();}
 						catch (IOException g) {}
@@ -460,7 +460,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( IOException f ) {
 						log.error( "Error writing profile", f );
-						showErrorDialog( "Error saving profile: " + f.getMessage() );
+						showErrorDialog( "Error saving profile:\n" + f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
@@ -524,8 +524,8 @@ public class FTLFrame extends JFrame {
 						JOptionPane.showMessageDialog(FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE);
 						
 					} catch( IOException ex ) {
-						log.error("Error extracting dat",ex);
-						showErrorDialog("Error extracting dat: " + ex.getMessage());
+						log.error("Error extracting dat", ex);
+						showErrorDialog("Error extracting dat:\n" + ex.getMessage());
 					}
 				} else
 					log.trace("Extract dialog cancelled");
@@ -589,7 +589,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( Exception f ) {
 						log.error( "Error reading saved game", f );
-						showErrorDialog( "Error reading saved game: " + f.getMessage() );
+						showErrorDialog( "Error reading saved game:\n" + f.getMessage() );
 					}
 				} else {
 					log.trace( "Open dialog cancelled" );
@@ -629,7 +629,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( IOException f ) {
 						log.error( "Error dumping saved game", f );
-						showErrorDialog( "Error dumping saved game: "+ f.getMessage() );
+						showErrorDialog( "Error dumping saved game:\n"+ f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
@@ -771,7 +771,7 @@ public class FTLFrame extends JFrame {
 			
 		} catch (Exception e) {
 			log.error( "Error checking for latest version", e );
-			showErrorDialog( "Error checking for latest version\n(Use the About window to check the download page manually)\n"+ e );
+			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e );
 
 		} finally {
 			try {if (in != null) in.close();}

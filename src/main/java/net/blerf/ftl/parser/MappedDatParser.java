@@ -22,6 +22,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
+import org.xml.sax.SAXParseException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +37,7 @@ import net.blerf.ftl.xml.ShipBlueprint;
 public class MappedDatParser extends Parser implements Closeable {
 
 	private static final Logger log = LogManager.getLogger(MappedDatParser.class);
+	private static final String BOM_UTF8 = "\uFEFF";
 
 	private HashMap<String,InnerFileInfo> innerFilesMap = new HashMap<String,InnerFileInfo>();
 	private File datFile = null;
@@ -83,22 +85,24 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		StringBuilder sb = new StringBuilder();
 		String line;
-		sb.append("<achievements>").append("\n");  // XML has multiple root nodes so need to wrap
 		while( (line = in.readLine()) != null ) {
 			line = line.replaceAll("<!--[^>]*-->", "");  // TODO need a proper Matcher for multiline comments
 			line = line.replaceAll("<desc>([^<]*)</name>", "<desc>$1</desc>");
 			sb.append(line).append("\n");
 		}
 		in.close();
-		sb.append("</achievements>").append("\n");
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<achievements>\n");
+		sb.append("</achievements>\n");
 
 		// Parse cleaned XML
-		JAXBContext jc = JAXBContext.newInstance(Achievements.class);
-		Unmarshaller u = jc.createUnmarshaller();
-		Achievements ach = (Achievements)u.unmarshal( new StreamSource(new StringReader(sb.toString())) );
+		Achievements ach = (Achievements)unmarshalFromSequence( Achievements.class, sb );
 
 		return ach.getAchievements();
 	}
@@ -108,12 +112,13 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		StringBuilder sb = new StringBuilder();
 		String line;
-		sb.append("<blueprints>").append("\n");  // XML has multiple root nodes so need to wrap
+
 		boolean comment = false, inShipShields = false, inSlot = false;
 		while( (line = in.readLine()) != null ) {
+			// blueprints.xml
 			line = line.replaceAll("^<!-- sardonyx$", "<!-- sardonyx -->");  // Error above one shipBlueprint
 			line = line.replaceAll("<!--.*-->", "");
 			line = line.replaceAll("<\\?xml[^>]*>", "");
@@ -124,7 +129,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			line = line.replaceAll("</ship>", "</shipBlueprint>");  // Error in one shipBlueprint
 
 			// Multi-line error in shipBlueprint
-			if( line.matches(".*<shields [^\\/>]*>") ) {
+			if ( line.matches(".*<shields [^\\/>]*>") ) {
 				inShipShields = true;
 			} else if (inShipShields) {
 				if (line.contains("<slot>"))
@@ -139,32 +144,45 @@ public class MappedDatParser extends Parser implements Closeable {
 					inShipShields = false;
 			}
 
+			// autoBlueprints.xml
+			line = line.replaceAll("\"max=", "\" max=");  // ahhhh
+			line = line.replaceAll("\"room=", "\" room=");  // ahhhh
+
 			// Remove multiline comments
 			if (comment && line.contains("-->"))
 				comment = false;
-			else if(line.contains("<!--"))
+			else if (line.contains("<!--"))
 				comment = true;
-			else if(!comment)
+			else if (!comment)
 				sb.append(line).append("\n");
 		}
 		in.close();
-		sb.append("</blueprints>").append("\n");
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<blueprints>\n");
+		sb.append("</blueprints>\n");
 
 		// Parse cleaned XML
-		JAXBContext jc = JAXBContext.newInstance(Blueprints.class);
-		Unmarshaller u = jc.createUnmarshaller();
-		Blueprints bps = (Blueprints)u.unmarshal( new StreamSource(new StringReader(sb.toString())) );
+		Blueprints bps = (Blueprints)unmarshalFromSequence( Blueprints.class, sb.toString() );
 
 		return bps;
 	}
 
 	public ShipLayout readLayout( InputStream stream ) throws IOException {
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		ShipLayout shipLayout = new ShipLayout();
 
 		String line = null;
+		boolean firstLine = true;
 		while ( (line = in.readLine()) != null ) {
-			if ( line.length() == 0 ) break;
+			if ( firstLine ) {
+				if ( line.startsWith(BOM_UTF8) )
+					line = line.substring( BOM_UTF8.length() );
+				firstLine = false;
+			}
+			if ( line.length() == 0 ) continue;
 
 			if ( line.equals("X_OFFSET") ) {
 				shipLayout.setOffsetX( Integer.parseInt( in.readLine() ) );
@@ -203,6 +221,68 @@ public class MappedDatParser extends Parser implements Closeable {
 			}
 		}
 		return shipLayout;
+	}
+
+	/**
+	 * Parse XML from a CharSequence into an arbitrary class.
+	 * Besides throwing the usual exception, the logger will
+	 * print what the invalid line was.
+	 */
+	private Object unmarshalFromSequence( Class c, CharSequence seq ) throws JAXBException {
+		Object result = null;
+		try {
+			JAXBContext jc = JAXBContext.newInstance(c);
+			Unmarshaller u = jc.createUnmarshaller();
+			result = u.unmarshal( new StreamSource(new StringReader(seq.toString())) );
+
+		} catch (JAXBException e) {
+			Throwable linkedException = e.getLinkedException();
+			if ( linkedException instanceof SAXParseException ) {
+				// Get the 1-based line number where the problem was.
+				int exLineNum = ((SAXParseException)linkedException).getLineNumber();
+
+				String badLine = "";
+				try { badLine = getLineFromSequence( seq, exLineNum-1 ); }
+				catch (IndexOutOfBoundsException f) {}
+
+				log.error( c.getSimpleName() +" parsing failed at line "+ exLineNum +" (1-based) of xml: "+ badLine );
+			}
+			throw e;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns a specific line from a CharSequence.
+	 *
+	 * @param seq a sequence to search
+	 * @param lineNum a 0-based line number
+	 * @throws IndexOutOfBoundsException if lineNum is greater
+	 *         than the total available lines in seq, or negative.
+	 */
+	private String getLineFromSequence( CharSequence seq, int lineNum ) throws IndexOutOfBoundsException {
+		if ( lineNum < 0 )
+			throw new IndexOutOfBoundsException( "Attempted to get a negative line ("+ lineNum +") from a char sequence" );
+
+		int charCount = seq.length();
+		int currentLineNum = 0;
+		int prevBreak = -1;
+		int c = 0;
+		for (; c < charCount; c++) {
+			if ( seq.charAt(c) == '\n' ) {
+				if ( currentLineNum == lineNum ) {
+					break;
+				} else {
+					prevBreak = c;
+					currentLineNum++;
+				}
+			}
+		}
+		if ( currentLineNum != lineNum )
+			throw new IndexOutOfBoundsException( "Attempted to get line "+ lineNum +" (0-based) from a char sequence but only "+ currentLineNum +" lines were present" );
+
+		return seq.subSequence( prevBreak+1, c ).toString();
 	}
 
 	public InputStream getInputStream(String innerPath) throws FileNotFoundException, IOException {
@@ -273,14 +353,17 @@ public class MappedDatParser extends Parser implements Closeable {
 		public ByteBufferBackedInputStream(ByteBuffer buf) {
 			this.buf = buf;
 		}
+		@Override
 		public synchronized int available() throws IOException {
 			if (!buf.hasRemaining()) return 0;
 			return buf.remaining();
 		}
+		@Override
 		public synchronized int read() throws IOException {
 			if (!buf.hasRemaining()) return -1;
 			return buf.get() & 0xFF;
 		}
+		@Override
 		public synchronized int read(byte[] bytes, int off, int len) throws IOException {
 			if (!buf.hasRemaining()) return -1;
 			len = Math.min(len, buf.remaining());
