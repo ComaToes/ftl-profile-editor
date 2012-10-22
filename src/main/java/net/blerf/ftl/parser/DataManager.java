@@ -38,9 +38,11 @@ public class DataManager implements Closeable {
 	private List<Achievement> achievements;
 	private List<Achievement> generalAchievements;
 	private Blueprints blueprints;
+	private Blueprints autoBlueprints;
 
 	private Map<String, WeaponBlueprint> weapons;	
 	private Map<String, ShipBlueprint> ships;
+	private Map<String, ShipBlueprint> autoShips;
 	private List<ShipBlueprint> playerShips; // Type A's
 	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
 	private Map<String, ShipLayout> shipLayouts;
@@ -52,18 +54,27 @@ public class DataManager implements Closeable {
 		
 		log.trace("DataManager initialising");
 		
-		InputStream ach_stream = null;
-		InputStream blue_stream = null;
+		boolean meltdown = false;
+		InputStream achStream = null;
+		InputStream blueStream = null;
+		InputStream autoBlueStream = null;
 		
 		try {
 			dataParser = new MappedDatParser( new File(ftlFolder, "resources/data.dat") );
 	 		resourceParser = new MappedDatParser( new File(ftlFolder, "resources/resource.dat") );
-		
-			ach_stream = dataParser.getInputStream( "data/achievements.xml" );
-			achievements = dataParser.readAchievements( ach_stream );
-			blue_stream = dataParser.getInputStream( "data/blueprints.xml" );
-			blueprints = dataParser.readBlueprints( blue_stream );
-		
+
+			log.debug("Reading 'data/achievements.xml'");
+			achStream = dataParser.getInputStream( "data/achievements.xml" );
+			achievements = dataParser.readAchievements( achStream );
+
+			log.debug("Reading 'data/blueprints.xml'");
+			blueStream = dataParser.getInputStream( "data/blueprints.xml" );
+			blueprints = dataParser.readBlueprints( blueStream );
+
+			log.debug("Reading 'data/autoBlueprints.xml'");
+			autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
+			autoBlueprints = dataParser.readBlueprints( autoBlueStream );
+
 			generalAchievements = new ArrayList<Achievement>();
 			for( Achievement ach : achievements )
 				if ( ach.getShipId() == null )
@@ -76,7 +87,11 @@ public class DataManager implements Closeable {
 			ships = new HashMap<String, ShipBlueprint>();
 			for ( ShipBlueprint ship : blueprints.getShipBlueprint() )
 				ships.put( ship.getId(), ship );
-		
+
+			autoShips = new HashMap<String, ShipBlueprint>();
+			for ( ShipBlueprint ship : autoBlueprints.getShipBlueprint() )
+				autoShips.put( ship.getId(), ship );
+
 			playerShips = new ArrayList<ShipBlueprint>();
 			playerShips.add( ships.get("PLAYER_SHIP_HARD") );
 			playerShips.add( ships.get("PLAYER_SHIP_STEALTH") );
@@ -87,7 +102,7 @@ public class DataManager implements Closeable {
 			playerShips.add( ships.get("PLAYER_SHIP_ROCK") );
 			playerShips.add( ships.get("PLAYER_SHIP_ENERGY") );
 			playerShips.add( ships.get("PLAYER_SHIP_CRYSTAL") );
-		
+
 			shipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
 			for (ShipBlueprint ship: playerShips) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
@@ -99,16 +114,27 @@ public class DataManager implements Closeable {
 
 			// This'll populate as layouts are requested.
 			shipLayouts = new HashMap<String, ShipLayout>();
-		
+
+		} catch (JAXBException e) {
+			meltdown = true;
+			throw e;
+
 		} catch (IOException e) {
-			log.error( "Error while constructing DataManager", e );
-			this.close();
+			meltdown = true;
+			throw e;
 
 		} finally {
-			try {if (ach_stream != null) ach_stream.close();}
-			catch (IOException f) {}
-			try {if (blue_stream != null) blue_stream.close();}
-			catch (IOException f) {}
+			ArrayList<InputStream> streams = new ArrayList<InputStream>();
+			streams.add(achStream);
+			streams.add(blueStream);
+			streams.add(autoBlueStream);
+
+			for (InputStream stream : streams) {
+				try {if (stream != null) achStream.close();}
+				catch (IOException f) {}
+			}
+
+			if ( meltdown ) this.close();
 		}
 	}
 
@@ -149,6 +175,8 @@ public class DataManager implements Closeable {
 
 	public ShipBlueprint getShip( String id ) {
 		ShipBlueprint result = ships.get(id);
+		if ( result == null )  // TODO: Auto ships might need their own method.
+			result = autoShips.get(id);
 		if ( result == null )
 			log.error( "No ShipBlueprint found for id: "+ id );
 		return result;
