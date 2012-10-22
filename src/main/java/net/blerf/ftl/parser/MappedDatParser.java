@@ -22,6 +22,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
+import org.xml.sax.SAXParseException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -101,9 +102,7 @@ public class MappedDatParser extends Parser implements Closeable {
 		sb.append("</achievements>\n");
 
 		// Parse cleaned XML
-		JAXBContext jc = JAXBContext.newInstance(Achievements.class);
-		Unmarshaller u = jc.createUnmarshaller();
-		Achievements ach = (Achievements)u.unmarshal( new StreamSource(new StringReader(sb.toString())) );
+		Achievements ach = (Achievements)unmarshalFromSequence( Achievements.class, sb );
 
 		return ach.getAchievements();
 	}
@@ -161,9 +160,7 @@ public class MappedDatParser extends Parser implements Closeable {
 		sb.append("</blueprints>\n");
 
 		// Parse cleaned XML
-		JAXBContext jc = JAXBContext.newInstance(Blueprints.class);
-		Unmarshaller u = jc.createUnmarshaller();
-		Blueprints bps = (Blueprints)u.unmarshal( new StreamSource(new StringReader(sb.toString())) );
+		Blueprints bps = (Blueprints)unmarshalFromSequence( Blueprints.class, sb.toString() );
 
 		return bps;
 	}
@@ -219,6 +216,68 @@ public class MappedDatParser extends Parser implements Closeable {
 			}
 		}
 		return shipLayout;
+	}
+
+	/**
+	 * Parse XML from a CharSequence into an arbitrary class.
+	 * Besides throwing the usual exception, the logger will
+	 * print what the invalid line was.
+	 */
+	private Object unmarshalFromSequence( Class c, CharSequence seq ) throws JAXBException {
+		Object result = null;
+		try {
+			JAXBContext jc = JAXBContext.newInstance(c);
+			Unmarshaller u = jc.createUnmarshaller();
+			result = u.unmarshal( new StreamSource(new StringReader(seq.toString())) );
+
+		} catch (JAXBException e) {
+			Throwable linkedException = e.getLinkedException();
+			if ( linkedException instanceof SAXParseException ) {
+				// Get the 1-based line number where the problem was.
+				int exLineNum = ((SAXParseException)linkedException).getLineNumber();
+
+				String badLine = "";
+				try { badLine = getLineFromSequence( seq, exLineNum-1 ); }
+				catch (IndexOutOfBoundsException f) {}
+
+				log.error( c.getSimpleName() +" parsing failed at line "+ exLineNum +" (1-based) of xml: "+ badLine );
+			}
+			throw e;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns a specific line from a CharSequence.
+	 *
+	 * @param seq a sequence to search
+	 * @param lineNum a 0-based line number
+	 * @throws IndexOutOfBoundsException if lineNum is greater
+	 *         than the total available lines in seq, or negative.
+	 */
+	private String getLineFromSequence( CharSequence seq, int lineNum ) throws IndexOutOfBoundsException {
+		if ( lineNum < 0 )
+			throw new IndexOutOfBoundsException( "Attempted to get a negative line ("+ lineNum +") from a char sequence" );
+
+		int charCount = seq.length();
+		int currentLineNum = 0;
+		int prevBreak = -1;
+		int c = 0;
+		for (; c < charCount; c++) {
+			if ( seq.charAt(c) == '\n' ) {
+				if ( currentLineNum == lineNum ) {
+					break;
+				} else {
+					prevBreak = c;
+					currentLineNum++;
+				}
+			}
+		}
+		if ( currentLineNum != lineNum )
+			throw new IndexOutOfBoundsException( "Attempted to get line "+ lineNum +" (0-based) from a char sequence but only "+ currentLineNum +" lines were present" );
+
+		return seq.subSequence( prevBreak+1, c ).toString();
 	}
 
 	public InputStream getInputStream(String innerPath) throws FileNotFoundException, IOException {
