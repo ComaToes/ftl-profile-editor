@@ -70,7 +70,7 @@ public class SavedGameParser extends DatParser {
 			// Variable length unknown list. Need to read to get to the right position for beacon list
 			int unknownCount = readInt(in);
 			List<Integer> mil = new ArrayList<Integer>();
-			for (int i = 0; i < unknownCount; i++) {
+			for (int i=0; i < unknownCount; i++) {
 				mil.add( readInt(in) );
 			}
 			gameState.mysteryIntList = mil;
@@ -78,7 +78,7 @@ public class SavedGameParser extends DatParser {
 			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
 			
 			int beaconCount = readInt(in);
-			for (int i = 0; i < beaconCount; i++) {
+			for (int i=0; i < beaconCount; i++) {
 				gameState.addBeacon( readBeacon(in) );
 			}
 
@@ -101,11 +101,21 @@ public class SavedGameParser extends DatParser {
 
 		String shipBlueprintId = readString(in);  // blueprints.xml / autoBlueprints.xml.
 		String shipName = readString(in);
-		String shipLayoutId = readString(in);
-		ShipState shipState = new ShipState(shipName, shipBlueprintId, shipLayoutId, playerControlled);
+		String pseudoLayoutId = readString(in);   // ?
+
+		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+		if ( shipBlueprint == null )
+			throw new RuntimeException( String.format("Could not find blueprint for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
+
+		String shipLayoutId = shipBlueprint.getLayout();
 
 		// Use this for room and door info later.
 		ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
+		if ( shipLayout == null )
+			throw new RuntimeException( String.format("Could not find layout for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
+
+		ShipState shipState = new ShipState(shipName, shipBlueprintId, shipLayoutId, playerControlled);
+		shipState.setPseudoLayoutId( pseudoLayoutId );
 
 		int startingCrewCount = readInt(in);
 		for (int i=0; i < startingCrewCount; i++) {
@@ -171,7 +181,7 @@ public class SavedGameParser extends DatParser {
 			shipState.addAugmentId( readString(in) );
 		}
 
-		int cargoCount = readInt(in);
+		int cargoCount = readInt(in);  // TODO: Nearby ships say 1, but have none?.
 		for (int i=0; i < cargoCount; i++) {
 			shipState.addCargoItemId( readString(in) );
 		}
@@ -272,7 +282,7 @@ public class SavedGameParser extends DatParser {
 
 		boolean visited = readBool(in);
 		beacon.setVisited(visited);
-		if( visited ) {
+		if ( visited ) {
 			beacon.setBgStarscapeImageInnerPath( readString(in) );
 			beacon.setBgSpriteImageInnerPath( readString(in) );
 			beacon.setBgSpritePosX( readInt(in) );
@@ -284,14 +294,14 @@ public class SavedGameParser extends DatParser {
 		
 		boolean enemyPresent = readBool(in);
 		beacon.setEnemyPresent(enemyPresent);
-		if( enemyPresent ) {
+		if ( enemyPresent ) {
 			beacon.setShipEventId( readString(in) );
 			beacon.setShipBlueprintListId( readString(in) );
 			beacon.setUnknownEnemyPresentAlpha( readInt(in) );
 		}
 		
 		int fleetPresence = readInt(in);
-		switch( fleetPresence ) {
+		switch ( fleetPresence ) {
 			case 0: beacon.setFleetPresence( FleetPresence.NONE ); break;
 			case 1: beacon.setFleetPresence( FleetPresence.REBEL ); break;
 			case 2: beacon.setFleetPresence( FleetPresence.FEDERATION ); break;
@@ -303,7 +313,7 @@ public class SavedGameParser extends DatParser {
 		
 		boolean storePresent = readBool(in);
 		beacon.setStorePresent(storePresent);
-		if( storePresent ) {
+		if ( storePresent ) {
 			StoreState store = new StoreState();
 			store.setTopShelf( readStoreShelf(in) );
 			store.setBottomShelf( readStoreShelf(in) );
@@ -322,7 +332,7 @@ public class SavedGameParser extends DatParser {
 		StoreShelf shelf = new StoreShelf();
 		
 		int itemType = readInt(in);
-		switch( itemType ) {
+		switch ( itemType ) {
 			case 0: shelf.setItemType( StoreItemType.WEAPON ); break;
 			case 1: shelf.setItemType( StoreItemType.DRONE ); break;
 			case 2: shelf.setItemType( StoreItemType.AUGMENT ); break;
@@ -333,7 +343,7 @@ public class SavedGameParser extends DatParser {
 		
 		for (int i = 0; i < 3; i++) {
 			int available = readInt(in);
-			if( available < 0 )
+			if ( available < 0 )
 				continue; // -1 means no item
 			String itemId = readString(in);
 			shelf.addItem( new StoreItem(available > 0, itemId) );
@@ -351,7 +361,7 @@ public class SavedGameParser extends DatParser {
 		private String playerShipName = "";
 		private String playerShipBlueprintId = "";
 		private int sectorNumber = 1;
-		private HashMap<String,Integer> stateVars = new HashMap<String,Integer>();
+		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
 		private int sectorLayoutSeed, rebelFleetOffset;
 		private List<Integer> mysteryIntList;
@@ -419,7 +429,8 @@ public class SavedGameParser extends DatParser {
 			}
 
 			result.append("\nPlayer Ship...\n");
-			result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			if ( playerShipState != null )
+				result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nSector Data...\n");
 			result.append( String.format("Sector Layout Seed: %d\n", sectorLayoutSeed) );
@@ -453,6 +464,7 @@ public class SavedGameParser extends DatParser {
 	public class ShipState {
 		private boolean playerControlled = false;
 		private String shipName, shipBlueprintId, shipLayoutId;
+		private String pseudoLayoutId;
 		private ArrayList<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
 		private int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
@@ -472,6 +484,19 @@ public class SavedGameParser extends DatParser {
 			this.shipBlueprintId = shipBlueprintId;
 			this.shipLayoutId = shipLayoutId;
 			this.playerControlled = playerControlled;
+		}
+
+		/**
+		 * Sets what resembles a ShipLayout id string, but isn't.
+		 * TODO: Find out what this is for.
+		 *
+		 * Values in the wild:
+		 *   jelly_croissant_pirate, rebel_long_pirate...
+		 *
+		 * The proper shipLayoutId comes from the ShipBlueprint.
+		 */
+		public void setPseudoLayoutId( String pseudoLayoutId ) {
+			this.pseudoLayoutId = pseudoLayoutId;
 		}
 
 		public void addStartingCrewMember( StartingCrewState sc ) {
@@ -586,9 +611,9 @@ public class SavedGameParser extends DatParser {
 
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
-			result.append(String.format("Ship Name: %s\n", shipName));
-			result.append(String.format("Ship Type: %s\n", shipBlueprintId));
-			result.append(String.format("Ship Layout: %s\n", shipLayoutId));
+			result.append(String.format("Ship Name:   %s\n", shipName));
+			result.append(String.format("Ship Type:   %s\n", shipBlueprintId));
+			result.append(String.format("Ship Layout: %s (Actually %s)\n", shipLayoutId, pseudoLayoutId));
 
 			result.append("\nSupplies...\n");
 			result.append(String.format("Hull:        %3d\n", hullAmt));
@@ -993,7 +1018,7 @@ public class SavedGameParser extends DatParser {
 			StringBuilder result = new StringBuilder();
 			
 			result.append(String.format("Visited:           %b\n", visited));
-			if( visited ) {
+			if ( visited ) {
 				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("Bkg Sprite:        %s\n", bgSpriteImageInnerPath));
 				result.append(String.format("Bkg Sprite Coords: %d,%d\n", bgSpritePosX, bgSpritePosY));
