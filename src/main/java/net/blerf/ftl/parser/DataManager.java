@@ -1,5 +1,6 @@
 package net.blerf.ftl.parser;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -20,7 +21,7 @@ import net.blerf.ftl.xml.WeaponBlueprint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class DataManager {
+public class DataManager implements Closeable {
 	
 	private static final Logger log = LogManager.getLogger(DataManager.class);
 
@@ -101,11 +102,7 @@ public class DataManager {
 		
 		} catch (IOException e) {
 			log.error( "Error while constructing DataManager", e );
-
-			try {if (dataParser != null) dataParser.close();}
-			catch (IOException f) {}
-			try {if (resourceParser != null) resourceParser.close();}
-			catch (IOException f) {}
+			this.close();
 
 		} finally {
 			try {if (ach_stream != null) ach_stream.close();}
@@ -113,6 +110,14 @@ public class DataManager {
 			try {if (blue_stream != null) blue_stream.close();}
 			catch (IOException f) {}
 		}
+	}
+
+	public void close() {
+		try {if (dataParser != null) dataParser.close();}
+		catch (IOException e) {}
+
+		try {if (resourceParser != null) resourceParser.close();}
+		catch (IOException e) {}
 	}
 	
 	public InputStream getDataInputStream( String innerPath ) throws IOException {
