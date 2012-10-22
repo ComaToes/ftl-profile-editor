@@ -82,7 +82,13 @@ public class SavedGameParser extends DatParser {
 				gameState.addBeacon( readBeacon(in) );
 			}
 
-			// Mystery bytes (including recent beacon info)...
+			int questEventCount = readInt(in);
+			for (int i=0; i < questEventCount; i++) {
+				String questEventId = readString(in);
+				int questAlpha = readInt(in);  // beaconId?
+				gameState.addQuestEvent( questEventId, questAlpha );
+			}
+
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
 			gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
 
@@ -366,7 +372,8 @@ public class SavedGameParser extends DatParser {
 		private ShipState playerShipState = null;
 		private int sectorLayoutSeed, rebelFleetOffset;
 		private List<Integer> mysteryIntList;
-		private List<BeaconState> beacons = new ArrayList<BeaconState>();
+		private List<BeaconState> beaconList = new ArrayList<BeaconState>();
+		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public void setSectorNumber( int n ) { sectorNumber = n; }
@@ -409,7 +416,11 @@ public class SavedGameParser extends DatParser {
 		}
 
 		public void addBeacon( BeaconState beacon ) {
-			beacons.add( beacon );
+			beaconList.add( beacon );
+		}
+
+		public void addQuestEvent( String questEventId, int questAlpha ) {
+			questEventMap.put( questEventId, new Integer(questAlpha) );
 		}
 
 		public void addMysteryBytes( MysteryBytes m ) {
@@ -441,11 +452,18 @@ public class SavedGameParser extends DatParser {
 			result.append("\nSector Beacons...\n");
 			int beaconId = 0;
 			first = true;
-			for( BeaconState beacon: beacons ) {
+			for( BeaconState beacon: beaconList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append( String.format("BeaconId: %2d\n", beaconId++) );
 				result.append( beacon.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			}
+
+			result.append("\nQuests...\n");
+			for (Map.Entry<String, Integer> entry : questEventMap.entrySet()) {
+				String questEventId = entry.getKey();
+				int questAlpha = entry.getValue().intValue();
+				result.append(String.format("QuestEventId: %s, Alpha: %d\n", questEventId, questAlpha));
 			}
 
 			result.append("\nMystery Bytes...\n");
