@@ -36,6 +36,7 @@ import net.blerf.ftl.xml.ShipBlueprint;
 public class MappedDatParser extends Parser implements Closeable {
 
 	private static final Logger log = LogManager.getLogger(MappedDatParser.class);
+	private static final String BOM_UTF8 = "\uFEFF";
 
 	private HashMap<String,InnerFileInfo> innerFilesMap = new HashMap<String,InnerFileInfo>();
 	private File datFile = null;
@@ -83,17 +84,21 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		StringBuilder sb = new StringBuilder();
 		String line;
-		sb.append("<achievements>").append("\n");  // XML has multiple root nodes so need to wrap
 		while( (line = in.readLine()) != null ) {
 			line = line.replaceAll("<!--[^>]*-->", "");  // TODO need a proper Matcher for multiline comments
 			line = line.replaceAll("<desc>([^<]*)</name>", "<desc>$1</desc>");
 			sb.append(line).append("\n");
 		}
 		in.close();
-		sb.append("</achievements>").append("\n");
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<achievements>\n");
+		sb.append("</achievements>\n");
 
 		// Parse cleaned XML
 		JAXBContext jc = JAXBContext.newInstance(Achievements.class);
@@ -108,10 +113,10 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		StringBuilder sb = new StringBuilder();
 		String line;
-		sb.append("<blueprints>").append("\n");  // XML has multiple root nodes so need to wrap
+
 		boolean comment = false, inShipShields = false, inSlot = false;
 		while( (line = in.readLine()) != null ) {
 			line = line.replaceAll("^<!-- sardonyx$", "<!-- sardonyx -->");  // Error above one shipBlueprint
@@ -124,7 +129,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			line = line.replaceAll("</ship>", "</shipBlueprint>");  // Error in one shipBlueprint
 
 			// Multi-line error in shipBlueprint
-			if( line.matches(".*<shields [^\\/>]*>") ) {
+			if ( line.matches(".*<shields [^\\/>]*>") ) {
 				inShipShields = true;
 			} else if (inShipShields) {
 				if (line.contains("<slot>"))
@@ -142,13 +147,18 @@ public class MappedDatParser extends Parser implements Closeable {
 			// Remove multiline comments
 			if (comment && line.contains("-->"))
 				comment = false;
-			else if(line.contains("<!--"))
+			else if (line.contains("<!--"))
 				comment = true;
-			else if(!comment)
+			else if (!comment)
 				sb.append(line).append("\n");
 		}
 		in.close();
-		sb.append("</blueprints>").append("\n");
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<blueprints>\n");
+		sb.append("</blueprints>\n");
 
 		// Parse cleaned XML
 		JAXBContext jc = JAXBContext.newInstance(Blueprints.class);
@@ -159,12 +169,18 @@ public class MappedDatParser extends Parser implements Closeable {
 	}
 
 	public ShipLayout readLayout( InputStream stream ) throws IOException {
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream));
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		ShipLayout shipLayout = new ShipLayout();
 
 		String line = null;
+		boolean firstLine = true;
 		while ( (line = in.readLine()) != null ) {
-			if ( line.length() == 0 ) break;
+			if ( firstLine ) {
+				if ( line.startsWith(BOM_UTF8) )
+					line = line.substring( BOM_UTF8.length() );
+				firstLine = false;
+			}
+			if ( line.length() == 0 ) continue;
 
 			if ( line.equals("X_OFFSET") ) {
 				shipLayout.setOffsetX( Integer.parseInt( in.readLine() ) );
