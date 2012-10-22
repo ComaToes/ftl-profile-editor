@@ -46,8 +46,8 @@ public class FTLProfileEditor {
 				writeConfig = true;  // Create a new cfg, but only if necessary.
 			}
 		} catch (IOException e) {
-			showErrorDialog( "Error loading config from " + propFile.getPath() );
 			log.error( "Error loading config", e );
+			showErrorDialog( "Error loading config from " + propFile.getPath() );
 		} finally {
 			if ( in != null ) { try { in.close(); } catch (IOException e) {} }
 		}
@@ -95,8 +95,8 @@ public class FTLProfileEditor {
 				config.store( out, "FTL Profile Editor - Config File" );
 
 			} catch (IOException e) {
-				showErrorDialog( "Error saving config to " + propFile.getPath() );
 				log.error( "Error saving config to " + propFile.getPath(), e );
+				showErrorDialog( "Error saving config to " + propFile.getPath() );
 
 			} finally {
 				if ( out != null ) { try { out.close(); } catch (IOException e) {} }
@@ -109,8 +109,9 @@ public class FTLProfileEditor {
 			DataManager.init( ftlPath );
 			
 		} catch (Exception e) {
-			showErrorDialog( "Error parsing FTL data files" );
 			log.error( "Error parsing FTL data files", e );
+			showErrorDialog( "Error parsing FTL data files" );
+			System.exit(1);
 		}
 
 		try {
