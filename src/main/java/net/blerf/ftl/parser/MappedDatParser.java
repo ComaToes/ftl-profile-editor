@@ -118,6 +118,7 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		boolean comment = false, inShipShields = false, inSlot = false;
 		while( (line = in.readLine()) != null ) {
+			// blueprints.xml
 			line = line.replaceAll("^<!-- sardonyx$", "<!-- sardonyx -->");  // Error above one shipBlueprint
 			line = line.replaceAll("<!--.*-->", "");
 			line = line.replaceAll("<\\?xml[^>]*>", "");
@@ -142,6 +143,10 @@ public class MappedDatParser extends Parser implements Closeable {
 				} else if (line.contains("</shields>"))
 					inShipShields = false;
 			}
+
+			// autoBlueprints.xml
+			line = line.replaceAll("\"max=", "\" max=");  // ahhhh
+			line = line.replaceAll("\"room=", "\" room=");  // ahhhh
 
 			// Remove multiline comments
 			if (comment && line.contains("-->"))
