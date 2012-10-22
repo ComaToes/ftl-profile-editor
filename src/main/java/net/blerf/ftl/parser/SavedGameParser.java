@@ -89,6 +89,14 @@ public class SavedGameParser extends DatParser {
 				gameState.addQuestEvent( questEventId, questAlpha );
 			}
 
+			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+
+			boolean shipNearby = readBool(in);
+			if ( shipNearby ) {
+				ShipState nearbyShipState = readShip( in, false );
+				gameState.setNearbyShipState(nearbyShipState);
+			}
+
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
 			gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
 
@@ -374,6 +382,7 @@ public class SavedGameParser extends DatParser {
 		private List<Integer> mysteryIntList;
 		private List<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
+		private ShipState nearbyShipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public void setSectorNumber( int n ) { sectorNumber = n; }
@@ -423,6 +432,10 @@ public class SavedGameParser extends DatParser {
 			questEventMap.put( questEventId, new Integer(questAlpha) );
 		}
 
+		public void setNearbyShipState( ShipState shipState ) {
+			this.nearbyShipState = shipState;
+		}
+
 		public void addMysteryBytes( MysteryBytes m ) {
 			mysteryList.add(m);
 		}
@@ -465,6 +478,10 @@ public class SavedGameParser extends DatParser {
 				int questAlpha = entry.getValue().intValue();
 				result.append(String.format("QuestEventId: %s, Alpha: %d\n", questEventId, questAlpha));
 			}
+
+			result.append("\nNearby Ship...\n");
+			if ( nearbyShipState != null )
+				result.append(nearbyShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nMystery Bytes...\n");
 			first = true;
