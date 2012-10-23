@@ -277,9 +277,9 @@ public class SavedGameParser extends DatParser {
 	}
 
 	private DoorState readDoor( InputStream in ) throws IOException {
-		int alpha = readInt(in);  // 0. What else would a door have; damage?
 		int open = readInt(in);   // 0=Closed, 1=Open
-		DoorState door = new DoorState( alpha, open );
+		int alpha = readInt(in);  // 0. What else would a door have; damage?
+		DoorState door = new DoorState( open, alpha );
 		return door;
 	}
 
@@ -981,9 +981,9 @@ public class SavedGameParser extends DatParser {
 
 		private int unknownAlpha;
 
-		public DoorState( int alpha, int open ) {
-			this.unknownAlpha = alpha;
+		public DoorState( int open, int alpha ) {
 			this.open = open;
+			this.unknownAlpha = alpha;
 		}
 
 		@Override
