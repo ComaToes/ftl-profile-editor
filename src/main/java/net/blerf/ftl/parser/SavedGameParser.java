@@ -64,10 +64,9 @@ public class SavedGameParser extends DatParser {
 
 			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 			
-			gameState.sectorLayoutSeed = readInt(in);
+			gameState.setSectorLayoutSeed( readInt(in) );
 			
-			// Pixel offset from far right of sector map
-			gameState.rebelFleetOffset = readInt(in);
+			gameState.setRebelFleetOffset( readInt(in) );
 			
 			gameState.addMysteryBytes( new MysteryBytes(in, 24) );
 			
@@ -86,8 +85,8 @@ public class SavedGameParser extends DatParser {
 			int questEventCount = readInt(in);
 			for (int i=0; i < questEventCount; i++) {
 				String questEventId = readString(in);
-				int questAlpha = readInt(in);  // beaconId?
-				gameState.addQuestEvent( questEventId, questAlpha );
+				int questBeaconId = readInt(in);
+				gameState.addQuestEvent( questEventId, questBeaconId );
 			}
 
 			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
@@ -220,7 +219,7 @@ public class SavedGameParser extends DatParser {
 		crew.setX( readInt(in) );
 		crew.setY( readInt(in) );
 		crew.setRoomId( readInt(in) );
-		crew.setRoomSquare( readInt(in) );   // 0-based, as a wrapped H row.
+		crew.setRoomSquare( readInt(in) );
 		crew.setPlayerControlled( readBool(in) );
 		crew.setPilotSkill( readInt(in) );
 		crew.setEngineSkill( readInt(in) );
@@ -228,7 +227,7 @@ public class SavedGameParser extends DatParser {
 		crew.setWeaponSkill( readInt(in) );
 		crew.setRepairSkill( readInt(in) );
 		crew.setCombatSkill( readInt(in) );  // Maybe
-		crew.setGender( readInt(in) );       // 1 == male, 0 == female (only human females are 0, prob because other races don't have female gfx)
+		crew.setGender( readInt(in) );
 		crew.setEta( readInt(in) );          // Matches repair?
 		crew.setTheta( readInt(in) );
 		crew.setKappa( readInt(in) );
@@ -274,7 +273,7 @@ public class SavedGameParser extends DatParser {
 	}
 
 	private DoorState readDoor( InputStream in ) throws IOException {
-		int open = readInt(in);   // 0=Closed, 1=Open
+		boolean open = readBool(in);
 		int alpha = readInt(in);  // 0. What else would a door have; damage?
 		DoorState door = new DoorState( open, alpha );
 		return door;
@@ -352,7 +351,7 @@ public class SavedGameParser extends DatParser {
 			case 0: shelf.setItemType( StoreItemType.WEAPON ); break;
 			case 1: shelf.setItemType( StoreItemType.DRONE ); break;
 			case 2: shelf.setItemType( StoreItemType.AUGMENT ); break;
-			case 3: shelf.setItemType( StoreItemType.CREW ); break; // TODO: this is a guess. no sample save to verify
+			case 3: shelf.setItemType( StoreItemType.CREW ); break;
 			case 4: shelf.setItemType( StoreItemType.SYSTEM ); break;
 			default: throw new RuntimeException( "Unknown store item type: " + itemType );
 		}
@@ -380,12 +379,26 @@ public class SavedGameParser extends DatParser {
 		private int sectorNumber = 1;
 		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
-		private int sectorLayoutSeed, rebelFleetOffset;
+		private int sectorLayoutSeed;
+		private int rebelFleetOffset;  // Pixels from far right of sector map.
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ShipState nearbyShipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+
+		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
+		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
+		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
+		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
+
+		/**
+		 * Set redundant player ship info.
+		 */
+		public void setPlayerShipInfo( String shipName, String shipBlueprintId ) {
+			playerShipName = shipName;
+			playerShipBlueprintId = shipBlueprintId;
+		}
 
 		public void setSectorNumber( int n ) { sectorNumber = n; }
 
@@ -415,22 +428,12 @@ public class SavedGameParser extends DatParser {
 			return result.intValue();
 		}
 
-		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
-		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
-		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
-		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
-
-		/**
-		 * Set redundant player ship info.
-		 */
-		public void setPlayerShipInfo( String shipName, String shipBlueprintId ) {
-			playerShipName = shipName;
-			playerShipBlueprintId = shipBlueprintId;
-		}
-
 		public void setPlayerShipState( ShipState shipState ) {
 			this.playerShipState = shipState;
 		}
+
+		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
+		public void setRebelFleetOffset( int n ) { rebelFleetOffset = n; }
 
 		/**
 		 * Adds a dot of the sector tree.
@@ -448,8 +451,8 @@ public class SavedGameParser extends DatParser {
 			beaconList.add( beacon );
 		}
 
-		public void addQuestEvent( String questEventId, int questAlpha ) {
-			questEventMap.put( questEventId, new Integer(questAlpha) );
+		public void addQuestEvent( String questEventId, int questBeaconId ) {
+			questEventMap.put( questEventId, new Integer(questBeaconId) );
 		}
 
 		public void setNearbyShipState( ShipState shipState ) {
@@ -507,8 +510,8 @@ public class SavedGameParser extends DatParser {
 			result.append("\nQuests...\n");
 			for (Map.Entry<String, Integer> entry : questEventMap.entrySet()) {
 				String questEventId = entry.getKey();
-				int questAlpha = entry.getValue().intValue();
-				result.append(String.format("QuestEventId: %s, Alpha: %d\n", questEventId, questAlpha));
+				int questBeaconId = entry.getValue().intValue();
+				result.append(String.format("QuestEventId: %s, BeaconId: %d\n", questEventId, questBeaconId));
 			}
 
 			result.append("\nNearby Ship...\n");
@@ -834,17 +837,19 @@ public class SavedGameParser extends DatParser {
 		public final int MASTERY_INTERVAL_REPAIR = 18;
 		public final int MASTERY_INTERVAL_COMBAT = 8;
 
-		// Neither Crystal crews' lockdown, nor its cooldown are stored.
+		// Neither Crystal crews' lockdown, nor its cooldown is stored.
+		// Zoltan-produced power is not stored in SystemState.
 
 		private String name, race;
 		private int health;
-		private int blueprintRoomId, roomSquare;
+		private int blueprintRoomId;
+		private int roomSquare;  // 0-based, L-to-R wrapped row.
 		private boolean playerControlled;
 		private int pilotSkill, engineSkill, shieldSkill;
 		private int weaponSkill, repairSkill, combatSkill;
 		private int jumpsSurvived;
 		private int x, y;
-		private int gender;
+		private int gender;  // 1=Male, 0=Female.
 
 		private int unknownAlpha;
 		private int unknownEpsilon, unknownDigamma, unknownEta;
@@ -885,7 +890,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Health:           %3d\n", health));
 			result.append(String.format("RoomId:           %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:      %3d\n", roomSquare));
-			result.append(String.format("Player Controlled: %3s\n", playerControlled));
+			result.append(String.format("Player Controlled: %b\n", playerControlled));
 			result.append(String.format("Pilot Skill:      %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
 			result.append(String.format("Engine Skill:     %3d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
 			result.append(String.format("Shield Skill:     %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
@@ -893,8 +898,8 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Repair Skill:     %3d (Mastery Interval: %2d)\n", repairSkill, MASTERY_INTERVAL_REPAIR));
 			result.append(String.format("Combat Skill?:    %3d (Mastery Interval: %2d)\n", combatSkill, MASTERY_INTERVAL_COMBAT));
 			result.append(String.format("Jumps Survived:   %3d\n", jumpsSurvived));
-			result.append(String.format("Position:         (%d,%d)\n", x, y));
-			result.append(String.format("Gender:           %s\n", gender == 1 ? "Male" : "Female" ));
+			result.append(String.format("Position:         (%3d,%3d)\n", x, y));
+			result.append(String.format("Gender:           %s\n", (gender == 1 ? "Male" : "Female") ));
 			result.append("/ / / Unknowns / / /\n");
 			result.append(String.format("Alpha:            %3d\n", unknownAlpha));
 			result.append(String.format("Eta:              %3d\n", unknownEta));
@@ -996,11 +1001,11 @@ public class SavedGameParser extends DatParser {
 
 
 	public class DoorState {
-		private int open;
+		private boolean open;
 
 		private int unknownAlpha;
 
-		public DoorState( int open, int alpha ) {
+		public DoorState( boolean open, int alpha ) {
 			this.open = open;
 			this.unknownAlpha = alpha;
 		}
@@ -1008,7 +1013,7 @@ public class SavedGameParser extends DatParser {
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Open: %d, Alpha?: %d\n", open, unknownAlpha));
+			result.append(String.format("Open: %b, Alpha?: %d\n", open, unknownAlpha));
 			return result.toString();
 		}
 	}
@@ -1018,7 +1023,7 @@ public class SavedGameParser extends DatParser {
 	public class WeaponState {
 		private String weaponId;
 		private int armed;
-		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown.
+		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown. 0 when not armed.
 
 		public WeaponState( String weaponId, int armed, int cooldownTicks ) {
 			this.weaponId = weaponId;
