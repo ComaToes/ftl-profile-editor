@@ -37,8 +37,12 @@ public class SavedGameParser extends DatParser {
 			SavedGameState gameState = new SavedGameState();
 			in = new FileInputStream(datFile);
 
-			// Mystery bytes x24
-			gameState.addMysteryBytes( new MysteryBytes(in, 24) );
+			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+
+			gameState.setTotalShipsDefeated( readInt(in) );
+			gameState.setTotalBeaconsExplored( readInt(in) );
+			gameState.setTotalScrapCollected( readInt(in) );
+			gameState.setTotalCrewHired( readInt(in) );
 
 			String playerShipName = readString(in);         // Redundant.
 			String playerShipBlueprintId = readString(in);  // Redundant.
@@ -373,6 +377,7 @@ public class SavedGameParser extends DatParser {
 	// Stash state classes here until they're finalized.
 
 	public class SavedGameState {
+		private int totalShipsDefeated, totalBeaconsExplored, totalScrapCollected, totalCrewHired;
 		private String playerShipName = "";
 		private String playerShipBlueprintId = "";
 		private int sectorNumber = 1;
@@ -392,7 +397,8 @@ public class SavedGameParser extends DatParser {
 		 * The following ids have been seen in the wild:
 		 * blue_alien, dead_crew, destroyed_rock, env_danger, fired_shot,
 		 * killed_crew, nebula, reactor_upgrade, store_purchase, store_repair,
-		 * system_upgrade, teleported, used_missile, weapon_upgrade.
+		 * system_upgrade, teleported, used_drone, used_missile,
+		 * weapon_upgrade.
 		 *
 		 * Each is optional, and counts something.
 		 * *_upgrade counts upgrades beyond the ship's default levels.
@@ -411,6 +417,11 @@ public class SavedGameParser extends DatParser {
 			Integer result = stateVars.get(stateVarId);
 			return result.intValue();
 		}
+
+		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
+		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
+		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
+		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
 
 		/**
 		 * Set redundant player ship info.
@@ -446,7 +457,11 @@ public class SavedGameParser extends DatParser {
 			boolean first = true;
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
-			result.append(String.format("Sector: %d\n", sectorNumber));
+			result.append(String.format("Sector:                 %4d\n", sectorNumber));
+			result.append(String.format("Total Ships Defeated:   %4d\n", totalShipsDefeated));
+			result.append(String.format("Total Beacons Explored: %4d\n", totalBeaconsExplored));
+			result.append(String.format("Total Scrap Collected:  %4d\n", totalScrapCollected));
+			result.append(String.format("Total Crew Hired:       %4d\n", totalCrewHired));
 
 			result.append("\nState Vars...\n");
 			for (Map.Entry<String, Integer> entry : stateVars.entrySet()) {
@@ -675,7 +690,8 @@ public class SavedGameParser extends DatParser {
 			}
 
 			result.append("\nSystems...\n");
-			first = true;
+			result.append(String.format("  Reserve Power Capacity: %2d\n", reservePowerCapacity));
+			first = false;
 			for (SystemState s : systemList) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
