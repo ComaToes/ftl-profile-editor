@@ -71,13 +71,10 @@ public class SavedGameParser extends DatParser {
 			
 			gameState.addMysteryBytes( new MysteryBytes(in, 24) );
 			
-			// Variable length unknown list. Need to read to get to the right position for beacon list
-			int unknownCount = readInt(in);
-			List<Integer> mil = new ArrayList<Integer>();
-			for (int i=0; i < unknownCount; i++) {
-				mil.add( readInt(in) );
+			int sectorCount = readInt(in);
+			for (int i=0; i < sectorCount; i++) {
+				gameState.addSector( readBool(in) );
 			}
-			gameState.mysteryIntList = mil;
 			
 			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
 			
@@ -199,7 +196,7 @@ public class SavedGameParser extends DatParser {
 			shipState.addAugmentId( readString(in) );
 		}
 
-		int cargoCount = readInt(in);  // TODO: Nearby ships say 1, but have none?.
+		int cargoCount = readInt(in);  // TODO: Nearby ships say 1, but have none?
 		for (int i=0; i < cargoCount; i++) {
 			shipState.addCargoItemId( readString(in) );
 		}
@@ -233,7 +230,7 @@ public class SavedGameParser extends DatParser {
 		crew.setCombatSkill( readInt(in) );  // Maybe
 		crew.setGender( readInt(in) );       // 1 == male, 0 == female (only human females are 0, prob because other races don't have female gfx)
 		crew.setEta( readInt(in) );          // Matches repair?
-		crew.setTheta( readInt(in) );        // Matches combat, sometimes less?
+		crew.setTheta( readInt(in) );
 		crew.setKappa( readInt(in) );
 		crew.setJumpsSurvived( readInt(in) );
 		crew.setIota( readInt(in) );         // Increments to 1 at first mastery?
@@ -384,8 +381,8 @@ public class SavedGameParser extends DatParser {
 		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
 		private int sectorLayoutSeed, rebelFleetOffset;
-		private List<Integer> mysteryIntList;
-		private List<BeaconState> beaconList = new ArrayList<BeaconState>();
+		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
+		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ShipState nearbyShipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
@@ -435,6 +432,18 @@ public class SavedGameParser extends DatParser {
 			this.playerShipState = shipState;
 		}
 
+		/**
+		 * Adds a dot of the sector tree.
+		 * Dots are indexed top-to-bottom for each column, left-to-right.
+		 */
+		public void addSector( boolean visited ) {
+			sectorList.add( new Boolean(visited) );
+		}
+
+		public void setSectorVisited( int sector, boolean visited ) {
+			sectorList.set( sector, new Boolean(visited) );
+		}
+
 		public void addBeacon( BeaconState beacon ) {
 			beaconList.add( beacon );
 		}
@@ -475,8 +484,16 @@ public class SavedGameParser extends DatParser {
 			result.append("\nSector Data...\n");
 			result.append( String.format("Sector Layout Seed: %d\n", sectorLayoutSeed) );
 			result.append( String.format("Rebel Fleet Offset: %d\n", rebelFleetOffset) );
-			result.append( String.format("Mystery Int List: %s\n", mysteryIntList) );
-			
+
+			result.append("\nSector Tree Breadcrumbs...\n");
+			first = true;
+			for (Boolean b : sectorList) {
+				if (first) { first = false; }
+				else { result.append(","); }
+				result.append( (b ? "T" : "F") );
+			}
+			result.append("\n");
+
 			result.append("\nSector Beacons...\n");
 			int beaconId = 0;
 			first = true;
@@ -817,6 +834,8 @@ public class SavedGameParser extends DatParser {
 		public final int MASTERY_INTERVAL_REPAIR = 18;
 		public final int MASTERY_INTERVAL_COMBAT = 8;
 
+		// Neither Crystal crews' lockdown, nor its cooldown are stored.
+
 		private String name, race;
 		private int health;
 		private int blueprintRoomId, roomSquare;
@@ -893,7 +912,7 @@ public class SavedGameParser extends DatParser {
 		private int capacity = 0;
 		private int power = 0;
 		private int damagedBars = 0;     // Number of unusable power bars.
-		private int ionizedBars = 0;     // Number of disabled power bars.
+		private int ionizedBars = 0;     // Number of disabled power bars; -1 while cloaked.
 		private int repairProgress = 0;  // Turns bar yellow.
 		private int burnProgress = 0;    // Turns bar red.
 
