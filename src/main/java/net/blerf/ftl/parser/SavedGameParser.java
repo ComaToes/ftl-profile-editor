@@ -447,6 +447,12 @@ public class SavedGameParser extends DatParser {
 			sectorList.set( sector, new Boolean(visited) );
 		}
 
+		/**
+		 * Adds a beacon to the sector map.
+		 * Beacons are indexed top-to-bottom for each column,
+		 * left-to-right. They're randomly offset a little
+		 * when shown on screen to disguise the columns.
+		 */
 		public void addBeacon( BeaconState beacon ) {
 			beaconList.add( beacon );
 		}
