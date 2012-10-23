@@ -119,7 +119,7 @@ public class SavedGameParser extends DatParser {
 
 		String shipBlueprintId = readString(in);  // blueprints.xml / autoBlueprints.xml.
 		String shipName = readString(in);
-		String pseudoLayoutId = readString(in);   // ?
+		String shipGfxBaseName = readString(in);   // See 'img/ship/basename_*.png'.
 
 		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
 		if ( shipBlueprint == null )
@@ -133,7 +133,7 @@ public class SavedGameParser extends DatParser {
 			throw new RuntimeException( String.format("Could not find layout for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
 
 		ShipState shipState = new ShipState(shipName, shipBlueprintId, shipLayoutId, playerControlled);
-		shipState.setPseudoLayoutId( pseudoLayoutId );
+		shipState.setShipGraphicsBaseName( shipGfxBaseName );
 
 		int startingCrewCount = readInt(in);
 		for (int i=0; i < startingCrewCount; i++) {
@@ -515,7 +515,7 @@ public class SavedGameParser extends DatParser {
 	public class ShipState {
 		private boolean playerControlled = false;
 		private String shipName, shipBlueprintId, shipLayoutId;
-		private String pseudoLayoutId;
+		private String shipGfxBaseName;
 		private ArrayList<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
 		private int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
@@ -546,8 +546,8 @@ public class SavedGameParser extends DatParser {
 		 *
 		 * The proper shipLayoutId comes from the ShipBlueprint.
 		 */
-		public void setPseudoLayoutId( String pseudoLayoutId ) {
-			this.pseudoLayoutId = pseudoLayoutId;
+		public void setShipGraphicsBaseName( String shipGfxBaseName ) {
+			this.shipGfxBaseName = shipGfxBaseName;
 		}
 
 		public void addStartingCrewMember( StartingCrewState sc ) {
@@ -662,9 +662,10 @@ public class SavedGameParser extends DatParser {
 
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
-			result.append(String.format("Ship Name:   %s\n", shipName));
-			result.append(String.format("Ship Type:   %s\n", shipBlueprintId));
-			result.append(String.format("Ship Layout: %s (Actually %s)\n", shipLayoutId, pseudoLayoutId));
+			result.append(String.format("Ship Name:    %s\n", shipName));
+			result.append(String.format("Ship Type:    %s\n", shipBlueprintId));
+			result.append(String.format("Ship Layout:  %s\n", shipLayoutId));
+			result.append(String.format("Gfx BaseName: %s\n", shipGfxBaseName));
 
 			result.append("\nSupplies...\n");
 			result.append(String.format("Hull:        %3d\n", hullAmt));
