@@ -283,11 +283,11 @@ public class SavedGameParser extends DatParser {
 		DroneState drone = new DroneState( readString(in) );
 		drone.setArmed( readInt(in) );
 		drone.setAlpha( readInt(in) );
-		drone.setBeta( readInt(in) );
-		drone.setGamma( readInt(in) );
+		drone.setX( readInt(in) );
+		drone.setY( readInt(in) );
 		drone.setDelta( readInt(in) );
 		drone.setEpsilon( readInt(in) );
-		drone.setDigamma( readInt(in) );
+		drone.setHealth( readInt(in) );
 		return drone;
 	}
 
@@ -1050,33 +1050,35 @@ public class SavedGameParser extends DatParser {
 	public class DroneState {
 		private String droneId;
 		private int armed;
-		private int unknownAlpha, unknownBeta, unknownGamma, unknownDelta;
-		private int unknownEpsilon, unknownDigamma;
+		private int x = -1, y = -1;  // -1 when not armed.
+		private int health = 1;
+
+		private int unknownAlpha;
+		private int unknownDelta, unknownEpsilon;  // -1 when not armed.
 
 		public DroneState( String droneId ) {
 			this.droneId = droneId;
 		}
 
 		public void setArmed( int n ) { armed = n; }
+		public void setX( int n ) { x = n; }
+		public void setY( int n ) { y = n; }
+		public void setHealth( int n ) { health = n; }
 		public void setAlpha( int n ) { unknownAlpha = n; }
-		public void setBeta( int n ) { unknownBeta = n; }
-		public void setGamma( int n ) { unknownGamma = n; }
 		public void setDelta( int n ) { unknownDelta = n; }
 		public void setEpsilon( int n ) { unknownEpsilon = n; }
-		public void setDigamma( int n ) { unknownDigamma = n; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("DroneId: %s\n", droneId));
-			result.append(String.format("Armed:   %3d\n", armed));
+			result.append(String.format("DroneId:  %s\n", droneId));
+			result.append(String.format("Armed:    %3d\n", armed));
+			result.append(String.format("Health:   %3d\n", health));
+			result.append(String.format("Position: (%3d,%3d)\n", x, y));
 			result.append("/ / / Unknowns / / /\n");
 			result.append(String.format("Alpha:   %3d\n", unknownAlpha));
-			result.append(String.format("Beta:    %3d\n", unknownBeta));
-			result.append(String.format("Gamma:   %3d\n", unknownGamma));
 			result.append(String.format("Delta:   %3d\n", unknownDelta));
 			result.append(String.format("Epsilon: %3d\n", unknownEpsilon));
-			result.append(String.format("Digamma: %3d\n", unknownDigamma));
 			return result.toString();
 		}
 	}
