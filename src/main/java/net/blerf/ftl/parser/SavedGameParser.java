@@ -74,8 +74,10 @@ public class SavedGameParser extends DatParser {
 			for (int i=0; i < sectorCount; i++) {
 				gameState.addSector( readBool(in) );
 			}
-			
-			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+
+			int zeroBasedSectorNumber = readInt( in );  // Redundant.
+
+			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 			
 			int beaconCount = readInt(in);
 			for (int i=0; i < beaconCount; i++) {
