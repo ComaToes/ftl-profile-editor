@@ -37,8 +37,12 @@ public class SavedGameParser extends DatParser {
 			SavedGameState gameState = new SavedGameState();
 			in = new FileInputStream(datFile);
 
-			// Mystery bytes x24
-			gameState.addMysteryBytes( new MysteryBytes(in, 24) );
+			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+
+			gameState.setTotalShipsDefeated( readInt(in) );
+			gameState.setTotalBeaconsExplored( readInt(in) );
+			gameState.setTotalScrapCollected( readInt(in) );
+			gameState.setTotalCrewHired( readInt(in) );
 
 			String playerShipName = readString(in);         // Redundant.
 			String playerShipBlueprintId = readString(in);  // Redundant.
@@ -60,22 +64,20 @@ public class SavedGameParser extends DatParser {
 
 			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 			
-			gameState.sectorLayoutSeed = readInt(in);
+			gameState.setSectorLayoutSeed( readInt(in) );
 			
-			// Pixel offset from far right of sector map
-			gameState.rebelFleetOffset = readInt(in);
+			gameState.setRebelFleetOffset( readInt(in) );
 			
 			gameState.addMysteryBytes( new MysteryBytes(in, 24) );
 			
-			// Variable length unknown list. Need to read to get to the right position for beacon list
-			int unknownCount = readInt(in);
-			List<Integer> mil = new ArrayList<Integer>();
-			for (int i=0; i < unknownCount; i++) {
-				mil.add( readInt(in) );
+			int sectorCount = readInt(in);
+			for (int i=0; i < sectorCount; i++) {
+				gameState.addSector( readBool(in) );
 			}
-			gameState.mysteryIntList = mil;
-			
-			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+
+			int zeroBasedSectorNumber = readInt( in );  // Redundant.
+
+			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 			
 			int beaconCount = readInt(in);
 			for (int i=0; i < beaconCount; i++) {
@@ -85,11 +87,17 @@ public class SavedGameParser extends DatParser {
 			int questEventCount = readInt(in);
 			for (int i=0; i < questEventCount; i++) {
 				String questEventId = readString(in);
-				int questAlpha = readInt(in);  // beaconId?
-				gameState.addQuestEvent( questEventId, questAlpha );
+				int questBeaconId = readInt(in);
+				gameState.addQuestEvent( questEventId, questBeaconId );
 			}
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+			int distantQuestEventCount = readInt(in);
+			for (int i=0; i < distantQuestEventCount; i++) {
+				String distantQuestEventId = readString(in);
+				gameState.addDistantQuestEvent( distantQuestEventId );
+			}
+
+			gameState.setCurrentBeaconId( readInt(in) );
 
 			boolean shipNearby = readBool(in);
 			if ( shipNearby ) {
@@ -98,7 +106,9 @@ public class SavedGameParser extends DatParser {
 			}
 
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
-			gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
+			if ( bytesRemaining > 0 ) {
+				gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
+			}
 
 			return gameState;  // The finally block will still be executed.
 
@@ -115,7 +125,7 @@ public class SavedGameParser extends DatParser {
 
 		String shipBlueprintId = readString(in);  // blueprints.xml / autoBlueprints.xml.
 		String shipName = readString(in);
-		String pseudoLayoutId = readString(in);   // ?
+		String shipGfxBaseName = readString(in);   // See 'img/ship/basename_*.png'.
 
 		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
 		if ( shipBlueprint == null )
@@ -129,7 +139,7 @@ public class SavedGameParser extends DatParser {
 			throw new RuntimeException( String.format("Could not find layout for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
 
 		ShipState shipState = new ShipState(shipName, shipBlueprintId, shipLayoutId, playerControlled);
-		shipState.setPseudoLayoutId( pseudoLayoutId );
+		shipState.setShipGraphicsBaseName( shipGfxBaseName );
 
 		int startingCrewCount = readInt(in);
 		for (int i=0; i < startingCrewCount; i++) {
@@ -180,7 +190,7 @@ public class SavedGameParser extends DatParser {
 		int weaponCount = readInt(in);
 		for (int i=0; i < weaponCount; i++) {
 			String weaponId = readString(in);
-			int weaponArmed = readInt(in);
+			boolean weaponArmed = readBool(in);
 			int weaponCooldownTicks = readInt(in);
 			shipState.addWeapon( new WeaponState(weaponId, weaponArmed, weaponCooldownTicks) );
 		}
@@ -195,7 +205,7 @@ public class SavedGameParser extends DatParser {
 			shipState.addAugmentId( readString(in) );
 		}
 
-		int cargoCount = readInt(in);  // TODO: Nearby ships say 1, but have none?.
+		int cargoCount = readInt(in);  // TODO: Nearby ships say 1, but have none?
 		for (int i=0; i < cargoCount; i++) {
 			shipState.addCargoItemId( readString(in) );
 		}
@@ -214,25 +224,25 @@ public class SavedGameParser extends DatParser {
 		CrewState crew = new CrewState();
 		crew.setName( readString(in) );
 		crew.setRace( readString(in) );
-		crew.setAlpha( readInt(in) );        // Always 0?
+		crew.setEnemyBoardingDrone( readBool(in) );
 		crew.setHealth( readInt(in) );
 		crew.setX( readInt(in) );
 		crew.setY( readInt(in) );
 		crew.setRoomId( readInt(in) );
-		crew.setRoomSquare( readInt(in) );   // 0-based, as a wrapped H row.
+		crew.setRoomSquare( readInt(in) );
 		crew.setPlayerControlled( readBool(in) );
 		crew.setPilotSkill( readInt(in) );
 		crew.setEngineSkill( readInt(in) );
 		crew.setShieldSkill( readInt(in) );
 		crew.setWeaponSkill( readInt(in) );
 		crew.setRepairSkill( readInt(in) );
-		crew.setCombatSkill( readInt(in) );  // Maybe
-		crew.setGender( readInt(in) );       // 1 == male, 0 == female (only human females are 0, prob because other races don't have female gfx)
-		crew.setEta( readInt(in) );          // Matches repair?
-		crew.setTheta( readInt(in) );        // Matches combat, sometimes less?
-		crew.setKappa( readInt(in) );
+		crew.setCombatSkill( readInt(in) );
+		crew.setGender( readInt(in) );
+		crew.setRepairs( readInt(in) );
+		crew.setCombatKills( readInt(in) );
+		crew.setPilotedEvasions( readInt(in) );
 		crew.setJumpsSurvived( readInt(in) );
-		crew.setIota( readInt(in) );         // Increments to 1 at first mastery?
+		crew.setSkillMasteries( readInt(in) );
 		return crew;
 	}
 
@@ -273,21 +283,21 @@ public class SavedGameParser extends DatParser {
 	}
 
 	private DoorState readDoor( InputStream in ) throws IOException {
+		boolean open = readBool(in);
 		int alpha = readInt(in);  // 0. What else would a door have; damage?
-		int open = readInt(in);   // 0=Closed, 1=Open
-		DoorState door = new DoorState( alpha, open );
+		DoorState door = new DoorState( open, alpha );
 		return door;
 	}
 
 	private DroneState readDrone( InputStream in ) throws IOException {
 		DroneState drone = new DroneState( readString(in) );
-		drone.setArmed( readInt(in) );
-		drone.setAlpha( readInt(in) );
-		drone.setBeta( readInt(in) );
-		drone.setGamma( readInt(in) );
-		drone.setDelta( readInt(in) );
-		drone.setEpsilon( readInt(in) );
-		drone.setDigamma( readInt(in) );
+		drone.setArmed( readBool(in) );
+		drone.setPlayerControlled( readBool(in) );
+		drone.setX( readInt(in) );
+		drone.setY( readInt(in) );
+		drone.setRoomId( readInt(in) );
+		drone.setRoomSquare( readInt(in) );
+		drone.setHealth( readInt(in) );
 		return drone;
 	}
 
@@ -351,7 +361,7 @@ public class SavedGameParser extends DatParser {
 			case 0: shelf.setItemType( StoreItemType.WEAPON ); break;
 			case 1: shelf.setItemType( StoreItemType.DRONE ); break;
 			case 2: shelf.setItemType( StoreItemType.AUGMENT ); break;
-			case 3: shelf.setItemType( StoreItemType.CREW ); break; // TODO: this is a guess. no sample save to verify
+			case 3: shelf.setItemType( StoreItemType.CREW ); break;
 			case 4: shelf.setItemType( StoreItemType.SYSTEM ); break;
 			default: throw new RuntimeException( "Unknown store item type: " + itemType );
 		}
@@ -373,17 +383,34 @@ public class SavedGameParser extends DatParser {
 	// Stash state classes here until they're finalized.
 
 	public class SavedGameState {
+		private int totalShipsDefeated, totalBeaconsExplored, totalScrapCollected, totalCrewHired;
 		private String playerShipName = "";
 		private String playerShipBlueprintId = "";
 		private int sectorNumber = 1;
 		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
-		private int sectorLayoutSeed, rebelFleetOffset;
-		private List<Integer> mysteryIntList;
-		private List<BeaconState> beaconList = new ArrayList<BeaconState>();
+		private int sectorLayoutSeed;
+		private int rebelFleetOffset;  // Pixels from far right of sector map.
+		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
+		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
+		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
 		private ShipState nearbyShipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+		private int currentBeaconId = 0;  // Where the player is.
+
+		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
+		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
+		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
+		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
+
+		/**
+		 * Set redundant player ship info.
+		 */
+		public void setPlayerShipInfo( String shipName, String shipBlueprintId ) {
+			playerShipName = shipName;
+			playerShipBlueprintId = shipBlueprintId;
+		}
 
 		public void setSectorNumber( int n ) { sectorNumber = n; }
 
@@ -391,8 +418,9 @@ public class SavedGameParser extends DatParser {
 		 * Sets a state var.
 		 * The following ids have been seen in the wild:
 		 * blue_alien, dead_crew, destroyed_rock, env_danger, fired_shot,
-		 * killed_crew, nebula, reactor_upgrade, store_purchase, store_repair,
-		 * system_upgrade, teleported, used_missile, weapon_upgrade.
+		 * killed_crew, nebula, offensive_drone, reactor_upgrade,
+		 * store_purchase, store_repair, system_upgrade, teleported,
+		 * used_drone, used_missile, weapon_upgrade.
 		 *
 		 * Each is optional, and counts something.
 		 * *_upgrade counts upgrades beyond the ship's default levels.
@@ -412,25 +440,44 @@ public class SavedGameParser extends DatParser {
 			return result.intValue();
 		}
 
-		/**
-		 * Set redundant player ship info.
-		 */
-		public void setPlayerShipInfo( String shipName, String shipBlueprintId ) {
-			playerShipName = shipName;
-			playerShipBlueprintId = shipBlueprintId;
-		}
-
 		public void setPlayerShipState( ShipState shipState ) {
 			this.playerShipState = shipState;
 		}
 
+		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
+		public void setRebelFleetOffset( int n ) { rebelFleetOffset = n; }
+
+		/**
+		 * Adds a dot of the sector tree.
+		 * Dots are indexed top-to-bottom for each column, left-to-right.
+		 */
+		public void addSector( boolean visited ) {
+			sectorList.add( new Boolean(visited) );
+		}
+
+		public void setSectorVisited( int sector, boolean visited ) {
+			sectorList.set( sector, new Boolean(visited) );
+		}
+
+		/**
+		 * Adds a beacon to the sector map.
+		 * Beacons are indexed top-to-bottom for each column,
+		 * left-to-right. They're randomly offset a little
+		 * when shown on screen to disguise the columns.
+		 */
 		public void addBeacon( BeaconState beacon ) {
 			beaconList.add( beacon );
 		}
 
-		public void addQuestEvent( String questEventId, int questAlpha ) {
-			questEventMap.put( questEventId, new Integer(questAlpha) );
+		public void addQuestEvent( String questEventId, int questBeaconId ) {
+			questEventMap.put( questEventId, new Integer(questBeaconId) );
 		}
+
+		public void addDistantQuestEvent( String questEventId ) {
+			distantQuestEventList.add( questEventId );
+		}
+
+		public void setCurrentBeaconId( int n ) { currentBeaconId = n; }
 
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
@@ -446,11 +493,15 @@ public class SavedGameParser extends DatParser {
 			boolean first = true;
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
-			result.append(String.format("Sector: %d\n", sectorNumber));
+			result.append(String.format("Sector:                 %4d\n", sectorNumber));
+			result.append(String.format("Total Ships Defeated:   %4d\n", totalShipsDefeated));
+			result.append(String.format("Total Beacons Explored: %4d\n", totalBeaconsExplored));
+			result.append(String.format("Total Scrap Collected:  %4d\n", totalScrapCollected));
+			result.append(String.format("Total Crew Hired:       %4d\n", totalCrewHired));
 
 			result.append("\nState Vars...\n");
 			for (Map.Entry<String, Integer> entry : stateVars.entrySet()) {
-				result.append(String.format("%s: %d\n", entry.getKey(), entry.getValue().intValue()));
+				result.append(String.format("%-16s %4d\n", entry.getKey() +":", entry.getValue().intValue()));
 			}
 
 			result.append("\nPlayer Ship...\n");
@@ -458,14 +509,23 @@ public class SavedGameParser extends DatParser {
 				result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nSector Data...\n");
-			result.append( String.format("Sector Layout Seed: %d\n", sectorLayoutSeed) );
-			result.append( String.format("Rebel Fleet Offset: %d\n", rebelFleetOffset) );
-			result.append( String.format("Mystery Int List: %s\n", mysteryIntList) );
-			
+			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
+			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
+			result.append( String.format("Current BeaconId:   %5d\n", currentBeaconId) );
+
+			result.append("\nSector Tree Breadcrumbs...\n");
+			first = true;
+			for (Boolean b : sectorList) {
+				if (first) { first = false; }
+				else { result.append(","); }
+				result.append( (b ? "T" : "F") );
+			}
+			result.append("\n");
+
 			result.append("\nSector Beacons...\n");
 			int beaconId = 0;
 			first = true;
-			for( BeaconState beacon: beaconList ) {
+			for( BeaconState beacon : beaconList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append( String.format("BeaconId: %2d\n", beaconId++) );
@@ -475,8 +535,13 @@ public class SavedGameParser extends DatParser {
 			result.append("\nQuests...\n");
 			for (Map.Entry<String, Integer> entry : questEventMap.entrySet()) {
 				String questEventId = entry.getKey();
-				int questAlpha = entry.getValue().intValue();
-				result.append(String.format("QuestEventId: %s, Alpha: %d\n", questEventId, questAlpha));
+				int questBeaconId = entry.getValue().intValue();
+				result.append(String.format("QuestEventId: %s, BeaconId: %d\n", questEventId, questBeaconId));
+			}
+
+			result.append("\nNext Sector Quests...\n");
+			for (String questEventId : distantQuestEventList) {
+				result.append(String.format("QuestEventId: %s\n", questEventId));
 			}
 
 			result.append("\nNearby Ship...\n");
@@ -500,7 +565,7 @@ public class SavedGameParser extends DatParser {
 	public class ShipState {
 		private boolean playerControlled = false;
 		private String shipName, shipBlueprintId, shipLayoutId;
-		private String pseudoLayoutId;
+		private String shipGfxBaseName;
 		private ArrayList<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
 		private int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
@@ -513,7 +578,6 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
 		private ArrayList<String> cargoIdList = new ArrayList<String>();
-		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean playerControlled) {
 			this.shipName = shipName;
@@ -531,8 +595,8 @@ public class SavedGameParser extends DatParser {
 		 *
 		 * The proper shipLayoutId comes from the ShipBlueprint.
 		 */
-		public void setPseudoLayoutId( String pseudoLayoutId ) {
-			this.pseudoLayoutId = pseudoLayoutId;
+		public void setShipGraphicsBaseName( String shipGfxBaseName ) {
+			this.shipGfxBaseName = shipGfxBaseName;
 		}
 
 		public void addStartingCrewMember( StartingCrewState sc ) {
@@ -601,10 +665,6 @@ public class SavedGameParser extends DatParser {
 		public void addCargoItemId( String cargoItemId ) {
 			cargoIdList.add( cargoItemId );
 		}
-		
-		public void addMysteryBytes( MysteryBytes m ) {
-			mysteryList.add(m);
-		}
 
 		@Override
 		public String toString() {
@@ -647,9 +707,10 @@ public class SavedGameParser extends DatParser {
 
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
-			result.append(String.format("Ship Name:   %s\n", shipName));
-			result.append(String.format("Ship Type:   %s\n", shipBlueprintId));
-			result.append(String.format("Ship Layout: %s (Actually %s)\n", shipLayoutId, pseudoLayoutId));
+			result.append(String.format("Ship Name:    %s\n", shipName));
+			result.append(String.format("Ship Type:    %s\n", shipBlueprintId));
+			result.append(String.format("Ship Layout:  %s\n", shipLayoutId));
+			result.append(String.format("Gfx BaseName: %s\n", shipGfxBaseName));
 
 			result.append("\nSupplies...\n");
 			result.append(String.format("Hull:        %3d\n", hullAmt));
@@ -675,7 +736,8 @@ public class SavedGameParser extends DatParser {
 			}
 
 			result.append("\nSystems...\n");
-			first = true;
+			result.append(String.format("  Reserve Power Capacity: %2d\n", reservePowerCapacity));
+			first = false;
 			for (SystemState s : systemList) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
@@ -749,14 +811,6 @@ public class SavedGameParser extends DatParser {
 				result.append(String.format("CargoItemId: %s\n", cargoItemId));
 			}
 
-			result.append("\nMystery Bytes...\n");
-			first = true;
-			for (MysteryBytes m : mysteryList) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-			}
-
 			return result.toString();
 		}
 	}
@@ -800,19 +854,23 @@ public class SavedGameParser extends DatParser {
 		public final int MASTERY_INTERVAL_REPAIR = 18;
 		public final int MASTERY_INTERVAL_COMBAT = 8;
 
+		// Neither Crystal crews' lockdown, nor its cooldown is stored.
+		// Zoltan-produced power is not stored in SystemState.
+
 		private String name, race;
+		private boolean enemyBoardingDrone = false;
 		private int health;
-		private int blueprintRoomId, roomSquare;
+		private int blueprintRoomId;
+		private int roomSquare;  // 0-based, L-to-R wrapped row.
 		private boolean playerControlled;
 		private int pilotSkill, engineSkill, shieldSkill;
 		private int weaponSkill, repairSkill, combatSkill;
-		private int jumpsSurvived;
+		private int repairs, combatKills, pilotedEvasions;
+		private int jumpsSurvived, skillMasteries;
 		private int x, y;
-		private int gender;
+		private int gender;  // 1=Male, 0=Female.
 
 		private int unknownAlpha;
-		private int unknownEpsilon, unknownDigamma, unknownEta;
-		private int unknownTheta, unknownKappa, unknownIota;
 
 		public CrewState() {
 		}
@@ -820,6 +878,8 @@ public class SavedGameParser extends DatParser {
 		public void setName( String s ) {name = s; }
 		public void setRace( String s ) {race = s; }
 		public void setHealth( int n ) {health = n; }
+		public void setX( int x ) { this.x = x; };
+		public void setY( int y ) { this.y = y; };
 		public void setRoomId( int n ) {blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
@@ -829,42 +889,48 @@ public class SavedGameParser extends DatParser {
 		public void setWeaponSkill( int n ) {weaponSkill = n; }
 		public void setRepairSkill( int n ) {repairSkill = n; }
 		public void setCombatSkill( int n ) {combatSkill = n; }
-		public void setJumpsSurvived( int n ) {jumpsSurvived = n; }
-		public void setX( int x ) { this.x = x; };
-		public void setY( int y ) { this.y = y; };
 		public void setGender( int gender ) { this.gender = gender; }
+		public void setRepairs( int n ) { repairs = n; }
+		public void setCombatKills( int n ) { combatKills = n; }
+		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
+		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
+		public void setSkillMasteries( int n ) { skillMasteries = n; }
 
-		public void setAlpha( int n ) { unknownAlpha = n; }
-		public void setEpsilon( int n ) { unknownEpsilon = n; }
-		public void setEta( int n ) { unknownEta = n; }
-		public void setTheta( int n ) { unknownTheta = n; }
-		public void setKappa( int n ) { unknownKappa = n; }
-		public void setIota( int n ) { unknownIota = n; }
+		/**
+		 * Sets whether this crew member is a hostile drone.
+		 * Bizarrely, this trumps race and playerControlled.
+		 *
+		 * Presumably this is so intruders can persist without
+		 * a ship, which would normally have a drones section
+		 * to contain them.
+		 */
+		public void setEnemyBoardingDrone( boolean b ) {
+			enemyBoardingDrone = b;
+		}
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Name: %s\n", name));
-			result.append(String.format("Race: %s\n", race));
-			result.append(String.format("Health:           %3d\n", health));
-			result.append(String.format("RoomId:           %3d\n", blueprintRoomId));
-			result.append(String.format("Room Square:      %3d\n", roomSquare));
-			result.append(String.format("Player Controlled: %3s\n", playerControlled));
-			result.append(String.format("Pilot Skill:      %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
-			result.append(String.format("Engine Skill:     %3d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
-			result.append(String.format("Shield Skill:     %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
-			result.append(String.format("Weapon Skill:     %3d (Mastery Interval: %2d)\n", weaponSkill, MASTERY_INTERVAL_WEAPON));
-			result.append(String.format("Repair Skill:     %3d (Mastery Interval: %2d)\n", repairSkill, MASTERY_INTERVAL_REPAIR));
-			result.append(String.format("Combat Skill?:    %3d (Mastery Interval: %2d)\n", combatSkill, MASTERY_INTERVAL_COMBAT));
-			result.append(String.format("Jumps Survived:   %3d\n", jumpsSurvived));
-			result.append(String.format("Position:         (%d,%d)\n", x, y));
-			result.append(String.format("Gender:           %s\n", gender == 1 ? "Male" : "Female" ));
-			result.append("/ / / Unknowns / / /\n");
-			result.append(String.format("Alpha:            %3d\n", unknownAlpha));
-			result.append(String.format("Eta:              %3d\n", unknownEta));
-			result.append(String.format("Theta:            %3d\n", unknownTheta));
-			result.append(String.format("Kappa:            %3d\n", unknownKappa));
-			result.append(String.format("Iota:             %3d\n", unknownIota));
+			result.append(String.format("Name:              %s\n", name));
+			result.append(String.format("Race:              %s\n", race));
+			result.append(String.format("Enemy Drone:       %b\n", enemyBoardingDrone));
+			result.append(String.format("Gender:            %s\n", (gender == 1 ? "Male" : "Female") ));
+			result.append(String.format("Health:            %3d\n", health));
+			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
+			result.append(String.format("Room Square:       %3d\n", roomSquare));
+			result.append(String.format("Player Controlled: %b\n", playerControlled));
+			result.append(String.format("Position:          %3d,%3d\n", x, y));
+			result.append(String.format("Pilot Skill:       %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
+			result.append(String.format("Engine Skill:      %3d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
+			result.append(String.format("Shield Skill:      %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
+			result.append(String.format("Weapon Skill:      %3d (Mastery Interval: %2d)\n", weaponSkill, MASTERY_INTERVAL_WEAPON));
+			result.append(String.format("Repair Skill:      %3d (Mastery Interval: %2d)\n", repairSkill, MASTERY_INTERVAL_REPAIR));
+			result.append(String.format("Combat Skill:      %3d (Mastery Interval: %2d)\n", combatSkill, MASTERY_INTERVAL_COMBAT));
+			result.append(String.format("Repairs:           %3d\n", repairs));
+			result.append(String.format("Combat Kills:      %3d\n", combatKills));
+			result.append(String.format("Piloted Evasions:  %3d\n", pilotedEvasions));
+			result.append(String.format("Jumps Survived:    %3d\n", jumpsSurvived));
+			result.append(String.format("Skill Masteries:   %3d\n", skillMasteries));
 			return result.toString();
 		}
 	}
@@ -876,7 +942,7 @@ public class SavedGameParser extends DatParser {
 		private int capacity = 0;
 		private int power = 0;
 		private int damagedBars = 0;     // Number of unusable power bars.
-		private int ionizedBars = 0;     // Number of disabled power bars.
+		private int ionizedBars = 0;     // Number of disabled power bars; -1 while cloaked.
 		private int repairProgress = 0;  // Turns bar yellow.
 		private int burnProgress = 0;    // Turns bar red.
 
@@ -900,10 +966,10 @@ public class SavedGameParser extends DatParser {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
 				result.append(String.format("%s: %d/%d Power\n", name, power, capacity));
-				result.append(String.format("Damaged Bars:    %d\n", damagedBars));
-				result.append(String.format("Ionized Bars:    %d\n", ionizedBars));
-				result.append(String.format("Repair Progress: %d%%\n", repairProgress));
-				result.append(String.format("Burn Progress:   %d%%\n", burnProgress));
+				result.append(String.format("Damaged Bars:    %3d\n", damagedBars));
+				result.append(String.format("Ionized Bars:    %3d\n", ionizedBars));
+				result.append(String.format("Repair Progress: %3d%%\n", repairProgress));
+				result.append(String.format("Burn Progress:   %3d%%\n", burnProgress));
 				result.append("/ / / Unknowns / / /\n");
 				if ( mysteryList.size() > 0 ) {
 					result.append("Mystery Bytes...\n");
@@ -960,19 +1026,19 @@ public class SavedGameParser extends DatParser {
 
 
 	public class DoorState {
-		private int open;
+		private boolean open;
 
 		private int unknownAlpha;
 
-		public DoorState( int alpha, int open ) {
-			this.unknownAlpha = alpha;
+		public DoorState( boolean open, int alpha ) {
 			this.open = open;
+			this.unknownAlpha = alpha;
 		}
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Open: %d, Alpha?: %d\n", open, unknownAlpha));
+			result.append(String.format("Open: %b, Alpha?: %d\n", open, unknownAlpha));
 			return result.toString();
 		}
 	}
@@ -981,10 +1047,10 @@ public class SavedGameParser extends DatParser {
 
 	public class WeaponState {
 		private String weaponId;
-		private int armed;
-		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown.
+		private boolean armed;
+		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown. 0 when not armed.
 
-		public WeaponState( String weaponId, int armed, int cooldownTicks ) {
+		public WeaponState( String weaponId, boolean armed, int cooldownTicks ) {
 			this.weaponId = weaponId;
 			this.armed = armed;
 			this.cooldownTicks = cooldownTicks;
@@ -998,8 +1064,8 @@ public class SavedGameParser extends DatParser {
 			String cooldownString = ( weaponBlueprint!=null ? weaponBlueprint.getCooldown()+"" : "?" );
 
 			result.append(String.format("WeaponId:       %s\n", weaponId));
-			result.append(String.format("Armed:          %d\n", armed));
-			result.append(String.format("Cooldown Ticks: %d (max: %s)\n", cooldownTicks, cooldownString));
+			result.append(String.format("Armed:          %b\n", armed));
+			result.append(String.format("Cooldown Ticks: %2d (max: %-2s)\n", cooldownTicks, cooldownString));
 			return result.toString();
 		}
 	}
@@ -1008,38 +1074,42 @@ public class SavedGameParser extends DatParser {
 
 	public class DroneState {
 		private String droneId;
-		private int armed;
-		private int unknownAlpha, unknownBeta, unknownGamma, unknownDelta;
-		private int unknownEpsilon, unknownDigamma;
+		private boolean armed = false;
+		private boolean playerControlled = true;  // False when not armed.
+		private int x = -1, y = -1;        // -1 when not armed.
+		private int blueprintRoomId = -1;  // -1 when not armed.
+		private int roomSquare = -1;       // -1 when not armed.
+		private int health = 1;
+
 
 		public DroneState( String droneId ) {
 			this.droneId = droneId;
 		}
 
-		public void setArmed( int n ) { armed = n; }
-		public void setAlpha( int n ) { unknownAlpha = n; }
-		public void setBeta( int n ) { unknownBeta = n; }
-		public void setGamma( int n ) { unknownGamma = n; }
-		public void setDelta( int n ) { unknownDelta = n; }
-		public void setEpsilon( int n ) { unknownEpsilon = n; }
-		public void setDigamma( int n ) { unknownDigamma = n; }
+		public void setArmed( boolean b ) { armed = b; }
+		public void setPlayerControlled( boolean b ) { playerControlled = b; }
+		public void setX( int n ) { x = n; }
+		public void setY( int n ) { y = n; }
+		public void setRoomId( int n ) { blueprintRoomId = n; }
+		public void setRoomSquare( int n ) { roomSquare = n; }
+		public void setHealth( int n ) { health = n; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("DroneId: %s\n", droneId));
-			result.append(String.format("Armed:   %3d\n", armed));
-			result.append("/ / / Unknowns / / /\n");
-			result.append(String.format("Alpha:   %3d\n", unknownAlpha));
-			result.append(String.format("Beta:    %3d\n", unknownBeta));
-			result.append(String.format("Gamma:   %3d\n", unknownGamma));
-			result.append(String.format("Delta:   %3d\n", unknownDelta));
-			result.append(String.format("Epsilon: %3d\n", unknownEpsilon));
-			result.append(String.format("Digamma: %3d\n", unknownDigamma));
+			result.append(String.format("DroneId:           %s\n", droneId));
+			result.append(String.format("Armed:             %b\n", armed));
+			result.append(String.format("Health:            %3d\n", health));
+			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
+			result.append(String.format("Room Square:       %3d\n", roomSquare));
+			result.append(String.format("Player Controlled: %b\n", playerControlled));
+			result.append(String.format("Position:          %3d,%3d\n", x, y));
 			return result.toString();
 		}
 	}
 
+
+	public enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
 
 	public class BeaconState {
 		
@@ -1071,8 +1141,8 @@ public class SavedGameParser extends DatParser {
 			if ( visited ) {
 				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("Bkg Sprite:        %s\n", bgSpriteImageInnerPath));
-				result.append(String.format("Bkg Sprite Coords: %d,%d\n", bgSpritePosX, bgSpritePosY));
-				result.append(String.format("Unknown:           %d\n", unknownVisitedAlpha));
+				result.append(String.format("Bkg Sprite Coords: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
+				result.append(String.format("Unknown:           %3d\n", unknownVisitedAlpha));
 			}
 			
 			result.append(String.format("Seen:              %b\n", seen));
@@ -1081,7 +1151,7 @@ public class SavedGameParser extends DatParser {
 			if ( enemyPresent ) {
 				result.append(String.format("  Ship Event ID:          %s\n", shipEventId));
 				result.append(String.format("  Ship Blueprint List ID: %s\n", shipBlueprintListId));
-				result.append(String.format("  Unknown:                %d\n", unknownEnemyPresentAlpha));
+				result.append(String.format("  Unknown:                %5d\n", unknownEnemyPresentAlpha));
 			}
 			
 			result.append(String.format("Fleets Present:    %s\n", fleetPresence));
@@ -1187,9 +1257,8 @@ public class SavedGameParser extends DatParser {
 			this.store = store;
 		}
 	}
-	
-	public enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
-	
+
+
 	public class StoreState {
 		
 		private int fuel, missiles, droneParts;
@@ -1199,11 +1268,11 @@ public class SavedGameParser extends DatParser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			
-			result.append( String.format("Fuel: %d\n" , fuel) );
-			result.append( String.format("Missiles: %d\n" , missiles) );
-			result.append( String.format("Drone Parts: %d\n" , droneParts) );
+			result.append( String.format("Fuel:        %2d\n" , fuel) );
+			result.append( String.format("Missiles:    %2d\n" , missiles) );
+			result.append( String.format("Drone Parts: %2d\n" , droneParts) );
 			
-			result.append( "\nTop Shelf:..." );
+			result.append( "\nTop Shelf...\n" );
 			result.append( topShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 
 			result.append( "\nBottom Shelf...\n" );
@@ -1244,7 +1313,7 @@ public class SavedGameParser extends DatParser {
 		}
 		
 	}
-	
+
 	public enum StoreItemType { WEAPON, DRONE, AUGMENT, CREW, SYSTEM };
 	
 	public class StoreShelf {
