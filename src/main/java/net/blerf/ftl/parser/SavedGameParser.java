@@ -234,11 +234,11 @@ public class SavedGameParser extends DatParser {
 		crew.setRepairSkill( readInt(in) );
 		crew.setCombatSkill( readInt(in) );
 		crew.setGender( readInt(in) );
-		crew.setEta( readInt(in) );          // Matches repair?
-		crew.setTheta( readInt(in) );
-		crew.setKappa( readInt(in) );
+		crew.setRepairs( readInt(in) );
+		crew.setCombatKills( readInt(in) );
+		crew.setPilotedEvasions( readInt(in) );
 		crew.setJumpsSurvived( readInt(in) );
-		crew.setIota( readInt(in) );         // Increments to 1 at first mastery?
+		crew.setSkillMasteries( readInt(in) );
 		return crew;
 	}
 
@@ -873,13 +873,12 @@ public class SavedGameParser extends DatParser {
 		private boolean playerControlled;
 		private int pilotSkill, engineSkill, shieldSkill;
 		private int weaponSkill, repairSkill, combatSkill;
-		private int jumpsSurvived;
+		private int repairs, combatKills, pilotedEvasions;
+		private int jumpsSurvived, skillMasteries;
 		private int x, y;
 		private int gender;  // 1=Male, 0=Female.
 
 		private int unknownAlpha;
-		private int unknownEpsilon, unknownDigamma, unknownEta;
-		private int unknownTheta, unknownKappa, unknownIota;
 
 		public CrewState() {
 		}
@@ -887,6 +886,8 @@ public class SavedGameParser extends DatParser {
 		public void setName( String s ) {name = s; }
 		public void setRace( String s ) {race = s; }
 		public void setHealth( int n ) {health = n; }
+		public void setX( int x ) { this.x = x; };
+		public void setY( int y ) { this.y = y; };
 		public void setRoomId( int n ) {blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
@@ -896,42 +897,39 @@ public class SavedGameParser extends DatParser {
 		public void setWeaponSkill( int n ) {weaponSkill = n; }
 		public void setRepairSkill( int n ) {repairSkill = n; }
 		public void setCombatSkill( int n ) {combatSkill = n; }
-		public void setJumpsSurvived( int n ) {jumpsSurvived = n; }
-		public void setX( int x ) { this.x = x; };
-		public void setY( int y ) { this.y = y; };
 		public void setGender( int gender ) { this.gender = gender; }
+		public void setRepairs( int n ) { repairs = n; }
+		public void setCombatKills( int n ) { combatKills = n; }
+		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
+		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
+		public void setSkillMasteries( int n ) { skillMasteries = n; }
 
 		public void setAlpha( int n ) { unknownAlpha = n; }
-		public void setEpsilon( int n ) { unknownEpsilon = n; }
-		public void setEta( int n ) { unknownEta = n; }
-		public void setTheta( int n ) { unknownTheta = n; }
-		public void setKappa( int n ) { unknownKappa = n; }
-		public void setIota( int n ) { unknownIota = n; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Name: %s\n", name));
 			result.append(String.format("Race: %s\n", race));
+			result.append(String.format("Gender:           %s\n", (gender == 1 ? "Male" : "Female") ));
 			result.append(String.format("Health:           %3d\n", health));
 			result.append(String.format("RoomId:           %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:      %3d\n", roomSquare));
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
+			result.append(String.format("Position:         %3d,%3d\n", x, y));
 			result.append(String.format("Pilot Skill:      %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
 			result.append(String.format("Engine Skill:     %3d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
 			result.append(String.format("Shield Skill:     %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
 			result.append(String.format("Weapon Skill:     %3d (Mastery Interval: %2d)\n", weaponSkill, MASTERY_INTERVAL_WEAPON));
 			result.append(String.format("Repair Skill:     %3d (Mastery Interval: %2d)\n", repairSkill, MASTERY_INTERVAL_REPAIR));
 			result.append(String.format("Combat Skill:     %3d (Mastery Interval: %2d)\n", combatSkill, MASTERY_INTERVAL_COMBAT));
+			result.append(String.format("Repairs:          %3d\n", repairs));
+			result.append(String.format("Combat Kills:     %3d\n", combatKills));
+			result.append(String.format("Piloted Evasions: %3d\n", pilotedEvasions));
 			result.append(String.format("Jumps Survived:   %3d\n", jumpsSurvived));
-			result.append(String.format("Position:         %3d,%3d\n", x, y));
-			result.append(String.format("Gender:           %s\n", (gender == 1 ? "Male" : "Female") ));
+			result.append(String.format("Skill Masteries:  %3d\n", skillMasteries));
 			result.append("/ / / Unknowns / / /\n");
 			result.append(String.format("Alpha:            %3d\n", unknownAlpha));
-			result.append(String.format("Eta:              %3d\n", unknownEta));
-			result.append(String.format("Theta:            %3d\n", unknownTheta));
-			result.append(String.format("Kappa:            %3d\n", unknownKappa));
-			result.append(String.format("Iota:             %3d\n", unknownIota));
 			return result.toString();
 		}
 	}
