@@ -95,7 +95,7 @@ public class SavedGameParser extends DatParser {
 				gameState.addDistantQuestEvent( distantQuestEventId );
 			}
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			gameState.setCurrentBeaconId( readInt(in) );
 
 			boolean shipNearby = readBool(in);
 			if ( shipNearby ) {
@@ -393,6 +393,7 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
 		private ShipState nearbyShipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+		private int currentBeaconId = 0;  // Where the player is.
 
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
 		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
@@ -472,6 +473,8 @@ public class SavedGameParser extends DatParser {
 			distantQuestEventList.add( questEventId );
 		}
 
+		public void setCurrentBeaconId( int n ) { currentBeaconId = n; }
+
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
 		}
@@ -494,7 +497,7 @@ public class SavedGameParser extends DatParser {
 
 			result.append("\nState Vars...\n");
 			for (Map.Entry<String, Integer> entry : stateVars.entrySet()) {
-				result.append(String.format("%s: %d\n", entry.getKey(), entry.getValue().intValue()));
+				result.append(String.format("%s: %4d\n", entry.getKey(), entry.getValue().intValue()));
 			}
 
 			result.append("\nPlayer Ship...\n");
@@ -502,8 +505,9 @@ public class SavedGameParser extends DatParser {
 				result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nSector Data...\n");
-			result.append( String.format("Sector Layout Seed: %d\n", sectorLayoutSeed) );
-			result.append( String.format("Rebel Fleet Offset: %d\n", rebelFleetOffset) );
+			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
+			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
+			result.append( String.format("Current BeaconId:   %5d\n", currentBeaconId) );
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
