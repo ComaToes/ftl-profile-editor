@@ -180,7 +180,7 @@ public class SavedGameParser extends DatParser {
 		int weaponCount = readInt(in);
 		for (int i=0; i < weaponCount; i++) {
 			String weaponId = readString(in);
-			int weaponArmed = readInt(in);
+			boolean weaponArmed = readBool(in);
 			int weaponCooldownTicks = readInt(in);
 			shipState.addWeapon( new WeaponState(weaponId, weaponArmed, weaponCooldownTicks) );
 		}
@@ -226,7 +226,7 @@ public class SavedGameParser extends DatParser {
 		crew.setShieldSkill( readInt(in) );
 		crew.setWeaponSkill( readInt(in) );
 		crew.setRepairSkill( readInt(in) );
-		crew.setCombatSkill( readInt(in) );  // Maybe
+		crew.setCombatSkill( readInt(in) );
 		crew.setGender( readInt(in) );
 		crew.setEta( readInt(in) );          // Matches repair?
 		crew.setTheta( readInt(in) );
@@ -281,12 +281,12 @@ public class SavedGameParser extends DatParser {
 
 	private DroneState readDrone( InputStream in ) throws IOException {
 		DroneState drone = new DroneState( readString(in) );
-		drone.setArmed( readInt(in) );
-		drone.setAlpha( readInt(in) );
+		drone.setArmed( readBool(in) );
+		drone.setPlayerControlled( readBool(in) );
 		drone.setX( readInt(in) );
 		drone.setY( readInt(in) );
-		drone.setDelta( readInt(in) );
-		drone.setEpsilon( readInt(in) );
+		drone.setRoomId( readInt(in) );
+		drone.setRoomSquare( readInt(in) );
 		drone.setHealth( readInt(in) );
 		return drone;
 	}
@@ -902,9 +902,9 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Shield Skill:     %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
 			result.append(String.format("Weapon Skill:     %3d (Mastery Interval: %2d)\n", weaponSkill, MASTERY_INTERVAL_WEAPON));
 			result.append(String.format("Repair Skill:     %3d (Mastery Interval: %2d)\n", repairSkill, MASTERY_INTERVAL_REPAIR));
-			result.append(String.format("Combat Skill?:    %3d (Mastery Interval: %2d)\n", combatSkill, MASTERY_INTERVAL_COMBAT));
+			result.append(String.format("Combat Skill:     %3d (Mastery Interval: %2d)\n", combatSkill, MASTERY_INTERVAL_COMBAT));
 			result.append(String.format("Jumps Survived:   %3d\n", jumpsSurvived));
-			result.append(String.format("Position:         (%3d,%3d)\n", x, y));
+			result.append(String.format("Position:         %3d,%3d\n", x, y));
 			result.append(String.format("Gender:           %s\n", (gender == 1 ? "Male" : "Female") ));
 			result.append("/ / / Unknowns / / /\n");
 			result.append(String.format("Alpha:            %3d\n", unknownAlpha));
@@ -1028,10 +1028,10 @@ public class SavedGameParser extends DatParser {
 
 	public class WeaponState {
 		private String weaponId;
-		private int armed;
+		private boolean armed;
 		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown. 0 when not armed.
 
-		public WeaponState( String weaponId, int armed, int cooldownTicks ) {
+		public WeaponState( String weaponId, boolean armed, int cooldownTicks ) {
 			this.weaponId = weaponId;
 			this.armed = armed;
 			this.cooldownTicks = cooldownTicks;
@@ -1045,7 +1045,7 @@ public class SavedGameParser extends DatParser {
 			String cooldownString = ( weaponBlueprint!=null ? weaponBlueprint.getCooldown()+"" : "?" );
 
 			result.append(String.format("WeaponId:       %s\n", weaponId));
-			result.append(String.format("Armed:          %d\n", armed));
+			result.append(String.format("Armed:          %b\n", armed));
 			result.append(String.format("Cooldown Ticks: %d (max: %s)\n", cooldownTicks, cooldownString));
 			return result.toString();
 		}
@@ -1055,40 +1055,42 @@ public class SavedGameParser extends DatParser {
 
 	public class DroneState {
 		private String droneId;
-		private int armed;
-		private int x = -1, y = -1;  // -1 when not armed.
+		private boolean armed = false;
+		private boolean playerControlled = true;  // False when not armed.
+		private int x = -1, y = -1;        // -1 when not armed.
+		private int blueprintRoomId = -1;  // -1 when not armed.
+		private int roomSquare = -1;       // -1 when not armed.
 		private int health = 1;
 
-		private int unknownAlpha;
-		private int unknownDelta, unknownEpsilon;  // -1 when not armed.
 
 		public DroneState( String droneId ) {
 			this.droneId = droneId;
 		}
 
-		public void setArmed( int n ) { armed = n; }
+		public void setArmed( boolean b ) { armed = b; }
+		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public void setX( int n ) { x = n; }
 		public void setY( int n ) { y = n; }
+		public void setRoomId( int n ) { blueprintRoomId = n; }
+		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setHealth( int n ) { health = n; }
-		public void setAlpha( int n ) { unknownAlpha = n; }
-		public void setDelta( int n ) { unknownDelta = n; }
-		public void setEpsilon( int n ) { unknownEpsilon = n; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("DroneId:  %s\n", droneId));
-			result.append(String.format("Armed:    %3d\n", armed));
-			result.append(String.format("Health:   %3d\n", health));
-			result.append(String.format("Position: (%3d,%3d)\n", x, y));
-			result.append("/ / / Unknowns / / /\n");
-			result.append(String.format("Alpha:   %3d\n", unknownAlpha));
-			result.append(String.format("Delta:   %3d\n", unknownDelta));
-			result.append(String.format("Epsilon: %3d\n", unknownEpsilon));
+			result.append(String.format("DroneId:           %s\n", droneId));
+			result.append(String.format("Armed:             %b\n", armed));
+			result.append(String.format("Health:            %3d\n", health));
+			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
+			result.append(String.format("Room Square:       %3d\n", roomSquare));
+			result.append(String.format("Player Controlled: %b\n", playerControlled));
+			result.append(String.format("Position:          %3d,%3d\n", x, y));
 			return result.toString();
 		}
 	}
 
+
+	public enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
 
 	public class BeaconState {
 		
@@ -1120,7 +1122,7 @@ public class SavedGameParser extends DatParser {
 			if ( visited ) {
 				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("Bkg Sprite:        %s\n", bgSpriteImageInnerPath));
-				result.append(String.format("Bkg Sprite Coords: %d,%d\n", bgSpritePosX, bgSpritePosY));
+				result.append(String.format("Bkg Sprite Coords: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
 				result.append(String.format("Unknown:           %d\n", unknownVisitedAlpha));
 			}
 			
@@ -1236,9 +1238,8 @@ public class SavedGameParser extends DatParser {
 			this.store = store;
 		}
 	}
-	
-	public enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
-	
+
+
 	public class StoreState {
 		
 		private int fuel, missiles, droneParts;
@@ -1248,11 +1249,11 @@ public class SavedGameParser extends DatParser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			
-			result.append( String.format("Fuel: %d\n" , fuel) );
-			result.append( String.format("Missiles: %d\n" , missiles) );
-			result.append( String.format("Drone Parts: %d\n" , droneParts) );
+			result.append( String.format("Fuel:        %2d\n" , fuel) );
+			result.append( String.format("Missiles:    %2d\n" , missiles) );
+			result.append( String.format("Drone Parts: %2d\n" , droneParts) );
 			
-			result.append( "\nTop Shelf:..." );
+			result.append( "\nTop Shelf...\n" );
 			result.append( topShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 
 			result.append( "\nBottom Shelf...\n" );
@@ -1293,7 +1294,7 @@ public class SavedGameParser extends DatParser {
 		}
 		
 	}
-	
+
 	public enum StoreItemType { WEAPON, DRONE, AUGMENT, CREW, SYSTEM };
 	
 	public class StoreShelf {
