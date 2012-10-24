@@ -89,7 +89,13 @@ public class SavedGameParser extends DatParser {
 				gameState.addQuestEvent( questEventId, questBeaconId );
 			}
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+			int distantQuestEventCount = readInt(in);
+			for (int i=0; i < distantQuestEventCount; i++) {
+				String distantQuestEventId = readString(in);
+				gameState.addDistantQuestEvent( distantQuestEventId );
+			}
+
+			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 
 			boolean shipNearby = readBool(in);
 			if ( shipNearby ) {
@@ -384,6 +390,7 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
+		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
 		private ShipState nearbyShipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
@@ -461,6 +468,10 @@ public class SavedGameParser extends DatParser {
 			questEventMap.put( questEventId, new Integer(questBeaconId) );
 		}
 
+		public void addDistantQuestEvent( String questEventId ) {
+			distantQuestEventList.add( questEventId );
+		}
+
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
 		}
@@ -506,7 +517,7 @@ public class SavedGameParser extends DatParser {
 			result.append("\nSector Beacons...\n");
 			int beaconId = 0;
 			first = true;
-			for( BeaconState beacon: beaconList ) {
+			for( BeaconState beacon : beaconList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append( String.format("BeaconId: %2d\n", beaconId++) );
@@ -518,6 +529,11 @@ public class SavedGameParser extends DatParser {
 				String questEventId = entry.getKey();
 				int questBeaconId = entry.getValue().intValue();
 				result.append(String.format("QuestEventId: %s, BeaconId: %d\n", questEventId, questBeaconId));
+			}
+
+			result.append("\nNext Sector Quests...\n");
+			for (String questEventId : distantQuestEventList) {
+				result.append(String.format("QuestEventId: %s\n", questEventId));
 			}
 
 			result.append("\nNearby Ship...\n");
