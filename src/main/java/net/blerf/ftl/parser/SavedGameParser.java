@@ -104,7 +104,9 @@ public class SavedGameParser extends DatParser {
 			}
 
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
-			gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
+			if ( bytesRemaining > 0 ) {
+				gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
+			}
 
 			return gameState;  // The finally block will still be executed.
 
