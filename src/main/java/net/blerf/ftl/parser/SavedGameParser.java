@@ -578,7 +578,6 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
 		private ArrayList<String> cargoIdList = new ArrayList<String>();
-		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
 		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean playerControlled) {
 			this.shipName = shipName;
@@ -665,10 +664,6 @@ public class SavedGameParser extends DatParser {
 		
 		public void addCargoItemId( String cargoItemId ) {
 			cargoIdList.add( cargoItemId );
-		}
-		
-		public void addMysteryBytes( MysteryBytes m ) {
-			mysteryList.add(m);
 		}
 
 		@Override
@@ -814,14 +809,6 @@ public class SavedGameParser extends DatParser {
 			result.append("\nCargo...\n");
 			for (String cargoItemId : cargoIdList) {
 				result.append(String.format("CargoItemId: %s\n", cargoItemId));
-			}
-
-			result.append("\nMystery Bytes...\n");
-			first = true;
-			for (MysteryBytes m : mysteryList) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			return result.toString();
