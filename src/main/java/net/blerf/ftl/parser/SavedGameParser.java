@@ -497,7 +497,7 @@ public class SavedGameParser extends DatParser {
 
 			result.append("\nState Vars...\n");
 			for (Map.Entry<String, Integer> entry : stateVars.entrySet()) {
-				result.append(String.format("%s: %4d\n", entry.getKey(), entry.getValue().intValue()));
+				result.append(String.format("%16s %4d\n", entry.getKey() +":", entry.getValue().intValue()));
 			}
 
 			result.append("\nPlayer Ship...\n");
