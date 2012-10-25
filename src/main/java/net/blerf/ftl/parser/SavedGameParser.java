@@ -121,7 +121,7 @@ public class SavedGameParser extends DatParser {
 		}
 	}
 
-	private ShipState readShip( InputStream in, boolean playerControlled ) throws IOException {
+	private ShipState readShip( InputStream in, boolean auto ) throws IOException {
 
 		String shipBlueprintId = readString(in);  // blueprints.xml / autoBlueprints.xml.
 		String shipName = readString(in);
@@ -129,16 +129,16 @@ public class SavedGameParser extends DatParser {
 
 		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
 		if ( shipBlueprint == null )
-			throw new RuntimeException( String.format("Could not find blueprint for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
+			throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (auto ? " auto" : ""), shipName) );
 
 		String shipLayoutId = shipBlueprint.getLayout();
 
 		// Use this for room and door info later.
 		ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
 		if ( shipLayout == null )
-			throw new RuntimeException( String.format("Could not find layout for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
+			throw new RuntimeException( String.format("Could not find layout for%s ship: %s", (auto ? " auto" : ""), shipName) );
 
-		ShipState shipState = new ShipState(shipName, shipBlueprintId, shipLayoutId, playerControlled);
+		ShipState shipState = new ShipState(shipName, shipBlueprintId, shipLayoutId, auto);
 		shipState.setShipGraphicsBaseName( shipGfxBaseName );
 
 		int startingCrewCount = readInt(in);
@@ -572,7 +572,7 @@ public class SavedGameParser extends DatParser {
 
 
 	public class ShipState {
-		private boolean playerControlled = false;
+		private boolean auto = false;  // Is autoShip.
 		private String shipName, shipBlueprintId, shipLayoutId;
 		private String shipGfxBaseName;
 		private ArrayList<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
@@ -588,11 +588,11 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
 		private ArrayList<String> cargoIdList = new ArrayList<String>();
 
-		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean playerControlled) {
+		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean auto) {
 			this.shipName = shipName;
 			this.shipBlueprintId = shipBlueprintId;
 			this.shipLayoutId = shipLayoutId;
-			this.playerControlled = playerControlled;
+			this.auto = auto;
 		}
 
 		/**
@@ -677,47 +677,14 @@ public class SavedGameParser extends DatParser {
 
 		@Override
 		public String toString() {
-			// The blueprint fetching might vary if !playerControlled.
+			// The blueprint fetching might vary if auto == true.
 			// See autoBlueprints.xml vs blueprints.xml.
 			ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+			ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
 			ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
 			if ( shipLayout == null )
-				throw new RuntimeException( String.format("Could not find layout for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
-
-			ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
-
-			// Build a roomId-to-name lookup table.
-			// But first, aggregate the rooms to test for nulls.
-			HashMap<String, ShipBlueprint.SystemList.SystemRoom> roomNameMap = new HashMap<String, ShipBlueprint.SystemList.SystemRoom>();
-			roomNameMap.put( "Pilot", blueprintSystems.getPilotRoom() );
-			roomNameMap.put( "Doors", blueprintSystems.getDoorsRoom() );
-			roomNameMap.put( "Sensors", blueprintSystems.getSensorsRoom() );
-			roomNameMap.put( "Medbay", blueprintSystems.getMedicalRoom() );
-			roomNameMap.put( "Oxygen", blueprintSystems.getLifeSupportRoom() );
-			roomNameMap.put( "Shields", blueprintSystems.getShieldRoom() );
-			roomNameMap.put( "Engines", blueprintSystems.getEngineRoom() );
-			roomNameMap.put( "Weapons", blueprintSystems.getWeaponRoom() );
-			roomNameMap.put( "Drone Ctrl", blueprintSystems.getDroneRoom() );
-			roomNameMap.put( "Teleporter", blueprintSystems.getTeleporterRoom() );
-			roomNameMap.put( "Cloaking", blueprintSystems.getCloakRoom() );
-			// Artillery's non-unique, but it can be tested for null elsewhere.
-
-			HashMap<Integer, String> roomIdNameMap = new HashMap<Integer, String>();
-
-			for (Map.Entry<String, ShipBlueprint.SystemList.SystemRoom> entry : roomNameMap.entrySet()) {
-				String systemName = entry.getKey();
-				ShipBlueprint.SystemList.SystemRoom room = entry.getValue();
-				if ( room == null ) continue;  // Ineligible systems will be null.
-				roomIdNameMap.put(new Integer( room.getRoomId() ), systemName);
-			}
-
-			List<ShipBlueprint.SystemList.SystemRoom> artilleryRooms = blueprintSystems.getArtilleryRooms();
-			if (artilleryRooms != null) {
-				for (ShipBlueprint.SystemList.SystemRoom artilleryRoom : artilleryRooms) {
-					roomIdNameMap.put(new Integer( artilleryRoom.getRoomId() ), "Artillery");
-				}
-			}
+				throw new RuntimeException( String.format("Could not find layout for%s ship: %s", (auto ? " auto" : ""), shipName) );
 
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
@@ -764,7 +731,7 @@ public class SavedGameParser extends DatParser {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				int roomId = it.nextIndex();
-				String roomName = roomIdNameMap.get( new Integer(roomId) );
+				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
 				if (roomName == null) roomName = "Empty";
 				result.append(String.format("RoomId: %2d (%s)\n", roomId, roomName));
 				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
