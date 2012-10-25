@@ -259,7 +259,12 @@ public class SavedGameParser extends DatParser {
 			system.setPower( readInt(in) );
 			system.setDamagedBars( readInt(in) );
 			system.setIonizedBars( readInt(in) );
-			system.addMysteryBytes( new MysteryBytes(in, 4) );
+
+			int miscTicks = readInt(in);
+			if ( miscTicks == -2147483648 )
+				miscTicks = Integer.MIN_VALUE;
+			system.setMiscTicks( miscTicks );
+
 			system.setRepairProgress( readInt(in) );
 			system.setBurnProgress( readInt(in) );
 		}
@@ -938,15 +943,42 @@ public class SavedGameParser extends DatParser {
 
 
 	public class SystemState {
+		// miscTicks isn't fully understood.
+		//   It sometimes has huge positive and negative values.
+
 		private String name;
 		private int capacity = 0;
 		private int power = 0;
-		private int damagedBars = 0;     // Number of unusable power bars.
-		private int ionizedBars = 0;     // Number of disabled power bars; -1 while cloaked.
-		private int repairProgress = 0;  // Turns bar yellow.
-		private int burnProgress = 0;    // Turns bar red.
+		private int damagedBars = 0;      // Number of unusable power bars.
+		private int ionizedBars = 0;      // Number of disabled power bars; -1 while cloaked.
+		private int repairProgress = 0;   // Turns bar yellow.
+		private int burnProgress = 0;     // Turns bar red.
+		private int miscTicks = Integer.MIN_VALUE;  // Millisecond counter.
 
-		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
+		// ionizedBars may briefly be -1 initially when a system
+		// disables itself. Then ionizedBars will be set to capacity+1.
+
+		// miscTicks is reset to 0 upon loading.
+		// Whatever needs timing will respond to it as it increments,
+		// including resetting after intervals. If nothing needs it,
+		// it may be 0, or more often, MIN_INT (signed 32bit \x0000_0080)
+		// of the compiler that built FTL. The parser will translate that
+		// to Java's equivalent minimum during reading, and back during
+		// writing.
+		//   Deionization: each bar counts to 5000.
+		//   Fire: (hull damage / ignition inc)?, ???
+		//   Shield bubbling: ???
+		//   Engines: FTL charging, ???
+		//   Oxygen: refill, ???
+		//   Cloaking: cooldown, ???
+		//   Teleporter: cooldown, ???
+		//   Doors: closing busted down doors?, ???
+		//   Pilot: ???, ???
+		//   Weapons: incrementing cooldownTicks?, ???
+		//   Medbay: healing?, ???
+		// These probably tick, but I havent checked...
+		//   Artillery: cooldown?, ???
+		//   Drone Ctrl: (healing / shots)?, ???
 
 		public SystemState( String name ) {
 			this.name = name;
@@ -958,8 +990,7 @@ public class SavedGameParser extends DatParser {
 		public void setIonizedBars( int n ) { ionizedBars = n; }
 		public void setRepairProgress( int n ) { repairProgress = n; }
 		public void setBurnProgress( int n ) { burnProgress = n; }
-
-		public void addMysteryBytes( MysteryBytes m ) { mysteryList.add(m); }
+		public void setMiscTicks( int n ) { miscTicks = n; }
 
 		@Override
 		public String toString() {
@@ -970,16 +1001,7 @@ public class SavedGameParser extends DatParser {
 				result.append(String.format("Ionized Bars:    %3d\n", ionizedBars));
 				result.append(String.format("Repair Progress: %3d%%\n", repairProgress));
 				result.append(String.format("Burn Progress:   %3d%%\n", burnProgress));
-				result.append("/ / / Unknowns / / /\n");
-				if ( mysteryList.size() > 0 ) {
-					result.append("Mystery Bytes...\n");
-					boolean first = true;
-					for (MysteryBytes m : mysteryList) {
-						if (first) { first = false; }
-						else { result.append(",\n"); }
-						result.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-					}
-				}
+				result.append(String.format("Misc Ticks:      %s\n", (miscTicks==Integer.MIN_VALUE ? "N/A" : miscTicks) ));
 			} else {
 				result.append(String.format("%s: N/A\n", name));
 			}
