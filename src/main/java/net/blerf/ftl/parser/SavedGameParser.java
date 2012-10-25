@@ -943,9 +943,6 @@ public class SavedGameParser extends DatParser {
 
 
 	public class SystemState {
-		// miscTicks isn't fully understood.
-		//   It sometimes has huge positive and negative values.
-
 		private String name;
 		private int capacity = 0;
 		private int power = 0;
@@ -958,27 +955,20 @@ public class SavedGameParser extends DatParser {
 		// ionizedBars may briefly be -1 initially when a system
 		// disables itself. Then ionizedBars will be set to capacity+1.
 
-		// miscTicks is reset to 0 upon loading.
+		// miscTicks is reset upon loading.
 		// Whatever needs timing will respond to it as it increments,
 		// including resetting after intervals. If nothing needs it,
 		// it may be 0, or more often, MIN_INT (signed 32bit \x0000_0080)
-		// of the compiler that built FTL. The parser will translate that
+		// of the compiler that built FTL. This parser will translate that
 		// to Java's equivalent minimum during reading, and back during
 		// writing.
 		//   Deionization: each bar counts to 5000.
-		//   Fire: (hull damage / ignition inc)?, ???
-		//   Shield bubbling: ???
-		//   Engines: FTL charging, ???
-		//   Oxygen: refill, ???
-		//   Cloaking: cooldown, ???
-		//   Teleporter: cooldown, ???
-		//   Doors: closing busted down doors?, ???
-		//   Pilot: ???, ???
-		//   Weapons: incrementing cooldownTicks?, ???
-		//   Medbay: healing?, ???
-		// These probably tick, but I havent checked...
-		//   Artillery: cooldown?, ???
-		//   Drone Ctrl: (healing / shots)?, ???
+		//
+		// TODO:
+		// Nearly every system has been observed with non-zero values,
+		// but aside from Teleporter/Cloaking, normal use doesn't reliably
+		// set such values. Might be unspecified garbage when not actively
+		// counting. Sometimes has huge positive and negative values.
 
 		public SystemState( String name ) {
 			this.name = name;
