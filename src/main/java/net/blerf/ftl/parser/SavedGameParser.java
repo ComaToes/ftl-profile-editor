@@ -48,7 +48,8 @@ public class SavedGameParser extends DatParser {
 			String playerShipBlueprintId = readString(in);  // Redundant.
 			gameState.setPlayerShipInfo( playerShipName, playerShipBlueprintId );
 
-			gameState.setSectorNumber( readInt(in) );
+			int sectorNumber = readInt(in);
+			gameState.setSectorNumber( sectorNumber );
 
 			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 
@@ -68,8 +69,18 @@ public class SavedGameParser extends DatParser {
 			
 			gameState.setRebelFleetOffset( readInt(in) );
 			
-			gameState.addMysteryBytes( new MysteryBytes(in, 24) );
-			
+			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+
+			gameState.setRebelPursuitMod( readInt(in) );
+
+			gameState.setSectorHazardsVisible( readBool(in) );
+
+			gameState.setRebelFlagshipVisible( readBool(in) );
+
+			gameState.setRebelFlagshipHop( readInt(in) );
+
+			gameState.setRebelFlagshipApproaching( readBool(in) );
+
 			int sectorCount = readInt(in);
 			for (int i=0; i < sectorCount; i++) {
 				gameState.addSector( readBool(in) );
@@ -105,7 +116,25 @@ public class SavedGameParser extends DatParser {
 				gameState.setNearbyShipState(nearbyShipState);
 			}
 
+			// Here, the stream might end.
+
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
+
+			// Or, if this is sector 8 and the boss has been engaged at
+			// least once, this will definitely be present.
+			if ( sectorNumber == 8 && bytesRemaining > 2*4 ) {
+				RebelFlagshipState flagshipState = readRebelFlagship(in);
+				gameState.setRebelFlagshipState( flagshipState );
+			}
+
+			// Otherwise this is sometimes present...
+			// This hasn't been observed to coincide with the above, but
+			// this is intermittent in all sectors, which would be
+			// odd if it were boss related.
+			//
+			//   0x0100_0000 0x0000_0000 == 1 0 as ints. No idea what for.
+
+			bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
 			if ( bytesRemaining > 0 ) {
 				gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
 			}
@@ -385,6 +414,25 @@ public class SavedGameParser extends DatParser {
 
 
 
+	public RebelFlagshipState readRebelFlagship( InputStream in ) throws IOException {
+
+		// TODO: Magic strings.
+		String[] blueprintIds = new String[] {"BOSS_1", "BOSS_2", "BOSS_3"};
+
+		RebelFlagshipState flagship = new RebelFlagshipState( blueprintIds );
+
+		flagship.setPendingStage( readInt(in) );
+
+		int previousRoomCount = readInt(in);
+		for (int i=0; i < previousRoomCount; i++) {
+			flagship.setPreviousOccupancy( i, readBool(in) );
+		}
+
+		return flagship;
+	}
+
+
+
 	// Stash state classes here until they're finalized.
 
 	public class SavedGameState {
@@ -398,14 +446,20 @@ public class SavedGameParser extends DatParser {
 		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
 		private int sectorLayoutSeed;
-		private int rebelFleetOffset;  // Pixels from far right of sector map.
+		private int rebelFleetOffset;
+		private int rebelPursuitMod = 0;
+		private boolean sectorHazardsVisible = false;
+		private boolean rebelFlagshipVisible = false;
+		private int rebelFlagshipHop = 0;
+		private boolean rebelFlagshipApproaching = false;
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
 		private ShipState nearbyShipState = null;
+		private int currentBeaconId = 0;
+		private RebelFlagshipState rebelFlagshipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
-		private int currentBeaconId = 0;  // Where the player is.
 
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
 		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
@@ -453,7 +507,24 @@ public class SavedGameParser extends DatParser {
 		}
 
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
+
+		/** Sets the fleet position, in pixels from far right of sector map. */
 		public void setRebelFleetOffset( int n ) { rebelFleetOffset = n; }
+
+		/** Delays/alerts the rebel fleet (-/+). */
+		public void setRebelPursuitMod( int n ) { rebelPursuitMod = n; }
+
+		/** Toggles visibility of beacon hazards for this sector. */
+		public void setSectorHazardsVisible( boolean b ) { sectorHazardsVisible = b; }
+
+		/** Toggles the flagship. Instant lose if not in sector 8. */
+		public void setRebelFlagshipVisible( boolean b ) { rebelFlagshipVisible = b; }
+
+		/** Set's the flagship's next/current beacon, as an index of a fixed list? */
+		public void setRebelFlagshipHop( int n ) { rebelFlagshipHop = n; }
+
+		/** Sets whether the flagship's approaching or circling its hop beacon. */
+		public void setRebelFlagshipApproaching( boolean b ) { rebelFlagshipApproaching = b; }
 
 		/**
 		 * Adds a dot of the sector tree.
@@ -485,10 +556,15 @@ public class SavedGameParser extends DatParser {
 			distantQuestEventList.add( questEventId );
 		}
 
+		/** Sets where the player is. */
 		public void setCurrentBeaconId( int n ) { currentBeaconId = n; }
 
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
+		}
+
+		public void setRebelFlagshipState( RebelFlagshipState flagshipState ) {
+			this.rebelFlagshipState = flagshipState;
 		}
 
 		public void addMysteryBytes( MysteryBytes m ) {
@@ -519,7 +595,12 @@ public class SavedGameParser extends DatParser {
 			result.append("\nSector Data...\n");
 			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
 			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
-			result.append( String.format("Current BeaconId:   %5d\n", currentBeaconId) );
+			result.append( String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod) );
+			result.append( String.format("Sector Hazards Map: %b\n", sectorHazardsVisible) );
+			result.append( String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible) );
+			result.append( String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop) );
+			result.append( String.format("Flagship Moving:    %b\n", rebelFlagshipApproaching) );
+			result.append( String.format("Player BeaconId:    %5d\n", currentBeaconId) );
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
@@ -555,6 +636,10 @@ public class SavedGameParser extends DatParser {
 			result.append("\nNearby Ship...\n");
 			if ( nearbyShipState != null )
 				result.append(nearbyShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+
+			result.append("\nRebel Flagship...\n");
+			if ( rebelFlagshipState != null )
+				result.append(rebelFlagshipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nMystery Bytes...\n");
 			first = true;
@@ -1353,7 +1438,90 @@ public class SavedGameParser extends DatParser {
 
 		@Override
 		public String toString() {
-			return String.format("%s (%s)\n" , itemId, (available ? "Available" : "Sold Out"));
+			return String.format("%s (%s)\n", itemId, (available ? "Available" : "Sold Out"));
+		}
+	}
+
+
+
+	public class RebelFlagshipState {
+		private String[] shipBlueprintIds;
+		private int pendingStage = 1;
+		private LinkedHashMap<Integer, Boolean> occupancyMap = new LinkedHashMap<Integer, Boolean>();
+
+		/**
+		 * Constructor.
+		 * This info is not present in saved games until after engaging
+		 * the rebel flagship in sector 8 for the first time.
+		 *
+		 * @param shipBlueprintIds The versions about to be fought
+		 *                         (BOSS_1/BOSS_2/BOSS_3)
+		 */
+		public RebelFlagshipState( String[] shipBlueprintIds ) {
+			this.shipBlueprintIds = shipBlueprintIds;
+		}
+
+		/**
+		 * Sets the next version of the flagship that will be encountered (1-based).
+		 */
+		public void setPendingStage( int pendingStage ) {
+			if ( pendingStage <= 0 || pendingStage > shipBlueprintIds.length )
+				throw new IndexOutOfBoundsException( "Attempted to set 1-based flagship stage "+ pendingStage +" of "+ shipBlueprintIds.length +" total" );
+			this.pendingStage = pendingStage;
+		}
+
+		/**
+		 * Sets whether a room had a crew member in the last seen layout.
+		 *
+		 * Stage 1 sets this, but doesn't read it.
+		 * Fleeing stage 1, altering these bytes, then returning
+		 * only results in a fresh fight.
+		 *
+		 * Upon first engaging stage 2, the layout is migrated.
+		 * Previous roomIds are truncated to the new layout's count.
+		 * (The blueprints happen to have matching low ids.)
+		 *
+		 *   Stage 1: 0x13=19 rooms
+		 *   Stage 2: 0x0F=15 rooms
+		 *   Stage 3: 0x0B=11 rooms
+		 *
+		 * Stage 2 will read altered bytes on additional skirmishes.
+		 *
+		 * Stage 3 probably will, too. (TODO: Confirm this.)
+		 *
+		 * @param roomId a room in the last seen stage's shipLayout
+		 * @param b true if there was crew, false otherwise
+		 */
+		public void setPreviousOccupancy( int roomId, boolean b ) {
+			occupancyMap.put( new Integer(roomId), new Boolean(b) );
+		}
+
+		@Override
+		public String toString() {
+			// Use the first, most complete, blueprint for room names.
+			ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintIds[0] );
+			if ( shipBlueprint == null )
+				throw new RuntimeException( String.format("Could not find blueprint for flagship: %s", shipBlueprintIds[0]) );
+
+			ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
+
+
+			StringBuilder result = new StringBuilder();
+
+			result.append( String.format("Pending Ship Type: %s\n", shipBlueprintIds[pendingStage-1] ) );
+
+			result.append( "\nOccupancy of Last Seen Type...\n" );
+			for (Map.Entry<Integer, Boolean> entry : occupancyMap.entrySet()) {
+				int roomId = entry.getKey().intValue();
+				boolean b = entry.getValue().booleanValue();
+
+				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
+				if (roomName == null) roomName = "Empty";
+
+				result.append( String.format("RoomId: %2d (%-10s), Occupied: %b\n", roomId, roomName, b) );
+			}
+
+			return result.toString();
 		}
 	}
 
