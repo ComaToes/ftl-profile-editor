@@ -125,7 +125,7 @@ public class SavedGameParser extends DatParser {
 
 		String shipBlueprintId = readString(in);  // blueprints.xml / autoBlueprints.xml.
 		String shipName = readString(in);
-		String shipGfxBaseName = readString(in);   // See 'img/ship/basename_*.png'.
+		String shipGfxBaseName = readString(in);
 
 		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
 		if ( shipBlueprint == null )
@@ -177,9 +177,9 @@ public class SavedGameParser extends DatParser {
 			shipState.addRoom( readRoom(in, squaresH, squaresV) );
 		}
 
-		int warningLightCount = readInt(in);
-		for (int i=0; i < warningLightCount; i++) {
-			shipState.setWarningLight( readInt(in), readInt(in), readInt(in) );
+		int breachCount = readInt(in);
+		for (int i=0; i < breachCount; i++) {
+			shipState.setBreach( readInt(in), readInt(in), readInt(in) );
 		}
 
 		LinkedHashMap<int[], EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
@@ -388,7 +388,10 @@ public class SavedGameParser extends DatParser {
 	// Stash state classes here until they're finalized.
 
 	public class SavedGameState {
-		private int totalShipsDefeated, totalBeaconsExplored, totalScrapCollected, totalCrewHired;
+		private int totalShipsDefeated = 0;
+		private int totalBeaconsExplored = 0;
+		private int totalScrapCollected = 0;
+		private int totalCrewHired = 0;
 		private String playerShipName = "";
 		private String playerShipBlueprintId = "";
 		private int sectorNumber = 1;
@@ -567,6 +570,7 @@ public class SavedGameParser extends DatParser {
 	}
 
 
+
 	public class ShipState {
 		private boolean playerControlled = false;
 		private String shipName, shipBlueprintId, shipLayoutId;
@@ -577,7 +581,7 @@ public class SavedGameParser extends DatParser {
 		private int reservePowerCapacity;
 		private ArrayList<SystemState> systemList = new ArrayList<SystemState>();
 		private ArrayList<RoomState> roomList = new ArrayList<RoomState>();
-		private LinkedHashMap<Point, Integer> warningLightMap = new LinkedHashMap<Point, Integer>();
+		private LinkedHashMap<Point, Integer> breachMap = new LinkedHashMap<Point, Integer>();
 		private LinkedHashMap<int[], DoorState> doorMap = new LinkedHashMap<int[], DoorState>();
 		private ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
@@ -592,12 +596,13 @@ public class SavedGameParser extends DatParser {
 		}
 
 		/**
-		 * Sets what resembles a ShipLayout id string, but isn't.
-		 * TODO: Find out what this is for.
+		 * Sets the basename to use when loading ship images.
+		 * See 'img/ship/basename_*.png'.
 		 *
 		 * Values in the wild:
 		 *   jelly_croissant_pirate, rebel_long_pirate...
 		 *
+		 * It often resembles the layout id, but they're not interchangeable.
 		 * The proper shipLayoutId comes from the ShipBlueprint.
 		 */
 		public void setShipGraphicsBaseName( String shipGfxBaseName ) {
@@ -631,15 +636,14 @@ public class SavedGameParser extends DatParser {
 		}
 
 		/**
-		 * Adds a flashing red light.
-		 * These are associated with hull breaches.
+		 * Adds a hull breach.
 		 *
-		 * @param x the 0-based Nth floor-square corner from the left
-		 * @param y the 0-based Nth floor-square corner from the top
+		 * @param x the 0-based Nth floor-square from the left (minus ShipLayout X_OFFSET)
+		 * @param y the 0-based Nth floor-square from the top (minus ShipLayout Y_OFFSET)
 		 * @param breachHealth 0 to 100.
 		 */
-		public void setWarningLight( int x, int y, int breachHealth ) {
-			warningLightMap.put( new Point(x, y), new Integer(breachHealth) );
+		public void setBreach( int x, int y, int breachHealth ) {
+			breachMap.put( new Point(x, y), new Integer(breachHealth) );
 		}
 
 		/**
@@ -676,6 +680,11 @@ public class SavedGameParser extends DatParser {
 			// The blueprint fetching might vary if !playerControlled.
 			// See autoBlueprints.xml vs blueprints.xml.
 			ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+
+			ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
+			if ( shipLayout == null )
+				throw new RuntimeException( String.format("Could not find layout for %s ship: %s", (playerControlled ? "player" : "non-player"), shipName) );
+
 			ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
 			// Build a roomId-to-name lookup table.
@@ -761,17 +770,17 @@ public class SavedGameParser extends DatParser {
 				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
-			result.append("\nWarning Lights...\n");
-			int warningLightId = -1;
+			result.append("\nHull Breaches...\n");
+			int breachId = -1;
 			first = true;
-			for (Map.Entry<Point, Integer> entry : warningLightMap.entrySet()) {
+			for (Map.Entry<Point, Integer> entry : breachMap.entrySet()) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 
-				Point lightCoord = entry.getKey();
+				Point breachCoord = entry.getKey();
 				int breachHealth = entry.getValue().intValue();
 
-				result.append(String.format("LightId: %2d (%2d,%2d)\n", ++warningLightId, lightCoord.x, lightCoord.y));
+				result.append(String.format("BreachId: %2d, Raw Coords: %2d,%2d (-Layout Offset: %2d,%2d)\n", ++breachId, breachCoord.x, breachCoord.y, breachCoord.x-shipLayout.getOffsetX(), breachCoord.y-shipLayout.getOffsetY()));
 				result.append(String.format("  Breach HP: %3d\n", breachHealth));
 			}
 
@@ -1027,7 +1036,6 @@ public class SavedGameParser extends DatParser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
-			result.append("/ / / Unknowns / / /\n");
 			for (int[] square : squareList) {
 				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%% %2d?\n", square[0], square[1], square[2]));
 			}
@@ -1119,6 +1127,7 @@ public class SavedGameParser extends DatParser {
 			return result.toString();
 		}
 	}
+
 
 
 	public enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
@@ -1271,6 +1280,7 @@ public class SavedGameParser extends DatParser {
 	}
 
 
+
 	public class StoreState {
 		
 		private int fuel, missiles, droneParts;
@@ -1280,9 +1290,9 @@ public class SavedGameParser extends DatParser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			
-			result.append( String.format("Fuel:        %2d\n" , fuel) );
-			result.append( String.format("Missiles:    %2d\n" , missiles) );
-			result.append( String.format("Drone Parts: %2d\n" , droneParts) );
+			result.append( String.format("Fuel:        %2d\n", fuel) );
+			result.append( String.format("Missiles:    %2d\n", missiles) );
+			result.append( String.format("Drone Parts: %2d\n", droneParts) );
 			
 			result.append( "\nTop Shelf...\n" );
 			result.append( topShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
