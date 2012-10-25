@@ -214,7 +214,29 @@ public class ShipBlueprint {
 		public void setArtilleryRooms(List<SystemRoom> artilleryRooms) {
 			this.artilleryRooms = artilleryRooms;
 		}
-		
+
+		/**
+		 * Returns the system's name in a given room, or null.
+		 */
+		public String getSystemNameByRoomId( int roomId ) {
+			if ( getPilotRoom() != null && getPilotRoom().getRoomId() == roomId ) return "Pilot";
+			if ( getDoorsRoom() != null && getDoorsRoom().getRoomId() == roomId ) return "Doors";
+			if ( getSensorsRoom() != null && getSensorsRoom().getRoomId() == roomId ) return "Sensors";
+			if ( getMedicalRoom() != null && getMedicalRoom().getRoomId() == roomId ) return "Medbay";
+			if ( getLifeSupportRoom() != null && getLifeSupportRoom().getRoomId() == roomId ) return "Oxygen";
+			if ( getShieldRoom() != null && getShieldRoom().getRoomId() == roomId ) return "Shields";
+			if ( getEngineRoom() != null && getEngineRoom().getRoomId() == roomId ) return "Engines";
+			if ( getWeaponRoom() != null && getWeaponRoom().getRoomId() == roomId ) return "Weapons";
+			if ( getDroneRoom() != null && getDroneRoom().getRoomId() == roomId ) return "Drone Ctrl";
+			if ( getTeleporterRoom() != null && getTeleporterRoom().getRoomId() == roomId ) return "Teleporter";
+			if ( getCloakRoom() != null && getCloakRoom().getRoomId() == roomId ) return "Cloaking";
+			if ( getArtilleryRooms() != null ) {
+				for ( SystemRoom artilleryRoom : artilleryRooms ) {
+					if ( artilleryRoom.getRoomId() == roomId ) return "Artillery";
+				}
+			}
+			return null;
+		}
 	}
 
 	public String getId() {
