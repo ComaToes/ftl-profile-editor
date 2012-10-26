@@ -55,7 +55,7 @@ public class SavedGameParser extends DatParser {
 			int oneBasedSectorNumber = readInt(in);  // Redundant.
 
 			// Always 0?
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			gameState.setHeaderAlpha( readInt(in) );
 
 			int stateVarCount = readInt(in);
 			for (int i=0; i < stateVarCount; i++) {
@@ -470,6 +470,8 @@ public class SavedGameParser extends DatParser {
 		private RebelFlagshipState rebelFlagshipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
+		private int unknownHeaderAlpha = 0;
+
 		public void setDifficultyEasy( boolean b ) { difficultyEasy = b; }
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
 		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
@@ -509,6 +511,8 @@ public class SavedGameParser extends DatParser {
 		 * but weird things might happen at or above #7.
 		 */
 		public void setSectorNumber( int n ) { sectorNumber = n; }
+
+		public void setHeaderAlpha( int n ) { unknownHeaderAlpha = n; }
 
 		/**
 		 * Sets a state var.
@@ -624,8 +628,9 @@ public class SavedGameParser extends DatParser {
 			boolean first = true;
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
-			result.append(String.format("Sector:                 %4d (%d)\n", sectorNumber, sectorNumber+1));
 			result.append(String.format("Difficulty:             %s\n", (difficultyEasy ? "Easy" : "Normal") ));
+			result.append(String.format("Sector:                 %4d (%d)\n", sectorNumber, sectorNumber+1));
+			result.append(String.format("Unknown?:               %4d\n", unknownHeaderAlpha));
 			result.append(String.format("Total Ships Defeated:   %4d\n", totalShipsDefeated));
 			result.append(String.format("Total Beacons Explored: %4d\n", totalBeaconsExplored));
 			result.append(String.format("Total Scrap Collected:  %4d\n", totalScrapCollected));
