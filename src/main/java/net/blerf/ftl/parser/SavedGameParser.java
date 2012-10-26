@@ -55,6 +55,7 @@ public class SavedGameParser extends DatParser {
 			int sectorNumber = readInt(in);
 			gameState.setSectorNumber( sectorNumber );
 
+			// Always 0?
 			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 
 			int stateVarCount = readInt(in);
@@ -73,6 +74,9 @@ public class SavedGameParser extends DatParser {
 			
 			gameState.setRebelFleetOffset( readInt(in) );
 			
+			// Varies from sector to sector and among games,
+			// but consistent within a sector.
+			// Hex in wild: 68 78 92 94 B9 C8 C9 D9 F6 1A01 2301
 			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
 
 			gameState.setRebelPursuitMod( readInt(in) );
@@ -92,7 +96,7 @@ public class SavedGameParser extends DatParser {
 
 			int zeroBasedSectorNumber = readInt( in );  // Redundant.
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			gameState.setSectorIsHiddenCrystalWorlds( readBool(in) );
 			
 			int beaconCount = readInt(in);
 			for (int i=0; i < beaconCount; i++) {
@@ -463,6 +467,7 @@ public class SavedGameParser extends DatParser {
 		private int rebelFlagshipHop = 0;
 		private boolean rebelFlagshipApproaching = false;
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
+		private boolean sectorIsHiddenCrystalWorlds = false;
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
@@ -550,6 +555,16 @@ public class SavedGameParser extends DatParser {
 		}
 
 		/**
+		 * Sets whether this sector is hidden.
+		 * The sector map will say "#? Hidden Crystal Worlds".
+		 *
+		 * When jumping from the exit beacon, you won't get to
+		 * choose which branch of the sector tree will be
+		 * next.
+		 */
+		public void setSectorIsHiddenCrystalWorlds( boolean b ) { sectorIsHiddenCrystalWorlds = b; }
+
+		/**
 		 * Adds a beacon to the sector map.
 		 * Beacons are indexed top-to-bottom for each column,
 		 * left-to-right. They're randomly offset a little
@@ -609,6 +624,7 @@ public class SavedGameParser extends DatParser {
 			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
 			result.append( String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod) );
 			result.append( String.format("Sector Hazards Map: %b\n", sectorHazardsVisible) );
+			result.append( String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds) );
 			result.append( String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible) );
 			result.append( String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop) );
 			result.append( String.format("Flagship Moving:    %b\n", rebelFlagshipApproaching) );
@@ -1227,7 +1243,7 @@ public class SavedGameParser extends DatParser {
 				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("Bkg Sprite:        %s\n", bgSpriteImageInnerPath));
 				result.append(String.format("Bkg Sprite Coords: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
-				result.append(String.format("Unknown:           %3d\n", unknownVisitedAlpha));
+				result.append(String.format("Unknown?:          %3d\n", unknownVisitedAlpha));
 			}
 			
 			result.append(String.format("Seen:              %b\n", seen));
@@ -1236,7 +1252,7 @@ public class SavedGameParser extends DatParser {
 			if ( enemyPresent ) {
 				result.append(String.format("  Ship Event ID:          %s\n", shipEventId));
 				result.append(String.format("  Ship Blueprint List ID: %s\n", shipBlueprintListId));
-				result.append(String.format("  Unknown:                %5d\n", unknownEnemyPresentAlpha));
+				result.append(String.format("  Unknown?:               %5d\n", unknownEnemyPresentAlpha));
 			}
 			
 			result.append(String.format("Fleets Present:    %s\n", fleetPresence));
