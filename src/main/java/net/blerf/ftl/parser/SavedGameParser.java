@@ -67,7 +67,7 @@ public class SavedGameParser extends DatParser {
 			ShipState playerShipState = readShip( in, true );
 			gameState.setPlayerShipState( playerShipState );
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			gameState.setSectorTreeSeed( readInt(in) );
 			
 			gameState.setSectorLayoutSeed( readInt(in) );
 			
@@ -468,6 +468,7 @@ public class SavedGameParser extends DatParser {
 		private int sectorNumber = 1;
 		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
+		private int sectorTreeSeed;
 		private int sectorLayoutSeed;
 		private int rebelFleetOffset;
 		private int rebelPursuitMod = 0;
@@ -551,6 +552,9 @@ public class SavedGameParser extends DatParser {
 			this.playerShipState = shipState;
 		}
 
+		// TODO: See what havoc can occur when seeds change.
+		// (Arrays might change size and overflow, etc)
+		public void setSectorTreeSeed( int n ) { sectorTreeSeed = n; }
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
 
 		/** Sets the fleet position, in pixels from far right of sector map. */
@@ -649,6 +653,7 @@ public class SavedGameParser extends DatParser {
 				result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nSector Data...\n");
+			result.append( String.format("Sector Tree Seed:   %5d\n", sectorTreeSeed) );
 			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
 			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
 			result.append( String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod) );
