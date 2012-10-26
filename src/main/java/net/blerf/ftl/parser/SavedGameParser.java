@@ -79,10 +79,7 @@ public class SavedGameParser extends DatParser {
 			
 			gameState.setRebelFleetOffset( readInt(in) );
 			
-			// Varies from sector to sector and among games,
-			// but consistent within a sector.
-			// Hex in wild: 68 78 92 94 B9 C8 C9 D9 F6 1A01 2301
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			gameState.setRebelFleetFudge( readInt(in) );
 
 			gameState.setRebelPursuitMod( readInt(in) );
 
@@ -452,9 +449,10 @@ public class SavedGameParser extends DatParser {
 		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
 		private ArrayList<String> cargoIdList = new ArrayList<String>();
-		private int sectorTreeSeed;
-		private int sectorLayoutSeed;
-		private int rebelFleetOffset;
+		private int sectorTreeSeed = 42;      // Arbitrary default.
+		private int sectorLayoutSeed = 42;    // Arbitrary default.
+		private int rebelFleetOffset = -750;  // Arbitrary default.
+		private int rebelFleetFudge = 100;    // Arbitrary default.
 		private int rebelPursuitMod = 0;
 		private boolean sectorHazardsVisible = false;
 		private boolean rebelFlagshipVisible = false;
@@ -549,10 +547,41 @@ public class SavedGameParser extends DatParser {
 		public void setSectorTreeSeed( int n ) { sectorTreeSeed = n; }
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
 
-		/** Sets the fleet position, in pixels from far right of sector map. */
+		/**
+		 * Sets the fleet position on the map.
+		 * This is always a negative value that, when added to
+		 * rebelFleetFudge, equals how far in from the left the
+		 * warning circle has encroached (image has ~50px margin).
+		 *
+		 * Most sectors start with large negative value to keep
+		 * this off-screen and increment toward 0 from there.
+		 * The Last Stand sector uses a constant -25 and moderate
+		 * rebelFleetFudge value to cover the map.
+		 *
+		 * This has always been observed in multiples of 25.
+		 *
+		 * @param n pixels from the map's right edge
+		 *          (see 'img/map/map_warningcircle_point.png', 650px wide)
+		 */
 		public void setRebelFleetOffset( int n ) { rebelFleetOffset = n; }
 
-		/** Delays/alerts the rebel fleet (-/+). */
+		/**
+		 * This is always a positive number around 100-300 that,
+		 * when added to rebelFleetOffset, equals how far in
+		 * from the left the warning circle has encroached.
+		 *
+		 * This varies seemingly randomly from game to game and
+		 * sector to sector, but it's consistent while within
+		 * each sector. Except in The Last Stand, in which it is
+		 * always 200 (the warning circle will extend beyond
+		 * both edges of the map).
+		 */
+		public void setRebelFleetFudge( int n ) { rebelFleetFudge = n; }
+
+		/**
+		 * Delays/alerts the rebel fleet (-/+).
+		 * Example: Hiring a merc ship to distract sets -2.
+		 */
 		public void setRebelPursuitMod( int n ) { rebelPursuitMod = n; }
 
 		/** Toggles visibility of beacon hazards for this sector. */
@@ -654,6 +683,7 @@ public class SavedGameParser extends DatParser {
 			result.append( String.format("Sector Tree Seed:   %5d\n", sectorTreeSeed) );
 			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
 			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
+			result.append( String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge) );
 			result.append( String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod) );
 			result.append( String.format("Sector Hazards Map: %b\n", sectorHazardsVisible) );
 			result.append( String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds) );
