@@ -52,8 +52,7 @@ public class SavedGameParser extends DatParser {
 			String playerShipBlueprintId = readString(in);  // Redundant.
 			gameState.setPlayerShipInfo( playerShipName, playerShipBlueprintId );
 
-			int sectorNumber = readInt(in);
-			gameState.setSectorNumber( sectorNumber );
+			int oneBasedSectorNumber = readInt(in);  // Redundant.
 
 			// Always 0?
 			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
@@ -94,7 +93,17 @@ public class SavedGameParser extends DatParser {
 				gameState.addSector( readBool(in) );
 			}
 
-			int zeroBasedSectorNumber = readInt( in );  // Redundant.
+			// The number on the sector map is this+1,
+			// but the sector's type on the map is
+			// unaffected when these bytes are modified.
+			// All hazards and point-of-interest labels
+			// will change, but not the beacons.
+			// The sector tree is unaffected when modified.
+			// Jumping from an exit beacon increments this
+			// number and sets the header's sector number
+			// to this+1.
+			int sectorNumber = readInt(in);
+			gameState.setSectorNumber( sectorNumber );
 
 			gameState.setSectorIsHiddenCrystalWorlds( readBool(in) );
 			
@@ -130,7 +139,7 @@ public class SavedGameParser extends DatParser {
 
 			// Or, if this is sector 8 and the boss has been engaged at
 			// least once, this will definitely be present.
-			if ( sectorNumber == 8 && bytesRemaining > 2*4 ) {
+			if ( sectorNumber == 7 && bytesRemaining > 2*4 ) {
 				RebelFlagshipState flagshipState = readRebelFlagship(in);
 				gameState.setRebelFlagshipState( flagshipState );
 			}
@@ -490,6 +499,26 @@ public class SavedGameParser extends DatParser {
 			playerShipBlueprintId = shipBlueprintId;
 		}
 
+		/**
+		 * Sets the current sector's number (0-based).
+		 *
+		 * It's uncertain how soon sector-dependent events
+		 * will take notice of changes. On the map, the
+		 * number, all visible hazards, and
+		 * point-of-interest labels will immediately
+		 * change, but not the beacons' pixel positions.
+		 *
+		 * Ship encounters will not be immediately
+		 * affected (TODO: turn #0 into #5, jump to the
+		 * next sector, and see if the ships there are
+		 * tough).
+		 *
+		 * Modifying this will not change the sector tree.
+		 *
+		 * TODO: Determine long-term effects of this.
+		 * The Final Stand is baked into the sector tree,
+		 * but weird things might happen at or above #7.
+		 */
 		public void setSectorNumber( int n ) { sectorNumber = n; }
 
 		/**
@@ -603,7 +632,7 @@ public class SavedGameParser extends DatParser {
 			boolean first = true;
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
-			result.append(String.format("Sector:                 %4d\n", sectorNumber));
+			result.append(String.format("Sector:                 %4d (%d)\n", sectorNumber, sectorNumber+1));
 			result.append(String.format("Difficulty:             %s\n", (difficultyEasy ? "Easy" : "Normal") ));
 			result.append(String.format("Total Ships Defeated:   %4d\n", totalShipsDefeated));
 			result.append(String.format("Total Beacons Explored: %4d\n", totalBeaconsExplored));
