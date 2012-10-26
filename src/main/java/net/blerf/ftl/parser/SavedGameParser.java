@@ -446,7 +446,7 @@ public class SavedGameParser extends DatParser {
 		private String playerShipName = "";
 		private String playerShipBlueprintId = "";
 		private int sectorNumber = 1;
-		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
+		private LinkedHashMap<String, Integer> stateVars = new LinkedHashMap<String, Integer>();
 		private ShipState playerShipState = null;
 		private ArrayList<String> cargoIdList = new ArrayList<String>();
 		private int sectorTreeSeed = 42;      // Arbitrary default.
@@ -476,6 +476,12 @@ public class SavedGameParser extends DatParser {
 		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
 		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
 
+		public boolean isDifficultyEasy() { return difficultyEasy; }
+		public int getTotalShipsDefeated() { return totalShipsDefeated; }
+		public int getTotalBeaconsExplored() { return totalBeaconsExplored; }
+		public int getTotalScrapCollected() { return totalScrapCollected; }
+		public int getTotalCrewHired() { return totalCrewHired; }
+
 		/**
 		 * Set redundant player ship info.
 		 */
@@ -483,10 +489,14 @@ public class SavedGameParser extends DatParser {
 			playerShipName = shipName;
 			playerShipBlueprintId = shipBlueprintId;
 		}
+		public String getShipName() { return playerShipName; }
+		public String getShipBlueprintId() { return playerShipBlueprintId; }
 
 		public void addCargoItemId( String cargoItemId ) {
 			cargoIdList.add( cargoItemId );
 		}
+
+		public ArrayList<String> getCargoIdList() { return cargoIdList; }
 
 		/**
 		 * Sets the current sector's number (0-based).
@@ -509,8 +519,10 @@ public class SavedGameParser extends DatParser {
 		 * but weird things might happen at or above #7.
 		 */
 		public void setSectorNumber( int n ) { sectorNumber = n; }
+		public int getSectorNumber() { return sectorNumber; }
 
 		public void setHeaderAlpha( int n ) { unknownHeaderAlpha = n; }
+		public int getHeaderAlpha() { return unknownHeaderAlpha; }
 
 		/**
 		 * Sets a state var.
@@ -538,14 +550,20 @@ public class SavedGameParser extends DatParser {
 			return result.intValue();
 		}
 
+		public LinkedHashMap<String, Integer> getStateVars() { return stateVars; }
+
 		public void setPlayerShipState( ShipState shipState ) {
 			this.playerShipState = shipState;
 		}
+		public ShipState getPlayerShipState() { return playerShipState; }
 
 		// TODO: See what havoc can occur when seeds change.
 		// (Arrays might change size and overflow, etc)
 		public void setSectorTreeSeed( int n ) { sectorTreeSeed = n; }
+		public int getSectorTreeSeed() { return sectorTreeSeed; }
+
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
+		public int getSectorLayoutSeed() { return sectorLayoutSeed; }
 
 		/**
 		 * Sets the fleet position on the map.
@@ -564,6 +582,7 @@ public class SavedGameParser extends DatParser {
 		 *          (see 'img/map/map_warningcircle_point.png', 650px wide)
 		 */
 		public void setRebelFleetOffset( int n ) { rebelFleetOffset = n; }
+		public int getRebelFleetOffset() { return rebelFleetOffset; }
 
 		/**
 		 * This is always a positive number around 100-300 that,
@@ -577,24 +596,30 @@ public class SavedGameParser extends DatParser {
 		 * both edges of the map).
 		 */
 		public void setRebelFleetFudge( int n ) { rebelFleetFudge = n; }
+		public int getRebelFleetFudge() { return rebelFleetFudge; }
 
 		/**
 		 * Delays/alerts the rebel fleet (-/+).
 		 * Example: Hiring a merc ship to distract sets -2.
 		 */
 		public void setRebelPursuitMod( int n ) { rebelPursuitMod = n; }
+		public int getRebelPursuitMod() { return rebelPursuitMod; }
 
 		/** Toggles visibility of beacon hazards for this sector. */
 		public void setSectorHazardsVisible( boolean b ) { sectorHazardsVisible = b; }
+		public boolean areSectorHazardsVisible() { return sectorHazardsVisible; }
 
 		/** Toggles the flagship. Instant lose if not in sector 8. */
 		public void setRebelFlagshipVisible( boolean b ) { rebelFlagshipVisible = b; }
+		public boolean isRebelFlagshipVisible() { return rebelFlagshipVisible; }
 
 		/** Set's the flagship's next/current beacon, as an index of a fixed list? */
 		public void setRebelFlagshipHop( int n ) { rebelFlagshipHop = n; }
+		public int getRebelFlagshipHop() { return rebelFlagshipHop; }
 
 		/** Sets whether the flagship's approaching or circling its hop beacon. */
 		public void setRebelFlagshipApproaching( boolean b ) { rebelFlagshipApproaching = b; }
+		public boolean isRebelFlagshipApproaching() { return rebelFlagshipApproaching; }
 
 		/**
 		 * Adds a dot of the sector tree.
@@ -608,6 +633,8 @@ public class SavedGameParser extends DatParser {
 			sectorList.set( sector, new Boolean(visited) );
 		}
 
+		public ArrayList<Boolean> getSectorList() { return sectorList; }
+
 		/**
 		 * Sets whether this sector is hidden.
 		 * The sector map will say "#? Hidden Crystal Worlds".
@@ -617,6 +644,7 @@ public class SavedGameParser extends DatParser {
 		 * next.
 		 */
 		public void setSectorIsHiddenCrystalWorlds( boolean b ) { sectorIsHiddenCrystalWorlds = b; }
+		public boolean isSectorHiddenCrystalWorlds() { return sectorIsHiddenCrystalWorlds; }
 
 		/**
 		 * Adds a beacon to the sector map.
@@ -628,28 +656,45 @@ public class SavedGameParser extends DatParser {
 			beaconList.add( beacon );
 		}
 
+		public ArrayList<BeaconState> getBeaconList() { return beaconList; }
+
 		public void addQuestEvent( String questEventId, int questBeaconId ) {
 			questEventMap.put( questEventId, new Integer(questBeaconId) );
+		}
+
+		public LinkedHashMap<String, Integer> getQuestEventMap() {
+			return questEventMap;
 		}
 
 		public void addDistantQuestEvent( String questEventId ) {
 			distantQuestEventList.add( questEventId );
 		}
 
+		public ArrayList<String> getDistantQuestEventList() {
+			return distantQuestEventList;
+		}
+
 		/** Sets where the player is. */
 		public void setCurrentBeaconId( int n ) { currentBeaconId = n; }
+		public int getCurrentBeaconId() { return currentBeaconId; }
 
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
 		}
+		public ShipState getNearbyShipState() { return nearbyShipState; }
 
 		public void setRebelFlagshipState( RebelFlagshipState flagshipState ) {
 			this.rebelFlagshipState = flagshipState;
+		}
+		public RebelFlagshipState getRebelFlagshipState() {
+			return rebelFlagshipState;
 		}
 
 		public void addMysteryBytes( MysteryBytes m ) {
 			mysteryList.add(m);
 		}
+
+		public ArrayList<MysteryBytes> getMysteryList() { return mysteryList; }
 
 		@Override
 		public String toString() {
@@ -769,6 +814,11 @@ public class SavedGameParser extends DatParser {
 			this.auto = auto;
 		}
 
+		public String getShipName() { return shipName; }
+		public String getShipBlueprintId() { return shipBlueprintId; }
+		public String getShipLayoutId() { return shipLayoutId; }
+		public boolean isAuto() { return auto; }
+
 		/**
 		 * Sets the basename to use when loading ship images.
 		 * See 'img/ship/basename_*.png'.
@@ -782,9 +832,14 @@ public class SavedGameParser extends DatParser {
 		public void setShipGraphicsBaseName( String shipGfxBaseName ) {
 			this.shipGfxBaseName = shipGfxBaseName;
 		}
+		public String getShipGraphicsBaseName() { return shipGfxBaseName; }
 
 		public void addStartingCrewMember( StartingCrewState sc ) {
 			startingCrewList.add(sc);
+		}
+
+		public ArrayList<StartingCrewState> getStartingCrewList() {
+			return startingCrewList;
 		}
 
 		public void setHullAmt( int n ) { hullAmt = n; }
@@ -793,21 +848,32 @@ public class SavedGameParser extends DatParser {
 		public void setMissilesAmt( int n ) { missilesAmt = n; }
 		public void setScrapAmt( int n ) { scrapAmt = n; }
 
+		public int getHullAmt() { return hullAmt; }
+		public int getFuelAmt() { return fuelAmt; }
+		public int getDronePartsAmt() { return dronePartsAmt; }
+		public int getMissilesAmt() { return missilesAmt; }
+		public int getScrapAmt() { return scrapAmt; }
+
 		public void addCrewMember( CrewState c ) {
 			crewList.add(c);
 		}
 
-		public void setReservePowerCapacity( int n ) {
-			reservePowerCapacity = n;
-		}
+		public ArrayList<CrewState> getCrewList() { return crewList; }
+
+		public void setReservePowerCapacity( int n ) { reservePowerCapacity = n; }
+		public int getReservePowerCapacity() { return reservePowerCapacity; }
 
 		public void addSystem( SystemState s ) {
 			systemList.add(s);
 		}
 
+		public ArrayList<SystemState> getSystemList() { return systemList; }
+
 		public void addRoom( RoomState r ) {
 			roomList.add(r);
 		}
+
+		public ArrayList<RoomState> getRoomList() { return roomList; }
 
 		/**
 		 * Adds a hull breach.
@@ -819,6 +885,8 @@ public class SavedGameParser extends DatParser {
 		public void setBreach( int x, int y, int breachHealth ) {
 			breachMap.put( new Point(x, y), new Integer(breachHealth) );
 		}
+
+		public LinkedHashMap<Point, Integer> getBreachMap() { return breachMap; }
 
 		/**
 		 * Adds a door.
@@ -833,17 +901,25 @@ public class SavedGameParser extends DatParser {
 			doorMap.put(doorCoord, d);
 		}
 
+		public LinkedHashMap<int[], DoorState> getDoorMap() { return doorMap; }
+
 		public void addWeapon( WeaponState w ) {
 			weaponList.add(w);
 		}
+
+		public ArrayList<WeaponState> getWeaponList() { return weaponList; }
 
 		public void addDrone( DroneState d ) {
 			droneList.add(d);
 		}
 
+		public ArrayList<DroneState> getDroneList() { return droneList; }
+
 		public void addAugmentId( String augmentId ) {
 			augmentIdList.add(augmentId);
 		}
+
+		public ArrayList<String> getAugmentIdList() { return augmentIdList; }
 		
 		@Override
 		public String toString() {
@@ -1016,8 +1092,6 @@ public class SavedGameParser extends DatParser {
 		private int x, y;
 		private int gender;  // 1=Male, 0=Female.
 
-		private int unknownAlpha;
-
 		public CrewState() {
 		}
 
@@ -1042,6 +1116,27 @@ public class SavedGameParser extends DatParser {
 		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
 		public void setSkillMasteries( int n ) { skillMasteries = n; }
 
+		public String getName() { return name; }
+		public String getRace() { return race; }
+		public int getHealth() { return health; }
+		public int getX() { return x; }
+		public int getY() { return y; }
+		public int getRoomId() { return blueprintRoomId; }
+		public int getRoomSquare() { return roomSquare; }
+		public boolean isPlayerControlled() { return playerControlled; }
+		public int getPilotSkill() { return pilotSkill; }
+		public int getEngineSkill() { return engineSkill; }
+		public int getShieldSkill() { return shieldSkill; }
+		public int getWeaponSkill() { return weaponSkill; }
+		public int getRepairSkill() { return repairSkill; }
+		public int getCombatSkill() { return combatSkill; }
+		public int getGender() { return gender; }
+		public int getRepairs() { return repairs; }
+		public int getCombatKills() { return combatKills; }
+		public int getPilotedEvasions() { return pilotedEvasions; }
+		public int getJumpsSurvived() { return jumpsSurvived; }
+		public int getSkillMasteries() { return skillMasteries; }
+
 		/**
 		 * Sets whether this crew member is a hostile drone.
 		 * Bizarrely, this trumps race and playerControlled.
@@ -1053,6 +1148,7 @@ public class SavedGameParser extends DatParser {
 		public void setEnemyBoardingDrone( boolean b ) {
 			enemyBoardingDrone = b;
 		}
+		public boolean isEnemyBoardingDrone() { return enemyBoardingDrone; }
 
 		@Override
 		public String toString() {
@@ -1115,6 +1211,8 @@ public class SavedGameParser extends DatParser {
 			this.name = name;
 		}
 
+		public String getName() { return name; }
+
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
 		public void setDamagedBars( int n ) { damagedBars = n; }
@@ -1122,6 +1220,14 @@ public class SavedGameParser extends DatParser {
 		public void setRepairProgress( int n ) { repairProgress = n; }
 		public void setBurnProgress( int n ) { burnProgress = n; }
 		public void setMiscTicks( int n ) { miscTicks = n; }
+
+		public int getCapacity() { return capacity; }
+		public int getPower() { return power; }
+		public int getDamagedBars() { return damagedBars; }
+		public int getIonizedBars() { return ionizedBars; }
+		public int getRepairProgress() { return repairProgress; }
+		public int getBurnProgress() { return burnProgress; }
+		public int getMiscTicks() { return miscTicks; }
 
 		@Override
 		public String toString() {
@@ -1147,6 +1253,7 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<int[]> squareList = new ArrayList<int[]>();
 
 		public void setOxygen( int n ) { oxygen = n; }
+		public int getOxygen() { return oxygen; }
 
 		/**
 		 * Adds a floor square to the room.
@@ -1163,6 +1270,8 @@ public class SavedGameParser extends DatParser {
 		public void addSquare( int fireHealth, int ignitionProgress, int gamma ) {
 			squareList.add( new int[] {fireHealth, ignitionProgress, gamma} );
 		}
+
+		public ArrayList<int[]> getSquareList() { return squareList; }
 
 		@Override
 		public String toString() {
@@ -1187,6 +1296,12 @@ public class SavedGameParser extends DatParser {
 			this.unknownAlpha = alpha;
 		}
 
+		public void setOpen( boolean b ) { open = b; }
+		public void setAlpha( int n ) { unknownAlpha = n; }
+
+		public boolean isOpen() { return open; }
+		public int getAlpha() { return unknownAlpha; }
+
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
@@ -1207,6 +1322,17 @@ public class SavedGameParser extends DatParser {
 			this.armed = armed;
 			this.cooldownTicks = cooldownTicks;
 		}
+
+		public String getWeaponId() { return weaponId; }
+
+		public void setArmed( boolean b ) {
+			armed = b;
+			if ( b == false ) cooldownTicks = 0;
+		}
+		public boolean isArmed() { return armed; }
+
+		public void setCooldownTicks( int n ) { cooldownTicks = n; }
+		public int getCooldownTicks() { return cooldownTicks; }
 
 		@Override
 		public String toString() {
@@ -1238,6 +1364,8 @@ public class SavedGameParser extends DatParser {
 			this.droneId = droneId;
 		}
 
+		public String getDroneId() { return droneId; }
+
 		public void setArmed( boolean b ) { armed = b; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public void setX( int n ) { x = n; }
@@ -1245,6 +1373,14 @@ public class SavedGameParser extends DatParser {
 		public void setRoomId( int n ) { blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setHealth( int n ) { health = n; }
+
+		public boolean isArmed() { return armed; }
+		public boolean isPlayerControlled() { return playerControlled; }
+		public int getX() { return x; }
+		public int getY() { return y; }
+		public int getRoomId() { return blueprintRoomId; }
+		public int getRoomSquare() { return roomSquare; }
+		public int getHealth() { return health; }
 
 		@Override
 		public String toString() {
@@ -1495,6 +1631,9 @@ public class SavedGameParser extends DatParser {
 			return result.toString();
 		}
 
+		public List<StoreItem> getItems() {
+			return items;
+		}
 		public StoreItemType getItemType() {
 			return itemType;
 		}
@@ -1514,6 +1653,14 @@ public class SavedGameParser extends DatParser {
 		public StoreItem(boolean available, String itemId) {
 			this.available = available;
 			this.itemId = itemId;
+		}
+
+		public boolean isAvailable() {
+			return available;
+		}
+
+		public String getItemId() {
+			return itemId;
 		}
 
 		@Override
@@ -1541,6 +1688,10 @@ public class SavedGameParser extends DatParser {
 			this.shipBlueprintIds = shipBlueprintIds;
 		}
 
+		public String[] getShipBlueprintIds() {
+			return shipBlueprintIds;
+		}
+
 		/**
 		 * Sets the next version of the flagship that will be encountered (1-based).
 		 */
@@ -1548,6 +1699,9 @@ public class SavedGameParser extends DatParser {
 			if ( pendingStage <= 0 || pendingStage > shipBlueprintIds.length )
 				throw new IndexOutOfBoundsException( "Attempted to set 1-based flagship stage "+ pendingStage +" of "+ shipBlueprintIds.length +" total" );
 			this.pendingStage = pendingStage;
+		}
+		public int getPendingStage() {
+			return pendingStage;
 		}
 
 		/**
@@ -1575,6 +1729,10 @@ public class SavedGameParser extends DatParser {
 		 */
 		public void setPreviousOccupancy( int roomId, int n ) {
 			occupancyMap.put( new Integer(roomId), new Integer(n) );
+		}
+
+		public LinkedHashMap<Integer, Integer> getOccupancyMap() {
+			return occupancyMap;
 		}
 
 		@Override
