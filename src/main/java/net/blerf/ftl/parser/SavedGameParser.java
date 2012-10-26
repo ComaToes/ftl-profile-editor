@@ -67,6 +67,12 @@ public class SavedGameParser extends DatParser {
 			ShipState playerShipState = readShip( in, true );
 			gameState.setPlayerShipState( playerShipState );
 
+			// Nearby ships have no cargo, so this isn't in readShip().
+			int cargoCount = readInt(in);
+			for (int i=0; i < cargoCount; i++) {
+				gameState.addCargoItemId( readString(in) );
+			}
+
 			gameState.setSectorTreeSeed( readInt(in) );
 			
 			gameState.setSectorLayoutSeed( readInt(in) );
@@ -254,11 +260,6 @@ public class SavedGameParser extends DatParser {
 		int augmentCount = readInt(in);
 		for (int i=0; i < augmentCount; i++) {
 			shipState.addAugmentId( readString(in) );
-		}
-
-		int cargoCount = readInt(in);  // TODO: Nearby ships say 1, but have none?
-		for (int i=0; i < cargoCount; i++) {
-			shipState.addCargoItemId( readString(in) );
 		}
 
 		return shipState;
@@ -500,6 +501,10 @@ public class SavedGameParser extends DatParser {
 			playerShipBlueprintId = shipBlueprintId;
 		}
 
+		public void addCargoItemId( String cargoItemId ) {
+			cargoIdList.add( cargoItemId );
+		}
+
 		/**
 		 * Sets the current sector's number (0-based).
 		 *
@@ -652,6 +657,11 @@ public class SavedGameParser extends DatParser {
 			if ( playerShipState != null )
 				result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
+			result.append("\nCargo...\n");
+			for (String cargoItemId : cargoIdList) {
+				result.append(String.format("CargoItemId: %s\n", cargoItemId));
+			}
+
 			result.append("\nSector Data...\n");
 			result.append( String.format("Sector Tree Seed:   %5d\n", sectorTreeSeed) );
 			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
@@ -733,7 +743,6 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
-		private ArrayList<String> cargoIdList = new ArrayList<String>();
 
 		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean auto) {
 			this.shipName = shipName;
@@ -818,10 +827,6 @@ public class SavedGameParser extends DatParser {
 			augmentIdList.add(augmentId);
 		}
 		
-		public void addCargoItemId( String cargoItemId ) {
-			cargoIdList.add( cargoItemId );
-		}
-
 		@Override
 		public String toString() {
 			// The blueprint fetching might vary if auto == true.
@@ -934,11 +939,6 @@ public class SavedGameParser extends DatParser {
 				result.append(String.format("AugmentId: %s\n", augmentId));
 			}
 			
-			result.append("\nCargo...\n");
-			for (String cargoItemId : cargoIdList) {
-				result.append(String.format("CargoItemId: %s\n", cargoItemId));
-			}
-
 			return result.toString();
 		}
 	}
