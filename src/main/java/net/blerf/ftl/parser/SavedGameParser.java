@@ -517,7 +517,7 @@ public class SavedGameParser extends DatParser {
 		 * Modifying this will not change the sector tree.
 		 *
 		 * TODO: Determine long-term effects of this.
-		 * The Final Stand is baked into the sector tree,
+		 * The Last Stand is baked into the sector tree,
 		 * but weird things might happen at or above #7.
 		 */
 		public void setSectorNumber( int n ) { sectorNumber = n; }
