@@ -37,8 +37,12 @@ public class SavedGameParser extends DatParser {
 			SavedGameState gameState = new SavedGameState();
 			in = new FileInputStream(datFile);
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+			// This should always 2.
+			int headerAlpha = readInt(in);
+			if ( headerAlpha != 2 )
+				log.warn( "Unexpected first byte ("+ headerAlpha +"): it's either a bad file, or possibly too new for this tool" );
 
+			gameState.setDifficultyEasy( readBool(in) );
 			gameState.setTotalShipsDefeated( readInt(in) );
 			gameState.setTotalBeaconsExplored( readInt(in) );
 			gameState.setTotalScrapCollected( readInt(in) );
@@ -133,6 +137,11 @@ public class SavedGameParser extends DatParser {
 			// odd if it were boss related.
 			//
 			//   0x0100_0000 0x0000_0000 == 1 0 as ints. No idea what for.
+			//
+			// Making this 2 0 before engaging the boss for the first time
+			// will result in skipping to stage 2 with 0 crew. So the
+			// parser COULD treat it as boss info if it's never shown to
+			// be otherwise important.
 
 			bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
 			if ( bytesRemaining > 0 ) {
@@ -436,6 +445,7 @@ public class SavedGameParser extends DatParser {
 	// Stash state classes here until they're finalized.
 
 	public class SavedGameState {
+		private boolean difficultyEasy = false;
 		private int totalShipsDefeated = 0;
 		private int totalBeaconsExplored = 0;
 		private int totalScrapCollected = 0;
@@ -461,6 +471,7 @@ public class SavedGameParser extends DatParser {
 		private RebelFlagshipState rebelFlagshipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
+		public void setDifficultyEasy( boolean b ) { difficultyEasy = b; }
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
 		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
 		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
@@ -578,6 +589,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
 			result.append(String.format("Sector:                 %4d\n", sectorNumber));
+			result.append(String.format("Difficulty:             %s\n", (difficultyEasy ? "Easy" : "Normal") ));
 			result.append(String.format("Total Ships Defeated:   %4d\n", totalShipsDefeated));
 			result.append(String.format("Total Beacons Explored: %4d\n", totalBeaconsExplored));
 			result.append(String.format("Total Scrap Collected:  %4d\n", totalScrapCollected));
@@ -1484,6 +1496,7 @@ public class SavedGameParser extends DatParser {
 		 *   Stage 1: 0x13=19 rooms
 		 *   Stage 2: 0x0F=15 rooms
 		 *   Stage 3: 0x0B=11 rooms
+		 *   Having 0 rooms is allowed, meaning AI took over.
 		 *
 		 * Stage 2 will read altered bytes on additional skirmishes.
 		 *
