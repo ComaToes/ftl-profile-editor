@@ -139,30 +139,12 @@ public class SavedGameParser extends DatParser {
 				gameState.setNearbyShipState(nearbyShipState);
 			}
 
-			// Here, the stream might end.
+			RebelFlagshipState flagshipState = readRebelFlagship(in);
+			gameState.setRebelFlagshipState( flagshipState );
+
+			// The stream should end here.
 
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
-
-			// Or, if this is sector 8 and the boss has been engaged at
-			// least once, this will definitely be present.
-			if ( sectorNumber == 7 && bytesRemaining > 2*4 ) {
-				RebelFlagshipState flagshipState = readRebelFlagship(in);
-				gameState.setRebelFlagshipState( flagshipState );
-			}
-
-			// Otherwise this is sometimes present...
-			// This hasn't been observed to coincide with the above, but
-			// this is intermittent in all sectors, which would be
-			// odd if it were boss related.
-			//
-			//   0x0100_0000 0x0000_0000 == 1 0 as ints. No idea what for.
-			//
-			// Making this 2 0 before engaging the boss for the first time
-			// will result in skipping to stage 2 with 0 crew. So the
-			// parser COULD treat it as boss info if it's never shown to
-			// be otherwise important.
-
-			bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
 			if ( bytesRemaining > 0 ) {
 				gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
 			}
@@ -469,6 +451,7 @@ public class SavedGameParser extends DatParser {
 		private int sectorNumber = 1;
 		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
 		private ShipState playerShipState = null;
+		private ArrayList<String> cargoIdList = new ArrayList<String>();
 		private int sectorTreeSeed;
 		private int sectorLayoutSeed;
 		private int rebelFleetOffset;
