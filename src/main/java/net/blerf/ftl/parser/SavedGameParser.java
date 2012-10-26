@@ -447,7 +447,7 @@ public class SavedGameParser extends DatParser {
 
 		int previousRoomCount = readInt(in);
 		for (int i=0; i < previousRoomCount; i++) {
-			flagship.setPreviousOccupancy( i, readBool(in) );
+			flagship.setPreviousOccupancy( i, readInt(in) );
 		}
 
 		return flagship;
@@ -1509,7 +1509,7 @@ public class SavedGameParser extends DatParser {
 	public class RebelFlagshipState {
 		private String[] shipBlueprintIds;
 		private int pendingStage = 1;
-		private LinkedHashMap<Integer, Boolean> occupancyMap = new LinkedHashMap<Integer, Boolean>();
+		private LinkedHashMap<Integer, Integer> occupancyMap = new LinkedHashMap<Integer, Integer>();
 
 		/**
 		 * Constructor.
@@ -1533,7 +1533,7 @@ public class SavedGameParser extends DatParser {
 		}
 
 		/**
-		 * Sets whether a room had a crew member in the last seen layout.
+		 * Sets whether a room had crew members in the last seen layout.
 		 *
 		 * Stage 1 sets this, but doesn't read it.
 		 * Fleeing stage 1, altering these bytes, then returning
@@ -1553,10 +1553,10 @@ public class SavedGameParser extends DatParser {
 		 * Stage 3 probably will, too. (TODO: Confirm this.)
 		 *
 		 * @param roomId a room in the last seen stage's shipLayout
-		 * @param b true if there was crew, false otherwise
+		 * @param n the number of crew in that room
 		 */
-		public void setPreviousOccupancy( int roomId, boolean b ) {
-			occupancyMap.put( new Integer(roomId), new Boolean(b) );
+		public void setPreviousOccupancy( int roomId, int n ) {
+			occupancyMap.put( new Integer(roomId), new Integer(n) );
 		}
 
 		@Override
@@ -1574,14 +1574,14 @@ public class SavedGameParser extends DatParser {
 			result.append( String.format("Pending Ship Type: %s\n", shipBlueprintIds[pendingStage-1] ) );
 
 			result.append( "\nOccupancy of Last Seen Type...\n" );
-			for (Map.Entry<Integer, Boolean> entry : occupancyMap.entrySet()) {
+			for (Map.Entry<Integer, Integer> entry : occupancyMap.entrySet()) {
 				int roomId = entry.getKey().intValue();
-				boolean b = entry.getValue().booleanValue();
+				int occupantCount = entry.getValue().intValue();
 
 				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
 				if (roomName == null) roomName = "Empty";
 
-				result.append( String.format("RoomId: %2d (%-10s), Occupied: %b\n", roomId, roomName, b) );
+				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, roomName, occupantCount) );
 			}
 
 			return result.toString();
