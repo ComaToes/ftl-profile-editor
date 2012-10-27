@@ -50,8 +50,10 @@ public class SavedGameParser extends DatParser {
 			gameState.setTotalCrewHired( readInt(in) );
 
 			String playerShipName = readString(in);         // Redundant.
+			gameState.setPlayerShipName( playerShipName );
+
 			String playerShipBlueprintId = readString(in);  // Redundant.
-			gameState.setPlayerShipInfo( playerShipName, playerShipBlueprintId );
+			gameState.setPlayerShipBlueprintId( playerShipBlueprintId );
 
 			int oneBasedSectorNumber = readInt(in);  // Redundant.
 
@@ -790,14 +792,16 @@ public class SavedGameParser extends DatParser {
 		public int getTotalScrapCollected() { return totalScrapCollected; }
 		public int getTotalCrewHired() { return totalCrewHired; }
 
-		/**
-		 * Set redundant player ship info.
-		 */
-		public void setPlayerShipInfo( String shipName, String shipBlueprintId ) {
+		/** Sets redundant player ship name. */
+		public void setPlayerShipName( String shipName) {
 			playerShipName = shipName;
-			playerShipBlueprintId = shipBlueprintId;
 		}
 		public String getPlayerShipName() { return playerShipName; }
+
+		/** Sets redundant player ship blueprint. */
+		public void setPlayerShipBlueprintId( String shipBlueprintId ) {
+			playerShipBlueprintId = shipBlueprintId;
+		}
 		public String getPlayerShipBlueprintId() { return playerShipBlueprintId; }
 
 		public void addCargoItemId( String cargoItemId ) {
@@ -1121,6 +1125,8 @@ public class SavedGameParser extends DatParser {
 			this.shipLayoutId = shipLayoutId;
 			this.auto = auto;
 		}
+
+		public void setShipName( String s ) { shipName = s; }
 
 		public String getShipName() { return shipName; }
 		public String getShipBlueprintId() { return shipBlueprintId; }
