@@ -65,6 +65,7 @@ import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.parser.DataManager;
+import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.parser.ProfileParser;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.ExtensionFileFilter;
@@ -590,6 +591,18 @@ public class FTLFrame extends JFrame {
 						loadGameState( gs );
 
 						log.trace( "Read completed successfully" );
+
+						if ( gameState.getMysteryList().size() > 0 ) {
+							StringBuilder musteryBuf = new StringBuilder();
+							musteryBuf.append("This saved game file contains mystery bytes the developers hadn't anticipated!\n");
+							boolean first = true;
+							for (MysteryBytes m : gameState.getMysteryList()) {
+								if (first) { first = false; }
+								else { musteryBuf.append(",\n"); }
+								musteryBuf.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+							}
+							log.warn( musteryBuf.toString() );
+						}
 						
 					} catch( Exception f ) {
 						log.error( "Error reading saved game", f );
