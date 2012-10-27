@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -157,6 +158,87 @@ public class SavedGameParser extends DatParser {
 		}
 	}
 
+	public void writeSavedGame( OutputStream out, SavedGameState gameState ) throws IOException {
+
+		if ( gameState.getMysteryList().size() > 0 )
+			log.warn( "The original saved game file contained mystery bytes, which will be omitted in the new file" );
+
+		// This should always be 2.
+		writeInt( out, 2 );
+
+		writeBool( out, gameState.isDifficultyEasy() );
+		writeInt( out, gameState.getTotalShipsDefeated() );
+		writeInt( out, gameState.getTotalBeaconsExplored() );
+		writeInt( out, gameState.getTotalScrapCollected() );
+		writeInt( out, gameState.getTotalCrewHired() );
+
+		writeString( out, gameState.getPlayerShipName() );
+		writeString( out, gameState.getPlayerShipBlueprintId() );
+
+		// Redundant 1-based sector number.
+		writeInt( out, gameState.getSectorNumber()+1 );
+
+		writeInt( out, gameState.getHeaderAlpha() );
+
+		writeInt( out, gameState.getStateVars().size() );
+		for (Map.Entry<String, Integer> entry : gameState.getStateVars().entrySet()) {
+			writeString( out, entry.getKey() );
+			writeInt( out, entry.getValue().intValue() );
+		}
+
+		writeShip( out, gameState.getPlayerShipState() );
+
+		writeInt( out, gameState.getCargoIdList().size() );
+		for (String cargoItemId : gameState.getCargoIdList()) {
+			writeString( out, cargoItemId );
+		}
+
+		writeInt( out, gameState.getSectorTreeSeed() );
+		writeInt( out, gameState.getSectorLayoutSeed() );
+		writeInt( out, gameState.getRebelFleetOffset() );
+		writeInt( out, gameState.getRebelFleetFudge() );
+		writeInt( out, gameState.getRebelPursuitMod() );
+		writeBool( out, gameState.areSectorHazardsVisible() );
+		writeBool( out, gameState.isRebelFlagshipVisible() );
+		writeInt( out, gameState.getRebelFlagshipHop() );
+		writeBool( out, gameState.isRebelFlagshipApproaching() );
+
+		writeInt( out, gameState.getSectorList().size() );
+		for (Boolean visited : gameState.getSectorList()) {
+			writeBool( out, visited.booleanValue() );
+		}
+
+		writeInt( out, gameState.getSectorNumber() );
+		writeBool( out, gameState.isSectorHiddenCrystalWorlds() );
+
+		writeInt( out, gameState.getBeaconList().size() );
+		for (BeaconState beacon : gameState.getBeaconList()) {
+			writeBeacon( out, beacon );
+		}
+
+		writeInt( out, gameState.getQuestEventMap().size() );
+		for (Map.Entry<String, Integer> entry : gameState.getQuestEventMap().entrySet()) {
+			writeString( out, entry.getKey() );
+			writeInt( out, entry.getValue().intValue() );
+		}
+
+		writeInt( out, gameState.getDistantQuestEventList().size() );
+		for (String questEventId : gameState.getDistantQuestEventList()) {
+			writeString( out, questEventId );
+		}
+
+		writeInt( out, gameState.getCurrentBeaconId() );
+
+		ShipState nearbyShip = gameState.getNearbyShipState();
+		writeBool( out, (nearbyShip != null) );
+		if ( nearbyShip != null ) {
+			writeShip( out, nearbyShip );
+		}
+
+		writeRebelFlagship( out, gameState.getRebelFlagshipState() );
+
+	}
+
 	private ShipState readShip( InputStream in, boolean auto ) throws IOException {
 
 		String shipBlueprintId = readString(in);  // blueprints.xml / autoBlueprints.xml.
@@ -244,11 +326,100 @@ public class SavedGameParser extends DatParser {
 		return shipState;
 	}
 
+	public void writeShip( OutputStream out, ShipState shipState ) throws IOException {
+		String shipBlueprintId = shipState.getShipBlueprintId();
+
+		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+		if ( shipBlueprint == null )
+			throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
+
+		String shipLayoutId = shipBlueprint.getLayout();
+
+		ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
+		if ( shipLayout == null )
+			throw new RuntimeException( String.format("Could not find layout for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
+
+
+		writeString( out, shipBlueprintId );
+		writeString( out, shipState.getShipName() );
+		writeString( out, shipState.getShipGraphicsBaseName() );
+
+		writeInt( out, shipState.getStartingCrewList().size() );
+		for (StartingCrewState startingCrew : shipState.getStartingCrewList()) {
+			writeStartingCrewMember( out, startingCrew );
+		}
+
+		writeInt( out, shipState.getHullAmt() );
+		writeInt( out, shipState.getFuelAmt() );
+		writeInt( out, shipState.getDronePartsAmt() );
+		writeInt( out, shipState.getMissilesAmt() );
+		writeInt( out, shipState.getScrapAmt() );
+
+		writeInt( out, shipState.getCrewList().size() );
+		for (CrewState crew : shipState.getCrewList()) {
+			writeCrewMember( out, crew );
+		}
+
+		String[] systemNames = new String[] {"Shields", "Engines", "Oxygen",
+		                                     "Weapons", "Drone Ctrl", "Medbay",
+		                                     "Pilot", "Sensors", "Doors",
+		                                     "Teleporter", "Cloaking", "Artillery"};
+		writeInt( out, shipState.getReservePowerCapacity() );
+
+		Map<String, SystemState> systemMap = shipState.getSystemMap();
+		for (String name : systemNames) {
+			SystemState system = systemMap.get(name);
+			if ( system != null )
+				writeSystem( out, system );
+			else
+				writeInt( out, 0 );
+		}
+
+		for (RoomState room : shipState.getRoomList()) {
+			writeRoom( out, room );
+		}
+
+		writeInt( out, shipState.getBreachMap().size() );
+		for (Map.Entry<Point, Integer> entry : shipState.getBreachMap().entrySet()) {
+			writeInt( out, entry.getKey().x );
+			writeInt( out, entry.getKey().y );
+			writeInt( out, entry.getValue().intValue() );
+		}
+
+		Map<ShipLayout.DoorCoordinate, DoorState> doorMap = shipState.getDoorMap();
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
+		for (ShipLayout.DoorCoordinate doorCoord : layoutDoorMap.keySet()) {
+			writeDoor( out, doorMap.get( doorCoord ) );
+		}
+
+		writeInt( out, shipState.getWeaponList().size() );
+		for (WeaponState weapon : shipState.getWeaponList()) {
+			writeString( out, weapon.getWeaponId() );
+			writeBool( out, weapon.isArmed() );
+			writeInt( out, weapon.getCooldownTicks() );
+		}
+
+		writeInt( out, shipState.getDroneList().size() );
+		for (DroneState drone : shipState.getDroneList()) {
+			writeDrone( out, drone );
+		}
+
+		writeInt( out, shipState.getAugmentIdList().size() );
+		for (String augmentId : shipState.getAugmentIdList()) {
+			writeString( out, augmentId );
+		}
+	}
+
 	private StartingCrewState readStartingCrewMember( InputStream in ) throws IOException {
 		String crewRace = readString(in);
 		String crewName = readString(in);
 		StartingCrewState startingCrew = new StartingCrewState(crewName, crewRace);
 		return startingCrew;
+	}
+
+	public void writeStartingCrewMember( OutputStream out, StartingCrewState startingCrew ) throws IOException {
+		writeString( out, startingCrew.getRace() );
+		writeString( out, startingCrew.getName() );
 	}
 
 	private CrewState readCrewMember( InputStream in ) throws IOException {
@@ -277,6 +448,30 @@ public class SavedGameParser extends DatParser {
 		return crew;
 	}
 
+	public void writeCrewMember( OutputStream out, CrewState crew ) throws IOException {
+		writeString( out, crew.getName() );
+		writeString( out, crew.getRace() );
+		writeBool( out, crew.isEnemyBoardingDrone() );
+		writeInt( out, crew.getHealth() );
+		writeInt( out, crew.getX() );
+		writeInt( out, crew.getY() );
+		writeInt( out, crew.getRoomId() );
+		writeInt( out, crew.getRoomSquare() );
+		writeBool( out, crew.isPlayerControlled() );
+		writeInt( out, crew.getPilotSkill() );
+		writeInt( out, crew.getEngineSkill() );
+		writeInt( out, crew.getShieldSkill() );
+		writeInt( out, crew.getWeaponSkill() );
+		writeInt( out, crew.getRepairSkill() );
+		writeInt( out, crew.getCombatSkill() );
+		writeInt( out, crew.getGender() );
+		writeInt( out, crew.getRepairs() );
+		writeInt( out, crew.getCombatKills() );
+		writeInt( out, crew.getPilotedEvasions() );
+		writeInt( out, crew.getJumpsSurvived() );
+		writeInt( out, crew.getSkillMasteries() );
+	}
+
 	private SystemState readSystem( InputStream in, String name ) throws IOException {
 		SystemState system = new SystemState( name );
 		int capacity = readInt(in);
@@ -302,6 +497,23 @@ public class SavedGameParser extends DatParser {
 		return system;
 	}
 
+	public void writeSystem( OutputStream out, SystemState system ) throws IOException {
+		writeInt( out, system.getCapacity() );
+		if ( system.getCapacity() > 0 ) {
+			writeInt( out, system.getPower() );
+			writeInt( out, system.getDamagedBars() );
+			writeInt( out, system.getIonizedBars() );
+
+			if ( system.getMiscTicks() == Integer.MIN_VALUE )
+				writeInt( out, -2147483648 );
+			else
+				writeInt( out, system.getMiscTicks() );
+
+			writeInt( out, system.getRepairProgress() );
+			writeInt( out, system.getBurnProgress() );
+		}
+	}
+
 	private RoomState readRoom( InputStream in, int squaresH, int squaresV ) throws IOException {
 		RoomState room = new RoomState();
 		room.setOxygen( readInt(in) );
@@ -318,11 +530,26 @@ public class SavedGameParser extends DatParser {
 		return room;
 	}
 
+	public void writeRoom( OutputStream out, RoomState room ) throws IOException {
+		writeInt( out, room.getOxygen() );
+
+		for (int[] square : room.getSquareList()) {
+			writeInt( out, square[0] );
+			writeInt( out, square[1] );
+			writeInt( out, square[2] );
+		}
+	}
+
 	private DoorState readDoor( InputStream in ) throws IOException {
 		boolean open = readBool(in);
 		int alpha = readInt(in);  // 0. What else would a door have; damage?
 		DoorState door = new DoorState( open, alpha );
 		return door;
+	}
+
+	public void writeDoor( OutputStream out, DoorState door ) throws IOException {
+		writeBool( out, door.isOpen() );
+		writeInt( out, door.getAlpha() );
 	}
 
 	private DroneState readDrone( InputStream in ) throws IOException {
@@ -335,6 +562,17 @@ public class SavedGameParser extends DatParser {
 		drone.setRoomSquare( readInt(in) );
 		drone.setHealth( readInt(in) );
 		return drone;
+	}
+
+	public void writeDrone( OutputStream out, DroneState drone ) throws IOException {
+		writeString( out, drone.getDroneId() );
+		writeBool( out, drone.isArmed() );
+		writeBool( out, drone.isPlayerControlled() );
+		writeInt( out, drone.getX() );
+		writeInt( out, drone.getY() );
+		writeInt( out, drone.getRoomId() );
+		writeInt( out, drone.getRoomSquare() );
+		writeInt( out, drone.getHealth() );
 	}
 
 	private BeaconState readBeacon( InputStream in ) throws IOException {
@@ -387,6 +625,45 @@ public class SavedGameParser extends DatParser {
 		return beacon;
 		
 	}
+
+	public void writeBeacon( OutputStream out, BeaconState beacon ) throws IOException {
+		writeBool( out, beacon.isVisited() );
+		if ( beacon.isVisited() ) {
+			writeString( out, beacon.getBgStarscapeImageInnerPath() );
+			writeString( out, beacon.getBgSpriteImageInnerPath() );
+			writeInt( out, beacon.getBgSpritePosX() );
+			writeInt( out, beacon.getBgSpritePosY() );
+			writeInt( out, beacon.getUnknownVisitedAlpha() );
+		}
+
+		writeBool( out, beacon.isSeen() );
+
+		writeBool( out, beacon.isEnemyPresent() );
+		if ( beacon.isEnemyPresent() ) {
+			writeString( out, beacon.getShipEventId() );
+			writeString( out, beacon.getShipBlueprintListId() );
+			writeInt( out, beacon.getUnknownEnemyPresentAlpha() );
+		}
+
+		FleetPresence fleetPresence = beacon.getFleetPresence();
+		if ( fleetPresence == FleetPresence.NONE ) writeInt( out, 0 );
+		else if ( fleetPresence == FleetPresence.REBEL ) writeInt( out, 1 );
+		else if ( fleetPresence == FleetPresence.FEDERATION ) writeInt( out, 2 );
+		else if ( fleetPresence == FleetPresence.BOTH ) writeInt( out, 3 );
+		else throw new RuntimeException( "Unknown fleet presence: "+ fleetPresence );
+
+		writeBool( out, beacon.isUnderAttack() );
+
+		writeBool( out, beacon.isStorePresent() );
+		if ( beacon.isStorePresent() ) {
+			StoreState store = beacon.getStore();
+			writeStoreShelf( out, store.getTopShelf() );
+			writeStoreShelf( out, store.getBottomShelf() );
+			writeInt( out, store.getFuel() );
+			writeInt( out, store.getMissiles() );
+			writeInt( out, store.getDroneParts() );
+		}
+	}
 	
 	private StoreShelf readStoreShelf( InputStream in ) throws IOException {
 		
@@ -414,7 +691,28 @@ public class SavedGameParser extends DatParser {
 		
 	}
 
+	public void writeStoreShelf( OutputStream out, StoreShelf shelf ) throws IOException {
 
+		StoreItemType itemType = shelf.getItemType();
+		if ( itemType == StoreItemType.WEAPON ) writeInt( out, 0 );
+		else if ( itemType == StoreItemType.DRONE ) writeInt( out, 1 );
+		else if ( itemType == StoreItemType.AUGMENT ) writeInt( out, 2 );
+		else if ( itemType == StoreItemType.CREW ) writeInt( out, 3 );
+		else if ( itemType == StoreItemType.SYSTEM ) writeInt( out, 4 );
+		else throw new RuntimeException( "Unknown store item type: "+ itemType );
+
+		List<StoreItem> items = shelf.getItems();
+		for (int i=0; i < 3; i++) {
+			int available = -1;
+			String itemId = null;
+			if ( items.size() >= i ) {
+				available = (items.get(i).isAvailable() ? 1 : 0);
+				itemId = items.get(i).getItemId();
+			}
+			writeInt( out, available );
+			if ( available >= 0 ) writeString( out, itemId );
+		}
+	}
 
 	public RebelFlagshipState readRebelFlagship( InputStream in ) throws IOException {
 
@@ -431,6 +729,16 @@ public class SavedGameParser extends DatParser {
 		}
 
 		return flagship;
+	}
+
+	public void writeRebelFlagship( OutputStream out, RebelFlagshipState flagship ) throws IOException {
+		writeInt( out, flagship.getPendingStage() );
+
+		writeInt( out, flagship.getOccupancyMap().size() );
+		for (Map.Entry<Integer, Integer> entry : flagship.getOccupancyMap().entrySet()) {
+			int occupantCount = entry.getValue().intValue();
+			writeInt( out, occupantCount );
+		}
 	}
 
 
