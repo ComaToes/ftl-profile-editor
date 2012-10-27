@@ -71,6 +71,7 @@ import net.blerf.ftl.ui.ExtensionFileFilter;
 import net.blerf.ftl.ui.GeneralAchievementsPanel;
 import net.blerf.ftl.ui.ProfileStatsPanel;
 import net.blerf.ftl.ui.SavedGameDumpPanel;
+import net.blerf.ftl.ui.SavedGameGeneralPanel;
 import net.blerf.ftl.ui.ShipUnlockPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
@@ -84,7 +85,7 @@ public class FTLFrame extends JFrame {
 	private static final Logger log = LogManager.getLogger(FTLFrame.class);
 
 	private Profile profile;
-	SavedGameParser.SavedGameState gameState = null;  // Can't make an empty one yet.
+	SavedGameParser.SavedGameState gameState = null;
 	
 	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource("open.gif") );
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource("save.gif") );
@@ -114,6 +115,7 @@ public class FTLFrame extends JFrame {
 	private GeneralAchievementsPanel generalAchievementsPanel;
 	private ProfileStatsPanel statsPanel;
 	private SavedGameDumpPanel savedGameDumpPanel;
+	private SavedGameGeneralPanel savedGameGeneralPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -188,8 +190,10 @@ public class FTLFrame extends JFrame {
 		savedGamePane.add( savedGameTabsPane, BorderLayout.CENTER );
 
 		savedGameDumpPanel = new SavedGameDumpPanel(this);
+		savedGameGeneralPanel = new SavedGameGeneralPanel(this);
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
+		savedGameTabsPane.add( "Edit", new JScrollPane( savedGameGeneralPanel ) );
 
 
 		JPanel statusPanel = new JPanel();
@@ -599,13 +603,46 @@ public class FTLFrame extends JFrame {
 		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing saved game.") );
 		toolbar.add( openButton );
 
+		JButton saveButton = new JButton("Save", saveIcon);
+		saveButton.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.trace( "Save game state button clicked" );
+
+				if ( gameState == null ) return;
+
+				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					FileOutputStream out = null;
+					try {
+						File file = fc.getSelectedFile();
+						log.trace("File selected: " + file.getAbsolutePath());
+						SavedGameParser parser = new SavedGameParser();
+						out = new FileOutputStream( file );
+						FTLFrame.this.updateGameState(gameState);
+						parser.writeSavedGame(out, gameState);
+						
+					} catch( IOException f ) {
+						log.error( "Error writing game state", f );
+						showErrorDialog( "Error saving game state:\n" + f.getMessage() );
+					} finally {
+						try {if (out != null) out.close();}
+						catch (IOException g) {}
+					}
+				} else {
+					log.trace( "Save dialog cancelled" );
+				}
+			}
+		});
+		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current game state.") );
+		toolbar.add( saveButton );
+
 		JButton dumpButton = new JButton("Dump", saveIcon);
 		dumpButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Dump saved game button clicked" );
+				log.trace( "Dump game state button clicked" );
 
-				if ( gameState == null ) return;  // No default empty state yet.
+				if ( gameState == null ) return;
 
 				JFileChooser dumpChooser = new JFileChooser();
 				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
@@ -628,8 +665,8 @@ public class FTLFrame extends JFrame {
 						out.close();
 						
 					} catch( IOException f ) {
-						log.error( "Error dumping saved game", f );
-						showErrorDialog( "Error dumping saved game:\n"+ f.getMessage() );
+						log.error( "Error dumping game state", f );
+						showErrorDialog( "Error dumping game state:\n"+ f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
@@ -638,7 +675,7 @@ public class FTLFrame extends JFrame {
 					log.trace( "Dump dialog cancelled" );
 			}
 		});
-		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump saved game info to a text file.") );
+		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump game state info to a text file.") );
 		toolbar.add( dumpButton );
 
 		toolbar.add( Box.createHorizontalGlue() );
@@ -893,8 +930,17 @@ public class FTLFrame extends JFrame {
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
 
 		savedGameDumpPanel.setGameState( gs );
+		savedGameGeneralPanel.setGameState( gs );
 
 		gameState = gs;
+	}
+
+	public void updateGameState( SavedGameParser.SavedGameState gs ) {
+
+		// savedGameDumpPanel doesn't modify anything.
+		savedGameGeneralPanel.updateGameState( gs );
+
+		loadGameState(gs);
 	}
 
 	public void setStatusText( String text ) {
