@@ -30,14 +30,14 @@ public class SavedGameParser extends DatParser {
 	private static final Logger log = LogManager.getLogger(SavedGameParser.class);
 
 
-	public SavedGameState readSavedGame(File datFile) throws IOException {
+	public SavedGameState readSavedGame( File datFile ) throws IOException {
 		FileInputStream in = null;
 		InputStream layoutStream = null;
 		try {
 			SavedGameState gameState = new SavedGameState();
 			in = new FileInputStream(datFile);
 
-			// This should always 2.
+			// This should always be 2.
 			int headerAlpha = readInt(in);
 			if ( headerAlpha != 2 )
 				log.warn( "Unexpected first byte ("+ headerAlpha +"): it's either a bad file, or possibly too new for this tool" );
@@ -218,9 +218,9 @@ public class SavedGameParser extends DatParser {
 			shipState.setBreach( readInt(in), readInt(in), readInt(in) );
 		}
 
-		LinkedHashMap<int[], EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for (int[] doorCoord : layoutDoorMap.keySet()) {
-			shipState.setDoor( doorCoord[0], doorCoord[1], doorCoord[2], readDoor(in) );
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
+		for (ShipLayout.DoorCoordinate doorCoord : layoutDoorMap.keySet()) {
+			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in) );
 		}
 
 		int weaponCount = readInt(in);
@@ -403,11 +403,11 @@ public class SavedGameParser extends DatParser {
 		}
 		
 		for (int i = 0; i < 3; i++) {
-			int available = readInt(in);
+			int available = readInt(in); // -1=no item, 0=bought already, 1=buyable
 			if ( available < 0 )
-				continue; // -1 means no item
+				continue;
 			String itemId = readString(in);
-			shelf.addItem( new StoreItem(available > 0, itemId) );
+			shelf.addItem( new StoreItem( (available > 0), itemId) );
 		}
 		
 		return shelf;
@@ -489,8 +489,8 @@ public class SavedGameParser extends DatParser {
 			playerShipName = shipName;
 			playerShipBlueprintId = shipBlueprintId;
 		}
-		public String getShipName() { return playerShipName; }
-		public String getShipBlueprintId() { return playerShipBlueprintId; }
+		public String getPlayerShipName() { return playerShipName; }
+		public String getPlayerShipBlueprintId() { return playerShipBlueprintId; }
 
 		public void addCargoItemId( String cargoItemId ) {
 			cargoIdList.add( cargoItemId );
@@ -799,10 +799,10 @@ public class SavedGameParser extends DatParser {
 		private int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
 		private int reservePowerCapacity;
-		private ArrayList<SystemState> systemList = new ArrayList<SystemState>();
+		private LinkedHashMap<String, SystemState> systemMap = new LinkedHashMap<String, SystemState>();
 		private ArrayList<RoomState> roomList = new ArrayList<RoomState>();
 		private LinkedHashMap<Point, Integer> breachMap = new LinkedHashMap<Point, Integer>();
-		private LinkedHashMap<int[], DoorState> doorMap = new LinkedHashMap<int[], DoorState>();
+		private LinkedHashMap<ShipLayout.DoorCoordinate, DoorState> doorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, DoorState>();
 		private ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
@@ -864,10 +864,10 @@ public class SavedGameParser extends DatParser {
 		public int getReservePowerCapacity() { return reservePowerCapacity; }
 
 		public void addSystem( SystemState s ) {
-			systemList.add(s);
+			systemMap.put( s.getName(), s );
 		}
 
-		public ArrayList<SystemState> getSystemList() { return systemList; }
+		public LinkedHashMap<String, SystemState> getSystemMap() { return systemMap; }
 
 		public void addRoom( RoomState r ) {
 			roomList.add(r);
@@ -897,11 +897,11 @@ public class SavedGameParser extends DatParser {
 		 * @see net.blerf.ftl.model.ShipLayout
 		 */
 		public void setDoor( int wallX, int wallY, int vertical, DoorState d ) {
-			int[] doorCoord = new int[] { wallX, wallY, vertical };
+			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
 			doorMap.put(doorCoord, d);
 		}
 
-		public LinkedHashMap<int[], DoorState> getDoorMap() { return doorMap; }
+		public LinkedHashMap<ShipLayout.DoorCoordinate, DoorState> getDoorMap() { return doorMap; }
 
 		public void addWeapon( WeaponState w ) {
 			weaponList.add(w);
@@ -965,10 +965,10 @@ public class SavedGameParser extends DatParser {
 			result.append("\nSystems...\n");
 			result.append(String.format("  Reserve Power Capacity: %2d\n", reservePowerCapacity));
 			first = false;
-			for (SystemState s : systemList) {
+			for (Map.Entry<String, SystemState> entry : systemMap.entrySet()) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
-				result.append(s.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append(entry.getValue().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nRooms...\n");
@@ -1000,15 +1000,15 @@ public class SavedGameParser extends DatParser {
 			result.append("\nDoors...\n");
 			int doorId = -1;
 			first = true;
-			for (Map.Entry<int[], DoorState> entry : doorMap.entrySet()) {
+			for (Map.Entry<ShipLayout.DoorCoordinate, DoorState> entry : doorMap.entrySet()) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 
-				int[] doorCoord = entry.getKey();
+				ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 				DoorState d = entry.getValue();
-				String orientation = (doorCoord[2]==1 ? "V" : "H");
+				String orientation = (doorCoord.v==1 ? "V" : "H");
 
-				result.append(String.format("DoorId: %2d (%2d,%2d,%2s)\n", ++doorId, doorCoord[0], doorCoord[1], orientation));
+				result.append(String.format("DoorId: %2d (%2d,%2d,%2s)\n", ++doorId, doorCoord.x, doorCoord.y, orientation));
 				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
