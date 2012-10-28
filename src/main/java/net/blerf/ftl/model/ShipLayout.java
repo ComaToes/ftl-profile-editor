@@ -11,7 +11,7 @@ import java.util.NoSuchElementException;
 public class ShipLayout {
 	// TODO: Some ROOM values haven't been deciphered (see: setRoom()).
 
-	public enum RoomInfo { ALPHA, BETA, SQUARES_H, SQUARES_V }
+	public enum RoomInfo { LOCATION_X, LOCATION_Y, SQUARES_H, SQUARES_V }
 	public enum DoorInfo { ROOM_ID_A, ROOM_ID_B }
 
 	private int offsetX = 0, offsetY = 0, horizontal = 0, vertical = 0;
@@ -43,16 +43,16 @@ public class ShipLayout {
 	 * Sets a room's info.
 	 *
 	 * @param roomId a roomId
-	 * @param alpha ???
-	 * @param beta ???
+	 * @param locationX 0-based Nth square from the left (without layout offset)
+	 * @param locationY 0-based Nth square from the top (without layout offset)
 	 * @param squaresH horizontal count of tiles
 	 * @param squaresV certical count of tiles
 	 */
-	public void setRoom( int roomId, int alpha, int beta, int squaresH, int squaresV ) {
+	public void setRoom( int roomId, int locationX, int locationY, int squaresH, int squaresV ) {
 		Integer roomIdObj = new Integer(roomId);
 		EnumMap<RoomInfo,Integer> infoMap = new EnumMap<RoomInfo,Integer>(RoomInfo.class);
-		infoMap.put( RoomInfo.ALPHA, new Integer(alpha) );
-		infoMap.put( RoomInfo.BETA, new Integer(beta) );
+		infoMap.put( RoomInfo.LOCATION_X, new Integer(locationX) );
+		infoMap.put( RoomInfo.LOCATION_Y, new Integer(locationY) );
 		infoMap.put( RoomInfo.SQUARES_H, new Integer(squaresH) );
 		infoMap.put( RoomInfo.SQUARES_V, new Integer(squaresV) );
 		roomMap.put( roomIdObj, infoMap );
