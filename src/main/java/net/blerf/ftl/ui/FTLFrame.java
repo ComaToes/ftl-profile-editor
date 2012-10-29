@@ -11,6 +11,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.RasterFormatException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -271,34 +272,27 @@ public class FTLFrame extends JFrame {
 		if (race == null || race.length() == 0) return null;
 
 		ImageIcon result = null;
-		int offsetX = 0, offsetY = 0, w = 36, h = 36;
+		int offsetX = 0, offsetY = 0, w = 35, h = 35;
 		InputStream in = null;
 		try {
 			in = DataManager.get().getResourceInputStream("img/people/"+ race +"_player_yellow.png");
-			BufferedImage big = ImageIO.read( in );
-			if (offsetX+w <= big.getWidth() || offsetY+h <= big.getHeight()) {
-				BufferedImage cropped = big.getSubimage(offsetX, offsetY, w, h);
+			BufferedImage bigImage = ImageIO.read( in );
+			BufferedImage croppedImage = bigImage.getSubimage(offsetX, offsetY, w, h);
 
-				// Shrink the crop area until non-transparent pixels are hit.
-				int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
-				int highX = -1, highY = -1;
-				for (int testY=0; testY < h; testY++) {
-					for (int testX=0; testX < w; testX++) {
-						int pixel = cropped.getRGB(testX, testY);
-						int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
-						if (alpha != 0) {
-							if (testX > highX) highX = testX;
-							if (testY > highY) highY = testY;
-							if (testX < lowX) lowX = testX;
-							if (testY < lowY) lowY = testY;
-						}
+			// Shrink the crop area until non-transparent pixels are hit.
+			int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
+			int highX = -1, highY = -1;
+			for (int testY=0; testY < h; testY++) {
+				for (int testX=0; testX < w; testX++) {
+					int pixel = croppedImage.getRGB(testX, testY);
+					int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
+					if (alpha != 0) {
+						if (testX > highX) highX = testX;
+						if (testY > highY) highY = testY;
+						if (testX < lowX) lowX = testX;
+						if (testY < lowY) lowY = testY;
 					}
 				}
-				log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
-				if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
-					cropped = cropped.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
-				}
-				result = new ImageIcon(cropped);
 			}
 
 		} catch (IOException e) {
