@@ -16,6 +16,7 @@ import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
@@ -46,6 +47,7 @@ public class DataManager implements Closeable {
 	private List<ShipBlueprint> playerShips; // Type A's
 	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
 	private Map<String, ShipLayout> shipLayouts;
+	private Map<String, ShipChassis> shipChassisMap;
 	
 	private	MappedDatParser dataParser = null;
 	private	MappedDatParser resourceParser = null;
@@ -112,8 +114,9 @@ public class DataManager implements Closeable {
 				shipAchievements.put( ship, shipAchs );
 			}
 
-			// This'll populate as layouts are requested.
+			// These'll populate as files are requested.
 			shipLayouts = new HashMap<String, ShipLayout>();
+			shipChassisMap = new HashMap<String, ShipChassis>();
 
 		} catch (JAXBException e) {
 			meltdown = true;
@@ -209,6 +212,34 @@ public class DataManager implements Closeable {
 
 			} catch (IOException e) {
 				log.error( "An error occurred while parsing ShipLayout: "+ id, e );
+
+			} finally {
+				try {if (in != null) in.close();}
+				catch (IOException f) {}
+			}
+		}
+
+		return result;
+	}
+
+	public ShipChassis getShipChassis(String id) {
+		ShipChassis result = shipChassisMap.get(id);
+
+		if ( result == null ) {  // Wasn't cached; try parsing it.
+			InputStream in = null;
+			try {
+				in = getDataInputStream("data/"+ id +".xml");
+				result = dataParser.readChassis(in);
+				shipChassisMap.put( id, result );
+
+			} catch (JAXBException e) {
+				log.error( "Parsing XML failed for ShipChassis id: "+ id );
+
+			} catch (FileNotFoundException e) {
+				log.error( "No ShipChassis found for id: "+ id );
+
+			} catch (IOException e) {
+				log.error( "An error occurred while parsing ShipChassis: "+ id, e );
 
 			} finally {
 				try {if (in != null) in.close();}
