@@ -74,6 +74,7 @@ import net.blerf.ftl.ui.GeneralAchievementsPanel;
 import net.blerf.ftl.ui.ProfileStatsPanel;
 import net.blerf.ftl.ui.SavedGameDumpPanel;
 import net.blerf.ftl.ui.SavedGameGeneralPanel;
+import net.blerf.ftl.ui.SavedGameFloorplanPanel;
 import net.blerf.ftl.ui.ShipUnlockPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
@@ -118,6 +119,7 @@ public class FTLFrame extends JFrame {
 	private ProfileStatsPanel statsPanel;
 	private SavedGameDumpPanel savedGameDumpPanel;
 	private SavedGameGeneralPanel savedGameGeneralPanel;
+	private SavedGameFloorplanPanel savedGameFloorplanPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -193,9 +195,11 @@ public class FTLFrame extends JFrame {
 
 		savedGameDumpPanel = new SavedGameDumpPanel(this);
 		savedGameGeneralPanel = new SavedGameGeneralPanel(this);
+		savedGameFloorplanPanel = new SavedGameFloorplanPanel(this);
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
-		savedGameTabsPane.add( "Edit", new JScrollPane( savedGameGeneralPanel ) );
+		savedGameTabsPane.add( "General Editing", new JScrollPane( savedGameGeneralPanel ) );
+		savedGameTabsPane.add( "Ship Thumbnail", new JScrollPane( savedGameFloorplanPanel ) );
 
 
 		JPanel statusPanel = new JPanel();
@@ -294,6 +298,14 @@ public class FTLFrame extends JFrame {
 					}
 				}
 			}
+			log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
+			if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
+				croppedImage = croppedImage.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
+			}
+			result = new ImageIcon(croppedImage);
+
+		} catch (RasterFormatException e) {
+			log.error( "Failed to load and crop race ("+ race +")", e );
 
 		} catch (IOException e) {
 			log.error( "Failed to load and crop race ("+ race +")", e );
@@ -937,6 +949,7 @@ public class FTLFrame extends JFrame {
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
 
 		savedGameDumpPanel.setGameState( gs );
+		savedGameFloorplanPanel.setGameState( gs );
 		savedGameGeneralPanel.setGameState( gs );
 
 		gameState = gs;
