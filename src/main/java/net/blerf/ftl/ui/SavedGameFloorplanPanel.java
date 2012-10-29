@@ -57,10 +57,10 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 	private static final Integer BASE_LAYER = new Integer(10);
 	private static final Integer FLOOR_LAYER = new Integer(11);
 	private static final Integer OXYGEN_LAYER = new Integer(12);
-	private static final Integer SYSTEM_LAYER = new Integer(13);
-	private static final Integer BREACH_LAYER = new Integer(14);
-	private static final Integer FIRE_LAYER = new Integer(15);
-	private static final Integer WALL_LAYER = new Integer(20);
+	private static final Integer WALL_LAYER = new Integer(15);
+	private static final Integer SYSTEM_LAYER = new Integer(16);
+	private static final Integer BREACH_LAYER = new Integer(17);
+	private static final Integer FIRE_LAYER = new Integer(18);
 	private static final Integer DOOR_LAYER = new Integer(30);
 	private static final Integer CREW_LAYER = new Integer(40);
 	private static final int squareSize = 35, tileEdge = 1;
