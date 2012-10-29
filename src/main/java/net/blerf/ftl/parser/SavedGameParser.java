@@ -1171,6 +1171,9 @@ public class SavedGameParser extends DatParser {
 		public void addCrewMember( CrewState c ) {
 			crewList.add(c);
 		}
+		public CrewState getCrewMember( int n ) {
+			return crewList.get(n);
+		}
 
 		public ArrayList<CrewState> getCrewList() { return crewList; }
 
@@ -1180,11 +1183,17 @@ public class SavedGameParser extends DatParser {
 		public void addSystem( SystemState s ) {
 			systemMap.put( s.getName(), s );
 		}
+		public SystemState getSystem( String name ) {
+			return systemMap.get( name );
+		}
 
 		public LinkedHashMap<String, SystemState> getSystemMap() { return systemMap; }
 
 		public void addRoom( RoomState r ) {
 			roomList.add(r);
+		}
+		public RoomState getRoom( int roomId ) {
+			return roomList.get( roomId );
 		}
 
 		public ArrayList<RoomState> getRoomList() { return roomList; }
@@ -1213,6 +1222,10 @@ public class SavedGameParser extends DatParser {
 		public void setDoor( int wallX, int wallY, int vertical, DoorState d ) {
 			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
 			doorMap.put(doorCoord, d);
+		}
+		public DoorState getDoor( int wallX, int wallY, int vertical ) {
+			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
+			return doorMap.get(doorCoord);
 		}
 
 		public LinkedHashMap<ShipLayout.DoorCoordinate, DoorState> getDoorMap() { return doorMap; }
@@ -1583,6 +1596,9 @@ public class SavedGameParser extends DatParser {
 		 */
 		public void addSquare( int fireHealth, int ignitionProgress, int gamma ) {
 			squareList.add( new int[] {fireHealth, ignitionProgress, gamma} );
+		}
+		public int[] getSquare( int n ) {
+			return squareList.get(n);
 		}
 
 		public ArrayList<int[]> getSquareList() { return squareList; }
