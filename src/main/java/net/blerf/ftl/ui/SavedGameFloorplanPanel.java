@@ -13,8 +13,11 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.Transparency;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
 import java.awt.image.RescaleOp;
@@ -70,6 +73,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 	private ShipChassis shipChassis = null;
 	private String shipGfxBaseName = null;
 	private int originX=0, originY=0;
+	private HashMap<Rectangle, Integer> roomRegions = new HashMap<Rectangle, Integer>();
 	private ArrayList<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
 	private ArrayList<SystemSprite> systemSprites = new ArrayList<SystemSprite>();
 	private ArrayList<BreachSprite> breachSprites = new ArrayList<BreachSprite>();
@@ -104,6 +108,18 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		wallLbl.setOpaque(false);
 		wallLbl.setBounds( 0, 0, 50, 50 );
 		this.add( wallLbl, WALL_LAYER );
+
+		wallLbl.addMouseMotionListener(new MouseMotionAdapter() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				for (Map.Entry<Rectangle, Integer> entry : roomRegions.entrySet()) {
+					if ( entry.getKey().contains(e.getPoint()) ) {
+						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("RoomId: %2d", entry.getValue().intValue()) );
+						break;
+					}
+				}
+			}
+		});
 
 		this.setBackground( new Color(212, 208, 200) );
 		this.setOpaque(true);
@@ -145,6 +161,20 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		crewSprites.clear();
 
 		if ( shipGfxBaseName != prevGfxBaseName ) {
+			// Associate graphical regions with roomIds.
+			roomRegions.clear();
+			for (int i=0; i < shipLayout.getRoomCount(); i++) {
+				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
+				int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
+				int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
+				int roomX = originX + squareSize * roomLocX;
+				int roomY = originY + squareSize * roomLocY;
+				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+				roomRegions.put( new Rectangle(roomX, roomY, squaresH*squareSize, squaresV*squareSize), i );
+			}
+
+			// Load the fuselage image.
 			InputStream in = null;
 			try {
 				in = DataManager.get().getResourceInputStream("img/ship/"+ shipGfxBaseName +"_base.png");
@@ -161,6 +191,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 				catch (IOException f) {}
 	    }
 
+			// Load the interior image.
 			try {
 				in = DataManager.get().getResourceInputStream("img/ship/"+ shipGfxBaseName +"_floor.png");
 				BufferedImage floorImage = ImageIO.read( in );
@@ -176,6 +207,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 				catch (IOException f) {}
 	    }
 
+			// Draw walls and floor crevices.
 			BufferedImage wallImage = gc.createCompatibleImage( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight(), Transparency.BITMASK );
 			Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
 			drawWalls( wallG, originX, originY, shipState, shipLayout );
@@ -184,6 +216,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
 		}
 
+		// Draw oxygen.
 		BufferedImage oxygenImage = gc.createCompatibleImage( baseLbl.getIcon().getIconWidth(), baseLbl.getIcon().getIconHeight(), Transparency.BITMASK );
 		Graphics2D oxygenG = (Graphics2D)oxygenImage.createGraphics();
 		drawOxygen( oxygenG, originX, originY, shipState, shipLayout );
