@@ -302,8 +302,27 @@ public class SavedGameParser extends DatParser {
 			shipState.setBreach( readInt(in), readInt(in), readInt(in) );
 		}
 
+		// Doors are defined in the layout text file, but their
+		// order is different at runtime. Vacuum-adjacent doors
+		// are plucked out and moved to the end... for some
+		// reason.
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> vacuumDoorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>>();
 		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for (ShipLayout.DoorCoordinate doorCoord : layoutDoorMap.keySet()) {
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+
+			if ( doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_A).intValue() == -1 ||
+			     doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_B).intValue() == -1 ) {
+				vacuumDoorMap.put( doorCoord, doorInfo );
+				continue;
+			}
+			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in) );
+		}
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+
 			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in) );
 		}
 
@@ -388,10 +407,28 @@ public class SavedGameParser extends DatParser {
 			writeInt( out, entry.getValue().intValue() );
 		}
 
-		Map<ShipLayout.DoorCoordinate, DoorState> doorMap = shipState.getDoorMap();
+		// Doors are defined in the layout text file, but their
+		// order is different at runtime. Vacuum-adjacent doors
+		// are plucked out and moved to the end... for some
+		// reason.
+		Map<ShipLayout.DoorCoordinate, DoorState> shipDoorMap = shipState.getDoorMap();
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> vacuumDoorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>>();
 		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for (ShipLayout.DoorCoordinate doorCoord : layoutDoorMap.keySet()) {
-			writeDoor( out, doorMap.get( doorCoord ) );
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+
+			if ( doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_A).intValue() == -1 ||
+			     doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_B).intValue() == -1 ) {
+				vacuumDoorMap.put( doorCoord, doorInfo );
+				continue;
+			}
+			writeDoor( out, shipDoorMap.get( doorCoord ) );
+		}
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+
+			writeDoor( out, shipDoorMap.get( doorCoord ) );
 		}
 
 		writeInt( out, shipState.getWeaponList().size() );
@@ -1228,6 +1265,15 @@ public class SavedGameParser extends DatParser {
 			return doorMap.get(doorCoord);
 		}
 
+		/**
+		 * Returns the map containing this ship's door states.
+		 *
+		 * Do not rely on the keys' order. ShipLayout config
+		 * files have a different order than saved game files.
+		 * Entries will be in whatever order setDoor was
+		 * called, which generally will be in the saved game
+		 * file's order.
+		 */
 		public LinkedHashMap<ShipLayout.DoorCoordinate, DoorState> getDoorMap() { return doorMap; }
 
 		public void addWeapon( WeaponState w ) {

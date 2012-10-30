@@ -99,6 +99,12 @@ public class ShipLayout {
 		return doorMap.size();
 	}
 
+	/**
+	 * Returns the map containing this layout's door info.
+	 *
+	 * Keys are in the order of the original layout config file.
+	 * That is NOT the same order as doors in saved games.
+	 */
 	public LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo,Integer>> getDoorMap() {
 		return doorMap;
 	}
