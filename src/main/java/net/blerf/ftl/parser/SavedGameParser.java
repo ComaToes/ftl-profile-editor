@@ -581,14 +581,14 @@ public class SavedGameParser extends DatParser {
 
 	private DoorState readDoor( InputStream in ) throws IOException {
 		boolean open = readBool(in);
-		int alpha = readInt(in);  // 0. What else would a door have; damage?
-		DoorState door = new DoorState( open, alpha );
+		boolean walkingThrough = readBool(in);
+		DoorState door = new DoorState( open, walkingThrough );
 		return door;
 	}
 
 	public void writeDoor( OutputStream out, DoorState door ) throws IOException {
 		writeBool( out, door.isOpen() );
-		writeInt( out, door.getAlpha() );
+		writeBool( out, door.isWalkingThrough() );
 	}
 
 	private DroneState readDrone( InputStream in ) throws IOException {
@@ -1512,11 +1512,17 @@ public class SavedGameParser extends DatParser {
 
 		/**
 		 * Sets whether this crew member is a hostile drone.
-		 * Bizarrely, this trumps race and playerControlled.
+		 * Upon loading after setting this on your crew,
+		 * name will change to "Anti-Personnel Drone", race
+		 * will be "battle", and playerControlled will be
+		 * false.
 		 *
 		 * Presumably this is so intruders can persist without
 		 * a ship, which would normally have a drones section
 		 * to contain them.
+		 *
+		 * TODO: Jump away from Boss #2 to see what its
+		 * drone is (blueprints.xml mentions BOARDER_BOSS).
 		 */
 		public void setEnemyBoardingDrone( boolean b ) {
 			enemyBoardingDrone = b;
@@ -1664,24 +1670,23 @@ public class SavedGameParser extends DatParser {
 
 	public class DoorState {
 		private boolean open;
+		private boolean walkingThrough;
 
-		private int unknownAlpha;
-
-		public DoorState( boolean open, int alpha ) {
+		public DoorState( boolean open, boolean walkingThrough ) {
 			this.open = open;
-			this.unknownAlpha = alpha;
+			this.walkingThrough = walkingThrough;
 		}
 
 		public void setOpen( boolean b ) { open = b; }
-		public void setAlpha( int n ) { unknownAlpha = n; }
+		public void setWalkingThrough( boolean b ) { walkingThrough = b; }
 
 		public boolean isOpen() { return open; }
-		public int getAlpha() { return unknownAlpha; }
+		public boolean isWalkingThrough() { return walkingThrough; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Open: %b, Alpha?: %d\n", open, unknownAlpha));
+			result.append(String.format("Open: %b, Walking Through: %b\n", open, walkingThrough));
 			return result.toString();
 		}
 	}
