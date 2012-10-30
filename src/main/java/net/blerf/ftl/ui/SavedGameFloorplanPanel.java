@@ -299,7 +299,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 
 			int crewX = roomX + tileEdge + (crewState.getRoomSquare()%squaresH)*squareSize + squareSize/2;
 			int crewY = roomY + tileEdge + (crewState.getRoomSquare()/squaresH)*squareSize + squareSize/2;
-			addCrewSprite( crewX, crewY, crewState.getRace(), crewState.getName() );
+			addCrewSprite( crewX, crewY, crewState.getRace(), crewState.getName(), crewState.isPlayerControlled(), crewState.isEnemyBoardingDrone() );
 		}
 
 		this.revalidate();
@@ -414,11 +414,20 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		}
 	}
 
-	private void addCrewSprite( int centerX, int centerY, String race, String name ) {
+	private void addCrewSprite( int centerX, int centerY, String race, String name, boolean playerControlled, boolean enemyBoardingDrone ) {
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		String suffix = "";
 		InputStream in = null;
 		try {
-			in = DataManager.get().getResourceInputStream( "img/people/"+ race +"_player_yellow.png" );
+			if ( enemyBoardingDrone ) {
+				race = "battle";
+				suffix = "_enemy_sheet";
+			} else if ( playerControlled ) {
+				suffix = "_player_yellow";
+			} else {
+				suffix = "_enemy_red";
+			}
+			in = DataManager.get().getResourceInputStream( "img/people/"+ race + suffix +".png" );
 			BufferedImage bigImage = ImageIO.read(in);
 			BufferedImage crewImage = bigImage.getSubimage(offsetX, offsetY, w, h);
 
@@ -429,9 +438,9 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			crewSprite.addMouseListener( new StatusbarMouseListener(frame, name) );
 
 		} catch (RasterFormatException e) {
-			log.error( "Failed to load and crop race image ("+ race +")", e );
+			log.error( "Failed to load and crop race image ("+ race + suffix +")", e );
 		} catch (IOException e) {
-			log.error( "Failed to load and crop race image ("+ race +")", e );
+			log.error( "Failed to load and crop race image ("+ race + suffix +")", e );
 		} finally {
 			try {if (in != null) in.close();}
 			catch (IOException f) {}
