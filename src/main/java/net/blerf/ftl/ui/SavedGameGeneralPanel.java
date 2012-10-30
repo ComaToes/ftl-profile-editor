@@ -259,7 +259,7 @@ public class SavedGameGeneralPanel extends JPanel {
 					if ( square[0] > 0 ) fireCount++;
 				}
 			}
-			meanOxygen /= shipState.getRoomList().size();
+			meanOxygen = Math.round( meanOxygen / ((float)shipState.getRoomList().size()) );
 
 			setBoolAndReminder( FULL_OXYGEN, (meanOxygen == 100), meanOxygen +"%" );
 			setBoolAndReminder( NO_BREACHES, (breachCount == 0), ""+breachCount );
