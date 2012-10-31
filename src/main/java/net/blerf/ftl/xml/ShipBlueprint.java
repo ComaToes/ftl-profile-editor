@@ -25,14 +25,28 @@ public class ShipBlueprint {
 	private String name, desc;
 	
 	private SystemList systemList;
+	private Health health;
 	
 	private int weaponSlots, droneSlots;
 	
-	private Object weaponList, health, maxPower, crewCount; // TODO model
+	private Object weaponList, maxPower, crewCount; // TODO model
 	
 	@XmlRootElement
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class SystemList {
+
+		public static final String NAME_PILOT = "Pilot";
+		public static final String NAME_DOORS = "Doors";
+		public static final String NAME_SENSORS = "Sensors";
+		public static final String NAME_MEDBAY = "Medbay";
+		public static final String NAME_OXYGEN = "Oxygen";
+		public static final String NAME_SHIELDS = "Shields";
+		public static final String NAME_ENGINES = "Engines";
+		public static final String NAME_WEAPONS = "Weapons";
+		public static final String NAME_DRONE_CTRL = "Drone Ctrl";
+		public static final String NAME_TELEPORTER = "Teleporter";
+		public static final String NAME_CLOAKING = "Cloaking";
+		public static final String NAME_ARTILLERY = "Artillery";
 
 		@XmlRootElement
 		@XmlAccessorType(XmlAccessType.FIELD)
@@ -219,24 +233,63 @@ public class ShipBlueprint {
 		 * Returns the system's name in a given room, or null.
 		 */
 		public String getSystemNameByRoomId( int roomId ) {
-			if ( getPilotRoom() != null && getPilotRoom().getRoomId() == roomId ) return "Pilot";
-			if ( getDoorsRoom() != null && getDoorsRoom().getRoomId() == roomId ) return "Doors";
-			if ( getSensorsRoom() != null && getSensorsRoom().getRoomId() == roomId ) return "Sensors";
-			if ( getMedicalRoom() != null && getMedicalRoom().getRoomId() == roomId ) return "Medbay";
-			if ( getLifeSupportRoom() != null && getLifeSupportRoom().getRoomId() == roomId ) return "Oxygen";
-			if ( getShieldRoom() != null && getShieldRoom().getRoomId() == roomId ) return "Shields";
-			if ( getEngineRoom() != null && getEngineRoom().getRoomId() == roomId ) return "Engines";
-			if ( getWeaponRoom() != null && getWeaponRoom().getRoomId() == roomId ) return "Weapons";
-			if ( getDroneRoom() != null && getDroneRoom().getRoomId() == roomId ) return "Drone Ctrl";
-			if ( getTeleporterRoom() != null && getTeleporterRoom().getRoomId() == roomId ) return "Teleporter";
-			if ( getCloakRoom() != null && getCloakRoom().getRoomId() == roomId ) return "Cloaking";
+			if ( getPilotRoom() != null && getPilotRoom().getRoomId() == roomId ) return NAME_PILOT;
+			if ( getDoorsRoom() != null && getDoorsRoom().getRoomId() == roomId ) return NAME_DOORS;
+			if ( getSensorsRoom() != null && getSensorsRoom().getRoomId() == roomId ) return NAME_SENSORS;
+			if ( getMedicalRoom() != null && getMedicalRoom().getRoomId() == roomId ) return NAME_MEDBAY;
+			if ( getLifeSupportRoom() != null && getLifeSupportRoom().getRoomId() == roomId ) return NAME_OXYGEN;
+			if ( getShieldRoom() != null && getShieldRoom().getRoomId() == roomId ) return NAME_SHIELDS;
+			if ( getEngineRoom() != null && getEngineRoom().getRoomId() == roomId ) return NAME_ENGINES;
+			if ( getWeaponRoom() != null && getWeaponRoom().getRoomId() == roomId ) return NAME_WEAPONS;
+			if ( getDroneRoom() != null && getDroneRoom().getRoomId() == roomId ) return NAME_DRONE_CTRL;
+			if ( getTeleporterRoom() != null && getTeleporterRoom().getRoomId() == roomId ) return NAME_TELEPORTER;
+			if ( getCloakRoom() != null && getCloakRoom().getRoomId() == roomId ) return NAME_CLOAKING;
 			if ( getArtilleryRooms() != null ) {
 				for ( SystemRoom artilleryRoom : artilleryRooms ) {
-					if ( artilleryRoom.getRoomId() == roomId ) return "Artillery";
+					if ( artilleryRoom.getRoomId() == roomId ) return NAME_ARTILLERY;
 				}
 			}
 			return null;
 		}
+
+		/**
+		 * Returns a system's roomId(s), or null.
+		 */
+		public int[] getRoomIdBySystemName( String name ) {
+			SystemList.SystemRoom systemRoom = null;
+			if ( name.equals(NAME_PILOT) ) systemRoom = getPilotRoom();
+			else if ( name.equals(NAME_DOORS) ) systemRoom = getDoorsRoom();
+			else if ( name.equals(NAME_SENSORS) ) systemRoom = getSensorsRoom();
+			else if ( name.equals(NAME_MEDBAY) ) systemRoom = getMedicalRoom();
+			else if ( name.equals(NAME_OXYGEN) ) systemRoom = getLifeSupportRoom();
+			else if ( name.equals(NAME_SHIELDS) ) systemRoom = getShieldRoom();
+			else if ( name.equals(NAME_ENGINES) ) systemRoom = getEngineRoom();
+			else if ( name.equals(NAME_WEAPONS) ) systemRoom = getWeaponRoom();
+			else if ( name.equals(NAME_DRONE_CTRL) ) systemRoom = getDroneRoom();
+			else if ( name.equals(NAME_TELEPORTER) ) systemRoom = getTeleporterRoom();
+			else if ( name.equals(NAME_CLOAKING) ) systemRoom = getCloakRoom();
+			if ( systemRoom != null ) return new int[] { systemRoom.getRoomId() };
+
+			if ( name.equals(NAME_ARTILLERY) ) {
+				if ( getArtilleryRooms() != null && getArtilleryRooms().size() > 0 ) {
+					int n = 0;
+					int[] result = new int[getArtilleryRooms().size()];
+					for ( SystemRoom artilleryRoom : artilleryRooms ) {
+						result[n++] = artilleryRoom.getRoomId();
+					}
+					return result;
+				}
+			}
+
+			return null;
+		}
+	}
+
+	@XmlRootElement
+	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class Health {
+		@XmlAttribute
+		public int amount;
 	}
 
 	public String getId() {
@@ -319,11 +372,11 @@ public class ShipBlueprint {
 		this.weaponList = weaponList;
 	}
 
-	public Object getHealth() {
+	public Health getHealth() {
 		return health;
 	}
 
-	public void setHealth(Object health) {
+	public void setHealth(Health health) {
 		this.health = health;
 	}
 

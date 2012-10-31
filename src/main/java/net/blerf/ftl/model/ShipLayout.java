@@ -11,13 +11,13 @@ import java.util.NoSuchElementException;
 public class ShipLayout {
 	// TODO: Some ROOM values haven't been deciphered (see: setRoom()).
 
-	public enum RoomInfo { ALPHA, BETA, SQUARES_H, SQUARES_V }
+	public enum RoomInfo { LOCATION_X, LOCATION_Y, SQUARES_H, SQUARES_V }
 	public enum DoorInfo { ROOM_ID_A, ROOM_ID_B }
 
 	private int offsetX = 0, offsetY = 0, horizontal = 0, vertical = 0;
 	private Rectangle shieldEllipse = new Rectangle();
 	private TreeMap<Integer, EnumMap<RoomInfo,Integer>> roomMap = new TreeMap<Integer, EnumMap<RoomInfo,Integer>>();
-	private LinkedHashMap<int[], EnumMap<DoorInfo,Integer>> doorMap = new LinkedHashMap<int[], EnumMap<DoorInfo,Integer>>();
+	private LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo,Integer>> doorMap = new LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo,Integer>>();
 
 	/**
 	 * Constructs a layout with uninteresting defaults.
@@ -43,16 +43,16 @@ public class ShipLayout {
 	 * Sets a room's info.
 	 *
 	 * @param roomId a roomId
-	 * @param alpha ???
-	 * @param beta ???
+	 * @param locationX 0-based Nth square from the left (without layout offset)
+	 * @param locationY 0-based Nth square from the top (without layout offset)
 	 * @param squaresH horizontal count of tiles
 	 * @param squaresV certical count of tiles
 	 */
-	public void setRoom( int roomId, int alpha, int beta, int squaresH, int squaresV ) {
+	public void setRoom( int roomId, int locationX, int locationY, int squaresH, int squaresV ) {
 		Integer roomIdObj = new Integer(roomId);
 		EnumMap<RoomInfo,Integer> infoMap = new EnumMap<RoomInfo,Integer>(RoomInfo.class);
-		infoMap.put( RoomInfo.ALPHA, new Integer(alpha) );
-		infoMap.put( RoomInfo.BETA, new Integer(beta) );
+		infoMap.put( RoomInfo.LOCATION_X, new Integer(locationX) );
+		infoMap.put( RoomInfo.LOCATION_Y, new Integer(locationY) );
 		infoMap.put( RoomInfo.SQUARES_H, new Integer(squaresH) );
 		infoMap.put( RoomInfo.SQUARES_V, new Integer(squaresV) );
 		roomMap.put( roomIdObj, infoMap );
@@ -84,7 +84,7 @@ public class ShipLayout {
 	 * @param roomIdB an adjacent roomId, or -1 for vacuum
 	 */
 	public void setDoor( int wallX, int wallY, int vertical, int roomIdA, int roomIdB ) {
-		int[] doorCoord = new int[] {wallX, wallY, vertical};
+		DoorCoordinate doorCoord = new DoorCoordinate( wallX, wallY, vertical );
 		EnumMap<DoorInfo, Integer> infoMap = new EnumMap<DoorInfo, Integer>(DoorInfo.class);
 		infoMap.put( DoorInfo.ROOM_ID_A, new Integer(roomIdA) );
 		infoMap.put( DoorInfo.ROOM_ID_B, new Integer(roomIdB) );
@@ -92,14 +92,60 @@ public class ShipLayout {
 	}
 
 	public EnumMap<DoorInfo, Integer> getDoorInfo( int wallX, int wallY, int vertical ) {
-		return doorMap.get( new int[] {wallX, wallY, vertical} );
+		return doorMap.get( new DoorCoordinate( wallX, wallY, vertical ) );
 	}
 
 	public int getDoorCount() {
 		return doorMap.size();
 	}
 
-	public LinkedHashMap<int[], EnumMap<DoorInfo,Integer>> getDoorMap() {
+	/**
+	 * Returns the map containing this layout's door info.
+	 *
+	 * Keys are in the order of the original layout config file.
+	 * That is NOT the same order as doors in saved games.
+	 */
+	public LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo,Integer>> getDoorMap() {
 		return doorMap;
+	}
+
+
+
+	// Regular int arrays don't override the methods needed for
+	// use as Map keys, testing for identity instead of equality.
+	public static class DoorCoordinate {
+		public int x = 0;
+		public int y = 0;
+		public int v = 0;
+
+		public DoorCoordinate( int x, int y, int v ) {
+			this.x = x;
+			this.y = y;
+			this.v = v;
+		}
+
+		@Override
+		public boolean equals( Object o ) {
+			if ( !(o instanceof DoorCoordinate) ) return false;
+			DoorCoordinate d = (DoorCoordinate)o;
+			return ( x==d.x && y==d.y && v==d.v );
+		}
+
+		@Override
+		public int hashCode() {
+			return mangle(x) | (mangle(y) << 1) | (mangle(v) << 2);
+		}
+
+		// Use Z-Order Curve to interleve coords' bits for uniqueness.
+		// http://stackoverflow.com/questions/9858376/hashcode-for-3d-integer-coordinates-with-high-spatial-coherence
+		// http://www.opensourcescripts.com/info/interleave-bits--aka-morton-ize-aka-z-order-curve-.html
+		private int mangle( int n ) {
+			n &= 0x000003ff;
+			n = (n ^ (n << 16)) & 0xff0000ff;
+			n = (n ^ (n <<  8)) & 0x0300f00f;
+			n = (n ^ (n <<  4)) & 0x030c30c3;
+			n = (n ^ (n <<  2)) & 0x09249249;
+			return n;
+		}
 	}
 }

@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -30,28 +31,34 @@ public class SavedGameParser extends DatParser {
 	private static final Logger log = LogManager.getLogger(SavedGameParser.class);
 
 
-	public SavedGameState readSavedGame(File datFile) throws IOException {
+	public SavedGameState readSavedGame( File datFile ) throws IOException {
 		FileInputStream in = null;
 		InputStream layoutStream = null;
 		try {
 			SavedGameState gameState = new SavedGameState();
 			in = new FileInputStream(datFile);
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 8) );
+			// This should always be 2.
+			int headerAlpha = readInt(in);
+			if ( headerAlpha != 2 )
+				log.warn( "Unexpected first byte ("+ headerAlpha +"): it's either a bad file, or possibly too new for this tool" );
 
+			gameState.setDifficultyEasy( readBool(in) );
 			gameState.setTotalShipsDefeated( readInt(in) );
 			gameState.setTotalBeaconsExplored( readInt(in) );
 			gameState.setTotalScrapCollected( readInt(in) );
 			gameState.setTotalCrewHired( readInt(in) );
 
 			String playerShipName = readString(in);         // Redundant.
+			gameState.setPlayerShipName( playerShipName );
+
 			String playerShipBlueprintId = readString(in);  // Redundant.
-			gameState.setPlayerShipInfo( playerShipName, playerShipBlueprintId );
+			gameState.setPlayerShipBlueprintId( playerShipBlueprintId );
 
-			int sectorNumber = readInt(in);
-			gameState.setSectorNumber( sectorNumber );
+			int oneBasedSectorNumber = readInt(in);  // Redundant.
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			// Always 0?
+			gameState.setHeaderAlpha( readInt(in) );
 
 			int stateVarCount = readInt(in);
 			for (int i=0; i < stateVarCount; i++) {
@@ -63,13 +70,19 @@ public class SavedGameParser extends DatParser {
 			ShipState playerShipState = readShip( in, true );
 			gameState.setPlayerShipState( playerShipState );
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			// Nearby ships have no cargo, so this isn't in readShip().
+			int cargoCount = readInt(in);
+			for (int i=0; i < cargoCount; i++) {
+				gameState.addCargoItemId( readString(in) );
+			}
+
+			gameState.setSectorTreeSeed( readInt(in) );
 			
 			gameState.setSectorLayoutSeed( readInt(in) );
 			
 			gameState.setRebelFleetOffset( readInt(in) );
 			
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			gameState.setRebelFleetFudge( readInt(in) );
 
 			gameState.setRebelPursuitMod( readInt(in) );
 
@@ -86,9 +99,19 @@ public class SavedGameParser extends DatParser {
 				gameState.addSector( readBool(in) );
 			}
 
-			int zeroBasedSectorNumber = readInt( in );  // Redundant.
+			// The number on the sector map is this+1,
+			// but the sector's type on the map is
+			// unaffected when these bytes are modified.
+			// All hazards and point-of-interest labels
+			// will change, but not the beacons.
+			// The sector tree is unaffected when modified.
+			// Jumping from an exit beacon increments this
+			// number and sets the header's sector number
+			// to this+1.
+			int sectorNumber = readInt(in);
+			gameState.setSectorNumber( sectorNumber );
 
-			gameState.addMysteryBytes( new MysteryBytes(in, 4) );
+			gameState.setSectorIsHiddenCrystalWorlds( readBool(in) );
 			
 			int beaconCount = readInt(in);
 			for (int i=0; i < beaconCount; i++) {
@@ -116,25 +139,12 @@ public class SavedGameParser extends DatParser {
 				gameState.setNearbyShipState(nearbyShipState);
 			}
 
-			// Here, the stream might end.
+			RebelFlagshipState flagshipState = readRebelFlagship(in);
+			gameState.setRebelFlagshipState( flagshipState );
+
+			// The stream should end here.
 
 			int bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
-
-			// Or, if this is sector 8 and the boss has been engaged at
-			// least once, this will definitely be present.
-			if ( sectorNumber == 8 && bytesRemaining > 2*4 ) {
-				RebelFlagshipState flagshipState = readRebelFlagship(in);
-				gameState.setRebelFlagshipState( flagshipState );
-			}
-
-			// Otherwise this is sometimes present...
-			// This hasn't been observed to coincide with the above, but
-			// this is intermittent in all sectors, which would be
-			// odd if it were boss related.
-			//
-			//   0x0100_0000 0x0000_0000 == 1 0 as ints. No idea what for.
-
-			bytesRemaining = (int)(in.getChannel().size() - in.getChannel().position());
 			if ( bytesRemaining > 0 ) {
 				gameState.addMysteryBytes( new MysteryBytes(in, bytesRemaining) );
 			}
@@ -148,6 +158,87 @@ public class SavedGameParser extends DatParser {
 			try {if (layoutStream != null) in.close();}
 			catch (IOException e) {}
 		}
+	}
+
+	public void writeSavedGame( OutputStream out, SavedGameState gameState ) throws IOException {
+
+		if ( gameState.getMysteryList().size() > 0 )
+			log.warn( "The original saved game file contained mystery bytes, which will be omitted in the new file" );
+
+		// This should always be 2.
+		writeInt( out, 2 );
+
+		writeBool( out, gameState.isDifficultyEasy() );
+		writeInt( out, gameState.getTotalShipsDefeated() );
+		writeInt( out, gameState.getTotalBeaconsExplored() );
+		writeInt( out, gameState.getTotalScrapCollected() );
+		writeInt( out, gameState.getTotalCrewHired() );
+
+		writeString( out, gameState.getPlayerShipName() );
+		writeString( out, gameState.getPlayerShipBlueprintId() );
+
+		// Redundant 1-based sector number.
+		writeInt( out, gameState.getSectorNumber()+1 );
+
+		writeInt( out, gameState.getHeaderAlpha() );
+
+		writeInt( out, gameState.getStateVars().size() );
+		for (Map.Entry<String, Integer> entry : gameState.getStateVars().entrySet()) {
+			writeString( out, entry.getKey() );
+			writeInt( out, entry.getValue().intValue() );
+		}
+
+		writeShip( out, gameState.getPlayerShipState() );
+
+		writeInt( out, gameState.getCargoIdList().size() );
+		for (String cargoItemId : gameState.getCargoIdList()) {
+			writeString( out, cargoItemId );
+		}
+
+		writeInt( out, gameState.getSectorTreeSeed() );
+		writeInt( out, gameState.getSectorLayoutSeed() );
+		writeInt( out, gameState.getRebelFleetOffset() );
+		writeInt( out, gameState.getRebelFleetFudge() );
+		writeInt( out, gameState.getRebelPursuitMod() );
+		writeBool( out, gameState.areSectorHazardsVisible() );
+		writeBool( out, gameState.isRebelFlagshipVisible() );
+		writeInt( out, gameState.getRebelFlagshipHop() );
+		writeBool( out, gameState.isRebelFlagshipApproaching() );
+
+		writeInt( out, gameState.getSectorList().size() );
+		for (Boolean visited : gameState.getSectorList()) {
+			writeBool( out, visited.booleanValue() );
+		}
+
+		writeInt( out, gameState.getSectorNumber() );
+		writeBool( out, gameState.isSectorHiddenCrystalWorlds() );
+
+		writeInt( out, gameState.getBeaconList().size() );
+		for (BeaconState beacon : gameState.getBeaconList()) {
+			writeBeacon( out, beacon );
+		}
+
+		writeInt( out, gameState.getQuestEventMap().size() );
+		for (Map.Entry<String, Integer> entry : gameState.getQuestEventMap().entrySet()) {
+			writeString( out, entry.getKey() );
+			writeInt( out, entry.getValue().intValue() );
+		}
+
+		writeInt( out, gameState.getDistantQuestEventList().size() );
+		for (String questEventId : gameState.getDistantQuestEventList()) {
+			writeString( out, questEventId );
+		}
+
+		writeInt( out, gameState.getCurrentBeaconId() );
+
+		ShipState nearbyShip = gameState.getNearbyShipState();
+		writeBool( out, (nearbyShip != null) );
+		if ( nearbyShip != null ) {
+			writeShip( out, nearbyShip );
+		}
+
+		writeRebelFlagship( out, gameState.getRebelFlagshipState() );
+
 	}
 
 	private ShipState readShip( InputStream in, boolean auto ) throws IOException {
@@ -211,9 +302,28 @@ public class SavedGameParser extends DatParser {
 			shipState.setBreach( readInt(in), readInt(in), readInt(in) );
 		}
 
-		LinkedHashMap<int[], EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for (int[] doorCoord : layoutDoorMap.keySet()) {
-			shipState.setDoor( doorCoord[0], doorCoord[1], doorCoord[2], readDoor(in) );
+		// Doors are defined in the layout text file, but their
+		// order is different at runtime. Vacuum-adjacent doors
+		// are plucked out and moved to the end... for some
+		// reason.
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> vacuumDoorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>>();
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+
+			if ( doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_A).intValue() == -1 ||
+			     doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_B).intValue() == -1 ) {
+				vacuumDoorMap.put( doorCoord, doorInfo );
+				continue;
+			}
+			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in) );
+		}
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+
+			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in) );
 		}
 
 		int weaponCount = readInt(in);
@@ -234,12 +344,109 @@ public class SavedGameParser extends DatParser {
 			shipState.addAugmentId( readString(in) );
 		}
 
-		int cargoCount = readInt(in);  // TODO: Nearby ships say 1, but have none?
-		for (int i=0; i < cargoCount; i++) {
-			shipState.addCargoItemId( readString(in) );
+		return shipState;
+	}
+
+	public void writeShip( OutputStream out, ShipState shipState ) throws IOException {
+		String shipBlueprintId = shipState.getShipBlueprintId();
+
+		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+		if ( shipBlueprint == null )
+			throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
+
+		String shipLayoutId = shipBlueprint.getLayout();
+
+		ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
+		if ( shipLayout == null )
+			throw new RuntimeException( String.format("Could not find layout for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
+
+
+		writeString( out, shipBlueprintId );
+		writeString( out, shipState.getShipName() );
+		writeString( out, shipState.getShipGraphicsBaseName() );
+
+		writeInt( out, shipState.getStartingCrewList().size() );
+		for (StartingCrewState startingCrew : shipState.getStartingCrewList()) {
+			writeStartingCrewMember( out, startingCrew );
 		}
 
-		return shipState;
+		writeInt( out, shipState.getHullAmt() );
+		writeInt( out, shipState.getFuelAmt() );
+		writeInt( out, shipState.getDronePartsAmt() );
+		writeInt( out, shipState.getMissilesAmt() );
+		writeInt( out, shipState.getScrapAmt() );
+
+		writeInt( out, shipState.getCrewList().size() );
+		for (CrewState crew : shipState.getCrewList()) {
+			writeCrewMember( out, crew );
+		}
+
+		String[] systemNames = new String[] {"Shields", "Engines", "Oxygen",
+		                                     "Weapons", "Drone Ctrl", "Medbay",
+		                                     "Pilot", "Sensors", "Doors",
+		                                     "Teleporter", "Cloaking", "Artillery"};
+		writeInt( out, shipState.getReservePowerCapacity() );
+
+		Map<String, SystemState> systemMap = shipState.getSystemMap();
+		for (String name : systemNames) {
+			SystemState system = systemMap.get(name);
+			if ( system != null )
+				writeSystem( out, system );
+			else
+				writeInt( out, 0 );
+		}
+
+		for (RoomState room : shipState.getRoomList()) {
+			writeRoom( out, room );
+		}
+
+		writeInt( out, shipState.getBreachMap().size() );
+		for (Map.Entry<Point, Integer> entry : shipState.getBreachMap().entrySet()) {
+			writeInt( out, entry.getKey().x );
+			writeInt( out, entry.getKey().y );
+			writeInt( out, entry.getValue().intValue() );
+		}
+
+		// Doors are defined in the layout text file, but their
+		// order is different at runtime. Vacuum-adjacent doors
+		// are plucked out and moved to the end... for some
+		// reason.
+		Map<ShipLayout.DoorCoordinate, DoorState> shipDoorMap = shipState.getDoorMap();
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> vacuumDoorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>>();
+		LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+
+			if ( doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_A).intValue() == -1 ||
+			     doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_B).intValue() == -1 ) {
+				vacuumDoorMap.put( doorCoord, doorInfo );
+				continue;
+			}
+			writeDoor( out, shipDoorMap.get( doorCoord ) );
+		}
+		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+
+			writeDoor( out, shipDoorMap.get( doorCoord ) );
+		}
+
+		writeInt( out, shipState.getWeaponList().size() );
+		for (WeaponState weapon : shipState.getWeaponList()) {
+			writeString( out, weapon.getWeaponId() );
+			writeBool( out, weapon.isArmed() );
+			writeInt( out, weapon.getCooldownTicks() );
+		}
+
+		writeInt( out, shipState.getDroneList().size() );
+		for (DroneState drone : shipState.getDroneList()) {
+			writeDrone( out, drone );
+		}
+
+		writeInt( out, shipState.getAugmentIdList().size() );
+		for (String augmentId : shipState.getAugmentIdList()) {
+			writeString( out, augmentId );
+		}
 	}
 
 	private StartingCrewState readStartingCrewMember( InputStream in ) throws IOException {
@@ -247,6 +454,11 @@ public class SavedGameParser extends DatParser {
 		String crewName = readString(in);
 		StartingCrewState startingCrew = new StartingCrewState(crewName, crewRace);
 		return startingCrew;
+	}
+
+	public void writeStartingCrewMember( OutputStream out, StartingCrewState startingCrew ) throws IOException {
+		writeString( out, startingCrew.getRace() );
+		writeString( out, startingCrew.getName() );
 	}
 
 	private CrewState readCrewMember( InputStream in ) throws IOException {
@@ -275,6 +487,30 @@ public class SavedGameParser extends DatParser {
 		return crew;
 	}
 
+	public void writeCrewMember( OutputStream out, CrewState crew ) throws IOException {
+		writeString( out, crew.getName() );
+		writeString( out, crew.getRace() );
+		writeBool( out, crew.isEnemyBoardingDrone() );
+		writeInt( out, crew.getHealth() );
+		writeInt( out, crew.getX() );
+		writeInt( out, crew.getY() );
+		writeInt( out, crew.getRoomId() );
+		writeInt( out, crew.getRoomSquare() );
+		writeBool( out, crew.isPlayerControlled() );
+		writeInt( out, crew.getPilotSkill() );
+		writeInt( out, crew.getEngineSkill() );
+		writeInt( out, crew.getShieldSkill() );
+		writeInt( out, crew.getWeaponSkill() );
+		writeInt( out, crew.getRepairSkill() );
+		writeInt( out, crew.getCombatSkill() );
+		writeInt( out, crew.getGender() );
+		writeInt( out, crew.getRepairs() );
+		writeInt( out, crew.getCombatKills() );
+		writeInt( out, crew.getPilotedEvasions() );
+		writeInt( out, crew.getJumpsSurvived() );
+		writeInt( out, crew.getSkillMasteries() );
+	}
+
 	private SystemState readSystem( InputStream in, String name ) throws IOException {
 		SystemState system = new SystemState( name );
 		int capacity = readInt(in);
@@ -300,6 +536,23 @@ public class SavedGameParser extends DatParser {
 		return system;
 	}
 
+	public void writeSystem( OutputStream out, SystemState system ) throws IOException {
+		writeInt( out, system.getCapacity() );
+		if ( system.getCapacity() > 0 ) {
+			writeInt( out, system.getPower() );
+			writeInt( out, system.getDamagedBars() );
+			writeInt( out, system.getIonizedBars() );
+
+			if ( system.getMiscTicks() == Integer.MIN_VALUE )
+				writeInt( out, -2147483648 );
+			else
+				writeInt( out, system.getMiscTicks() );
+
+			writeInt( out, system.getRepairProgress() );
+			writeInt( out, system.getBurnProgress() );
+		}
+	}
+
 	private RoomState readRoom( InputStream in, int squaresH, int squaresV ) throws IOException {
 		RoomState room = new RoomState();
 		room.setOxygen( readInt(in) );
@@ -316,11 +569,26 @@ public class SavedGameParser extends DatParser {
 		return room;
 	}
 
+	public void writeRoom( OutputStream out, RoomState room ) throws IOException {
+		writeInt( out, room.getOxygen() );
+
+		for (int[] square : room.getSquareList()) {
+			writeInt( out, square[0] );
+			writeInt( out, square[1] );
+			writeInt( out, square[2] );
+		}
+	}
+
 	private DoorState readDoor( InputStream in ) throws IOException {
 		boolean open = readBool(in);
-		int alpha = readInt(in);  // 0. What else would a door have; damage?
-		DoorState door = new DoorState( open, alpha );
+		boolean walkingThrough = readBool(in);
+		DoorState door = new DoorState( open, walkingThrough );
 		return door;
+	}
+
+	public void writeDoor( OutputStream out, DoorState door ) throws IOException {
+		writeBool( out, door.isOpen() );
+		writeBool( out, door.isWalkingThrough() );
 	}
 
 	private DroneState readDrone( InputStream in ) throws IOException {
@@ -333,6 +601,17 @@ public class SavedGameParser extends DatParser {
 		drone.setRoomSquare( readInt(in) );
 		drone.setHealth( readInt(in) );
 		return drone;
+	}
+
+	public void writeDrone( OutputStream out, DroneState drone ) throws IOException {
+		writeString( out, drone.getDroneId() );
+		writeBool( out, drone.isArmed() );
+		writeBool( out, drone.isPlayerControlled() );
+		writeInt( out, drone.getX() );
+		writeInt( out, drone.getY() );
+		writeInt( out, drone.getRoomId() );
+		writeInt( out, drone.getRoomSquare() );
+		writeInt( out, drone.getHealth() );
 	}
 
 	private BeaconState readBeacon( InputStream in ) throws IOException {
@@ -385,6 +664,45 @@ public class SavedGameParser extends DatParser {
 		return beacon;
 		
 	}
+
+	public void writeBeacon( OutputStream out, BeaconState beacon ) throws IOException {
+		writeBool( out, beacon.isVisited() );
+		if ( beacon.isVisited() ) {
+			writeString( out, beacon.getBgStarscapeImageInnerPath() );
+			writeString( out, beacon.getBgSpriteImageInnerPath() );
+			writeInt( out, beacon.getBgSpritePosX() );
+			writeInt( out, beacon.getBgSpritePosY() );
+			writeInt( out, beacon.getUnknownVisitedAlpha() );
+		}
+
+		writeBool( out, beacon.isSeen() );
+
+		writeBool( out, beacon.isEnemyPresent() );
+		if ( beacon.isEnemyPresent() ) {
+			writeString( out, beacon.getShipEventId() );
+			writeString( out, beacon.getShipBlueprintListId() );
+			writeInt( out, beacon.getUnknownEnemyPresentAlpha() );
+		}
+
+		FleetPresence fleetPresence = beacon.getFleetPresence();
+		if ( fleetPresence == FleetPresence.NONE ) writeInt( out, 0 );
+		else if ( fleetPresence == FleetPresence.REBEL ) writeInt( out, 1 );
+		else if ( fleetPresence == FleetPresence.FEDERATION ) writeInt( out, 2 );
+		else if ( fleetPresence == FleetPresence.BOTH ) writeInt( out, 3 );
+		else throw new RuntimeException( "Unknown fleet presence: "+ fleetPresence );
+
+		writeBool( out, beacon.isUnderAttack() );
+
+		writeBool( out, beacon.isStorePresent() );
+		if ( beacon.isStorePresent() ) {
+			StoreState store = beacon.getStore();
+			writeStoreShelf( out, store.getTopShelf() );
+			writeStoreShelf( out, store.getBottomShelf() );
+			writeInt( out, store.getFuel() );
+			writeInt( out, store.getMissiles() );
+			writeInt( out, store.getDroneParts() );
+		}
+	}
 	
 	private StoreShelf readStoreShelf( InputStream in ) throws IOException {
 		
@@ -401,18 +719,39 @@ public class SavedGameParser extends DatParser {
 		}
 		
 		for (int i = 0; i < 3; i++) {
-			int available = readInt(in);
+			int available = readInt(in); // -1=no item, 0=bought already, 1=buyable
 			if ( available < 0 )
-				continue; // -1 means no item
+				continue;
 			String itemId = readString(in);
-			shelf.addItem( new StoreItem(available > 0, itemId) );
+			shelf.addItem( new StoreItem( (available > 0), itemId) );
 		}
 		
 		return shelf;
 		
 	}
 
+	public void writeStoreShelf( OutputStream out, StoreShelf shelf ) throws IOException {
 
+		StoreItemType itemType = shelf.getItemType();
+		if ( itemType == StoreItemType.WEAPON ) writeInt( out, 0 );
+		else if ( itemType == StoreItemType.DRONE ) writeInt( out, 1 );
+		else if ( itemType == StoreItemType.AUGMENT ) writeInt( out, 2 );
+		else if ( itemType == StoreItemType.CREW ) writeInt( out, 3 );
+		else if ( itemType == StoreItemType.SYSTEM ) writeInt( out, 4 );
+		else throw new RuntimeException( "Unknown store item type: "+ itemType );
+
+		List<StoreItem> items = shelf.getItems();
+		for (int i=0; i < 3; i++) {
+			int available = -1;
+			String itemId = null;
+			if ( items.size() >= i ) {
+				available = (items.get(i).isAvailable() ? 1 : 0);
+				itemId = items.get(i).getItemId();
+			}
+			writeInt( out, available );
+			if ( available >= 0 ) writeString( out, itemId );
+		}
+	}
 
 	public RebelFlagshipState readRebelFlagship( InputStream in ) throws IOException {
 
@@ -425,10 +764,20 @@ public class SavedGameParser extends DatParser {
 
 		int previousRoomCount = readInt(in);
 		for (int i=0; i < previousRoomCount; i++) {
-			flagship.setPreviousOccupancy( i, readBool(in) );
+			flagship.setPreviousOccupancy( i, readInt(in) );
 		}
 
 		return flagship;
+	}
+
+	public void writeRebelFlagship( OutputStream out, RebelFlagshipState flagship ) throws IOException {
+		writeInt( out, flagship.getPendingStage() );
+
+		writeInt( out, flagship.getOccupancyMap().size() );
+		for (Map.Entry<Integer, Integer> entry : flagship.getOccupancyMap().entrySet()) {
+			int occupantCount = entry.getValue().intValue();
+			writeInt( out, occupantCount );
+		}
 	}
 
 
@@ -436,6 +785,7 @@ public class SavedGameParser extends DatParser {
 	// Stash state classes here until they're finalized.
 
 	public class SavedGameState {
+		private boolean difficultyEasy = false;
 		private int totalShipsDefeated = 0;
 		private int totalBeaconsExplored = 0;
 		private int totalScrapCollected = 0;
@@ -443,16 +793,20 @@ public class SavedGameParser extends DatParser {
 		private String playerShipName = "";
 		private String playerShipBlueprintId = "";
 		private int sectorNumber = 1;
-		private HashMap<String, Integer> stateVars = new HashMap<String, Integer>();
+		private LinkedHashMap<String, Integer> stateVars = new LinkedHashMap<String, Integer>();
 		private ShipState playerShipState = null;
-		private int sectorLayoutSeed;
-		private int rebelFleetOffset;
+		private ArrayList<String> cargoIdList = new ArrayList<String>();
+		private int sectorTreeSeed = 42;      // Arbitrary default.
+		private int sectorLayoutSeed = 42;    // Arbitrary default.
+		private int rebelFleetOffset = -750;  // Arbitrary default.
+		private int rebelFleetFudge = 100;    // Arbitrary default.
 		private int rebelPursuitMod = 0;
 		private boolean sectorHazardsVisible = false;
 		private boolean rebelFlagshipVisible = false;
 		private int rebelFlagshipHop = 0;
 		private boolean rebelFlagshipApproaching = false;
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
+		private boolean sectorIsHiddenCrystalWorlds = false;
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
@@ -461,20 +815,63 @@ public class SavedGameParser extends DatParser {
 		private RebelFlagshipState rebelFlagshipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
+		private int unknownHeaderAlpha = 0;
+
+		public void setDifficultyEasy( boolean b ) { difficultyEasy = b; }
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
 		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
 		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
 		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
 
-		/**
-		 * Set redundant player ship info.
-		 */
-		public void setPlayerShipInfo( String shipName, String shipBlueprintId ) {
+		public boolean isDifficultyEasy() { return difficultyEasy; }
+		public int getTotalShipsDefeated() { return totalShipsDefeated; }
+		public int getTotalBeaconsExplored() { return totalBeaconsExplored; }
+		public int getTotalScrapCollected() { return totalScrapCollected; }
+		public int getTotalCrewHired() { return totalCrewHired; }
+
+		/** Sets redundant player ship name. */
+		public void setPlayerShipName( String shipName) {
 			playerShipName = shipName;
+		}
+		public String getPlayerShipName() { return playerShipName; }
+
+		/** Sets redundant player ship blueprint. */
+		public void setPlayerShipBlueprintId( String shipBlueprintId ) {
 			playerShipBlueprintId = shipBlueprintId;
 		}
+		public String getPlayerShipBlueprintId() { return playerShipBlueprintId; }
 
+		public void addCargoItemId( String cargoItemId ) {
+			cargoIdList.add( cargoItemId );
+		}
+
+		public ArrayList<String> getCargoIdList() { return cargoIdList; }
+
+		/**
+		 * Sets the current sector's number (0-based).
+		 *
+		 * It's uncertain how soon sector-dependent events
+		 * will take notice of changes. On the map, the
+		 * number, all visible hazards, and
+		 * point-of-interest labels will immediately
+		 * change, but not the beacons' pixel positions.
+		 *
+		 * Ship encounters will not be immediately
+		 * affected (TODO: turn #0 into #5, jump to the
+		 * next sector, and see if the ships there are
+		 * tough).
+		 *
+		 * Modifying this will not change the sector tree.
+		 *
+		 * TODO: Determine long-term effects of this.
+		 * The Last Stand is baked into the sector tree,
+		 * but weird things might happen at or above #7.
+		 */
 		public void setSectorNumber( int n ) { sectorNumber = n; }
+		public int getSectorNumber() { return sectorNumber; }
+
+		public void setHeaderAlpha( int n ) { unknownHeaderAlpha = n; }
+		public int getHeaderAlpha() { return unknownHeaderAlpha; }
 
 		/**
 		 * Sets a state var.
@@ -502,29 +899,76 @@ public class SavedGameParser extends DatParser {
 			return result.intValue();
 		}
 
+		public LinkedHashMap<String, Integer> getStateVars() { return stateVars; }
+
 		public void setPlayerShipState( ShipState shipState ) {
 			this.playerShipState = shipState;
 		}
+		public ShipState getPlayerShipState() { return playerShipState; }
+
+		// TODO: See what havoc can occur when seeds change.
+		// (Arrays might change size and overflow, etc)
+		public void setSectorTreeSeed( int n ) { sectorTreeSeed = n; }
+		public int getSectorTreeSeed() { return sectorTreeSeed; }
 
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
+		public int getSectorLayoutSeed() { return sectorLayoutSeed; }
 
-		/** Sets the fleet position, in pixels from far right of sector map. */
+		/**
+		 * Sets the fleet position on the map.
+		 * This is always a negative value that, when added to
+		 * rebelFleetFudge, equals how far in from the left the
+		 * warning circle has encroached (image has ~50px margin).
+		 *
+		 * Most sectors start with large negative value to keep
+		 * this off-screen and increment toward 0 from there.
+		 * The Last Stand sector uses a constant -25 and moderate
+		 * rebelFleetFudge value to cover the map.
+		 *
+		 * This has always been observed in multiples of 25.
+		 *
+		 * @param n pixels from the map's right edge
+		 *          (see 'img/map/map_warningcircle_point.png', 650px wide)
+		 */
 		public void setRebelFleetOffset( int n ) { rebelFleetOffset = n; }
+		public int getRebelFleetOffset() { return rebelFleetOffset; }
 
-		/** Delays/alerts the rebel fleet (-/+). */
+		/**
+		 * This is always a positive number around 100-300 that,
+		 * when added to rebelFleetOffset, equals how far in
+		 * from the left the warning circle has encroached.
+		 *
+		 * This varies seemingly randomly from game to game and
+		 * sector to sector, but it's consistent while within
+		 * each sector. Except in The Last Stand, in which it is
+		 * always 200 (the warning circle will extend beyond
+		 * both edges of the map).
+		 */
+		public void setRebelFleetFudge( int n ) { rebelFleetFudge = n; }
+		public int getRebelFleetFudge() { return rebelFleetFudge; }
+
+		/**
+		 * Delays/alerts the rebel fleet (-/+).
+		 * Example: Hiring a merc ship to distract sets -2.
+		 */
 		public void setRebelPursuitMod( int n ) { rebelPursuitMod = n; }
+		public int getRebelPursuitMod() { return rebelPursuitMod; }
 
 		/** Toggles visibility of beacon hazards for this sector. */
 		public void setSectorHazardsVisible( boolean b ) { sectorHazardsVisible = b; }
+		public boolean areSectorHazardsVisible() { return sectorHazardsVisible; }
 
 		/** Toggles the flagship. Instant lose if not in sector 8. */
 		public void setRebelFlagshipVisible( boolean b ) { rebelFlagshipVisible = b; }
+		public boolean isRebelFlagshipVisible() { return rebelFlagshipVisible; }
 
 		/** Set's the flagship's next/current beacon, as an index of a fixed list? */
 		public void setRebelFlagshipHop( int n ) { rebelFlagshipHop = n; }
+		public int getRebelFlagshipHop() { return rebelFlagshipHop; }
 
 		/** Sets whether the flagship's approaching or circling its hop beacon. */
 		public void setRebelFlagshipApproaching( boolean b ) { rebelFlagshipApproaching = b; }
+		public boolean isRebelFlagshipApproaching() { return rebelFlagshipApproaching; }
 
 		/**
 		 * Adds a dot of the sector tree.
@@ -538,6 +982,19 @@ public class SavedGameParser extends DatParser {
 			sectorList.set( sector, new Boolean(visited) );
 		}
 
+		public ArrayList<Boolean> getSectorList() { return sectorList; }
+
+		/**
+		 * Sets whether this sector is hidden.
+		 * The sector map will say "#? Hidden Crystal Worlds".
+		 *
+		 * When jumping from the exit beacon, you won't get to
+		 * choose which branch of the sector tree will be
+		 * next.
+		 */
+		public void setSectorIsHiddenCrystalWorlds( boolean b ) { sectorIsHiddenCrystalWorlds = b; }
+		public boolean isSectorHiddenCrystalWorlds() { return sectorIsHiddenCrystalWorlds; }
+
 		/**
 		 * Adds a beacon to the sector map.
 		 * Beacons are indexed top-to-bottom for each column,
@@ -548,28 +1005,45 @@ public class SavedGameParser extends DatParser {
 			beaconList.add( beacon );
 		}
 
+		public ArrayList<BeaconState> getBeaconList() { return beaconList; }
+
 		public void addQuestEvent( String questEventId, int questBeaconId ) {
 			questEventMap.put( questEventId, new Integer(questBeaconId) );
+		}
+
+		public LinkedHashMap<String, Integer> getQuestEventMap() {
+			return questEventMap;
 		}
 
 		public void addDistantQuestEvent( String questEventId ) {
 			distantQuestEventList.add( questEventId );
 		}
 
+		public ArrayList<String> getDistantQuestEventList() {
+			return distantQuestEventList;
+		}
+
 		/** Sets where the player is. */
 		public void setCurrentBeaconId( int n ) { currentBeaconId = n; }
+		public int getCurrentBeaconId() { return currentBeaconId; }
 
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
 		}
+		public ShipState getNearbyShipState() { return nearbyShipState; }
 
 		public void setRebelFlagshipState( RebelFlagshipState flagshipState ) {
 			this.rebelFlagshipState = flagshipState;
+		}
+		public RebelFlagshipState getRebelFlagshipState() {
+			return rebelFlagshipState;
 		}
 
 		public void addMysteryBytes( MysteryBytes m ) {
 			mysteryList.add(m);
 		}
+
+		public ArrayList<MysteryBytes> getMysteryList() { return mysteryList; }
 
 		@Override
 		public String toString() {
@@ -577,7 +1051,9 @@ public class SavedGameParser extends DatParser {
 			boolean first = true;
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
-			result.append(String.format("Sector:                 %4d\n", sectorNumber));
+			result.append(String.format("Difficulty:             %s\n", (difficultyEasy ? "Easy" : "Normal") ));
+			result.append(String.format("Sector:                 %4d (%d)\n", sectorNumber, sectorNumber+1));
+			result.append(String.format("Unknown?:               %4d\n", unknownHeaderAlpha));
 			result.append(String.format("Total Ships Defeated:   %4d\n", totalShipsDefeated));
 			result.append(String.format("Total Beacons Explored: %4d\n", totalBeaconsExplored));
 			result.append(String.format("Total Scrap Collected:  %4d\n", totalScrapCollected));
@@ -592,11 +1068,19 @@ public class SavedGameParser extends DatParser {
 			if ( playerShipState != null )
 				result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
+			result.append("\nCargo...\n");
+			for (String cargoItemId : cargoIdList) {
+				result.append(String.format("CargoItemId: %s\n", cargoItemId));
+			}
+
 			result.append("\nSector Data...\n");
+			result.append( String.format("Sector Tree Seed:   %5d\n", sectorTreeSeed) );
 			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
 			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
+			result.append( String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge) );
 			result.append( String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod) );
 			result.append( String.format("Sector Hazards Map: %b\n", sectorHazardsVisible) );
+			result.append( String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds) );
 			result.append( String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible) );
 			result.append( String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop) );
 			result.append( String.format("Flagship Moving:    %b\n", rebelFlagshipApproaching) );
@@ -664,14 +1148,13 @@ public class SavedGameParser extends DatParser {
 		private int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
 		private int reservePowerCapacity;
-		private ArrayList<SystemState> systemList = new ArrayList<SystemState>();
+		private LinkedHashMap<String, SystemState> systemMap = new LinkedHashMap<String, SystemState>();
 		private ArrayList<RoomState> roomList = new ArrayList<RoomState>();
 		private LinkedHashMap<Point, Integer> breachMap = new LinkedHashMap<Point, Integer>();
-		private LinkedHashMap<int[], DoorState> doorMap = new LinkedHashMap<int[], DoorState>();
+		private LinkedHashMap<ShipLayout.DoorCoordinate, DoorState> doorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, DoorState>();
 		private ArrayList<WeaponState> weaponList = new ArrayList<WeaponState>();
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
-		private ArrayList<String> cargoIdList = new ArrayList<String>();
 
 		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean auto) {
 			this.shipName = shipName;
@@ -679,6 +1162,13 @@ public class SavedGameParser extends DatParser {
 			this.shipLayoutId = shipLayoutId;
 			this.auto = auto;
 		}
+
+		public void setShipName( String s ) { shipName = s; }
+
+		public String getShipName() { return shipName; }
+		public String getShipBlueprintId() { return shipBlueprintId; }
+		public String getShipLayoutId() { return shipLayoutId; }
+		public boolean isAuto() { return auto; }
 
 		/**
 		 * Sets the basename to use when loading ship images.
@@ -693,9 +1183,14 @@ public class SavedGameParser extends DatParser {
 		public void setShipGraphicsBaseName( String shipGfxBaseName ) {
 			this.shipGfxBaseName = shipGfxBaseName;
 		}
+		public String getShipGraphicsBaseName() { return shipGfxBaseName; }
 
 		public void addStartingCrewMember( StartingCrewState sc ) {
 			startingCrewList.add(sc);
+		}
+
+		public ArrayList<StartingCrewState> getStartingCrewList() {
+			return startingCrewList;
 		}
 
 		public void setHullAmt( int n ) { hullAmt = n; }
@@ -704,32 +1199,54 @@ public class SavedGameParser extends DatParser {
 		public void setMissilesAmt( int n ) { missilesAmt = n; }
 		public void setScrapAmt( int n ) { scrapAmt = n; }
 
+		public int getHullAmt() { return hullAmt; }
+		public int getFuelAmt() { return fuelAmt; }
+		public int getDronePartsAmt() { return dronePartsAmt; }
+		public int getMissilesAmt() { return missilesAmt; }
+		public int getScrapAmt() { return scrapAmt; }
+
 		public void addCrewMember( CrewState c ) {
 			crewList.add(c);
 		}
-
-		public void setReservePowerCapacity( int n ) {
-			reservePowerCapacity = n;
+		public CrewState getCrewMember( int n ) {
+			return crewList.get(n);
 		}
+
+		public ArrayList<CrewState> getCrewList() { return crewList; }
+
+		public void setReservePowerCapacity( int n ) { reservePowerCapacity = n; }
+		public int getReservePowerCapacity() { return reservePowerCapacity; }
 
 		public void addSystem( SystemState s ) {
-			systemList.add(s);
+			systemMap.put( s.getName(), s );
 		}
+		public SystemState getSystem( String name ) {
+			return systemMap.get( name );
+		}
+
+		public LinkedHashMap<String, SystemState> getSystemMap() { return systemMap; }
 
 		public void addRoom( RoomState r ) {
 			roomList.add(r);
 		}
+		public RoomState getRoom( int roomId ) {
+			return roomList.get( roomId );
+		}
+
+		public ArrayList<RoomState> getRoomList() { return roomList; }
 
 		/**
 		 * Adds a hull breach.
 		 *
-		 * @param x the 0-based Nth floor-square from the left (minus ShipLayout X_OFFSET)
-		 * @param y the 0-based Nth floor-square from the top (minus ShipLayout Y_OFFSET)
+		 * @param x the 0-based Nth floor-square from the left (plus ShipLayout X_OFFSET)
+		 * @param y the 0-based Nth floor-square from the top (plus ShipLayout Y_OFFSET)
 		 * @param breachHealth 0 to 100.
 		 */
 		public void setBreach( int x, int y, int breachHealth ) {
 			breachMap.put( new Point(x, y), new Integer(breachHealth) );
 		}
+
+		public LinkedHashMap<Point, Integer> getBreachMap() { return breachMap; }
 
 		/**
 		 * Adds a door.
@@ -740,26 +1257,43 @@ public class SavedGameParser extends DatParser {
 		 * @see net.blerf.ftl.model.ShipLayout
 		 */
 		public void setDoor( int wallX, int wallY, int vertical, DoorState d ) {
-			int[] doorCoord = new int[] { wallX, wallY, vertical };
+			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
 			doorMap.put(doorCoord, d);
 		}
+		public DoorState getDoor( int wallX, int wallY, int vertical ) {
+			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
+			return doorMap.get(doorCoord);
+		}
+
+		/**
+		 * Returns the map containing this ship's door states.
+		 *
+		 * Do not rely on the keys' order. ShipLayout config
+		 * files have a different order than saved game files.
+		 * Entries will be in whatever order setDoor was
+		 * called, which generally will be in the saved game
+		 * file's order.
+		 */
+		public LinkedHashMap<ShipLayout.DoorCoordinate, DoorState> getDoorMap() { return doorMap; }
 
 		public void addWeapon( WeaponState w ) {
 			weaponList.add(w);
 		}
 
+		public ArrayList<WeaponState> getWeaponList() { return weaponList; }
+
 		public void addDrone( DroneState d ) {
 			droneList.add(d);
 		}
 
+		public ArrayList<DroneState> getDroneList() { return droneList; }
+
 		public void addAugmentId( String augmentId ) {
 			augmentIdList.add(augmentId);
 		}
-		
-		public void addCargoItemId( String cargoItemId ) {
-			cargoIdList.add( cargoItemId );
-		}
 
+		public ArrayList<String> getAugmentIdList() { return augmentIdList; }
+		
 		@Override
 		public String toString() {
 			// The blueprint fetching might vary if auto == true.
@@ -804,10 +1338,10 @@ public class SavedGameParser extends DatParser {
 			result.append("\nSystems...\n");
 			result.append(String.format("  Reserve Power Capacity: %2d\n", reservePowerCapacity));
 			first = false;
-			for (SystemState s : systemList) {
+			for (Map.Entry<String, SystemState> entry : systemMap.entrySet()) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
-				result.append(s.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append(entry.getValue().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nRooms...\n");
@@ -839,15 +1373,15 @@ public class SavedGameParser extends DatParser {
 			result.append("\nDoors...\n");
 			int doorId = -1;
 			first = true;
-			for (Map.Entry<int[], DoorState> entry : doorMap.entrySet()) {
+			for (Map.Entry<ShipLayout.DoorCoordinate, DoorState> entry : doorMap.entrySet()) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 
-				int[] doorCoord = entry.getKey();
+				ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 				DoorState d = entry.getValue();
-				String orientation = (doorCoord[2]==1 ? "V" : "H");
+				String orientation = (doorCoord.v==1 ? "V" : "H");
 
-				result.append(String.format("DoorId: %2d (%2d,%2d,%2s)\n", ++doorId, doorCoord[0], doorCoord[1], orientation));
+				result.append(String.format("DoorId: %2d (%2d,%2d,%2s)\n", ++doorId, doorCoord.x, doorCoord.y, orientation));
 				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
@@ -872,11 +1406,6 @@ public class SavedGameParser extends DatParser {
 				result.append(String.format("AugmentId: %s\n", augmentId));
 			}
 			
-			result.append("\nCargo...\n");
-			for (String cargoItemId : cargoIdList) {
-				result.append(String.format("CargoItemId: %s\n", cargoItemId));
-			}
-
 			return result.toString();
 		}
 	}
@@ -936,8 +1465,6 @@ public class SavedGameParser extends DatParser {
 		private int x, y;
 		private int gender;  // 1=Male, 0=Female.
 
-		private int unknownAlpha;
-
 		public CrewState() {
 		}
 
@@ -962,17 +1489,45 @@ public class SavedGameParser extends DatParser {
 		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
 		public void setSkillMasteries( int n ) { skillMasteries = n; }
 
+		public String getName() { return name; }
+		public String getRace() { return race; }
+		public int getHealth() { return health; }
+		public int getX() { return x; }
+		public int getY() { return y; }
+		public int getRoomId() { return blueprintRoomId; }
+		public int getRoomSquare() { return roomSquare; }
+		public boolean isPlayerControlled() { return playerControlled; }
+		public int getPilotSkill() { return pilotSkill; }
+		public int getEngineSkill() { return engineSkill; }
+		public int getShieldSkill() { return shieldSkill; }
+		public int getWeaponSkill() { return weaponSkill; }
+		public int getRepairSkill() { return repairSkill; }
+		public int getCombatSkill() { return combatSkill; }
+		public int getGender() { return gender; }
+		public int getRepairs() { return repairs; }
+		public int getCombatKills() { return combatKills; }
+		public int getPilotedEvasions() { return pilotedEvasions; }
+		public int getJumpsSurvived() { return jumpsSurvived; }
+		public int getSkillMasteries() { return skillMasteries; }
+
 		/**
 		 * Sets whether this crew member is a hostile drone.
-		 * Bizarrely, this trumps race and playerControlled.
+		 * Upon loading after setting this on your crew,
+		 * name will change to "Anti-Personnel Drone", race
+		 * will be "battle", and playerControlled will be
+		 * false.
 		 *
 		 * Presumably this is so intruders can persist without
 		 * a ship, which would normally have a drones section
 		 * to contain them.
+		 *
+		 * TODO: Jump away from Boss #2 to see what its
+		 * drone is (blueprints.xml mentions BOARDER_BOSS).
 		 */
 		public void setEnemyBoardingDrone( boolean b ) {
 			enemyBoardingDrone = b;
 		}
+		public boolean isEnemyBoardingDrone() { return enemyBoardingDrone; }
 
 		@Override
 		public String toString() {
@@ -1035,6 +1590,8 @@ public class SavedGameParser extends DatParser {
 			this.name = name;
 		}
 
+		public String getName() { return name; }
+
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
 		public void setDamagedBars( int n ) { damagedBars = n; }
@@ -1042,6 +1599,14 @@ public class SavedGameParser extends DatParser {
 		public void setRepairProgress( int n ) { repairProgress = n; }
 		public void setBurnProgress( int n ) { burnProgress = n; }
 		public void setMiscTicks( int n ) { miscTicks = n; }
+
+		public int getCapacity() { return capacity; }
+		public int getPower() { return power; }
+		public int getDamagedBars() { return damagedBars; }
+		public int getIonizedBars() { return ionizedBars; }
+		public int getRepairProgress() { return repairProgress; }
+		public int getBurnProgress() { return burnProgress; }
+		public int getMiscTicks() { return miscTicks; }
 
 		@Override
 		public String toString() {
@@ -1067,6 +1632,7 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<int[]> squareList = new ArrayList<int[]>();
 
 		public void setOxygen( int n ) { oxygen = n; }
+		public int getOxygen() { return oxygen; }
 
 		/**
 		 * Adds a floor square to the room.
@@ -1083,6 +1649,11 @@ public class SavedGameParser extends DatParser {
 		public void addSquare( int fireHealth, int ignitionProgress, int gamma ) {
 			squareList.add( new int[] {fireHealth, ignitionProgress, gamma} );
 		}
+		public int[] getSquare( int n ) {
+			return squareList.get(n);
+		}
+
+		public ArrayList<int[]> getSquareList() { return squareList; }
 
 		@Override
 		public String toString() {
@@ -1099,18 +1670,23 @@ public class SavedGameParser extends DatParser {
 
 	public class DoorState {
 		private boolean open;
+		private boolean walkingThrough;
 
-		private int unknownAlpha;
-
-		public DoorState( boolean open, int alpha ) {
+		public DoorState( boolean open, boolean walkingThrough ) {
 			this.open = open;
-			this.unknownAlpha = alpha;
+			this.walkingThrough = walkingThrough;
 		}
+
+		public void setOpen( boolean b ) { open = b; }
+		public void setWalkingThrough( boolean b ) { walkingThrough = b; }
+
+		public boolean isOpen() { return open; }
+		public boolean isWalkingThrough() { return walkingThrough; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			result.append(String.format("Open: %b, Alpha?: %d\n", open, unknownAlpha));
+			result.append(String.format("Open: %b, Walking Through: %b\n", open, walkingThrough));
 			return result.toString();
 		}
 	}
@@ -1127,6 +1703,17 @@ public class SavedGameParser extends DatParser {
 			this.armed = armed;
 			this.cooldownTicks = cooldownTicks;
 		}
+
+		public String getWeaponId() { return weaponId; }
+
+		public void setArmed( boolean b ) {
+			armed = b;
+			if ( b == false ) cooldownTicks = 0;
+		}
+		public boolean isArmed() { return armed; }
+
+		public void setCooldownTicks( int n ) { cooldownTicks = n; }
+		public int getCooldownTicks() { return cooldownTicks; }
 
 		@Override
 		public String toString() {
@@ -1158,6 +1745,8 @@ public class SavedGameParser extends DatParser {
 			this.droneId = droneId;
 		}
 
+		public String getDroneId() { return droneId; }
+
 		public void setArmed( boolean b ) { armed = b; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public void setX( int n ) { x = n; }
@@ -1165,6 +1754,14 @@ public class SavedGameParser extends DatParser {
 		public void setRoomId( int n ) { blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setHealth( int n ) { health = n; }
+
+		public boolean isArmed() { return armed; }
+		public boolean isPlayerControlled() { return playerControlled; }
+		public int getX() { return x; }
+		public int getY() { return y; }
+		public int getRoomId() { return blueprintRoomId; }
+		public int getRoomSquare() { return roomSquare; }
+		public int getHealth() { return health; }
 
 		@Override
 		public String toString() {
@@ -1215,7 +1812,7 @@ public class SavedGameParser extends DatParser {
 				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("Bkg Sprite:        %s\n", bgSpriteImageInnerPath));
 				result.append(String.format("Bkg Sprite Coords: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
-				result.append(String.format("Unknown:           %3d\n", unknownVisitedAlpha));
+				result.append(String.format("Unknown?:          %3d\n", unknownVisitedAlpha));
 			}
 			
 			result.append(String.format("Seen:              %b\n", seen));
@@ -1224,7 +1821,7 @@ public class SavedGameParser extends DatParser {
 			if ( enemyPresent ) {
 				result.append(String.format("  Ship Event ID:          %s\n", shipEventId));
 				result.append(String.format("  Ship Blueprint List ID: %s\n", shipBlueprintListId));
-				result.append(String.format("  Unknown:                %5d\n", unknownEnemyPresentAlpha));
+				result.append(String.format("  Unknown?:               %5d\n", unknownEnemyPresentAlpha));
 			}
 			
 			result.append(String.format("Fleets Present:    %s\n", fleetPresence));
@@ -1415,6 +2012,9 @@ public class SavedGameParser extends DatParser {
 			return result.toString();
 		}
 
+		public List<StoreItem> getItems() {
+			return items;
+		}
 		public StoreItemType getItemType() {
 			return itemType;
 		}
@@ -1436,6 +2036,14 @@ public class SavedGameParser extends DatParser {
 			this.itemId = itemId;
 		}
 
+		public boolean isAvailable() {
+			return available;
+		}
+
+		public String getItemId() {
+			return itemId;
+		}
+
 		@Override
 		public String toString() {
 			return String.format("%s (%s)\n", itemId, (available ? "Available" : "Sold Out"));
@@ -1447,7 +2055,7 @@ public class SavedGameParser extends DatParser {
 	public class RebelFlagshipState {
 		private String[] shipBlueprintIds;
 		private int pendingStage = 1;
-		private LinkedHashMap<Integer, Boolean> occupancyMap = new LinkedHashMap<Integer, Boolean>();
+		private LinkedHashMap<Integer, Integer> occupancyMap = new LinkedHashMap<Integer, Integer>();
 
 		/**
 		 * Constructor.
@@ -1461,6 +2069,10 @@ public class SavedGameParser extends DatParser {
 			this.shipBlueprintIds = shipBlueprintIds;
 		}
 
+		public String[] getShipBlueprintIds() {
+			return shipBlueprintIds;
+		}
+
 		/**
 		 * Sets the next version of the flagship that will be encountered (1-based).
 		 */
@@ -1469,9 +2081,12 @@ public class SavedGameParser extends DatParser {
 				throw new IndexOutOfBoundsException( "Attempted to set 1-based flagship stage "+ pendingStage +" of "+ shipBlueprintIds.length +" total" );
 			this.pendingStage = pendingStage;
 		}
+		public int getPendingStage() {
+			return pendingStage;
+		}
 
 		/**
-		 * Sets whether a room had a crew member in the last seen layout.
+		 * Sets whether a room had crew members in the last seen layout.
 		 *
 		 * Stage 1 sets this, but doesn't read it.
 		 * Fleeing stage 1, altering these bytes, then returning
@@ -1484,16 +2099,21 @@ public class SavedGameParser extends DatParser {
 		 *   Stage 1: 0x13=19 rooms
 		 *   Stage 2: 0x0F=15 rooms
 		 *   Stage 3: 0x0B=11 rooms
+		 *   Having 0 rooms is allowed, meaning AI took over.
 		 *
 		 * Stage 2 will read altered bytes on additional skirmishes.
 		 *
 		 * Stage 3 probably will, too. (TODO: Confirm this.)
 		 *
 		 * @param roomId a room in the last seen stage's shipLayout
-		 * @param b true if there was crew, false otherwise
+		 * @param n the number of crew in that room
 		 */
-		public void setPreviousOccupancy( int roomId, boolean b ) {
-			occupancyMap.put( new Integer(roomId), new Boolean(b) );
+		public void setPreviousOccupancy( int roomId, int n ) {
+			occupancyMap.put( new Integer(roomId), new Integer(n) );
+		}
+
+		public LinkedHashMap<Integer, Integer> getOccupancyMap() {
+			return occupancyMap;
 		}
 
 		@Override
@@ -1511,14 +2131,14 @@ public class SavedGameParser extends DatParser {
 			result.append( String.format("Pending Ship Type: %s\n", shipBlueprintIds[pendingStage-1] ) );
 
 			result.append( "\nOccupancy of Last Seen Type...\n" );
-			for (Map.Entry<Integer, Boolean> entry : occupancyMap.entrySet()) {
+			for (Map.Entry<Integer, Integer> entry : occupancyMap.entrySet()) {
 				int roomId = entry.getKey().intValue();
-				boolean b = entry.getValue().booleanValue();
+				int occupantCount = entry.getValue().intValue();
 
 				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
 				if (roomName == null) roomName = "Empty";
 
-				result.append( String.format("RoomId: %2d (%-10s), Occupied: %b\n", roomId, roomName, b) );
+				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, roomName, occupantCount) );
 			}
 
 			return result.toString();

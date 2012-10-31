@@ -11,6 +11,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.RasterFormatException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -65,12 +66,15 @@ import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.parser.DataManager;
+import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.parser.ProfileParser;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.ExtensionFileFilter;
 import net.blerf.ftl.ui.GeneralAchievementsPanel;
 import net.blerf.ftl.ui.ProfileStatsPanel;
 import net.blerf.ftl.ui.SavedGameDumpPanel;
+import net.blerf.ftl.ui.SavedGameGeneralPanel;
+import net.blerf.ftl.ui.SavedGameFloorplanPanel;
 import net.blerf.ftl.ui.ShipUnlockPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
@@ -84,7 +88,7 @@ public class FTLFrame extends JFrame {
 	private static final Logger log = LogManager.getLogger(FTLFrame.class);
 
 	private Profile profile;
-	SavedGameParser.SavedGameState gameState = null;  // Can't make an empty one yet.
+	SavedGameParser.SavedGameState gameState = null;
 	
 	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource("open.gif") );
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource("save.gif") );
@@ -114,6 +118,8 @@ public class FTLFrame extends JFrame {
 	private GeneralAchievementsPanel generalAchievementsPanel;
 	private ProfileStatsPanel statsPanel;
 	private SavedGameDumpPanel savedGameDumpPanel;
+	private SavedGameGeneralPanel savedGameGeneralPanel;
+	private SavedGameFloorplanPanel savedGameFloorplanPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -188,8 +194,12 @@ public class FTLFrame extends JFrame {
 		savedGamePane.add( savedGameTabsPane, BorderLayout.CENTER );
 
 		savedGameDumpPanel = new SavedGameDumpPanel(this);
+		savedGameGeneralPanel = new SavedGameGeneralPanel(this);
+		savedGameFloorplanPanel = new SavedGameFloorplanPanel(this);
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
+		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
+		savedGameTabsPane.add( "Ship", savedGameFloorplanPanel );
 
 
 		JPanel statusPanel = new JPanel();
@@ -266,35 +276,36 @@ public class FTLFrame extends JFrame {
 		if (race == null || race.length() == 0) return null;
 
 		ImageIcon result = null;
-		int offsetX = 0, offsetY = 0, w = 36, h = 36;
+		int offsetX = 0, offsetY = 0, w = 35, h = 35;
 		InputStream in = null;
 		try {
 			in = DataManager.get().getResourceInputStream("img/people/"+ race +"_player_yellow.png");
-			BufferedImage big = ImageIO.read( in );
-			if (offsetX+w <= big.getWidth() || offsetY+h <= big.getHeight()) {
-				BufferedImage cropped = big.getSubimage(offsetX, offsetY, w, h);
+			BufferedImage bigImage = ImageIO.read( in );
+			BufferedImage croppedImage = bigImage.getSubimage(offsetX, offsetY, w, h);
 
-				// Shrink the crop area until non-transparent pixels are hit.
-				int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
-				int highX = -1, highY = -1;
-				for (int testY=0; testY < h; testY++) {
-					for (int testX=0; testX < w; testX++) {
-						int pixel = cropped.getRGB(testX, testY);
-						int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
-						if (alpha != 0) {
-							if (testX > highX) highX = testX;
-							if (testY > highY) highY = testY;
-							if (testX < lowX) lowX = testX;
-							if (testY < lowY) lowY = testY;
-						}
+			// Shrink the crop area until non-transparent pixels are hit.
+			int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
+			int highX = -1, highY = -1;
+			for (int testY=0; testY < h; testY++) {
+				for (int testX=0; testX < w; testX++) {
+					int pixel = croppedImage.getRGB(testX, testY);
+					int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
+					if (alpha != 0) {
+						if (testX > highX) highX = testX;
+						if (testY > highY) highY = testY;
+						if (testX < lowX) lowX = testX;
+						if (testY < lowY) lowY = testY;
 					}
 				}
-				log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
-				if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
-					cropped = cropped.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
-				}
-				result = new ImageIcon(cropped);
 			}
+			log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
+			if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
+				croppedImage = croppedImage.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
+			}
+			result = new ImageIcon(croppedImage);
+
+		} catch (RasterFormatException e) {
+			log.error( "Failed to load and crop race ("+ race +")", e );
 
 		} catch (IOException e) {
 			log.error( "Failed to load and crop race ("+ race +")", e );
@@ -586,6 +597,18 @@ public class FTLFrame extends JFrame {
 						loadGameState( gs );
 
 						log.trace( "Read completed successfully" );
+
+						if ( gameState.getMysteryList().size() > 0 ) {
+							StringBuilder musteryBuf = new StringBuilder();
+							musteryBuf.append("This saved game file contains mystery bytes the developers hadn't anticipated!\n");
+							boolean first = true;
+							for (MysteryBytes m : gameState.getMysteryList()) {
+								if (first) { first = false; }
+								else { musteryBuf.append(",\n"); }
+								musteryBuf.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+							}
+							log.warn( musteryBuf.toString() );
+						}
 						
 					} catch( Exception f ) {
 						log.error( "Error reading saved game", f );
@@ -599,13 +622,46 @@ public class FTLFrame extends JFrame {
 		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing saved game.") );
 		toolbar.add( openButton );
 
+		JButton saveButton = new JButton("Save", saveIcon);
+		saveButton.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				log.trace( "Save game state button clicked" );
+
+				if ( gameState == null ) return;
+
+				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					FileOutputStream out = null;
+					try {
+						File file = fc.getSelectedFile();
+						log.trace("File selected: " + file.getAbsolutePath());
+						SavedGameParser parser = new SavedGameParser();
+						out = new FileOutputStream( file );
+						FTLFrame.this.updateGameState(gameState);
+						parser.writeSavedGame(out, gameState);
+						
+					} catch( IOException f ) {
+						log.error( "Error writing game state", f );
+						showErrorDialog( "Error saving game state:\n" + f.getMessage() );
+					} finally {
+						try {if (out != null) out.close();}
+						catch (IOException g) {}
+					}
+				} else {
+					log.trace( "Save dialog cancelled" );
+				}
+			}
+		});
+		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current game state.") );
+		toolbar.add( saveButton );
+
 		JButton dumpButton = new JButton("Dump", saveIcon);
 		dumpButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Dump saved game button clicked" );
+				log.trace( "Dump game state button clicked" );
 
-				if ( gameState == null ) return;  // No default empty state yet.
+				if ( gameState == null ) return;
 
 				JFileChooser dumpChooser = new JFileChooser();
 				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
@@ -628,8 +684,8 @@ public class FTLFrame extends JFrame {
 						out.close();
 						
 					} catch( IOException f ) {
-						log.error( "Error dumping saved game", f );
-						showErrorDialog( "Error dumping saved game:\n"+ f.getMessage() );
+						log.error( "Error dumping game state", f );
+						showErrorDialog( "Error dumping game state:\n"+ f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
@@ -638,7 +694,7 @@ public class FTLFrame extends JFrame {
 					log.trace( "Dump dialog cancelled" );
 			}
 		});
-		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump saved game info to a text file.") );
+		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump game state info to a text file.") );
 		toolbar.add( dumpButton );
 
 		toolbar.add( Box.createHorizontalGlue() );
@@ -893,8 +949,19 @@ public class FTLFrame extends JFrame {
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
 
 		savedGameDumpPanel.setGameState( gs );
+		savedGameFloorplanPanel.setGameState( gs );
+		savedGameGeneralPanel.setGameState( gs );
 
 		gameState = gs;
+	}
+
+	public void updateGameState( SavedGameParser.SavedGameState gs ) {
+
+		// savedGameDumpPanel doesn't modify anything.
+		savedGameFloorplanPanel.updateGameState( gs );
+		savedGameGeneralPanel.updateGameState( gs );
+
+		loadGameState(gs);
 	}
 
 	public void setStatusText( String text ) {
