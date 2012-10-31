@@ -24,6 +24,10 @@ public class Parser {
 		
 	}
 
+	protected void writeBool(OutputStream out, boolean b) throws IOException {
+		writeInt(out, (b ? 1 : 0) );
+	}
+
 	protected int readInt(InputStream in) throws IOException {
 		
 		int numRead = 0;
