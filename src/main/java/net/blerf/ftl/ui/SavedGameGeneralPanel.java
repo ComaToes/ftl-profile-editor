@@ -7,9 +7,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -22,13 +19,11 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
-import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.ShipBlueprint;
 
@@ -37,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 
 
 public class SavedGameGeneralPanel extends JPanel {
-	private enum ContentType { STRING, INTEGER, BOOLEAN, SLIDER };
 
 	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
 
@@ -45,11 +39,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	                            MISSILES="Missiles", SCRAP="Scrap", HAZARDS_VISIBLE="Sector Hazards Visible";
 
 	private FTLFrame frame;
-
-	private HashMap<String, JTextField> stringMap = new HashMap<String, JTextField>();
-	private HashMap<String, JCheckBox> boolMap = new HashMap<String, JCheckBox>();
-	private HashMap<String, JSlider> sliderMap = new HashMap<String, JSlider>();
-	private HashMap<String, JLabel> reminderMap = new HashMap<String, JLabel>();
+	private FieldEditorPanel generalPanel = null;
 
 	public SavedGameGeneralPanel( FTLFrame frame ) {
 		this.setLayout( new GridBagLayout() );
@@ -65,30 +55,20 @@ public class SavedGameGeneralPanel extends JPanel {
 		gridC.gridx = 0;
 		gridC.gridy = 0;
 
-		JPanel contentPane = new JPanel( new GridBagLayout() );
-		contentPane.setBorder( BorderFactory.createTitledBorder("General") );
+		generalPanel = new FieldEditorPanel( true );
+		generalPanel.setBorder( BorderFactory.createTitledBorder("General") );
 
-		// No default width for col 0.
-		gridC.gridx = 0;
-		contentPane.add( Box.createVerticalStrut(1), gridC );
-		gridC.gridx++;
-		contentPane.add( Box.createHorizontalStrut(120), gridC );
-		gridC.gridx++;
-		contentPane.add( Box.createHorizontalStrut(90), gridC );
-		gridC.gridy++;
+		generalPanel.addBlankRow();
+		generalPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
+		generalPanel.addRow( HULL, FieldEditorPanel.ContentType.SLIDER );
+		generalPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
+		generalPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
+		generalPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
+		generalPanel.addRow( SCRAP, FieldEditorPanel.ContentType.INTEGER );
+		generalPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
+		generalPanel.addBlankRow();
 
-		gridC.insets = new Insets(2, 4, 2, 4);
-		addBlankRow( contentPane, gridC );
-		addRow( contentPane, SHIP_NAME, ContentType.STRING, gridC );
-		addRow( contentPane, HULL, ContentType.SLIDER, gridC );
-		addRow( contentPane, FUEL, ContentType.INTEGER, gridC );
-		addRow( contentPane, DRONE_PARTS, ContentType.INTEGER, gridC );
-		addRow( contentPane, MISSILES, ContentType.INTEGER, gridC );
-		addRow( contentPane, SCRAP, ContentType.INTEGER, gridC );
-		addRow( contentPane, HAZARDS_VISIBLE, ContentType.BOOLEAN, gridC );
-		addBlankRow( contentPane, gridC );
-
-		boolMap.get(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
+		generalPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.fill = GridBagConstraints.NONE;
@@ -96,7 +76,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		thisC.weighty = 0.0;
 		thisC.gridx = 0;
 		thisC.gridy = 0;
-		this.add( contentPane, thisC );
+		this.add( generalPanel, thisC );
 
 		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weighty = 1.0;
@@ -107,122 +87,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		setGameState( null );
 	}
 
-	/**
-	 * Constructs JComponents for a given type of value.
-	 * A row consists of a static label, some JComponent, and a reminder label.
-	 * The last two will be accessable later via Maps.
-	 */
-	private void addRow( JPanel parent, String valueName, ContentType contentType, GridBagConstraints gridC ) {
-		gridC.fill = GridBagConstraints.HORIZONTAL;
-		gridC.gridwidth = 1;
-		gridC.gridx = 0;
-		parent.add( new JLabel( valueName +":" ), gridC );
-
-		gridC.gridx++;
-		if ( contentType == ContentType.STRING ) {
-			gridC.anchor = GridBagConstraints.WEST;
-			JTextField valueField = new JTextField();
-			stringMap.put( valueName, valueField );
-			parent.add( valueField, gridC );
-		}
-		else if ( contentType == ContentType.INTEGER ) {
-			gridC.anchor = GridBagConstraints.WEST;
-			JTextField valueField = new JTextField();
-			valueField.setHorizontalAlignment( JTextField.RIGHT );
-			valueField.setDocument( new RegexDocument("[0-9]*") );
-			stringMap.put( valueName, valueField );
-			parent.add( valueField, gridC );
-		}
-		else if ( contentType == ContentType.BOOLEAN ) {
-			gridC.anchor = GridBagConstraints.CENTER;
-			JCheckBox valueCheck = new JCheckBox();
-			valueCheck.setHorizontalAlignment( SwingConstants.CENTER );
-			boolMap.put( valueName, valueCheck );
-			parent.add( valueCheck, gridC );
-		}
-		else if ( contentType == ContentType.SLIDER ) {
-			gridC.anchor = GridBagConstraints.CENTER;
-			JPanel panel = new JPanel();
-			panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
-			final JSlider valueSlider = new JSlider( JSlider.HORIZONTAL );
-			valueSlider.setPreferredSize( new Dimension(50, valueSlider.getPreferredSize().height) );
-			sliderMap.put( valueName, valueSlider );
-			panel.add(valueSlider);
-			final JTextField valueField = new JTextField(3);
-			valueField.setMaximumSize( valueField.getPreferredSize() );
-			valueField.setHorizontalAlignment( JTextField.RIGHT );
-			valueField.setEditable( false );
-			panel.add(valueField);
-			parent.add( panel, gridC );
-
-			valueSlider.addChangeListener(new ChangeListener() {
-				@Override
-				public void stateChanged(ChangeEvent e) {
-					valueField.setText( ""+valueSlider.getValue() );
-				}
-			});
-		}
-
-		gridC.anchor = GridBagConstraints.WEST;
-		gridC.gridx++;
-		JLabel valueReminder = new JLabel();
-		reminderMap.put( valueName, valueReminder );
-		parent.add( valueReminder, gridC );
-
-		gridC.gridy++;
-	}
-
-	public void addBlankRow( JPanel parent, GridBagConstraints gridC ) {
-		gridC.fill = GridBagConstraints.NONE;
-		gridC.weighty = 0.0;
-		gridC.gridwidth = GridBagConstraints.REMAINDER;
-		gridC.gridx = 0;
-
-		parent.add(Box.createVerticalStrut(12), gridC);
-		gridC.gridy++;
-	}
-
-	private void setStringAndReminder( String valueName, String s ) {
-		JTextField valueField = stringMap.get( valueName );
-		if ( valueField != null ) valueField.setText(s);
-		setReminder( valueName, s );
-	}
-
-	private void setBoolAndReminder( String valueName, boolean b ) {
-		setBoolAndReminder( valueName, b, ""+b );
-	}
-	private void setBoolAndReminder( String valueName, boolean b, String s ) {
-		JCheckBox valueCheck = boolMap.get( valueName );
-		if ( valueCheck != null ) valueCheck.setSelected(b);
-		setReminder( valueName, s );
-	}
-
-	private void setSliderAndReminder( String valueName, int n ) {
-		setSliderAndReminder( valueName, n, ""+n );
-	}
-	private void setSliderAndReminder( String valueName, int n, String s ) {
-		JSlider valueSlider = sliderMap.get( valueName );
-		if ( valueSlider != null ) valueSlider.setValue(n);
-		setReminder( valueName, s );
-	}
-
-	private void setReminder( String valueName, String s ) {
-		JLabel valueReminder = reminderMap.get( valueName );
-		if ( valueReminder != null ) valueReminder.setText( "( "+ s +" )" );
-	}
-
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
-		for (JTextField valueField : stringMap.values())
-			valueField.setText("");
-
-		for (JCheckBox valueCheck : boolMap.values())
-			valueCheck.setSelected(false);
-
-		for (JSlider valueSlider : sliderMap.values())
-			valueSlider.setValue(0);
-
-		for (JLabel valueReminder : reminderMap.values())
-			valueReminder.setText("");
+		generalPanel.reset();
 
 		if ( gameState != null ) {
 			SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
@@ -230,16 +96,16 @@ public class SavedGameGeneralPanel extends JPanel {
 			if ( shipBlueprint == null )
 				throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
 
-			setStringAndReminder( SHIP_NAME, gameState.getPlayerShipName() );
+			generalPanel.setStringAndReminder( SHIP_NAME, gameState.getPlayerShipName() );
 
-			sliderMap.get(HULL).setMaximum( shipBlueprint.getHealth().amount );
-			setSliderAndReminder( HULL, shipState.getHullAmt() );
+			generalPanel.getSlider(HULL).setMaximum( shipBlueprint.getHealth().amount );
+			generalPanel.setSliderAndReminder( HULL, shipState.getHullAmt() );
 
-			setStringAndReminder( FUEL, ""+shipState.getFuelAmt() );
-			setStringAndReminder( DRONE_PARTS, ""+shipState.getDronePartsAmt() );
-			setStringAndReminder( MISSILES, ""+shipState.getMissilesAmt() );
-			setStringAndReminder( SCRAP, ""+shipState.getScrapAmt() );
-			setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
+			generalPanel.setIntAndReminder( FUEL, shipState.getFuelAmt() );
+			generalPanel.setIntAndReminder( DRONE_PARTS, shipState.getDronePartsAmt() );
+			generalPanel.setIntAndReminder( MISSILES, shipState.getMissilesAmt() );
+			generalPanel.setIntAndReminder( SCRAP, shipState.getScrapAmt() );
+			generalPanel.setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
 		}
 
 		this.repaint();
@@ -249,30 +115,30 @@ public class SavedGameGeneralPanel extends JPanel {
 		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 		String newString = null;
 
-		newString = stringMap.get(SHIP_NAME).getText();
+		newString = generalPanel.getString(SHIP_NAME).getText();
 		if ( newString.length() > 0 ) {
 			gameState.setPlayerShipName( newString );
 			shipState.setShipName( newString );
 		}
 
-		shipState.setHullAmt( sliderMap.get(HULL).getValue() );
+		shipState.setHullAmt( generalPanel.getSlider(HULL).getValue() );
 
-		newString = stringMap.get(FUEL).getText();
+		newString = generalPanel.getInt(FUEL).getText();
 		try { shipState.setFuelAmt(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		newString = stringMap.get(DRONE_PARTS).getText();
+		newString = generalPanel.getInt(DRONE_PARTS).getText();
 		try { shipState.setDronePartsAmt(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		newString = stringMap.get(MISSILES).getText();
+		newString = generalPanel.getInt(MISSILES).getText();
 		try { shipState.setMissilesAmt(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		newString = stringMap.get(SCRAP).getText();
+		newString = generalPanel.getInt(SCRAP).getText();
 		try { shipState.setScrapAmt(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		gameState.setSectorHazardsVisible( boolMap.get(HAZARDS_VISIBLE).isSelected() );
+		gameState.setSectorHazardsVisible( generalPanel.getBoolean(HAZARDS_VISIBLE).isSelected() );
 	}
 }
