@@ -42,8 +42,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
 
 	private static final String SHIP_NAME="Ship Name", HULL="Hull", FUEL="Fuel", DRONE_PARTS="Drone Parts",
-	                            MISSILES="Missiles", SCRAP="Scrap", HAZARDS_VISIBLE="Sector Hazards Visible",
-	                            FULL_OXYGEN="Full Oxygen", NO_BREACHES="No Breaches", NO_FIRES="No Fires";
+	                            MISSILES="Missiles", SCRAP="Scrap", HAZARDS_VISIBLE="Sector Hazards Visible";
 
 	private FTLFrame frame;
 
@@ -88,15 +87,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		addRow( contentPane, SCRAP, ContentType.INTEGER, gridC );
 		addRow( contentPane, HAZARDS_VISIBLE, ContentType.BOOLEAN, gridC );
 		addBlankRow( contentPane, gridC );
-		addRow( contentPane, FULL_OXYGEN, ContentType.BOOLEAN, gridC );
-		addRow( contentPane, NO_BREACHES, ContentType.BOOLEAN, gridC );
-		addRow( contentPane, NO_FIRES, ContentType.BOOLEAN, gridC );
-		addBlankRow( contentPane, gridC );
 
 		boolMap.get(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
-		boolMap.get(FULL_OXYGEN).addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
-		boolMap.get(NO_BREACHES).addMouseListener( new StatusbarMouseListener(frame, "Remove all hull breaches.") );
-		boolMap.get(NO_FIRES).addMouseListener( new StatusbarMouseListener(frame, "Remove all fires.") );
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.fill = GridBagConstraints.NONE;
@@ -248,22 +240,6 @@ public class SavedGameGeneralPanel extends JPanel {
 			setStringAndReminder( MISSILES, ""+shipState.getMissilesAmt() );
 			setStringAndReminder( SCRAP, ""+shipState.getScrapAmt() );
 			setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
-
-			int meanOxygen = 0;
-			int breachCount = shipState.getBreachMap().size();
-			int fireCount = 0;
-			for (SavedGameParser.RoomState room : shipState.getRoomList()) {
-				meanOxygen += room.getOxygen();
-
-				for (int[] square : room.getSquareList()) {
-					if ( square[0] > 0 ) fireCount++;
-				}
-			}
-			meanOxygen = Math.round( meanOxygen / ((float)shipState.getRoomList().size()) );
-
-			setBoolAndReminder( FULL_OXYGEN, (meanOxygen == 100), meanOxygen +"%" );
-			setBoolAndReminder( NO_BREACHES, (breachCount == 0), ""+breachCount );
-			setBoolAndReminder( NO_FIRES, (fireCount == 0), ""+fireCount );
 		}
 
 		this.repaint();
@@ -298,23 +274,5 @@ public class SavedGameGeneralPanel extends JPanel {
 		catch (NumberFormatException e) {}
 
 		gameState.setSectorHazardsVisible( boolMap.get(HAZARDS_VISIBLE).isSelected() );
-
-		boolean fullOxygen = boolMap.get(FULL_OXYGEN).isSelected();
-		boolean noBreaches = boolMap.get(NO_BREACHES).isSelected();
-		boolean noFires = boolMap.get(NO_FIRES).isSelected();
-
-		if ( noBreaches ) shipState.getBreachMap().clear();
-
-		for (SavedGameParser.RoomState room : shipState.getRoomList()) {
-			if ( fullOxygen ) room.setOxygen(100);
-
-			if ( noFires ) {
-				for (int[] square : room.getSquareList()) {
-					square[0] = 0;
-					square[1] = 0;
-					// TODO: Determine if the square's third value is relevant.
-				}
-			}
-		}
 	}
 }

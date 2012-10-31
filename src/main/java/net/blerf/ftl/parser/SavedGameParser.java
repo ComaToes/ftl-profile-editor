@@ -1238,8 +1238,8 @@ public class SavedGameParser extends DatParser {
 		/**
 		 * Adds a hull breach.
 		 *
-		 * @param x the 0-based Nth floor-square from the left (minus ShipLayout X_OFFSET)
-		 * @param y the 0-based Nth floor-square from the top (minus ShipLayout Y_OFFSET)
+		 * @param x the 0-based Nth floor-square from the left (plus ShipLayout X_OFFSET)
+		 * @param y the 0-based Nth floor-square from the top (plus ShipLayout Y_OFFSET)
 		 * @param breachHealth 0 to 100.
 		 */
 		public void setBreach( int x, int y, int breachHealth ) {

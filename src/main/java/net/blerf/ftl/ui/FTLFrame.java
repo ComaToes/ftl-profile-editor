@@ -198,8 +198,8 @@ public class FTLFrame extends JFrame {
 		savedGameFloorplanPanel = new SavedGameFloorplanPanel(this);
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
-		savedGameTabsPane.add( "General Editing", new JScrollPane( savedGameGeneralPanel ) );
-		savedGameTabsPane.add( "Ship Thumbnail", new JScrollPane( savedGameFloorplanPanel ) );
+		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
+		savedGameTabsPane.add( "Ship", savedGameFloorplanPanel );
 
 
 		JPanel statusPanel = new JPanel();
@@ -958,6 +958,7 @@ public class FTLFrame extends JFrame {
 	public void updateGameState( SavedGameParser.SavedGameState gs ) {
 
 		// savedGameDumpPanel doesn't modify anything.
+		savedGameFloorplanPanel.updateGameState( gs );
 		savedGameGeneralPanel.updateGameState( gs );
 
 		loadGameState(gs);

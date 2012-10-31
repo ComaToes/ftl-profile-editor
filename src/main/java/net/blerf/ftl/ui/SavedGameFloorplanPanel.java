@@ -11,11 +11,16 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.Transparency;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
@@ -33,12 +38,16 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
+import javax.swing.JScrollPane;
 import javax.swing.JPanel;
+import javax.swing.event.MouseInputAdapter;
 
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
@@ -52,7 +61,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-public class SavedGameFloorplanPanel extends JLayeredPane {
+public class SavedGameFloorplanPanel extends JPanel {
 
 	private static final Integer BASE_LAYER = new Integer(10);
 	private static final Integer FLOOR_LAYER = new Integer(11);
@@ -63,6 +72,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 	private static final Integer FIRE_LAYER = new Integer(18);
 	private static final Integer DOOR_LAYER = new Integer(30);
 	private static final Integer CREW_LAYER = new Integer(40);
+	private static final Integer SQUARE_SELECTION_LAYER = new Integer(50);
 	private static final int squareSize = 35, tileEdge = 1;
 	private static final Logger log = LogManager.getLogger(SavedGameFloorplanPanel.class);
 
@@ -74,59 +84,178 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 	private String shipGfxBaseName = null;
 	private int originX=0, originY=0;
 	private HashMap<Rectangle, Integer> roomRegions = new HashMap<Rectangle, Integer>();
-	private ArrayList<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
+	private HashMap<Rectangle, Integer> squareRegions = new HashMap<Rectangle, Integer>();
+	private ArrayList<RoomSprite> roomSprites = new ArrayList<RoomSprite>();
 	private ArrayList<SystemSprite> systemSprites = new ArrayList<SystemSprite>();
 	private ArrayList<BreachSprite> breachSprites = new ArrayList<BreachSprite>();
 	private ArrayList<FireSprite> fireSprites = new ArrayList<FireSprite>();
+	private ArrayList<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
 	private ArrayList<CrewSprite> crewSprites = new ArrayList<CrewSprite>();
 
+	private JLayeredPane shipPanel = null;
 	private JLabel baseLbl = null;
 	private JLabel floorLbl = null;
-	private JLabel oxygenLbl = null;
 	private JLabel wallLbl = null;
 	private JLabel crewLbl = null;
+	private SquareSelector squareSelector = null;
 
 	public SavedGameFloorplanPanel( FTLFrame frame ) {
+		super( new GridBagLayout() );
 		this.frame = frame;
+
+		shipPanel = new JLayeredPane();
+		shipPanel.setBackground( new Color(212, 208, 200) );
+		shipPanel.setOpaque(true);
+		shipPanel.setPreferredSize( new Dimension(50, 50) );
 
 		baseLbl = new JLabel();
 		baseLbl.setOpaque(false);
 		baseLbl.setBounds( 0, 0, 50, 50 );
-		this.add( baseLbl, BASE_LAYER );
+		shipPanel.add( baseLbl, BASE_LAYER );
 
 		floorLbl = new JLabel();
 		floorLbl.setOpaque(false);
 		floorLbl.setBounds( 0, 0, 50, 50 );
-		this.add( floorLbl, FLOOR_LAYER );
-
-		oxygenLbl = new JLabel();
-		oxygenLbl.setOpaque(false);
-		oxygenLbl.setBounds( 0, 0, 50, 50 );
-		this.add( oxygenLbl, OXYGEN_LAYER );
+		shipPanel.add( floorLbl, FLOOR_LAYER );
 
 		wallLbl = new JLabel();
 		wallLbl.setOpaque(false);
 		wallLbl.setBounds( 0, 0, 50, 50 );
-		this.add( wallLbl, WALL_LAYER );
+		shipPanel.add( wallLbl, WALL_LAYER );
 
-		wallLbl.addMouseMotionListener(new MouseMotionAdapter() {
+		squareSelector = new SquareSelector( roomRegions, squareRegions );
+		squareSelector.setOpaque(false);
+		squareSelector.setBounds( 0, 0, 50, 50 );
+		shipPanel.add( squareSelector, SQUARE_SELECTION_LAYER );
+
+		MouseInputAdapter squareListener = new MouseInputAdapter() {
 			@Override
 			public void mouseMoved(MouseEvent e) {
-				for (Map.Entry<Rectangle, Integer> entry : roomRegions.entrySet()) {
-					if ( entry.getKey().contains(e.getPoint()) ) {
-						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("RoomId: %2d", entry.getValue().intValue()) );
-						break;
-					}
+				squareSelector.setMousePoint( e.getX(), e.getY() );
+			}
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// Left-click triggers callback. Other buttons cancel.
+
+				if ( e.getButton() == MouseEvent.BUTTON1 ) {
+					if ( !squareSelector.isCurrentSquareValid() ) return;
+					boolean keepSelecting = false;
+					SquareSelectionCallback callback = squareSelector.getCallback();
+					if ( callback != null )
+						keepSelecting = callback.squareSelected( squareSelector, squareSelector.getRoomId(), squareSelector.getSquareId() );
+					if ( keepSelecting == false )
+						squareSelector.reset();
 				}
+				else if ( e.getButton() != MouseEvent.NOBUTTON ) {
+					squareSelector.reset();
+				}
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+				squareSelector.setMousePoint( -1, -1 );
+			}
+		};
+		squareSelector.addMouseListener( squareListener );
+		squareSelector.addMouseMotionListener( squareListener );
+
+		JPanel ctrlPanel = new JPanel();
+		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.X_AXIS) );
+		ctrlPanel.add( new JLabel("Select: ") );
+		JButton selectRoomBtn = new JButton("Room");
+		ctrlPanel.add( selectRoomBtn );
+		ctrlPanel.add( Box.createHorizontalStrut(5) );
+		JButton selectCrewBtn = new JButton("Crew");
+		ctrlPanel.add( selectCrewBtn );
+		ctrlPanel.add( Box.createHorizontalStrut(5) );
+		JButton selectBreachBtn = new JButton("Breach");
+		ctrlPanel.add( selectBreachBtn );
+		ctrlPanel.add( Box.createHorizontalStrut(5) );
+		JButton selectFireBtn = new JButton("Fire");
+		ctrlPanel.add( selectFireBtn );
+
+		ctrlPanel.add( Box.createHorizontalStrut(15) );
+		ctrlPanel.add( new JLabel("Reset: ") );
+		JButton resetOxygenBtn = new JButton("Oxygen");
+		ctrlPanel.add( resetOxygenBtn );
+		JButton resetBreachesBtn = new JButton("Breaches");
+		ctrlPanel.add( resetBreachesBtn );
+		JButton resetFiresBtn = new JButton("Fires");
+		ctrlPanel.add( resetFiresBtn );
+
+		selectRoomBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				selectRoom();
+			}
+		});
+		selectCrewBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				selectCrew();
+			}
+		});
+		selectBreachBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				selectBreach();
+			}
+		});
+		selectFireBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				selectFire();
 			}
 		});
 
-		this.setBackground( new Color(212, 208, 200) );
-		this.setOpaque(true);
+		resetOxygenBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				for (RoomSprite roomSprite : roomSprites) {
+					if ( roomSprite.getOxygen() != 100 ) {
+						roomSprite.setOxygen(100);
+					}
+				}
+				shipPanel.repaint();
+			}
+		});
+
+		resetBreachesBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				for (BreachSprite breachSprite : breachSprites)
+					shipPanel.remove( breachSprite );
+				breachSprites.clear();
+				shipPanel.repaint();
+			}
+		});
+
+		resetFiresBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				for (FireSprite fireSprite : fireSprites)
+					shipPanel.remove( fireSprite );
+				fireSprites.clear();
+				shipPanel.repaint();
+			}
+		});
+
+		GridBagConstraints gridC = new GridBagConstraints();
+
+		gridC.fill = GridBagConstraints.BOTH;
+		gridC.weightx = 1.0;
+		gridC.weighty = 1.0;
+		gridC.gridx = 0;
+		gridC.gridy = 0;
+		JScrollPane shipScroll = new JScrollPane( shipPanel );
+		shipScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
+		shipScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
+		this.add( shipScroll, gridC );
+
+		gridC.fill = GridBagConstraints.HORIZONTAL;
+		gridC.weightx = 1.0;
+		gridC.weighty = 0.0;
+		gridC.insets = new Insets(4, 4, 4, 4);
+		gridC.gridx = 0;
+		gridC.gridy++;
+		this.add( ctrlPanel, gridC );
 	}
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
 		String prevGfxBaseName = shipGfxBaseName;
+		squareSelector.reset();
 
 		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
@@ -140,29 +269,34 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		GraphicsDevice gs = ge.getDefaultScreenDevice();
 		GraphicsConfiguration gc = gs.getDefaultConfiguration();
 
-		for (DoorSprite doorSprite : doorSprites)
-			this.remove( doorSprite );
-		doorSprites.clear();
+		for (RoomSprite roomSprite : roomSprites)
+			shipPanel.remove( roomSprite );
+		roomSprites.clear();
 
 		for (SystemSprite systemSprite : systemSprites)
-			this.remove( systemSprite );
+			shipPanel.remove( systemSprite );
 		systemSprites.clear();
 
 		for (BreachSprite breachSprite : breachSprites)
-			this.remove( breachSprite );
+			shipPanel.remove( breachSprite );
 		breachSprites.clear();
 
 		for (FireSprite fireSprite : fireSprites)
-			this.remove( fireSprite );
+			shipPanel.remove( fireSprite );
 		fireSprites.clear();
 
+		for (DoorSprite doorSprite : doorSprites)
+			shipPanel.remove( doorSprite );
+		doorSprites.clear();
+
 		for (CrewSprite crewSprite : crewSprites)
-			this.remove( crewSprite );
+			shipPanel.remove( crewSprite );
 		crewSprites.clear();
 
 		if ( shipGfxBaseName != prevGfxBaseName ) {
-			// Associate graphical regions with roomIds.
+			// Associate graphical regions with roomIds and squares.
 			roomRegions.clear();
+			squareRegions.clear();
 			for (int i=0; i < shipLayout.getRoomCount(); i++) {
 				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
 				int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
@@ -171,7 +305,14 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 				int roomY = originY + squareSize * roomLocY;
 				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
 				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-				roomRegions.put( new Rectangle(roomX, roomY, squaresH*squareSize, squaresV*squareSize), i );
+
+				for (int j=0; j < squaresH*squaresV; j++) {
+					int squareX = roomX + tileEdge + (j%squaresH)*squareSize;
+					int squareY = roomY + tileEdge + (j/squaresH)*squareSize;
+					Rectangle squareRect = new Rectangle(squareX, squareY, squareSize, squareSize);
+					roomRegions.put( squareRect, i );
+					squareRegions.put( squareRect, j );
+				}
 			}
 
 			// Load the fuselage image.
@@ -206,23 +347,32 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 				try {if (in != null) in.close();}
 				catch (IOException f) {}
 	    }
-
-			// Draw walls and floor crevices.
-			BufferedImage wallImage = gc.createCompatibleImage( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight(), Transparency.BITMASK );
-			Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
-			drawWalls( wallG, originX, originY, shipState, shipLayout );
-			wallG.dispose();
-			wallLbl.setIcon( new ImageIcon(wallImage) );
-			wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
 		}
 
-		// Draw oxygen.
-		BufferedImage oxygenImage = gc.createCompatibleImage( baseLbl.getIcon().getIconWidth(), baseLbl.getIcon().getIconHeight(), Transparency.BITMASK );
-		Graphics2D oxygenG = (Graphics2D)oxygenImage.createGraphics();
-		drawOxygen( oxygenG, originX, originY, shipState, shipLayout );
-		oxygenG.dispose();
-		oxygenLbl.setIcon( new ImageIcon(oxygenImage) );
-		oxygenLbl.setSize( new Dimension(oxygenImage.getWidth(), oxygenImage.getHeight()) );
+		// Add doors and draw walls and floor crevices.
+		BufferedImage wallImage = gc.createCompatibleImage( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight(), Transparency.BITMASK );
+		Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
+		drawWalls( wallG, originX, originY, shipState, shipLayout );
+		wallG.dispose();
+		wallLbl.setIcon( new ImageIcon(wallImage) );
+		wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
+
+		// Add oxygen.
+		for (int i=0; i < shipLayout.getRoomCount(); i++) {
+			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
+			int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
+			int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
+			int roomX = originX + squareSize * roomLocX;
+			int roomY = originY + squareSize * roomLocY;
+			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+			int oxygen = shipState.getRoom(i).getOxygen();
+
+			RoomSprite roomSprite = new RoomSprite( i, oxygen );
+			roomSprite.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
+			roomSprites.add( roomSprite );
+			shipPanel.add( roomSprite, OXYGEN_LAYER );
+		}
 
 		// Associate systems' normal names with their image basenames.
 		HashMap<String, String> systemNames = new HashMap<String, String>();
@@ -258,12 +408,26 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		}
 
 		// Add breaches
-		for (Map.Entry<Point, Integer> entry : shipState.getBreachMap().entrySet()) {
-			int breachCoordX = entry.getKey().x-shipLayout.getOffsetX();
-			int breachCoordY = entry.getKey().y-shipLayout.getOffsetY();
+		for (Map.Entry<Point, Integer> breachEntry : shipState.getBreachMap().entrySet()) {
+			int breachCoordX = breachEntry.getKey().x-shipLayout.getOffsetX();
+			int breachCoordY = breachEntry.getKey().y-shipLayout.getOffsetY();
 			int breachX = originX+tileEdge + breachCoordX*squareSize + squareSize/2;
 			int breachY = originY+tileEdge + breachCoordY*squareSize + squareSize/2;
-			addBreachSprite( breachX, breachY, entry.getValue().intValue() );
+
+			Rectangle squareRect = null;
+			int roomId = -1;
+			int squareId = -1;
+			for (Map.Entry<Rectangle, Integer> regionEntry : roomRegions.entrySet()) {
+				if ( regionEntry.getKey().contains( breachX, breachY ) ) {
+					squareRect = regionEntry.getKey();
+					roomId = regionEntry.getValue().intValue();
+					break;
+				}
+			}
+			if ( squareRegions.containsKey(squareRect) )
+				squareId = squareRegions.get(squareRect).intValue();
+
+			addBreachSprite( breachX, breachY, roomId, squareId, breachEntry.getValue().intValue() );
 		}
 
 		// Add fires.
@@ -282,7 +446,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 				if ( fireHealth > 0 ) {
 					int fireX = roomX+tileEdge + (s%squaresH)*squareSize + squareSize/2;
 					int fireY = roomY+tileEdge + (s/squaresH)*squareSize + squareSize/2;
-					addFireSprite( fireX, fireY, fireHealth );
+					addFireSprite( fireX, fireY, i, s, fireHealth );
 				}
 			}
 		}
@@ -299,11 +463,151 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 
 			int crewX = roomX + tileEdge + (crewState.getRoomSquare()%squaresH)*squareSize + squareSize/2;
 			int crewY = roomY + tileEdge + (crewState.getRoomSquare()/squaresH)*squareSize + squareSize/2;
-			addCrewSprite( crewX, crewY, crewState.getRace(), crewState.getName(), crewState.isPlayerControlled(), crewState.isEnemyBoardingDrone() );
+			addCrewSprite( crewX, crewY, crewState );
 		}
 
-		this.revalidate();
-		this.repaint();
+		squareSelector.setSize( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight() );
+
+		shipPanel.setPreferredSize( new Dimension(floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight()) );
+
+		shipPanel.revalidate();
+		shipPanel.repaint();
+	}
+
+	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
+		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
+		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
+		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
+		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
+
+		// Oxygen.
+		for (int i=0; i < shipLayout.getRoomCount(); i++) {
+			SavedGameParser.RoomState roomState = shipState.getRoom(i);
+			roomState.setOxygen( roomSprites.get(i).getOxygen() );
+		}
+
+		// Breaches.
+		Map<Point, Integer> breachMap = shipState.getBreachMap();
+		breachMap.clear();
+		for (BreachSprite breachSprite : breachSprites) {
+			int roomId = breachSprite.getRoomId();
+			int squareId = breachSprite.getSquareId();
+
+			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomId );
+			int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
+			int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
+			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+
+			int breachX = roomLocX + squareId%squaresH + shipLayout.getOffsetX();
+			int breachY = roomLocY + squareId/squaresV + shipLayout.getOffsetY();
+			breachMap.put( new Point(breachX, breachY), new Integer(breachSprite.getHealth()) );
+		}
+
+		// Fires.
+		for (int i=0; i < shipLayout.getRoomCount(); i++) {
+			SavedGameParser.RoomState roomState = shipState.getRoom(i);
+			for (int[] squareState : roomState.getSquareList())
+				squareState[0] = 0;
+		}
+		for (FireSprite fireSprite : fireSprites) {
+			SavedGameParser.RoomState roomState = shipState.getRoom( fireSprite.getRoomId() );
+			int [] squareState = roomState.getSquareList().get( fireSprite.getSquareId() );
+			squareState[0] = fireSprite.getHealth();
+		}
+	}
+
+	private void selectRoom() {
+		squareSelector.reset();
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				int oxygen = roomSprites.get( roomId ).getOxygen();
+				SavedGameFloorplanPanel.this.frame.setStatusText( String.format("RoomId: %2d, Square: %d, Oxygen: %d%%", roomId, squareId, oxygen) );
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
+	private void selectCrew() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				for (CrewSprite crewSprite : crewSprites) {
+					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				for (CrewSprite crewSprite : crewSprites) {
+					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
+						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("Name: %s", crewSprite.getName()) );
+						break;
+					}
+				}
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
+	private void selectBreach() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				for (BreachSprite breachSprite : breachSprites) {
+					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				for (BreachSprite breachSprite : breachSprites) {
+					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
+						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("Breach HP: %d", breachSprite.getHealth()) );
+						break;
+					}
+				}
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
+	private void selectFire() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				for (FireSprite fireSprite : fireSprites) {
+					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				for (FireSprite fireSprite : fireSprites) {
+					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
+						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("Fire HP: %d", fireSprite.getHealth()) );
+						break;
+					}
+				}
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
 	}
 
 	private void addDoorSprite( int centerX, int centerY, int level, boolean vertical, boolean open ) {
@@ -324,7 +628,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			DoorSprite doorSprite = new DoorSprite( closedImages, openImages, level, vertical, open );
 			doorSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
 			doorSprites.add( doorSprite );
-			this.add( doorSprite, DOOR_LAYER );
+			shipPanel.add( doorSprite, DOOR_LAYER );
 
 		} catch (RasterFormatException e) {
 			log.error( "Failed to load and crop door images (door_sheet)", e );
@@ -358,7 +662,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			SystemSprite systemSprite = new SystemSprite( overlayImage );
 			systemSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
 			systemSprites.add( systemSprite );
-			this.add( systemSprite, SYSTEM_LAYER );
+			shipPanel.add( systemSprite, SYSTEM_LAYER );
 
 		} catch (IOException e) {
 			log.error( "Failed to load system overlay image ("+ overlayBaseName +")", e );
@@ -368,7 +672,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		}
 	}
 
-	private void addBreachSprite( int centerX, int centerY, int health ) {
+	private void addBreachSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
 		int offsetX = 0, offsetY = 0, w = 19, h = 19;
 		InputStream in = null;
 		try {
@@ -376,10 +680,10 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			BufferedImage bigImage = ImageIO.read(in);
 			BufferedImage breachImage = bigImage.getSubimage(offsetX+6*w, offsetY, w, h);
 
-			BreachSprite breachSprite = new BreachSprite( breachImage, health );
+			BreachSprite breachSprite = new BreachSprite( breachImage, roomId, squareId, health );
 			breachSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
 			breachSprites.add( breachSprite );
-			this.add( breachSprite, BREACH_LAYER );
+			shipPanel.add( breachSprite, BREACH_LAYER );
 
 		} catch (RasterFormatException e) {
 			log.error( "Failed to load and crop breach image (breach)", e );
@@ -391,7 +695,7 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		}
 	}
 
-	private void addFireSprite( int centerX, int centerY, int health ) {
+	private void addFireSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
 		int offsetX = 0, offsetY = 0, w = 32, h = 32;
 		InputStream in = null;
 		try {
@@ -399,10 +703,10 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			BufferedImage bigImage = ImageIO.read(in);
 			BufferedImage fireImage = bigImage.getSubimage(offsetX, offsetY, w, h);
 
-			FireSprite fireSprite = new FireSprite( fireImage, health );
+			FireSprite fireSprite = new FireSprite( fireImage, roomId, squareId, health );
 			fireSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
 			fireSprites.add( fireSprite );
-			this.add( fireSprite, FIRE_LAYER );
+			shipPanel.add( fireSprite, FIRE_LAYER );
 
 		} catch (RasterFormatException e) {
 			log.error( "Failed to load and crop fire image (fire_L1_strip8)", e );
@@ -414,15 +718,16 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		}
 	}
 
-	private void addCrewSprite( int centerX, int centerY, String race, String name, boolean playerControlled, boolean enemyBoardingDrone ) {
+	private void addCrewSprite( int centerX, int centerY, SavedGameParser.CrewState crewState ) {
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		String race = crewState.getRace();
 		String suffix = "";
 		InputStream in = null;
 		try {
-			if ( enemyBoardingDrone ) {
+			if ( crewState.isEnemyBoardingDrone() ) {
 				race = "battle";
 				suffix = "_enemy_sheet";
-			} else if ( playerControlled ) {
+			} else if ( crewState.isPlayerControlled() ) {
 				suffix = "_player_yellow";
 			} else {
 				suffix = "_enemy_red";
@@ -431,11 +736,11 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			BufferedImage bigImage = ImageIO.read(in);
 			BufferedImage crewImage = bigImage.getSubimage(offsetX, offsetY, w, h);
 
-			CrewSprite crewSprite = new CrewSprite( crewImage );
+			CrewSprite crewSprite = new CrewSprite( crewImage, crewState );
 			crewSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
 			crewSprites.add( crewSprite );
-			this.add( crewSprite, CREW_LAYER );
-			crewSprite.addMouseListener( new StatusbarMouseListener(frame, name) );
+			shipPanel.add( crewSprite, CREW_LAYER );
+			//crewSprite.addMouseListener( new StatusbarMouseListener(frame, name) );
 
 		} catch (RasterFormatException e) {
 			log.error( "Failed to load and crop race image ("+ race + suffix +")", e );
@@ -576,50 +881,148 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 		wallG.setStroke( prevStroke );
 	}
 
-	/** Draws each room in shades of red to indicate oxygen levels. */
-	private void drawOxygen( Graphics2D oxygenG, int originX, int originY, SavedGameParser.ShipState shipState, ShipLayout shipLayout ) {
-		Color prevColor = oxygenG.getColor();
-		Stroke prevStroke = oxygenG.getStroke();
-		Color maxColor = new Color( 230, 226, 219 );
-		Color minColor = new Color( 255, 176, 169 );
-		Color vacuumBorderColor = new Color(255, 180, 0);
 
-		for (int i=0; i < shipLayout.getRoomCount(); i++) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
-			int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-			int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-			int roomX = originX + squareSize * roomLocX;
-			int roomY = originY + squareSize * roomLocY;
-			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-			int oxygen = shipState.getRoom(i).getOxygen();
 
+	public class RoomSprite extends JComponent {
+		private final Color maxColor = new Color( 230, 226, 219 );
+		private final Color minColor = new Color( 255, 176, 169 );
+		private final Color vacuumBorderColor = new Color(255, 180, 0);
+
+		private int roomId;
+		private int oxygen;
+		private Color bgColor;
+
+		public RoomSprite( int roomId, int oxygen ) {
+			this.roomId = roomId;
+			setOxygen( oxygen );
+			this.setOpaque(true);
+		}
+
+		public void setRoomId( int n ) { roomId = n; }
+		public int getRoomId() { return roomId; }
+
+		public void setOxygen( int n ) {
+			oxygen = n;
 			if ( oxygen == 100 ) {
-				oxygenG.setColor( maxColor );
+				bgColor = maxColor;
 			} else if ( oxygen == 0 ) {
-				oxygenG.setColor( minColor );
+				bgColor = minColor;
 			} else {
-				int p = oxygen / 100;
+				double p = oxygen / 100.0;
 				int maxRed = maxColor.getRed();
 				int maxGreen = maxColor.getGreen();
 				int maxBlue = maxColor.getBlue();
 				int minRed = minColor.getRed();
 				int minGreen = minColor.getGreen();
 				int minBlue = minColor.getBlue();
-				Color partialColor = new Color( minRed+p*(maxRed-minRed), minGreen+p*(maxGreen-minGreen), minBlue+p*(maxBlue-minBlue) );
-				oxygenG.setColor( partialColor );
-			}
-			oxygenG.fillRect( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
-
-			if ( oxygen == 0 ) {  // Draw the yellow border.
-				oxygenG.setColor( vacuumBorderColor );
-				oxygenG.drawRect( roomX+2, roomY+2, squaresH*squareSize-4, squaresV*squareSize-4 );
-				oxygenG.drawRect( roomX+3, roomY+3, squaresH*squareSize-6, squaresV*squareSize-6 );
+				bgColor = new Color( (int)(minRed+p*(maxRed-minRed)), (int)(minGreen+p*(maxGreen-minGreen)), (int)(minBlue+p*(maxBlue-minBlue)) );
 			}
 		}
+		public int getOxygen() { return oxygen; }
 
-		oxygenG.setColor( prevColor );
-		oxygenG.setStroke( prevStroke );
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent(g);
+
+			Graphics2D g2d = (Graphics2D)g;
+			Color prevColor = g2d.getColor();
+
+			g2d.setColor( bgColor );
+			g2d.fillRect( 0, 0, this.getWidth()-1, this.getHeight()-1);
+
+			if ( oxygen == 0 ) {  // Draw the yellow border.
+				g2d.setColor( vacuumBorderColor );
+				g2d.drawRect( 2, 2, (this.getWidth()-1)-4, (this.getHeight()-1)-4 );
+				g2d.drawRect( 3, 3, (this.getWidth()-1)-6, (this.getHeight()-1)-6 );
+			}
+
+			g2d.setColor(prevColor);
+		}
+	}
+
+
+
+	public class SystemSprite extends JComponent {
+		private BufferedImage overlayImage;
+
+		public SystemSprite( BufferedImage overlayImage ) {
+			this.overlayImage = overlayImage;
+			this.setOpaque(false);
+		}
+
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent(g);
+
+			Graphics2D g2d = (Graphics2D)g;
+			g2d.drawImage( overlayImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
+		}
+	}
+
+
+
+	public class BreachSprite extends JComponent {
+		private BufferedImage breachImage;
+		private int roomId;
+		private int squareId;
+		private int health;
+
+		public BreachSprite( BufferedImage breachImage, int roomId, int squareId, int health ) {
+			this.breachImage = breachImage;
+			this.roomId = roomId;
+			this.squareId = squareId;
+			this.health = health;
+			this.setOpaque(false);
+		}
+
+		public void setRoomId( int n ) { roomId = n; }
+		public void setSquareId( int n ) { squareId = n; }
+		public void setHealth( int n ) { health = n; }
+
+		public int getRoomId() { return roomId; }
+		public int getSquareId() { return squareId; }
+		public int getHealth() { return health; }
+
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent(g);
+
+			Graphics2D g2d = (Graphics2D)g;
+			g2d.drawImage( breachImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
+		}
+	}
+
+
+
+	public class FireSprite extends JComponent {
+		private BufferedImage fireImage;
+		private int roomId;
+		private int squareId;
+		private int health;
+
+		public FireSprite( BufferedImage fireImage, int roomId, int squareId, int health ) {
+			this.fireImage = fireImage;
+			this.roomId = roomId;
+			this.squareId = squareId;
+			this.health = health;
+			this.setOpaque(false);
+		}
+
+		public void setRoomId( int n ) { roomId = n; }
+		public void setSquareId( int n ) { squareId = n; }
+		public void setHealth( int n ) { health = n; }
+
+		public int getRoomId() { return roomId; }
+		public int getSquareId() { return squareId; }
+		public int getHealth() { return health; }
+
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent(g);
+
+			Graphics2D g2d = (Graphics2D)g;
+			g2d.drawImage( fireImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
+		}
 	}
 
 
@@ -673,80 +1076,27 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 
 
 
-	public class SystemSprite extends JComponent {
-		private BufferedImage overlayImage;
-
-		public SystemSprite( BufferedImage overlayImage ) {
-			this.overlayImage = overlayImage;
-			this.setOpaque(false);
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( overlayImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
-		}
-	}
-
-
-
-	public class BreachSprite extends JComponent {
-		private BufferedImage breachImage;
-		private int health;
-
-		public BreachSprite( BufferedImage breachImage, int health ) {
-			this.breachImage = breachImage;
-			this.health = health;
-			this.setOpaque(false);
-		}
-
-		public void setHealth( int n ) { health = n; }
-		public int getHealth() { return health; }
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( breachImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
-		}
-	}
-
-
-
-	public class FireSprite extends JComponent {
-		private BufferedImage fireImage;
-		private int health;
-
-		public FireSprite( BufferedImage fireImage, int health ) {
-			this.fireImage = fireImage;
-			this.health = health;
-			this.setOpaque(false);
-		}
-
-		public void setHealth( int n ) { health = n; }
-		public int getHealth() { return health; }
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( fireImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
-		}
-	}
-
-
-
 	public class CrewSprite extends JComponent {
 		private BufferedImage crewImage;
+		private String name;
+		private int roomId;
+		private int squareId;
 
-		public CrewSprite( BufferedImage crewImage ) {
+		public CrewSprite( BufferedImage crewImage, SavedGameParser.CrewState crewState ) {
 			this.crewImage = crewImage;
+			name = crewState.getName();
+			roomId = crewState.getRoomId();
+			squareId = crewState.getRoomSquare();
 			this.setOpaque(false);
 		}
+
+		public void setName( String s ) { name = s; }
+		public void setRoomId( int n ) { roomId = n; }
+		public void setSquareId( int n ) { squareId = n; }
+
+		public String getName() { return name; }
+		public int getRoomId() { return roomId; }
+		public int getSquareId() { return squareId; }
 
 		@Override
 		public void paintComponent( Graphics g ) {
@@ -755,5 +1105,151 @@ public class SavedGameFloorplanPanel extends JLayeredPane {
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.drawImage( crewImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
 		}
+	}
+
+
+
+	/**
+	 * A glasspane-like layer to select squares.
+	 *
+	 * Usage: setVisible(), setCriteria(), setCallback()
+	 * To cancel selection, call reset();
+	 */
+	public class SquareSelector extends JComponent {
+		private SquareCriteria defaultCriteria = new SquareCriteria();
+
+		private HashMap<Rectangle, Integer> roomRegions;
+		private HashMap<Rectangle, Integer> squareRegions;
+		private SquareCriteria squareCriteria = defaultCriteria;
+		private SquareSelectionCallback callback = null;
+		private Point mousePoint = new Point( -1, -1 );
+		private Rectangle currentRect = null;
+
+		public SquareSelector( HashMap<Rectangle, Integer> roomRegions, HashMap<Rectangle, Integer> squareRegions ) {
+			this.roomRegions = roomRegions;
+			this.squareRegions = squareRegions;
+		}
+
+		public void setMousePoint( int x, int y ) {
+			if ( mousePoint.x != x || mousePoint.y != y) {
+				mousePoint.x = x;
+				mousePoint.y = y;
+
+				Rectangle newRect = null;
+				if ( mousePoint.x > 0 && mousePoint.y > 0 ) {
+					for (Map.Entry<Rectangle, Integer> entry : squareRegions.entrySet()) {
+						if ( entry.getKey().contains( mousePoint ) ) {
+							newRect = entry.getKey();
+							break;
+						}
+					}
+				}
+				if ( newRect != currentRect ) {
+					if ( currentRect != null ) this.repaint( currentRect );
+					currentRect = newRect;
+					if ( currentRect != null ) this.repaint( currentRect );
+				}
+			}
+		}
+
+		public int getRoomId() {
+			int roomId = -1;
+			if ( roomRegions.containsKey( currentRect ) )
+				roomId = roomRegions.get( currentRect ).intValue();
+
+			return roomId;
+		}
+
+		public int getSquareId() {
+			int squareId = -1;
+			if ( squareRegions.containsKey( currentRect ) )
+				squareId = squareRegions.get( currentRect ).intValue();
+
+			return squareId;
+		}
+
+		public Point getSquareCenter() {
+			Point result = null;
+			if ( currentRect != null ) {
+				int centerX = currentRect.x + currentRect.width/2;
+				int centerY = currentRect.y + currentRect.height/2;
+				result = new Point( centerX, centerY );
+			}
+			return result;
+		}
+
+		/** Sets the logic which decides square color and selectability. */
+		public void setCriteria( SquareCriteria sc ) {
+			if (sc != null)
+				squareCriteria = sc;
+			else
+				squareCriteria = defaultCriteria;
+		}
+
+		public boolean isCurrentSquareValid() {
+			return squareCriteria.isSquareValid( getRoomId(), getSquareId() );
+		}
+
+		public void setCallback( SquareSelectionCallback cb ) {
+			callback = cb;
+		}
+		public SquareSelectionCallback getCallback() {
+			return callback;
+		}
+
+		public void reset() {
+			this.setVisible(false);
+			setCriteria(null);
+			setCallback(null);
+			setMousePoint( -1, -1 );
+		}
+
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent(g);
+
+			Graphics2D g2d = (Graphics2D)g;
+			Color prevColor = g2d.getColor();
+
+			if ( currentRect != null ) {
+				Color squareColor = squareCriteria.getSquareColor( getRoomId(), getSquareId() );
+				if ( squareColor != null ) {
+					g2d.setColor( squareColor );
+					g2d.drawRect( currentRect.x, currentRect.y, (currentRect.width-1), (currentRect.height-1) );
+					g2d.drawRect( currentRect.x+1, currentRect.y+1, (currentRect.width-1)-2, (currentRect.height-1)-2 );
+					g2d.drawRect( currentRect.x+2, currentRect.y+2, (currentRect.width-1)-4, (currentRect.height-1)-4 );
+				}
+			}
+
+			g2d.setColor( prevColor );
+		}
+	}
+
+
+
+	public class SquareCriteria {
+		private Color validColor = Color.GREEN.darker();
+		private Color invalidColor = Color.RED.darker();
+
+		/** Returns a highlight color when hovering over a square, or null for none. */
+		public Color getSquareColor( int roomId, int squareId ) {
+			if ( roomId < 0 || squareId < 0 ) return null;
+			if ( isSquareValid(roomId, squareId) )
+				return validColor;
+			else
+				return invalidColor;
+		}
+
+		/** Returns true if a square can be selected, false otherwise. */
+		public boolean isSquareValid( int roomId, int squareId ) {
+			if ( roomId < 0 || squareId < 0 ) return false;
+			return true;
+		}
+	}
+
+
+	public interface SquareSelectionCallback {
+		/** Responds to a clicked square, returning true to continue selecting. */
+		public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId );
 	}
 }
