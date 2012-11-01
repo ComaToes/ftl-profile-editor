@@ -101,6 +101,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private JLayeredPane shipPanel = null;
 	private JPanel sidePanel = null;
+	private JScrollPane sideScroll = null;
+
 	private JLabel baseLbl = null;
 	private JLabel floorLbl = null;
 	private JLabel wallLbl = null;
@@ -108,7 +110,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private SquareSelector squareSelector = null;
 
 	public SavedGameFloorplanPanel( FTLFrame frame ) {
-		super( new GridBagLayout() );
+		super( new BorderLayout() );
 		this.frame = frame;
 
 		shipPanel = new JLayeredPane();
@@ -118,6 +120,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		sidePanel = new JPanel();
 		sidePanel.setLayout( new BoxLayout(sidePanel, BoxLayout.Y_AXIS) );
+		sidePanel.setBorder( BorderFactory.createEmptyBorder(4, 4, 4, 6) );
 
 		baseLbl = new JLabel();
 		baseLbl.setOpaque(false);
@@ -169,28 +172,38 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.addMouseListener( squareListener );
 		squareSelector.addMouseMotionListener( squareListener );
 
+		Insets ctrlInsets = new Insets(3, 4, 3, 4);
 		JPanel ctrlPanel = new JPanel();
 		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.X_AXIS) );
 		ctrlPanel.add( new JLabel("Select: ") );
 		JButton selectRoomBtn = new JButton("Room");
+		selectRoomBtn.setMargin(ctrlInsets);
 		ctrlPanel.add( selectRoomBtn );
 		ctrlPanel.add( Box.createHorizontalStrut(5) );
 		JButton selectCrewBtn = new JButton("Crew");
+		selectCrewBtn.setMargin(ctrlInsets);
 		ctrlPanel.add( selectCrewBtn );
 		ctrlPanel.add( Box.createHorizontalStrut(5) );
 		JButton selectBreachBtn = new JButton("Breach");
+		selectBreachBtn.setMargin(ctrlInsets);
 		ctrlPanel.add( selectBreachBtn );
 		ctrlPanel.add( Box.createHorizontalStrut(5) );
 		JButton selectFireBtn = new JButton("Fire");
+		selectFireBtn.setMargin(ctrlInsets);
 		ctrlPanel.add( selectFireBtn );
 
 		ctrlPanel.add( Box.createHorizontalStrut(15) );
 		ctrlPanel.add( new JLabel("Reset: ") );
 		JButton resetOxygenBtn = new JButton("Oxygen");
+		resetOxygenBtn.setMargin(ctrlInsets);
 		ctrlPanel.add( resetOxygenBtn );
+		ctrlPanel.add( Box.createHorizontalStrut(5) );
 		JButton resetBreachesBtn = new JButton("Breaches");
+		resetBreachesBtn.setMargin(ctrlInsets);
 		ctrlPanel.add( resetBreachesBtn );
+		ctrlPanel.add( Box.createHorizontalStrut(5) );
 		JButton resetFiresBtn = new JButton("Fires");
+		resetFiresBtn.setMargin(ctrlInsets);
 		ctrlPanel.add( resetFiresBtn );
 
 		selectRoomBtn.addActionListener(new ActionListener() {
@@ -243,6 +256,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 
+		JPanel centerPanel = new JPanel( new GridBagLayout() );
+
 		GridBagConstraints gridC = new GridBagConstraints();
 
 		gridC.fill = GridBagConstraints.BOTH;
@@ -253,26 +268,24 @@ public class SavedGameFloorplanPanel extends JPanel {
 		JScrollPane shipScroll = new JScrollPane( shipPanel );
 		shipScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
 		shipScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
-		this.add( shipScroll, gridC );
+		centerPanel.add( shipScroll, gridC );
 
 		gridC.insets = new Insets(4, 4, 4, 4);
-
-		gridC.anchor = GridBagConstraints.NORTH;
-		gridC.fill = GridBagConstraints.NONE;
-		gridC.weightx = 0.0;
-		gridC.weighty = 0.0;
-		gridC.gridheight = 2;
-		gridC.gridx++;
-		this.add( sidePanel, gridC );
 
 		gridC.anchor = GridBagConstraints.CENTER;
 		gridC.fill = GridBagConstraints.HORIZONTAL;
 		gridC.weightx = 1.0;
 		gridC.weighty = 0.0;
-		gridC.gridheight = 1;
 		gridC.gridx = 0;
 		gridC.gridy++;
-		this.add( ctrlPanel, gridC );
+		centerPanel.add( ctrlPanel, gridC );
+		this.add( centerPanel, BorderLayout.CENTER );
+
+		sideScroll = new JScrollPane( sidePanel );
+		sideScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
+		sideScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		sideScroll.setVisible( false );
+		this.add( sideScroll, BorderLayout.EAST );
 	}
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
@@ -923,19 +936,33 @@ public class SavedGameFloorplanPanel extends JPanel {
 		wallG.setStroke( prevStroke );
 	}
 
+	private void showSidePanel() {
+		sidePanel.revalidate();
+		int sideWidth = sidePanel.getPreferredSize().width;
+		int vbarWidth = sideScroll.getVerticalScrollBar().getPreferredSize().width;
+		sideScroll.setPreferredSize( new Dimension(sideWidth + vbarWidth, 1) );
+		sideScroll.setVisible( true );
+
+		this.revalidate();
+		this.repaint();
+	}
+
 	private void clearSidePanel() {
+		sideScroll.setVisible( false );
 		sidePanel.removeAll();
+
 		sidePanel.revalidate();
 		this.repaint();
 	}
 
 	/**
-	 * Populates the sidepanel.
-	 * Includes a title, arbitrary content,
-	 * and cancel/apply buttons.
+	 * Clears and ropulates the side panel.
+	 * Includes a title, arbitrary content, and
+	 * cancel/apply buttons.
 	 *
-	 * Afterward, revalidate() and repaint()
-	 * should be called.
+	 * More can be added to the side panel manually.
+	 *
+	 * Afterward, showSidePanel() should be called.
 	 */
 	private void createSidePanel( String title, final FieldEditorPanel editorPanel, final Runnable applyCallback ) {
 		clearSidePanel();
@@ -943,9 +970,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		titleLbl.setAlignmentX( Component.CENTER_ALIGNMENT );
 		sidePanel.add( titleLbl );
 		sidePanel.add( Box.createVerticalStrut(4) );
-		sidePanel.add( new JSeparator(JSeparator.HORIZONTAL) );
+		JSeparator titleSep = new JSeparator(JSeparator.HORIZONTAL);
+		titleSep.setMaximumSize( new Dimension(Short.MAX_VALUE, titleSep.getPreferredSize().height) );
+		sidePanel.add( titleSep );
 		sidePanel.add( Box.createVerticalStrut(4) );
 
+		// Keep the editor from growing and creating gaps around it.
+		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
 		sidePanel.add( editorPanel );
 
 		sidePanel.add( Box.createVerticalStrut(10) );
@@ -954,7 +985,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		applyPanel.setLayout( new BoxLayout(applyPanel, BoxLayout.X_AXIS) );
 		JButton cancelBtn = new JButton("Cancel");
 		applyPanel.add( cancelBtn );
-		applyPanel.add( Box.createHorizontalStrut(15) );
+		applyPanel.add( Box.createRigidArea( new Dimension(15, 1)) );
 		JButton applyBtn = new JButton("Apply");
 		applyPanel.add( applyBtn );
 		sidePanel.add( applyPanel );
@@ -993,8 +1024,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
-		sidePanel.revalidate();
-		this.repaint();
+		showSidePanel();
 	}
 
 	private void showBreachEditor( final BreachSprite breachSprite ) {
@@ -1017,8 +1047,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
-		sidePanel.revalidate();
-		this.repaint();
+		showSidePanel();
 	}
 
 	private void showFireEditor( final FireSprite fireSprite ) {
@@ -1041,8 +1070,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
-		sidePanel.revalidate();
-		this.repaint();
+		showSidePanel();
 	}
 
 	private void showCrewEditor( final CrewSprite crewSprite ) {
@@ -1168,8 +1196,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
-		sidePanel.revalidate();
-		this.repaint();
+		showSidePanel();
 	}
 
 
