@@ -1439,31 +1439,54 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class CrewState {
+	public static class CrewState {
 		// TODO: magic numbers.
-		// Make these static when the class gets its own file.
-		public final int MASTERY_INTERVAL_PILOT = 15;
-		public final int MASTERY_INTERVAL_ENGINE = 15;
-		public final int MASTERY_INTERVAL_SHIELD = 55;
-		public final int MASTERY_INTERVAL_WEAPON = 65;
-		public final int MASTERY_INTERVAL_REPAIR = 18;
-		public final int MASTERY_INTERVAL_COMBAT = 8;
+		// Might be worth putting in the config file.
+		public static final int MASTERY_INTERVAL_PILOT = 15;
+		public static final int MASTERY_INTERVAL_ENGINE = 15;
+		public static final int MASTERY_INTERVAL_SHIELD = 55;
+		public static final int MASTERY_INTERVAL_WEAPON = 65;
+		public static final int MASTERY_INTERVAL_REPAIR = 18;
+		public static final int MASTERY_INTERVAL_COMBAT = 8;
+
+		public static final int MAX_HEALTH_CRYSTAL = 120;
+		public static final int MAX_HEALTH_ENGI = 100;
+		public static final int MAX_HEALTH_ENERGY = 70;
+		public static final int MAX_HEALTH_HUMAN = 100;
+		public static final int MAX_HEALTH_MANTIS = 100;
+		public static final int MAX_HEALTH_ROCK = 150;
+		public static final int MAX_HEALTH_SLUG = 100;
+		public static final int MAX_HEALTH_BATTLE = 150;
+		public static final int MAX_HEALTH_REPAIR = 25;  // Might not be a race.
+
+		public static int getMaxHealth( String race ) {
+			if ( race.equals("crystal") ) return MAX_HEALTH_CRYSTAL;
+			else if ( race.equals("engi") ) return MAX_HEALTH_ENGI;
+			else if ( race.equals("energy") ) return MAX_HEALTH_ENERGY;
+			else if ( race.equals("human") ) return MAX_HEALTH_HUMAN;
+			else if ( race.equals("mantis") ) return MAX_HEALTH_MANTIS;
+			else if ( race.equals("rock") ) return MAX_HEALTH_ROCK;
+			else if ( race.equals("slug") ) return MAX_HEALTH_SLUG;
+			else if ( race.equals("battle") ) return MAX_HEALTH_BATTLE;
+			else if ( race.equals("repair") ) return MAX_HEALTH_REPAIR;
+			else throw new RuntimeException( "No max health known for race: "+ race );
+		}
 
 		// Neither Crystal crews' lockdown, nor its cooldown is stored.
 		// Zoltan-produced power is not stored in SystemState.
 
 		private String name, race;
 		private boolean enemyBoardingDrone = false;
-		private int health;
+		private int health=0;
 		private int blueprintRoomId;
 		private int roomSquare;  // 0-based, L-to-R wrapped row.
-		private boolean playerControlled;
-		private int pilotSkill, engineSkill, shieldSkill;
-		private int weaponSkill, repairSkill, combatSkill;
-		private int repairs, combatKills, pilotedEvasions;
-		private int jumpsSurvived, skillMasteries;
+		private boolean playerControlled=false;
+		private int pilotSkill=0, engineSkill=0, shieldSkill=0;
+		private int weaponSkill=0, repairSkill=0, combatSkill=0;
+		private int repairs=0, combatKills=0, pilotedEvasions=0;
+		private int jumpsSurvived=0, skillMasteries=0;
 		private int x, y;
-		private int gender;  // 1=Male, 0=Female.
+		private int gender=1;  // 1=Male, 0=Female.
 
 		public CrewState() {
 		}
@@ -1516,6 +1539,10 @@ public class SavedGameParser extends DatParser {
 		 * name will change to "Anti-Personnel Drone", race
 		 * will be "battle", and playerControlled will be
 		 * false.
+		 *
+		 * If after loading in-game, you re-edit this to false
+		 * and leave the "battle" race, the game will change
+		 * it to "human".
 		 *
 		 * Presumably this is so intruders can persist without
 		 * a ship, which would normally have a drones section

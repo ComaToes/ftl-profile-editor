@@ -90,6 +90,7 @@ public class FieldEditorPanel extends JPanel {
 	public void addRow( String valueName, ContentType contentType ) {
 		gridC.fill = GridBagConstraints.HORIZONTAL;
 		gridC.gridwidth = 1;
+		gridC.weighty = 0.0;
 		gridC.gridx = 0;
 		this.add( new JLabel( valueName +":" ), gridC );
 

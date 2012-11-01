@@ -4,6 +4,7 @@ import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -47,6 +48,7 @@ import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JScrollPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.event.MouseInputAdapter;
 
 import net.blerf.ftl.model.ShipLayout;
@@ -76,6 +78,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final int squareSize = 35, tileEdge = 1;
 	private static final Logger log = LogManager.getLogger(SavedGameFloorplanPanel.class);
 
+	private GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+	private GraphicsDevice gs = ge.getDefaultScreenDevice();
+	private GraphicsConfiguration gc = gs.getDefaultConfiguration();
+
 	private FTLFrame frame;
 
 	private ShipBlueprint shipBlueprint = null;
@@ -91,8 +97,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private ArrayList<FireSprite> fireSprites = new ArrayList<FireSprite>();
 	private ArrayList<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
 	private ArrayList<CrewSprite> crewSprites = new ArrayList<CrewSprite>();
+	private HashMap<String, HashMap<Rectangle, BufferedImage>> cachedSubImages = new HashMap<String, HashMap<Rectangle, BufferedImage>>();
 
 	private JLayeredPane shipPanel = null;
+	private JPanel sidePanel = null;
 	private JLabel baseLbl = null;
 	private JLabel floorLbl = null;
 	private JLabel wallLbl = null;
@@ -107,6 +115,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipPanel.setBackground( new Color(212, 208, 200) );
 		shipPanel.setOpaque(true);
 		shipPanel.setPreferredSize( new Dimension(50, 50) );
+
+		sidePanel = new JPanel();
+		sidePanel.setLayout( new BoxLayout(sidePanel, BoxLayout.Y_AXIS) );
 
 		baseLbl = new JLabel();
 		baseLbl.setOpaque(false);
@@ -244,10 +255,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
 		this.add( shipScroll, gridC );
 
+		gridC.insets = new Insets(4, 4, 4, 4);
+
+		gridC.anchor = GridBagConstraints.NORTH;
+		gridC.fill = GridBagConstraints.NONE;
+		gridC.weightx = 0.0;
+		gridC.weighty = 0.0;
+		gridC.gridx++;
+		this.add( sidePanel, gridC );
+
+		gridC.anchor = GridBagConstraints.CENTER;
 		gridC.fill = GridBagConstraints.HORIZONTAL;
 		gridC.weightx = 1.0;
 		gridC.weighty = 0.0;
-		gridC.insets = new Insets(4, 4, 4, 4);
 		gridC.gridx = 0;
 		gridC.gridy++;
 		this.add( ctrlPanel, gridC );
@@ -256,6 +276,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
 		String prevGfxBaseName = shipGfxBaseName;
 		squareSelector.reset();
+		clearSidePanel();
 
 		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
@@ -264,10 +285,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipGfxBaseName = shipState.getShipGraphicsBaseName();
 		originX = shipChassis.getImageBounds().x * -1;
 		originY = shipChassis.getImageBounds().y * -1;
-
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		GraphicsDevice gs = ge.getDefaultScreenDevice();
-		GraphicsConfiguration gc = gs.getDefaultConfiguration();
 
 		for (RoomSprite roomSprite : roomSprites)
 			shipPanel.remove( roomSprite );
@@ -515,14 +532,50 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int [] squareState = roomState.getSquareList().get( fireSprite.getSquareId() );
 			squareState[0] = fireSprite.getHealth();
 		}
+
+		// Crew.
+		// TODO: Make the sprite fully representative of a CrewState,
+		// so the shipState's list can be cleared and repopulated from scratch.
+		ArrayList<SavedGameParser.CrewState> crewList = shipState.getCrewList();
+		for (int i=0; i < crewList.size(); i++) {
+			CrewSprite crewSprite = crewSprites.get(i);
+			SavedGameParser.CrewState crewState = crewList.get(i);
+			crewState.setName( crewSprite.getName() );
+			crewState.setHealth( crewSprite.getHealth() );
+
+			crewState.setPilotSkill( crewSprite.getPilotSkill() );
+			crewState.setEngineSkill( crewSprite.getEngineSkill() );
+			crewState.setShieldSkill( crewSprite.getShieldSkill() );
+			crewState.setWeaponSkill( crewSprite.getWeaponSkill() );
+			crewState.setRepairSkill( crewSprite.getRepairSkill() );
+			crewState.setCombatSkill( crewSprite.getCombatSkill() );
+
+			int masteries = 0;
+			masteries += crewSprite.getPilotSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_PILOT;
+			masteries += crewSprite.getEngineSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_ENGINE;
+			masteries += crewSprite.getShieldSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_SHIELD;
+			masteries += crewSprite.getWeaponSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_WEAPON;
+			masteries += crewSprite.getRepairSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_REPAIR;
+			masteries += crewSprite.getCombatSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_COMBAT;
+			crewState.setSkillMasteries(masteries);
+
+			crewState.setRepairs( crewSprite.getRepairs() );
+			crewState.setCombatKills( crewSprite.getCombatKills() );
+			crewState.setPilotedEvasions( crewSprite.getPilotedEvasions() );
+			crewState.setJumpsSurvived( crewSprite.getJumpsSurvived() );
+
+			crewState.setPlayerControlled( crewSprite.isPlayerControlled() );
+			crewState.setEnemyBoardingDrone( crewSprite.isEnemyBoardingDrone() );
+			crewState.setGender( (crewSprite.isMale() ? 1 : 0) );
+		}
 	}
 
 	private void selectRoom() {
 		squareSelector.reset();
 		squareSelector.setCallback(new SquareSelectionCallback() {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
-				int oxygen = roomSprites.get( roomId ).getOxygen();
-				SavedGameFloorplanPanel.this.frame.setStatusText( String.format("RoomId: %2d, Square: %d, Oxygen: %d%%", roomId, squareId, oxygen) );
+				RoomSprite roomSprite = roomSprites.get( roomId );
+				showRoomEditor( roomSprite );
 				return true;
 			}
 		});
@@ -546,7 +599,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				for (CrewSprite crewSprite : crewSprites) {
 					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
-						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("Name: %s", crewSprite.getName()) );
+						showCrewEditor( crewSprite );
 						break;
 					}
 				}
@@ -573,7 +626,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				for (BreachSprite breachSprite : breachSprites) {
 					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
-						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("Breach HP: %d", breachSprite.getHealth()) );
+						showBreachEditor( breachSprite );
 						break;
 					}
 				}
@@ -600,7 +653,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				for (FireSprite fireSprite : fireSprites) {
 					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
-						SavedGameFloorplanPanel.this.frame.setStatusText( String.format("Fire HP: %d", fireSprite.getHealth()) );
+						showFireEditor( fireSprite );
 						break;
 					}
 				}
@@ -610,8 +663,50 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible(true);
 	}
 
+	/** Gets a cropped area of an image and caches the result. */
+	private BufferedImage getCroppedImage( String innerPath, int x, int y, int w, int h) {
+		Rectangle keyRect = new Rectangle( x, y, w, h );
+		BufferedImage result = null;
+		HashMap<Rectangle, BufferedImage> cropMap = cachedSubImages.get(innerPath);
+		if ( cropMap != null ) result = cropMap.get(keyRect);
+		if (result != null) return result;
+		log.trace( "Image not in cache, loading and cropping...: "+ innerPath );
+
+		InputStream in = null;
+		try {
+			in = DataManager.get().getResourceInputStream( innerPath );
+			BufferedImage bigImage = ImageIO.read(in);
+			result = bigImage.getSubimage(x, y, w, h);
+
+		} catch (RasterFormatException e) {
+			log.error( "Failed to load and crop image: "+ innerPath, e );
+		} catch (IOException e) {
+			log.error( "Failed to load and crop image: "+ innerPath, e );
+		} finally {
+			try {if (in != null) in.close();}
+			catch (IOException f) {}
+		}
+
+		if ( result == null ) {  // Gurantee a returned image, with a stand-in.
+			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
+			Graphics2D g2d = (Graphics2D)result.createGraphics();
+			g2d.setColor( new Color(150, 150, 200) );
+			g2d.fillRect( 0, 0, w-1, h-1 );
+			g2d.dispose();
+		}
+
+		if ( cropMap == null ) {
+			cropMap = new HashMap<Rectangle, BufferedImage>();
+			cachedSubImages.put( innerPath, cropMap );
+		}
+		cropMap.put( keyRect, result );
+
+		return result;
+	}
+
 	private void addDoorSprite( int centerX, int centerY, int level, boolean vertical, boolean open ) {
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		// Grr. Caching would be awkward with this.
 		InputStream in = null;
 		try {
 			in = DataManager.get().getResourceInputStream( "img/effects/door_sheet.png" );
@@ -641,115 +736,53 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void addSystemSprite( int centerX, int centerY, String overlayBaseName ) {
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream( "img/icons/s_"+ overlayBaseName +"_overlay.png" );
-			BufferedImage overlayImage = ImageIO.read(in);
-			int w = overlayImage.getWidth();
-			int h = overlayImage.getHeight();
+		int offsetX = 0, offsetY = 0, w = 32, h = 32;
+		// Cropping isn't necessary, but this keeps caching simple.
+		BufferedImage overlayImage = getCroppedImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", offsetX, offsetY, w, h );
 
-			// Darken the white icon to gray...
-			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-			GraphicsDevice gs = ge.getDefaultScreenDevice();
-			GraphicsConfiguration gc = gs.getDefaultConfiguration();
-			BufferedImage canvas = gc.createCompatibleImage(w, h, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D g2d = canvas.createGraphics();
-			g2d.drawImage(overlayImage, 0, 0, null);
-			g2d.dispose();
-			RescaleOp op = new RescaleOp(new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 }, null);
-			overlayImage = op.filter(canvas, null);
+		// Darken the white icon to gray...
+		BufferedImage canvas = gc.createCompatibleImage(w, h, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = canvas.createGraphics();
+		g2d.drawImage(overlayImage, 0, 0, null);
+		g2d.dispose();
+		RescaleOp op = new RescaleOp(new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 }, null);
+		overlayImage = op.filter(canvas, null);
 
-			SystemSprite systemSprite = new SystemSprite( overlayImage );
-			systemSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
-			systemSprites.add( systemSprite );
-			shipPanel.add( systemSprite, SYSTEM_LAYER );
-
-		} catch (IOException e) {
-			log.error( "Failed to load system overlay image ("+ overlayBaseName +")", e );
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
-		}
+		SystemSprite systemSprite = new SystemSprite( overlayImage );
+		systemSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
+		systemSprites.add( systemSprite );
+		shipPanel.add( systemSprite, SYSTEM_LAYER );
 	}
 
 	private void addBreachSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
 		int offsetX = 0, offsetY = 0, w = 19, h = 19;
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream( "img/effects/breach.png" );
-			BufferedImage bigImage = ImageIO.read(in);
-			BufferedImage breachImage = bigImage.getSubimage(offsetX+6*w, offsetY, w, h);
 
-			BreachSprite breachSprite = new BreachSprite( breachImage, roomId, squareId, health );
-			breachSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
-			breachSprites.add( breachSprite );
-			shipPanel.add( breachSprite, BREACH_LAYER );
+		BufferedImage breachImage = getCroppedImage( "img/effects/breach.png", offsetX+6*w, offsetY, w, h );
 
-		} catch (RasterFormatException e) {
-			log.error( "Failed to load and crop breach image (breach)", e );
-		} catch (IOException e) {
-			log.error( "Failed to load and crop breach image (breach)", e );
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
-		}
+		BreachSprite breachSprite = new BreachSprite( breachImage, roomId, squareId, health );
+		breachSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
+		breachSprites.add( breachSprite );
+		shipPanel.add( breachSprite, BREACH_LAYER );
 	}
 
 	private void addFireSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
 		int offsetX = 0, offsetY = 0, w = 32, h = 32;
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream( "img/effects/fire_L1_strip8.png" );
-			BufferedImage bigImage = ImageIO.read(in);
-			BufferedImage fireImage = bigImage.getSubimage(offsetX, offsetY, w, h);
 
-			FireSprite fireSprite = new FireSprite( fireImage, roomId, squareId, health );
-			fireSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
-			fireSprites.add( fireSprite );
-			shipPanel.add( fireSprite, FIRE_LAYER );
+		BufferedImage fireImage = getCroppedImage( "img/effects/fire_L1_strip8.png", offsetX, offsetY, w, h );
 
-		} catch (RasterFormatException e) {
-			log.error( "Failed to load and crop fire image (fire_L1_strip8)", e );
-		} catch (IOException e) {
-			log.error( "Failed to load and crop fire image (fire_L1_strip8)", e );
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
-		}
+		FireSprite fireSprite = new FireSprite( fireImage, roomId, squareId, health );
+		fireSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
+		fireSprites.add( fireSprite );
+		shipPanel.add( fireSprite, FIRE_LAYER );
 	}
 
 	private void addCrewSprite( int centerX, int centerY, SavedGameParser.CrewState crewState ) {
-		int offsetX = 0, offsetY = 0, w = 35, h = 35;
-		String race = crewState.getRace();
-		String suffix = "";
-		InputStream in = null;
-		try {
-			if ( crewState.isEnemyBoardingDrone() ) {
-				race = "battle";
-				suffix = "_enemy_sheet";
-			} else if ( crewState.isPlayerControlled() ) {
-				suffix = "_player_yellow";
-			} else {
-				suffix = "_enemy_red";
-			}
-			in = DataManager.get().getResourceInputStream( "img/people/"+ race + suffix +".png" );
-			BufferedImage bigImage = ImageIO.read(in);
-			BufferedImage crewImage = bigImage.getSubimage(offsetX, offsetY, w, h);
-
-			CrewSprite crewSprite = new CrewSprite( crewImage, crewState );
-			crewSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
-			crewSprites.add( crewSprite );
-			shipPanel.add( crewSprite, CREW_LAYER );
-			//crewSprite.addMouseListener( new StatusbarMouseListener(frame, name) );
-
-		} catch (RasterFormatException e) {
-			log.error( "Failed to load and crop race image ("+ race + suffix +")", e );
-		} catch (IOException e) {
-			log.error( "Failed to load and crop race image ("+ race + suffix +")", e );
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
-		}
+		CrewSprite crewSprite = new CrewSprite( crewState );
+		int w = crewSprite.getImageWidth();
+		int h = crewSprite.getImageHeight();
+		crewSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
+		crewSprites.add( crewSprite );
+		shipPanel.add( crewSprite, CREW_LAYER );
 	}
 
 	/** Relocates a JComponent within its parent's space. */
@@ -879,6 +912,243 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 		wallG.setColor( prevColor );
 		wallG.setStroke( prevStroke );
+	}
+
+	private void clearSidePanel() {
+		sidePanel.removeAll();
+		sidePanel.revalidate();
+		this.repaint();
+	}
+
+	/**
+	 * Populates the sidepanel.
+	 * Includes a title, arbitrary content,
+	 * and cancel/apply buttons.
+	 *
+	 * Afterward, revalidate() and repaint()
+	 * should be called.
+	 */
+	private void createSidePanel( String title, final FieldEditorPanel editorPanel, final Runnable applyCallback ) {
+		clearSidePanel();
+		JLabel titleLbl = new JLabel(title);
+		titleLbl.setAlignmentX( Component.CENTER_ALIGNMENT );
+		sidePanel.add( titleLbl );
+		sidePanel.add( Box.createVerticalStrut(4) );
+		sidePanel.add( new JSeparator(JSeparator.HORIZONTAL) );
+		sidePanel.add( Box.createVerticalStrut(4) );
+
+		sidePanel.add( editorPanel );
+
+		sidePanel.add( Box.createVerticalStrut(10) );
+
+		JPanel applyPanel = new JPanel();
+		applyPanel.setLayout( new BoxLayout(applyPanel, BoxLayout.X_AXIS) );
+		JButton cancelBtn = new JButton("Cancel");
+		applyPanel.add( cancelBtn );
+		applyPanel.add( Box.createHorizontalStrut(15) );
+		JButton applyBtn = new JButton("Apply");
+		applyPanel.add( applyBtn );
+		sidePanel.add( applyPanel );
+
+		cancelBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				clearSidePanel();
+			}
+		});
+
+		applyBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				applyCallback.run();
+			}
+		});
+	}
+
+	private void showRoomEditor( final RoomSprite roomSprite ) {
+		final String OXYGEN = "Oxygen";
+
+		int roomId = roomSprite.getRoomId();
+		String title = String.format("Room %2d", roomId);
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( OXYGEN, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(OXYGEN).setMaximum( 100 );
+		editorPanel.getSlider(OXYGEN).setValue( roomSprite.getOxygen() );
+		sidePanel.add( editorPanel );
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				roomSprite.setOxygen( editorPanel.getSlider(OXYGEN).getValue() );
+
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		sidePanel.revalidate();
+		this.repaint();
+	}
+
+	private void showBreachEditor( final BreachSprite breachSprite ) {
+		final String HEALTH = "Health";
+
+		String title = "Breach";
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(HEALTH).setMaximum( 100 );
+		editorPanel.getSlider(HEALTH).setValue( breachSprite.getHealth() );
+		sidePanel.add( editorPanel );
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				breachSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
+
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		sidePanel.revalidate();
+		this.repaint();
+	}
+
+	private void showFireEditor( final FireSprite fireSprite ) {
+		final String HEALTH = "Health";
+
+		String title = "Fire";
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(HEALTH).setMaximum( 100 );
+		editorPanel.getSlider(HEALTH).setValue( fireSprite.getHealth() );
+		sidePanel.add( editorPanel );
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				fireSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
+
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		sidePanel.revalidate();
+		this.repaint();
+	}
+
+	private void showCrewEditor( final CrewSprite crewSprite ) {
+		final String NAME = "Name";
+		final String HEALTH = "Health";
+		final String PILOT_SKILL = "Pilot Skill";
+		final String ENGINE_SKILL = "Engine Skill";
+		final String SHIELD_SKILL = "Shield Skill";
+		final String WEAPON_SKILL = "Weapon Skill";
+		final String REPAIR_SKILL = "Repair Skill";
+		final String COMBAT_SKILL = "Combat Skill";
+		final String REPAIRS = "Repairs";
+		final String COMBAT_KILLS = "Combat Kills";
+		final String PILOTED_EVASIONS = "Piloted Evasions";
+		final String JUMPS_SURVIVED = "Jumps Survived";
+		final String PLAYER_CONTROLLED = "Player Ctrl";
+		final String ENEMY_DRONE = "Enemy Drone";
+		final String GENDER = "Male";
+
+		int pilotInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_PILOT;
+		int engineInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_ENGINE;
+		int shieldInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_SHIELD;
+		int weaponInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_WEAPON;
+		int repairInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_REPAIR;
+		int combatInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_COMBAT;
+
+		int maxHealth = SavedGameParser.CrewState.getMaxHealth( crewSprite.getRace() );
+
+		String title = "Crew";
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( NAME, FieldEditorPanel.ContentType.STRING );
+		editorPanel.getString(NAME).setText( crewSprite.getName() );
+		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(HEALTH).setMaximum( maxHealth );
+		editorPanel.getSlider(HEALTH).setValue( crewSprite.getHealth() );
+		editorPanel.addRow( PILOT_SKILL, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(PILOT_SKILL).setMaximum( pilotInterval*2 );
+		editorPanel.getSlider(PILOT_SKILL).setValue( crewSprite.getPilotSkill() );
+		editorPanel.addRow( ENGINE_SKILL, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(ENGINE_SKILL).setMaximum( engineInterval*2 );
+		editorPanel.getSlider(ENGINE_SKILL).setValue( crewSprite.getEngineSkill() );
+		editorPanel.addRow( SHIELD_SKILL, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(SHIELD_SKILL).setMaximum( shieldInterval*2 );
+		editorPanel.getSlider(SHIELD_SKILL).setValue( crewSprite.getShieldSkill() );
+		editorPanel.addRow( WEAPON_SKILL, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(WEAPON_SKILL).setMaximum( weaponInterval*2 );
+		editorPanel.getSlider(WEAPON_SKILL).setValue( crewSprite.getWeaponSkill() );
+		editorPanel.addRow( REPAIR_SKILL, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(REPAIR_SKILL).setMaximum( repairInterval*2 );
+		editorPanel.getSlider(REPAIR_SKILL).setValue( crewSprite.getRepairSkill() );
+		editorPanel.addRow( COMBAT_SKILL, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(COMBAT_SKILL).setMaximum( combatInterval*2 );
+		editorPanel.getSlider(COMBAT_SKILL).setValue( crewSprite.getCombatSkill() );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( REPAIRS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(REPAIRS).setText( ""+crewSprite.getRepairs() );
+		editorPanel.addRow( COMBAT_KILLS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(COMBAT_KILLS).setText( ""+crewSprite.getCombatKills() );
+		editorPanel.addRow( PILOTED_EVASIONS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(PILOTED_EVASIONS).setText( ""+crewSprite.getPilotedEvasions() );
+		editorPanel.addRow( JUMPS_SURVIVED, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(JUMPS_SURVIVED).setText( ""+crewSprite.getJumpsSurvived() );
+		editorPanel.addRow( PLAYER_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(PLAYER_CONTROLLED).setSelected( crewSprite.isPlayerControlled() );
+		editorPanel.getBoolean(PLAYER_CONTROLLED).addMouseListener( new StatusbarMouseListener(frame, "Player controlled vs NPC.") );
+		editorPanel.addRow( ENEMY_DRONE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(ENEMY_DRONE).setSelected( crewSprite.isEnemyBoardingDrone() );
+		editorPanel.getBoolean(ENEMY_DRONE).addMouseListener( new StatusbarMouseListener(frame, "Turn into a boarding drone (clobbering other fields).") );
+		editorPanel.addRow( GENDER, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(GENDER).setSelected( crewSprite.isMale() );
+		editorPanel.getBoolean(GENDER).addMouseListener( new StatusbarMouseListener(frame, "Only humans can be female.") );
+
+		sidePanel.add( editorPanel );
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				String newString;
+				crewSprite.setName( editorPanel.getString(NAME).getText() );
+				crewSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
+				crewSprite.setPilotSkill( editorPanel.getSlider(PILOT_SKILL).getValue() );
+				crewSprite.setEngineSkill( editorPanel.getSlider(ENGINE_SKILL).getValue() );
+				crewSprite.setShieldSkill( editorPanel.getSlider(SHIELD_SKILL).getValue() );
+				crewSprite.setWeaponSkill( editorPanel.getSlider(WEAPON_SKILL).getValue() );
+				crewSprite.setRepairSkill( editorPanel.getSlider(REPAIR_SKILL).getValue() );
+				crewSprite.setCombatSkill( editorPanel.getSlider(COMBAT_SKILL).getValue() );
+
+				newString = editorPanel.getInt(REPAIRS).getText();
+				try { crewSprite.setRepairs( Integer.parseInt(newString) ); }
+				catch (NumberFormatException e) {}
+
+				newString = editorPanel.getInt(COMBAT_KILLS).getText();
+				try { crewSprite.setCombatKills( Integer.parseInt(newString) ); }
+				catch (NumberFormatException e) {}
+
+				newString = editorPanel.getInt(PILOTED_EVASIONS).getText();
+				try { crewSprite.setPilotedEvasions( Integer.parseInt(newString) ); }
+				catch (NumberFormatException e) {}
+
+				newString = editorPanel.getInt(JUMPS_SURVIVED).getText();
+				try { crewSprite.setJumpsSurvived( Integer.parseInt(newString) ); }
+				catch (NumberFormatException e) {}
+
+				crewSprite.setPlayerControlled( editorPanel.getBoolean(PLAYER_CONTROLLED).isSelected() );
+				crewSprite.setEnemyBoardingDrone( editorPanel.getBoolean(ENEMY_DRONE).isSelected() );
+				crewSprite.setMale( editorPanel.getBoolean(GENDER).isSelected() );
+
+				crewSprite.updateImage();
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		sidePanel.revalidate();
+		this.repaint();
 	}
 
 
@@ -1078,25 +1348,115 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	public class CrewSprite extends JComponent {
 		private BufferedImage crewImage;
-		private String name;
 		private int roomId;
 		private int squareId;
+		private String name;
+		private String race;
+		private int health;
+		private int pilotSkill, engineSkill, shieldSkill;
+		private int weaponSkill, repairSkill, combatSkill;
+		private int repairs, combatKills, pilotedEvasions;
+		private int jumpsSurvived;
+		private boolean playerControlled;
+		private boolean enemyBoardingDrone;
+		private boolean gender;
 
-		public CrewSprite( BufferedImage crewImage, SavedGameParser.CrewState crewState ) {
+		public CrewSprite( SavedGameParser.CrewState crewState ) {
 			this.crewImage = crewImage;
-			name = crewState.getName();
 			roomId = crewState.getRoomId();
 			squareId = crewState.getRoomSquare();
+			name = crewState.getName();
+			race = crewState.getRace();
+			health = crewState.getHealth();
+			pilotSkill = crewState.getPilotSkill();
+			engineSkill = crewState.getEngineSkill();
+			shieldSkill = crewState.getShieldSkill();
+			weaponSkill = crewState.getWeaponSkill();
+			repairSkill = crewState.getRepairSkill();
+			combatSkill = crewState.getCombatSkill();
+			repairs = crewState.getRepairs();
+			combatKills = crewState.getCombatKills();
+			pilotedEvasions = crewState.getPilotedEvasions();
+			jumpsSurvived = crewState.getJumpsSurvived();
+			playerControlled = crewState.isPlayerControlled();
+			enemyBoardingDrone = crewState.isEnemyBoardingDrone();
+			gender = (crewState.getGender() == 1);
+			updateImage();
 			this.setOpaque(false);
 		}
 
-		public void setName( String s ) { name = s; }
 		public void setRoomId( int n ) { roomId = n; }
 		public void setSquareId( int n ) { squareId = n; }
+		public void setName( String s ) { name = s; }
+		public void setHealth( int n ) {health = n; }
+		public void setPilotSkill( int n ) {pilotSkill = n; }
+		public void setEngineSkill( int n ) {engineSkill = n; }
+		public void setShieldSkill( int n ) {shieldSkill = n; }
+		public void setWeaponSkill( int n ) {weaponSkill = n; }
+		public void setRepairSkill( int n ) {repairSkill = n; }
+		public void setCombatSkill( int n ) {combatSkill = n; }
+		public void setRepairs( int n ) { repairs = n; }
+		public void setCombatKills( int n ) { combatKills = n; }
+		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
+		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
+		public void setPlayerControlled( boolean b ) { playerControlled = b; }
+		public void setEnemyBoardingDrone( boolean b ) { enemyBoardingDrone = b; }
+		public void setMale( boolean b ) { gender = b; }
 
-		public String getName() { return name; }
 		public int getRoomId() { return roomId; }
 		public int getSquareId() { return squareId; }
+		public String getName() { return name; }
+		public String getRace() { return race; }
+		public int getPilotSkill() { return pilotSkill; }
+		public int getEngineSkill() { return engineSkill; }
+		public int getShieldSkill() { return shieldSkill; }
+		public int getWeaponSkill() { return weaponSkill; }
+		public int getRepairSkill() { return repairSkill; }
+		public int getCombatSkill() { return combatSkill; }
+		public int getRepairs() { return repairs; }
+		public int getCombatKills() { return combatKills; }
+		public int getPilotedEvasions() { return pilotedEvasions; }
+		public int getJumpsSurvived() { return jumpsSurvived; }
+		public boolean isPlayerControlled() { return playerControlled; }
+		public boolean isEnemyBoardingDrone() { return enemyBoardingDrone; }
+		public boolean isMale() { return gender; }
+
+		public void setRace( String s ) {
+			race = s;
+			health = Math.min( health, SavedGameParser.CrewState.getMaxHealth(race) );
+		}
+		public int getHealth() { return health; }
+
+		public int getImageWidth() { return crewImage.getWidth(); }
+		public int getImageHeight() { return crewImage.getHeight(); }
+
+		public void updateImage() {
+			// TODO: Make CrewSprite image swapping less awful.
+
+			int offsetX = 0, offsetY = 0, w = 35, h = 35;
+			String imgRace = race;
+			String suffix = "";
+
+			if ( getRace().equals("battle") || isEnemyBoardingDrone() ) {
+				imgRace = "battle";         // The game will make this the new race,
+				suffix = "_enemy_sheet";    // or it'll revert to human if non-drone.
+			} else {
+				if ( isMale() == false ) {  // Never an actual race?
+					if ( getRace().equals("human") ) {
+						imgRace = "female";
+					} else {
+						setMale( true );        // Non-humans are all male.
+					}
+				}
+
+				if ( isPlayerControlled() ) {
+					suffix = "_player_yellow";
+				} else {
+					suffix = "_enemy_red";
+				}
+			}
+			crewImage = getCroppedImage( "img/people/"+ imgRace + suffix +".png", offsetX, offsetY, w, h );
+		}
 
 		@Override
 		public void paintComponent( Graphics g ) {
