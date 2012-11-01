@@ -173,88 +173,144 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.addMouseMotionListener( squareListener );
 
 		Insets ctrlInsets = new Insets(3, 4, 3, 4);
-		JPanel ctrlPanel = new JPanel();
-		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.X_AXIS) );
-		ctrlPanel.add( new JLabel("Select: ") );
-		JButton selectRoomBtn = new JButton("Room");
+
+		JPanel selectPanel = new JPanel();
+		selectPanel.setLayout( new BoxLayout(selectPanel, BoxLayout.X_AXIS) );
+		selectPanel.setBorder( BorderFactory.createTitledBorder("Select") );
+		final JButton selectRoomBtn = new JButton("Room");
 		selectRoomBtn.setMargin(ctrlInsets);
-		ctrlPanel.add( selectRoomBtn );
-		ctrlPanel.add( Box.createHorizontalStrut(5) );
-		JButton selectCrewBtn = new JButton("Crew");
+		selectPanel.add( selectRoomBtn );
+		selectPanel.add( Box.createHorizontalStrut(5) );
+		final JButton selectCrewBtn = new JButton("Crew");
 		selectCrewBtn.setMargin(ctrlInsets);
-		ctrlPanel.add( selectCrewBtn );
-		ctrlPanel.add( Box.createHorizontalStrut(5) );
-		JButton selectBreachBtn = new JButton("Breach");
+		selectPanel.add( selectCrewBtn );
+		selectPanel.add( Box.createHorizontalStrut(5) );
+		final JButton selectBreachBtn = new JButton("Breach");
 		selectBreachBtn.setMargin(ctrlInsets);
-		ctrlPanel.add( selectBreachBtn );
-		ctrlPanel.add( Box.createHorizontalStrut(5) );
-		JButton selectFireBtn = new JButton("Fire");
+		selectPanel.add( selectBreachBtn );
+		selectPanel.add( Box.createHorizontalStrut(5) );
+		final JButton selectFireBtn = new JButton("Fire");
 		selectFireBtn.setMargin(ctrlInsets);
-		ctrlPanel.add( selectFireBtn );
+		selectPanel.add( selectFireBtn );
 
-		ctrlPanel.add( Box.createHorizontalStrut(15) );
-		ctrlPanel.add( new JLabel("Reset: ") );
-		JButton resetOxygenBtn = new JButton("Oxygen");
+		JPanel addPanel = new JPanel();
+		addPanel.setLayout( new BoxLayout(addPanel, BoxLayout.X_AXIS) );
+		addPanel.setBorder( BorderFactory.createTitledBorder("Add") );
+		final JButton addCrewBtn = new JButton("Crew");
+		addCrewBtn.setMargin(ctrlInsets);
+		addPanel.add( addCrewBtn );
+		addPanel.add( Box.createHorizontalStrut(5) );
+		final JButton addBreachBtn = new JButton("Breach");
+		addBreachBtn.setMargin(ctrlInsets);
+		addPanel.add( addBreachBtn );
+		addPanel.add( Box.createHorizontalStrut(5) );
+		final JButton addFireBtn = new JButton("Fire");
+		addFireBtn.setMargin(ctrlInsets);
+		addPanel.add( addFireBtn );
+
+		JPanel resetPanel = new JPanel();
+		resetPanel.setLayout( new BoxLayout(resetPanel, BoxLayout.X_AXIS) );
+		resetPanel.setBorder( BorderFactory.createTitledBorder("Reset") );
+		final JButton resetOxygenBtn = new JButton("Oxygen");
 		resetOxygenBtn.setMargin(ctrlInsets);
-		ctrlPanel.add( resetOxygenBtn );
-		ctrlPanel.add( Box.createHorizontalStrut(5) );
-		JButton resetBreachesBtn = new JButton("Breaches");
+		resetPanel.add( resetOxygenBtn );
+		resetPanel.add( Box.createHorizontalStrut(5) );
+		final JButton resetIntrudersBtn = new JButton("Intruders");
+		resetIntrudersBtn.setMargin(ctrlInsets);
+		resetPanel.add( resetIntrudersBtn );
+		resetPanel.add( Box.createHorizontalStrut(5) );
+		final JButton resetBreachesBtn = new JButton("Breaches");
 		resetBreachesBtn.setMargin(ctrlInsets);
-		ctrlPanel.add( resetBreachesBtn );
-		ctrlPanel.add( Box.createHorizontalStrut(5) );
-		JButton resetFiresBtn = new JButton("Fires");
+		resetPanel.add( resetBreachesBtn );
+		resetPanel.add( Box.createHorizontalStrut(5) );
+		final JButton resetFiresBtn = new JButton("Fires");
 		resetFiresBtn.setMargin(ctrlInsets);
-		ctrlPanel.add( resetFiresBtn );
+		resetPanel.add( resetFiresBtn );
 
-		selectRoomBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				selectRoom();
-			}
-		});
-		selectCrewBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				selectCrew();
-			}
-		});
-		selectBreachBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				selectBreach();
-			}
-		});
-		selectFireBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				selectFire();
-			}
-		});
+		JPanel ctrlRowOnePanel = new JPanel();
+		ctrlRowOnePanel.setLayout( new BoxLayout(ctrlRowOnePanel, BoxLayout.X_AXIS) );
+		ctrlRowOnePanel.add( selectPanel );
+		ctrlRowOnePanel.add( Box.createHorizontalStrut(15) );
+		ctrlRowOnePanel.add( addPanel );
 
-		resetOxygenBtn.addActionListener(new ActionListener() {
+		JPanel ctrlRowTwoPanel = new JPanel();
+		ctrlRowTwoPanel.setLayout( new BoxLayout(ctrlRowTwoPanel, BoxLayout.X_AXIS) );
+		ctrlRowTwoPanel.add( resetPanel );
+
+		JPanel ctrlPanel = new JPanel();
+		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS) );
+		ctrlPanel.add( ctrlRowOnePanel );
+		ctrlPanel.add( Box.createVerticalStrut(8) );
+		ctrlPanel.add( ctrlRowTwoPanel );
+
+		ActionListener ctrlListener = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				for (RoomSprite roomSprite : roomSprites) {
-					if ( roomSprite.getOxygen() != 100 ) {
-						roomSprite.setOxygen(100);
+				Object source = e.getSource();
+				if ( source == selectRoomBtn ) {
+					selectRoom();
+				} else if (source == selectCrewBtn ) {
+					selectCrew();
+				} else if (source == selectBreachBtn ) {
+					selectBreach();
+				} else if (source == selectFireBtn ) {
+					selectFire();
+				} else if (source == addCrewBtn ) {
+					addCrew();
+				} else if (source == addBreachBtn ) {
+					addBreach();
+				} else if (source == addFireBtn ) {
+					addFire();
+				} else if (source == resetOxygenBtn ) {
+					for (RoomSprite roomSprite : roomSprites) {
+						if ( roomSprite.getOxygen() != 100 ) {
+							roomSprite.setOxygen(100);
+						}
 					}
+					shipPanel.repaint();
+
+				} else if (source == resetIntrudersBtn ) {
+					for (ListIterator<CrewSprite> it = crewSprites.listIterator(); it.hasNext(); ) {
+						CrewSprite crewSprite = it.next();
+						if ( !crewSprite.isPlayerControlled() ) {
+							shipPanel.remove( crewSprite );
+							it.remove();
+						}
+					}
+					shipPanel.repaint();
+
+				} else if (source == resetBreachesBtn ) {
+					for (BreachSprite breachSprite : breachSprites)
+						shipPanel.remove( breachSprite );
+					breachSprites.clear();
+					shipPanel.repaint();
+
+				} else if (source == resetFiresBtn ) {
+					for (FireSprite fireSprite : fireSprites)
+						shipPanel.remove( fireSprite );
+					fireSprites.clear();
+					shipPanel.repaint();
 				}
-				shipPanel.repaint();
 			}
-		});
+		};
 
-		resetBreachesBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				for (BreachSprite breachSprite : breachSprites)
-					shipPanel.remove( breachSprite );
-				breachSprites.clear();
-				shipPanel.repaint();
-			}
-		});
+		selectRoomBtn.addActionListener( ctrlListener );
+		selectCrewBtn.addActionListener( ctrlListener );
+		selectBreachBtn.addActionListener( ctrlListener );
+		selectFireBtn.addActionListener( ctrlListener );
 
-		resetFiresBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				for (FireSprite fireSprite : fireSprites)
-					shipPanel.remove( fireSprite );
-				fireSprites.clear();
-				shipPanel.repaint();
-			}
-		});
+		addCrewBtn.addActionListener( ctrlListener );
+		addBreachBtn.addActionListener( ctrlListener );
+		addFireBtn.addActionListener( ctrlListener );
+
+		resetOxygenBtn.addActionListener( ctrlListener );
+		resetIntrudersBtn.addActionListener( ctrlListener );
+		resetBreachesBtn.addActionListener( ctrlListener );
+		resetFiresBtn.addActionListener( ctrlListener );
+
+		resetOxygenBtn.addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
+		resetIntrudersBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all NPC crew.") );
+		resetBreachesBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all breaches.") );
+		resetFiresBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all fires.") );
 
 		JPanel centerPanel = new JPanel( new GridBagLayout() );
 
@@ -279,6 +335,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		gridC.gridx = 0;
 		gridC.gridy++;
 		centerPanel.add( ctrlPanel, gridC );
+
 		this.add( centerPanel, BorderLayout.CENTER );
 
 		sideScroll = new JScrollPane( sidePanel );
@@ -679,6 +736,83 @@ public class SavedGameFloorplanPanel extends JPanel {
 						break;
 					}
 				}
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
+	private void addCrew() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				for (CrewSprite crewSprite : crewSprites) {
+					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
+						return false;
+					}
+				}
+				return true;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				Point center = squareSelector.getSquareCenter();
+				SavedGameParser.CrewState crewState = new SavedGameParser.CrewState();
+				crewState.setRoomId( roomId );
+				crewState.setRoomSquare( squareId );
+				crewState.setSpriteX( center.x - originX - tileEdge + shipLayout.getOffsetX()*squareSize );
+				crewState.setSpriteY( center.y - originY - tileEdge + shipLayout.getOffsetY()*squareSize );
+				addCrewSprite( center.x, center.y, crewState );
+				shipPanel.repaint();
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
+	private void addBreach() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				for (BreachSprite breachSprite : breachSprites) {
+					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
+						return false;
+					}
+				}
+				return true;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				Point center = squareSelector.getSquareCenter();
+				addBreachSprite( center.x, center.y, roomId, squareId, 100 );
+				shipPanel.repaint();
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
+	private void addFire() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				for (FireSprite fireSprite : fireSprites) {
+					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
+						return false;
+					}
+				}
+				return true;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				Point center = squareSelector.getSquareCenter();
+				addFireSprite( center.x, center.y, roomId, squareId, 100 );
+				shipPanel.repaint();
 				return true;
 			}
 		});

@@ -1475,7 +1475,7 @@ public class SavedGameParser extends DatParser {
 		// Neither Crystal crews' lockdown, nor its cooldown is stored.
 		// Zoltan-produced power is not stored in SystemState.
 
-		private String name, race;
+		private String name="Frank", race="human";
 		private boolean enemyBoardingDrone = false;
 		private int health=0;
 		private int blueprintRoomId;
