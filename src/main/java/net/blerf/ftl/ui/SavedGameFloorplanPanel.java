@@ -18,6 +18,7 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
@@ -68,6 +69,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final Integer BASE_LAYER = new Integer(10);
 	private static final Integer FLOOR_LAYER = new Integer(11);
 	private static final Integer OXYGEN_LAYER = new Integer(12);
+	private static final Integer DECOR_LAYER = new Integer(13);
 	private static final Integer WALL_LAYER = new Integer(15);
 	private static final Integer SYSTEM_LAYER = new Integer(16);
 	private static final Integer BREACH_LAYER = new Integer(17);
@@ -91,13 +93,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private int originX=0, originY=0;
 	private HashMap<Rectangle, Integer> roomRegions = new HashMap<Rectangle, Integer>();
 	private HashMap<Rectangle, Integer> squareRegions = new HashMap<Rectangle, Integer>();
+	private ArrayList<Rectangle> blockedRegions = new ArrayList<Rectangle>();
+	private ArrayList<JComponent> roomDecorations = new ArrayList<JComponent>();
 	private ArrayList<RoomSprite> roomSprites = new ArrayList<RoomSprite>();
 	private ArrayList<SystemSprite> systemSprites = new ArrayList<SystemSprite>();
 	private ArrayList<BreachSprite> breachSprites = new ArrayList<BreachSprite>();
 	private ArrayList<FireSprite> fireSprites = new ArrayList<FireSprite>();
 	private ArrayList<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
 	private ArrayList<CrewSprite> crewSprites = new ArrayList<CrewSprite>();
-	private HashMap<String, HashMap<Rectangle, BufferedImage>> cachedSubImages = new HashMap<String, HashMap<Rectangle, BufferedImage>>();
+	private HashMap<String, HashMap<Rectangle, BufferedImage>> cachedImages = new HashMap<String, HashMap<Rectangle, BufferedImage>>();
 
 	private JLayeredPane shipPanel = null;
 	private JPanel sidePanel = null;
@@ -357,6 +361,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipGfxBaseName = shipState.getShipGraphicsBaseName();
 		originX = shipChassis.getImageBounds().x * -1;
 		originY = shipChassis.getImageBounds().y * -1;
+		ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
 		for (RoomSprite roomSprite : roomSprites)
 			shipPanel.remove( roomSprite );
@@ -403,6 +408,33 @@ public class SavedGameFloorplanPanel extends JPanel {
 					squareRegions.put( squareRect, j );
 				}
 			}
+			// Find squares that don't allow crew in them (medbay's slot).
+			blockedRegions.clear();
+			ShipBlueprint.SystemList.SystemRoom medicalSystem = blueprintSystems.getMedicalRoom();
+			if ( medicalSystem != null ) {
+				ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
+				if ( medicalSlot != null ) {
+					int badRoomId = medicalSystem.getRoomId();
+					int badSquareId = medicalSlot.getNumber();
+					if ( badSquareId >= 0 ) {
+						log.trace(String.format("Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId) );
+
+						EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(badRoomId);
+						int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
+						int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
+						int roomX = originX + squareSize * roomLocX;
+						int roomY = originY + squareSize * roomLocY;
+						int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+						int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+
+						int squareX = roomX + tileEdge + (badSquareId%squaresH)*squareSize;
+						int squareY = roomY + tileEdge + (badSquareId/squaresH)*squareSize;
+						Rectangle squareRect = new Rectangle(squareX, squareY, squareSize, squareSize);
+						blockedRegions.add( squareRect );
+					}
+				}
+			}
+
 
 			// Load the fuselage image.
 			InputStream in = null;
@@ -436,6 +468,47 @@ public class SavedGameFloorplanPanel extends JPanel {
 				try {if (in != null) in.close();}
 				catch (IOException f) {}
 	    }
+
+			for (JComponent roomDecor : roomDecorations)
+				shipPanel.remove( roomDecor );
+			roomDecorations.clear();
+			for (ShipBlueprint.SystemList.SystemRoom systemRoom : blueprintSystems.getSystemRooms()) {
+				String roomImgPath = systemRoom.getImg();
+
+				int roomId = systemRoom.getRoomId();
+				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(roomId);
+				int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
+				int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
+				int roomX = originX + squareSize * roomLocX;
+				int roomY = originY + squareSize * roomLocY;
+				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+
+				if ( roomImgPath != null ) {
+					// Gotta scale because Zoltan #2's got a tall Doors image for a wide room. :/
+					BufferedImage decorImage = getScaledImage( "img/ship/interior/"+ roomImgPath +".png", squaresH*squareSize, squaresV*squareSize );
+					JLabel decorLbl = new JLabel( new ImageIcon(decorImage) );
+					decorLbl.setOpaque(false);
+					decorLbl.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
+					roomDecorations.add( decorLbl );
+					shipPanel.add( decorLbl, DECOR_LAYER );
+				}
+
+				if ( systemRoom == blueprintSystems.getTeleporterRoom() ) {
+					for (int s=0; s < squaresH*squaresV; s++) {
+						int decorX = roomX + (s%squaresH)*squareSize + squareSize/2;
+						int decorY = roomY + (s/squaresH)*squareSize + squareSize/2;
+
+						BufferedImage decorImage = getScaledImage( "img/ship/interior/teleporter_off.png", 20, 20 );
+						JLabel decorLbl = new JLabel( new ImageIcon(decorImage) );
+						decorLbl.setOpaque(false);
+						decorLbl.setSize( squaresH*squareSize, squaresV*squareSize );
+						placeSprite( decorX, decorY, decorLbl );
+						roomDecorations.add( decorLbl );
+						shipPanel.add( decorLbl, DECOR_LAYER );
+					}
+				}
+			}
 		}
 
 		// Add doors and draw walls and floor crevices.
@@ -664,7 +737,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void selectCrew() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
-			public boolean isSquareValid( int roomId, int squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for (CrewSprite crewSprite : crewSprites) {
 					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
@@ -691,7 +764,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void selectBreach() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
-			public boolean isSquareValid( int roomId, int squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for (BreachSprite breachSprite : breachSprites) {
 					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
@@ -718,7 +791,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void selectFire() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
-			public boolean isSquareValid( int roomId, int squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for (FireSprite fireSprite : fireSprites) {
 					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
@@ -745,8 +818,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addCrew() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
-			public boolean isSquareValid( int roomId, int squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
+				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
 				for (CrewSprite crewSprite : crewSprites) {
 					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
 						return false;
@@ -774,8 +849,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addBreach() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
-			public boolean isSquareValid( int roomId, int squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
+				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
 				for (BreachSprite breachSprite : breachSprites) {
 					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
 						return false;
@@ -798,8 +875,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addFire() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
-			public boolean isSquareValid( int roomId, int squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
+				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
 				for (FireSprite fireSprite : fireSprites) {
 					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
 						return false;
@@ -822,8 +901,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void moveCrew( final CrewSprite mobileSprite ) {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
-			public boolean isSquareValid( int roomId, int squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
+				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
 				for (CrewSprite crewSprite : crewSprites) {
 					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
 						return false;
@@ -848,8 +929,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private BufferedImage getCroppedImage( String innerPath, int x, int y, int w, int h) {
 		Rectangle keyRect = new Rectangle( x, y, w, h );
 		BufferedImage result = null;
-		HashMap<Rectangle, BufferedImage> cropMap = cachedSubImages.get(innerPath);
-		if ( cropMap != null ) result = cropMap.get(keyRect);
+		HashMap<Rectangle, BufferedImage> cacheMap = cachedImages.get(innerPath);
+		if ( cacheMap != null ) result = cacheMap.get(keyRect);
 		if (result != null) return result;
 		log.trace( "Image not in cache, loading and cropping...: "+ innerPath );
 
@@ -868,7 +949,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			catch (IOException f) {}
 		}
 
-		if ( result == null ) {  // Gurantee a returned image, with a stand-in.
+		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
 			Graphics2D g2d = (Graphics2D)result.createGraphics();
 			g2d.setColor( new Color(150, 150, 200) );
@@ -876,11 +957,63 @@ public class SavedGameFloorplanPanel extends JPanel {
 			g2d.dispose();
 		}
 
-		if ( cropMap == null ) {
-			cropMap = new HashMap<Rectangle, BufferedImage>();
-			cachedSubImages.put( innerPath, cropMap );
+		if ( cacheMap == null ) {
+			cacheMap = new HashMap<Rectangle, BufferedImage>();
+			cachedImages.put( innerPath, cacheMap );
 		}
-		cropMap.put( keyRect, result );
+		cacheMap.put( keyRect, result );
+
+		return result;
+	}
+
+	/** Gets an image, scaling if necessary, and caches the result. */
+	private BufferedImage getScaledImage( String innerPath, int w, int h) {
+		Rectangle keyRect = new Rectangle( 0, 0, w, h );
+		BufferedImage result = null;
+		HashMap<Rectangle, BufferedImage> cacheMap = cachedImages.get(innerPath);
+		if ( cacheMap != null ) result = cacheMap.get(keyRect);
+		if (result != null) return result;
+		log.trace( "Image not in cache, loading and scaling...: "+ innerPath );
+
+
+		InputStream in = null;
+		try {
+			in = DataManager.get().getResourceInputStream( innerPath );
+			BufferedImage origImage = ImageIO.read(in);
+
+			if ( origImage.getWidth() == w && origImage.getHeight() == h ) {
+				result = origImage;
+			} else {
+				BufferedImage scaledImage = new BufferedImage(w, h, Transparency.TRANSLUCENT);
+				Graphics2D g2d = scaledImage.createGraphics();
+				g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+				g2d.drawImage(origImage, 0, 0, w, h, null);
+				g2d.dispose();
+				result = scaledImage;
+			}
+
+		} catch (RasterFormatException e) {
+			log.error( "Failed to load and scale image: "+ innerPath, e );
+		} catch (IOException e) {
+			log.error( "Failed to load and scale image: "+ innerPath, e );
+		} finally {
+			try {if (in != null) in.close();}
+			catch (IOException f) {}
+		}
+
+		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
+			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
+			Graphics2D g2d = (Graphics2D)result.createGraphics();
+			g2d.setColor( new Color(150, 150, 200) );
+			g2d.fillRect( 0, 0, w-1, h-1 );
+			g2d.dispose();
+		}
+
+		if ( cacheMap == null ) {
+			cacheMap = new HashMap<Rectangle, BufferedImage>();
+			cachedImages.put( innerPath, cacheMap );
+		}
+		cacheMap.put( keyRect, result );
 
 		return result;
 	}
@@ -981,9 +1114,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		Color floorCrackColor = new Color(125, 125, 125);
 		Stroke floorCrackStroke = new BasicStroke(1);
 		Color roomBorderColor = new Color(15, 15, 15);
-		Stroke roomBorderStroke = new BasicStroke(3);
-		Color closedDoorColor = new Color(250, 150, 50);
-		Stroke closedDoorStroke = new BasicStroke(5);
+		Stroke roomBorderStroke = new BasicStroke(4);
 		SavedGameParser.DoorState doorState = null;
 		int fromX, fromY, toX, toY;
 
@@ -1019,7 +1150,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				  wallG.drawLine( fromX, fromY, toX, fromY+(toY-fromY)/8 );
 				  wallG.drawLine( fromX, fromY+(toY-fromY)/8*7, toX, toY );
 
-					addDoorSprite( fromX+tileEdge, fromY+tileEdge+(toY-fromY)/2, doorLevel, true, doorState.isOpen() );
+					addDoorSprite( fromX, fromY+(toY-fromY)/2, doorLevel, true, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1039,7 +1170,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				  wallG.drawLine( fromX, fromY, toX, fromY+(toY-fromY)/8 );
 				  wallG.drawLine( fromX, fromY+(toY-fromY)/8*7, toX, toY );
 
-					addDoorSprite( fromX+tileEdge, fromY+tileEdge+(toY-fromY)/2, doorLevel, true, doorState.isOpen() );
+					addDoorSprite( fromX, fromY+(toY-fromY)/2, doorLevel, true, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1063,7 +1194,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				  wallG.drawLine( fromX, fromY, fromX+(toX-fromX)/8, fromY );
 				  wallG.drawLine( fromX+(toX-fromX)/8*7, fromY, toX, toY );
 
-					addDoorSprite( fromX+tileEdge+(toX-fromX)/2, fromY+tileEdge, doorLevel, false, doorState.isOpen() );
+					addDoorSprite( fromX+(toX-fromX)/2, fromY, doorLevel, false, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1083,7 +1214,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				  wallG.drawLine( fromX, fromY, fromX+(toX-fromX)/8, fromY );
 				  wallG.drawLine( fromX+(toX-fromX)/8*7, fromY, toX, toY );
 
-					addDoorSprite( fromX+tileEdge+(toX-fromX)/2, fromY+tileEdge, doorLevel, false, doorState.isOpen() );
+					addDoorSprite( fromX+(toX-fromX)/2, fromY, doorLevel, false, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1812,6 +1943,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			return squareId;
 		}
 
+		public Rectangle getSquareRectangle() {
+			return currentRect;
+		}
+
 		public Point getSquareCenter() {
 			Point result = null;
 			if ( currentRect != null ) {
@@ -1831,7 +1966,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		public boolean isCurrentSquareValid() {
-			return squareCriteria.isSquareValid( getRoomId(), getSquareId() );
+			return squareCriteria.isSquareValid( this, getRoomId(), getSquareId() );
 		}
 
 		public void setCallback( SquareSelectionCallback cb ) {
@@ -1856,7 +1991,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			Color prevColor = g2d.getColor();
 
 			if ( currentRect != null ) {
-				Color squareColor = squareCriteria.getSquareColor( getRoomId(), getSquareId() );
+				Color squareColor = squareCriteria.getSquareColor( this, getRoomId(), getSquareId() );
 				if ( squareColor != null ) {
 					g2d.setColor( squareColor );
 					g2d.drawRect( currentRect.x, currentRect.y, (currentRect.width-1), (currentRect.height-1) );
@@ -1876,16 +2011,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private Color invalidColor = Color.RED.darker();
 
 		/** Returns a highlight color when hovering over a square, or null for none. */
-		public Color getSquareColor( int roomId, int squareId ) {
+		public Color getSquareColor( SquareSelector squareSelector, int roomId, int squareId ) {
 			if ( roomId < 0 || squareId < 0 ) return null;
-			if ( isSquareValid(roomId, squareId) )
+			if ( isSquareValid(squareSelector, roomId, squareId) )
 				return validColor;
 			else
 				return invalidColor;
 		}
 
 		/** Returns true if a square can be selected, false otherwise. */
-		public boolean isSquareValid( int roomId, int squareId ) {
+		public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 			if ( roomId < 0 || squareId < 0 ) return false;
 			return true;
 		}
