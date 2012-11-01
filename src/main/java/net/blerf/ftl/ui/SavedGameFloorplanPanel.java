@@ -261,6 +261,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		gridC.fill = GridBagConstraints.NONE;
 		gridC.weightx = 0.0;
 		gridC.weighty = 0.0;
+		gridC.gridheight = 2;
 		gridC.gridx++;
 		this.add( sidePanel, gridC );
 
@@ -268,6 +269,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		gridC.fill = GridBagConstraints.HORIZONTAL;
 		gridC.weightx = 1.0;
 		gridC.weighty = 0.0;
+		gridC.gridheight = 1;
 		gridC.gridx = 0;
 		gridC.gridy++;
 		this.add( ctrlPanel, gridC );
@@ -534,12 +536,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Crew.
-		// TODO: Make the sprite fully representative of a CrewState,
-		// so the shipState's list can be cleared and repopulated from scratch.
 		ArrayList<SavedGameParser.CrewState> crewList = shipState.getCrewList();
-		for (int i=0; i < crewList.size(); i++) {
-			CrewSprite crewSprite = crewSprites.get(i);
-			SavedGameParser.CrewState crewState = crewList.get(i);
+		crewList.clear();
+		for (CrewSprite crewSprite : crewSprites) {
+			SavedGameParser.CrewState crewState = new SavedGameParser.CrewState();
+
 			crewState.setName( crewSprite.getName() );
 			crewState.setRace( crewSprite.getRace() );
 			crewState.setHealth( crewSprite.getHealth() );
@@ -568,6 +569,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			crewState.setPlayerControlled( crewSprite.isPlayerControlled() );
 			crewState.setEnemyBoardingDrone( crewSprite.isEnemyBoardingDrone() );
 			crewState.setMale( crewSprite.isMale() );
+
+			crewState.setRoomId( crewSprite.getRoomId() );
+			crewState.setRoomSquare( crewSprite.getSquareId() );
+			crewState.setSpriteX( crewSprite.getX()+crewSprite.getImageWidth()/2 - originX - tileEdge + shipLayout.getOffsetX()*squareSize );
+			crewState.setSpriteY( crewSprite.getY()+crewSprite.getImageHeight()/2 - originY - tileEdge + shipLayout.getOffsetY()*squareSize );
+
+			crewList.add( crewState );
 		}
 	}
 
@@ -1373,6 +1381,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private boolean playerControlled;
 		private boolean enemyBoardingDrone;
 		private boolean male;
+		private int spriteX;
+		private int spriteY;
 
 		public CrewSprite( SavedGameParser.CrewState crewState ) {
 			this.crewImage = crewImage;
@@ -1394,6 +1404,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			playerControlled = crewState.isPlayerControlled();
 			enemyBoardingDrone = crewState.isEnemyBoardingDrone();
 			male = crewState.isMale();
+			spriteX = crewState.getSpriteX();
+			spriteY = crewState.getSpriteY();
 			makeSane();
 			this.setOpaque(false);
 		}
@@ -1416,6 +1428,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public void setEnemyBoardingDrone( boolean b ) { enemyBoardingDrone = b; }
 		public void setMale( boolean b ) { male = b; }
+		public void setSpriteX( int n ) { spriteX = n; }
+		public void setSpriteY( int n ) { spriteY = n; }
 
 		public int getRoomId() { return roomId; }
 		public int getSquareId() { return squareId; }
@@ -1435,6 +1449,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public boolean isPlayerControlled() { return playerControlled; }
 		public boolean isEnemyBoardingDrone() { return enemyBoardingDrone; }
 		public boolean isMale() { return male; }
+		public int getSpriteX() { return spriteX; }
+		public int getSpriteY() { return spriteY; }
 
 		public int getImageWidth() { return crewImage.getWidth(); }
 		public int getImageHeight() { return crewImage.getHeight(); }

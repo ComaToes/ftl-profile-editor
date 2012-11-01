@@ -467,8 +467,8 @@ public class SavedGameParser extends DatParser {
 		crew.setRace( readString(in) );
 		crew.setEnemyBoardingDrone( readBool(in) );
 		crew.setHealth( readInt(in) );
-		crew.setX( readInt(in) );
-		crew.setY( readInt(in) );
+		crew.setSpriteX( readInt(in) );
+		crew.setSpriteY( readInt(in) );
 		crew.setRoomId( readInt(in) );
 		crew.setRoomSquare( readInt(in) );
 		crew.setPlayerControlled( readBool(in) );
@@ -492,8 +492,8 @@ public class SavedGameParser extends DatParser {
 		writeString( out, crew.getRace() );
 		writeBool( out, crew.isEnemyBoardingDrone() );
 		writeInt( out, crew.getHealth() );
-		writeInt( out, crew.getX() );
-		writeInt( out, crew.getY() );
+		writeInt( out, crew.getSpriteX() );
+		writeInt( out, crew.getSpriteY() );
 		writeInt( out, crew.getRoomId() );
 		writeInt( out, crew.getRoomSquare() );
 		writeBool( out, crew.isPlayerControlled() );
@@ -595,8 +595,8 @@ public class SavedGameParser extends DatParser {
 		DroneState drone = new DroneState( readString(in) );
 		drone.setArmed( readBool(in) );
 		drone.setPlayerControlled( readBool(in) );
-		drone.setX( readInt(in) );
-		drone.setY( readInt(in) );
+		drone.setSpriteX( readInt(in) );
+		drone.setSpriteY( readInt(in) );
 		drone.setRoomId( readInt(in) );
 		drone.setRoomSquare( readInt(in) );
 		drone.setHealth( readInt(in) );
@@ -607,8 +607,8 @@ public class SavedGameParser extends DatParser {
 		writeString( out, drone.getDroneId() );
 		writeBool( out, drone.isArmed() );
 		writeBool( out, drone.isPlayerControlled() );
-		writeInt( out, drone.getX() );
-		writeInt( out, drone.getY() );
+		writeInt( out, drone.getSpriteX() );
+		writeInt( out, drone.getSpriteY() );
 		writeInt( out, drone.getRoomId() );
 		writeInt( out, drone.getRoomSquare() );
 		writeInt( out, drone.getHealth() );
@@ -1485,7 +1485,7 @@ public class SavedGameParser extends DatParser {
 		private int weaponSkill=0, repairSkill=0, combatSkill=0;
 		private int repairs=0, combatKills=0, pilotedEvasions=0;
 		private int jumpsSurvived=0, skillMasteries=0;
-		private int x, y;
+		private int spriteX, spriteY;
 		private boolean male=true;
 
 		public CrewState() {
@@ -1494,8 +1494,6 @@ public class SavedGameParser extends DatParser {
 		public void setName( String s ) {name = s; }
 		public void setRace( String s ) {race = s; }
 		public void setHealth( int n ) {health = n; }
-		public void setX( int x ) { this.x = x; };
-		public void setY( int y ) { this.y = y; };
 		public void setRoomId( int n ) {blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
@@ -1514,8 +1512,6 @@ public class SavedGameParser extends DatParser {
 		public String getName() { return name; }
 		public String getRace() { return race; }
 		public int getHealth() { return health; }
-		public int getX() { return x; }
-		public int getY() { return y; }
 		public int getRoomId() { return blueprintRoomId; }
 		public int getRoomSquare() { return roomSquare; }
 		public boolean isPlayerControlled() { return playerControlled; }
@@ -1530,6 +1526,24 @@ public class SavedGameParser extends DatParser {
 		public int getPilotedEvasions() { return pilotedEvasions; }
 		public int getJumpsSurvived() { return jumpsSurvived; }
 		public int getSkillMasteries() { return skillMasteries; }
+
+		/**
+		 * Sets the position of the crew's image.
+		 *
+		 * Technically the roomId/square fields set the
+		 * crew's desired location. This field is where
+		 * the crew realy is, possibly en route.
+		 *
+		 * It's the position of the crew image's center,
+		 * relative to the top-left square's corner, in
+		 * pixels, plus (the ShipLayout's offset times
+		 * the square-size, which is 35).
+		 */
+		public void setSpriteX( int n ) { spriteX = n; };
+		public void setSpriteY( int n ) { spriteY = n; };
+		public int getSpriteX() { return spriteX; }
+		public int getSpriteY() { return spriteY; }
+
 
 		/**
 		 * Toggles gender.
@@ -1579,7 +1593,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
-			result.append(String.format("Position:          %3d,%3d\n", x, y));
+			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
 			result.append(String.format("Pilot Skill:       %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
 			result.append(String.format("Engine Skill:      %3d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
 			result.append(String.format("Shield Skill:      %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
@@ -1774,9 +1788,9 @@ public class SavedGameParser extends DatParser {
 		private String droneId;
 		private boolean armed = false;
 		private boolean playerControlled = true;  // False when not armed.
-		private int x = -1, y = -1;        // -1 when not armed.
-		private int blueprintRoomId = -1;  // -1 when not armed.
-		private int roomSquare = -1;       // -1 when not armed.
+		private int spriteX = -1, spriteY = -1;   // -1 when body not present.
+		private int blueprintRoomId = -1;  // -1 when body not present.
+		private int roomSquare = -1;       // -1 when body not present.
 		private int health = 1;
 
 
@@ -1788,16 +1802,16 @@ public class SavedGameParser extends DatParser {
 
 		public void setArmed( boolean b ) { armed = b; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
-		public void setX( int n ) { x = n; }
-		public void setY( int n ) { y = n; }
+		public void setSpriteX( int n ) { spriteX = n; }
+		public void setSpriteY( int n ) { spriteY = n; }
 		public void setRoomId( int n ) { blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setHealth( int n ) { health = n; }
 
 		public boolean isArmed() { return armed; }
 		public boolean isPlayerControlled() { return playerControlled; }
-		public int getX() { return x; }
-		public int getY() { return y; }
+		public int getSpriteX() { return spriteX; }
+		public int getSpriteY() { return spriteY; }
 		public int getRoomId() { return blueprintRoomId; }
 		public int getRoomSquare() { return roomSquare; }
 		public int getHealth() { return health; }
@@ -1811,7 +1825,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
-			result.append(String.format("Position:          %3d,%3d\n", x, y));
+			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
 			return result.toString();
 		}
 	}
