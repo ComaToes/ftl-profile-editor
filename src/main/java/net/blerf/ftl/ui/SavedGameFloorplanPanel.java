@@ -819,6 +819,31 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible(true);
 	}
 
+	private void moveCrew( final CrewSprite mobileSprite ) {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				for (CrewSprite crewSprite : crewSprites) {
+					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
+						return false;
+					}
+				}
+				return true;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				Point center = squareSelector.getSquareCenter();
+				placeSprite( center.x, center.y, mobileSprite );
+				mobileSprite.setRoomId( roomId );
+				mobileSprite.setSquareId( squareId );
+				return false;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
 	/** Gets a cropped area of an image and caches the result. */
 	private BufferedImage getCroppedImage( String innerPath, int x, int y, int w, int h) {
 		Rectangle keyRect = new Rectangle( x, y, w, h );
@@ -941,7 +966,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipPanel.add( crewSprite, CREW_LAYER );
 	}
 
-	/** Relocates a JComponent within its parent's space. */
+	/** Relocates a JComponent within its parent's null layout. */
 	private void placeSprite( int centerX, int centerY, JComponent sprite ) {
 		Dimension spriteSize = sprite.getSize();
 		sprite.setLocation( centerX-spriteSize.width/2, centerY-spriteSize.height/2 );
@@ -1103,11 +1128,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		JLabel titleLbl = new JLabel(title);
 		titleLbl.setAlignmentX( Component.CENTER_ALIGNMENT );
 		sidePanel.add( titleLbl );
-		sidePanel.add( Box.createVerticalStrut(4) );
-		JSeparator titleSep = new JSeparator(JSeparator.HORIZONTAL);
-		titleSep.setMaximumSize( new Dimension(Short.MAX_VALUE, titleSep.getPreferredSize().height) );
-		sidePanel.add( titleSep );
-		sidePanel.add( Box.createVerticalStrut(4) );
+		addSidePanelSeparator(4);
 
 		// Keep the editor from growing and creating gaps around it.
 		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
@@ -1135,6 +1156,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 				applyCallback.run();
 			}
 		});
+	}
+
+	/**
+	 * Adds a separator to the side panel.
+	 */
+	private void addSidePanelSeparator( int spacerSize ) {
+		sidePanel.add( Box.createVerticalStrut( spacerSize ) );
+		JSeparator newSep = new JSeparator(JSeparator.HORIZONTAL);
+		newSep.setMaximumSize( new Dimension(Short.MAX_VALUE, newSep.getPreferredSize().height) );
+		sidePanel.add( newSep );
+		sidePanel.add( Box.createVerticalStrut( spacerSize ) );
 	}
 
 	private void showRoomEditor( final RoomSprite roomSprite ) {
@@ -1181,6 +1213,20 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
+		addSidePanelSeparator(6);
+
+		JButton removeBtn = new JButton("Remove");
+		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
+		sidePanel.add(removeBtn);
+
+		removeBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				clearSidePanel();
+				breachSprites.remove( breachSprite );
+				shipPanel.remove( breachSprite );
+			}
+		});
+
 		showSidePanel();
 	}
 
@@ -1203,6 +1249,20 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		};
 		createSidePanel( title, editorPanel, applyCallback );
+
+		addSidePanelSeparator(6);
+
+		JButton removeBtn = new JButton("Remove");
+		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
+		sidePanel.add(removeBtn);
+
+		removeBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				clearSidePanel();
+				fireSprites.remove( fireSprite );
+				shipPanel.remove( fireSprite );
+			}
+		});
 
 		showSidePanel();
 	}
@@ -1329,6 +1389,32 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		};
 		createSidePanel( title, editorPanel, applyCallback );
+
+		addSidePanelSeparator(6);
+
+		JButton moveBtn = new JButton("Move To...");
+		moveBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
+		sidePanel.add(moveBtn);
+
+		sidePanel.add( Box.createVerticalStrut(6) );
+
+		JButton removeBtn = new JButton("Remove");
+		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
+		sidePanel.add(removeBtn);
+
+		moveBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				moveCrew( crewSprite );
+			}
+		});
+
+		removeBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				clearSidePanel();
+				crewSprites.remove( crewSprite );
+				shipPanel.remove( crewSprite );
+			}
+		});
 
 		showSidePanel();
 	}
