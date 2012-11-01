@@ -478,7 +478,7 @@ public class SavedGameParser extends DatParser {
 		crew.setWeaponSkill( readInt(in) );
 		crew.setRepairSkill( readInt(in) );
 		crew.setCombatSkill( readInt(in) );
-		crew.setGender( readInt(in) );
+		crew.setMale( readBool(in) );
 		crew.setRepairs( readInt(in) );
 		crew.setCombatKills( readInt(in) );
 		crew.setPilotedEvasions( readInt(in) );
@@ -503,7 +503,7 @@ public class SavedGameParser extends DatParser {
 		writeInt( out, crew.getWeaponSkill() );
 		writeInt( out, crew.getRepairSkill() );
 		writeInt( out, crew.getCombatSkill() );
-		writeInt( out, crew.getGender() );
+		writeBool( out, crew.isMale() );
 		writeInt( out, crew.getRepairs() );
 		writeInt( out, crew.getCombatKills() );
 		writeInt( out, crew.getPilotedEvasions() );
@@ -1486,7 +1486,7 @@ public class SavedGameParser extends DatParser {
 		private int repairs=0, combatKills=0, pilotedEvasions=0;
 		private int jumpsSurvived=0, skillMasteries=0;
 		private int x, y;
-		private int gender=1;  // 1=Male, 0=Female.
+		private boolean male=true;
 
 		public CrewState() {
 		}
@@ -1505,7 +1505,6 @@ public class SavedGameParser extends DatParser {
 		public void setWeaponSkill( int n ) {weaponSkill = n; }
 		public void setRepairSkill( int n ) {repairSkill = n; }
 		public void setCombatSkill( int n ) {combatSkill = n; }
-		public void setGender( int gender ) { this.gender = gender; }
 		public void setRepairs( int n ) { repairs = n; }
 		public void setCombatKills( int n ) { combatKills = n; }
 		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
@@ -1526,12 +1525,25 @@ public class SavedGameParser extends DatParser {
 		public int getWeaponSkill() { return weaponSkill; }
 		public int getRepairSkill() { return repairSkill; }
 		public int getCombatSkill() { return combatSkill; }
-		public int getGender() { return gender; }
 		public int getRepairs() { return repairs; }
 		public int getCombatKills() { return combatKills; }
 		public int getPilotedEvasions() { return pilotedEvasions; }
 		public int getJumpsSurvived() { return jumpsSurvived; }
 		public int getSkillMasteries() { return skillMasteries; }
+
+		/**
+		 * Toggles gender.
+		 * Humans with this set to false have a
+		 * female image. Other races accept the
+		 * flag but ignore it.
+		 *
+		 * No Andorians in the game, so this is
+		 * only a two-state boolean.
+		 */
+		public void setMale( boolean b ) {
+			male = b;
+		}
+		public boolean isMale() { return male; }
 
 		/**
 		 * Sets whether this crew member is a hostile drone.
@@ -1562,7 +1574,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Name:              %s\n", name));
 			result.append(String.format("Race:              %s\n", race));
 			result.append(String.format("Enemy Drone:       %b\n", enemyBoardingDrone));
-			result.append(String.format("Gender:            %s\n", (gender == 1 ? "Male" : "Female") ));
+			result.append(String.format("Gender:            %s\n", (male ? "Male" : "Female") ));
 			result.append(String.format("Health:            %3d\n", health));
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));

@@ -541,6 +541,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			CrewSprite crewSprite = crewSprites.get(i);
 			SavedGameParser.CrewState crewState = crewList.get(i);
 			crewState.setName( crewSprite.getName() );
+			crewState.setRace( crewSprite.getRace() );
 			crewState.setHealth( crewSprite.getHealth() );
 
 			crewState.setPilotSkill( crewSprite.getPilotSkill() );
@@ -566,7 +567,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			crewState.setPlayerControlled( crewSprite.isPlayerControlled() );
 			crewState.setEnemyBoardingDrone( crewSprite.isEnemyBoardingDrone() );
-			crewState.setGender( (crewSprite.isMale() ? 1 : 0) );
+			crewState.setMale( crewSprite.isMale() );
 		}
 	}
 
@@ -1038,6 +1039,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void showCrewEditor( final CrewSprite crewSprite ) {
 		final String NAME = "Name";
+		final String RACE = "Race";
 		final String HEALTH = "Health";
 		final String PILOT_SKILL = "Pilot Skill";
 		final String ENGINE_SKILL = "Engine Skill";
@@ -1067,6 +1069,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( NAME, FieldEditorPanel.ContentType.STRING );
 		editorPanel.getString(NAME).setText( crewSprite.getName() );
+		editorPanel.addRow( RACE, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.getCombo(RACE).addItem("battle");
+		editorPanel.getCombo(RACE).addItem("crystal");
+		editorPanel.getCombo(RACE).addItem("energy");
+		editorPanel.getCombo(RACE).addItem("engi");
+		editorPanel.getCombo(RACE).addItem("human");
+		editorPanel.getCombo(RACE).addItem("mantis");
+		editorPanel.getCombo(RACE).addItem("rock");
+		editorPanel.getCombo(RACE).addItem("slug");
+		editorPanel.getCombo(RACE).setSelectedItem( crewSprite.getRace() );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(HEALTH).setMaximum( maxHealth );
 		editorPanel.getSlider(HEALTH).setValue( crewSprite.getHealth() );
@@ -1105,7 +1117,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getBoolean(ENEMY_DRONE).addMouseListener( new StatusbarMouseListener(frame, "Turn into a boarding drone (clobbering other fields).") );
 		editorPanel.addRow( GENDER, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(GENDER).setSelected( crewSprite.isMale() );
-		editorPanel.getBoolean(GENDER).addMouseListener( new StatusbarMouseListener(frame, "Only humans can be female.") );
+		editorPanel.getBoolean(GENDER).addMouseListener( new StatusbarMouseListener(frame, "Only humans can be female (no effect on other races).") );
 
 		sidePanel.add( editorPanel );
 
@@ -1113,6 +1125,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public void run() {
 				String newString;
 				crewSprite.setName( editorPanel.getString(NAME).getText() );
+				crewSprite.setRace( (String)editorPanel.getCombo(RACE).getSelectedItem() );
 				crewSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
 				crewSprite.setPilotSkill( editorPanel.getSlider(PILOT_SKILL).getValue() );
 				crewSprite.setEngineSkill( editorPanel.getSlider(ENGINE_SKILL).getValue() );
@@ -1141,7 +1154,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				crewSprite.setEnemyBoardingDrone( editorPanel.getBoolean(ENEMY_DRONE).isSelected() );
 				crewSprite.setMale( editorPanel.getBoolean(GENDER).isSelected() );
 
-				crewSprite.updateImage();
+				crewSprite.makeSane();
 				clearSidePanel();
 			}
 		};
@@ -1359,7 +1372,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private int jumpsSurvived;
 		private boolean playerControlled;
 		private boolean enemyBoardingDrone;
-		private boolean gender;
+		private boolean male;
 
 		public CrewSprite( SavedGameParser.CrewState crewState ) {
 			this.crewImage = crewImage;
@@ -1380,14 +1393,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 			jumpsSurvived = crewState.getJumpsSurvived();
 			playerControlled = crewState.isPlayerControlled();
 			enemyBoardingDrone = crewState.isEnemyBoardingDrone();
-			gender = (crewState.getGender() == 1);
-			updateImage();
+			male = crewState.isMale();
+			makeSane();
 			this.setOpaque(false);
 		}
 
 		public void setRoomId( int n ) { roomId = n; }
 		public void setSquareId( int n ) { squareId = n; }
 		public void setName( String s ) { name = s; }
+		public void setRace( String s ) { race = s; }
 		public void setHealth( int n ) {health = n; }
 		public void setPilotSkill( int n ) {pilotSkill = n; }
 		public void setEngineSkill( int n ) {engineSkill = n; }
@@ -1401,12 +1415,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public void setEnemyBoardingDrone( boolean b ) { enemyBoardingDrone = b; }
-		public void setMale( boolean b ) { gender = b; }
+		public void setMale( boolean b ) { male = b; }
 
 		public int getRoomId() { return roomId; }
 		public int getSquareId() { return squareId; }
 		public String getName() { return name; }
 		public String getRace() { return race; }
+		public int getHealth() { return health; }
 		public int getPilotSkill() { return pilotSkill; }
 		public int getEngineSkill() { return engineSkill; }
 		public int getShieldSkill() { return shieldSkill; }
@@ -1419,34 +1434,40 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public int getJumpsSurvived() { return jumpsSurvived; }
 		public boolean isPlayerControlled() { return playerControlled; }
 		public boolean isEnemyBoardingDrone() { return enemyBoardingDrone; }
-		public boolean isMale() { return gender; }
-
-		public void setRace( String s ) {
-			race = s;
-			health = Math.min( health, SavedGameParser.CrewState.getMaxHealth(race) );
-		}
-		public int getHealth() { return health; }
+		public boolean isMale() { return male; }
 
 		public int getImageWidth() { return crewImage.getWidth(); }
 		public int getImageHeight() { return crewImage.getHeight(); }
 
-		public void updateImage() {
-			// TODO: Make CrewSprite image swapping less awful.
+		public void makeSane() {
+			if ( isEnemyBoardingDrone() && !getRace().equals("battle") )
+				setRace( "battle" );              // The game would do this when loaded.
 
+			if ( isEnemyBoardingDrone() && !getName().equals("Anti-Personnel Drone") )
+				setName("Anti-Personnel Drone");  // The game would do this when loaded.
+
+			if ( isEnemyBoardingDrone() && isPlayerControlled() )
+				setPlayerControlled( false );     // The game would do this when loaded.
+
+			if ( isEnemyBoardingDrone() && !getRace().equals("battle") )
+
+			if ( getRace().equals("battle") && !isEnemyBoardingDrone() )
+				setRace( "human" );               // The game would do this when loaded.
+
+			// Cap the health at the race's max.
+			health = Math.min( health, SavedGameParser.CrewState.getMaxHealth(race) );
+
+			// Always same size: no repositioning needed to align image's center with the square's.
 			int offsetX = 0, offsetY = 0, w = 35, h = 35;
 			String imgRace = race;
 			String suffix = "";
 
-			if ( getRace().equals("battle") || isEnemyBoardingDrone() ) {
-				imgRace = "battle";         // The game will make this the new race,
-				suffix = "_enemy_sheet";    // or it'll revert to human if non-drone.
+			if ( getRace().equals("battle") ) {
+				suffix = "_enemy_sheet";
 			} else {
-				if ( isMale() == false ) {  // Never an actual race?
-					if ( getRace().equals("human") ) {
-						imgRace = "female";
-					} else {
-						setMale( true );        // Non-humans are all male.
-					}
+				// Only humans can be female. Other races keep the flag but ignore it.
+				if ( !isMale() && getRace().equals("human") ) {
+					imgRace = "female";  // Never an actual race?
 				}
 
 				if ( isPlayerControlled() ) {
