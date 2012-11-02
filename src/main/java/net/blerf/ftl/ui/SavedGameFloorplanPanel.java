@@ -581,7 +581,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 			shipPanel.add( roomSprite, OXYGEN_LAYER );
 		}
 
-		// Associate systems' normal names with their image basenames.
 		ArrayList<String> systemIds = new ArrayList<String>();
 		systemIds.add( SystemBlueprint.ID_PILOT );
 		systemIds.add( SystemBlueprint.ID_DOORS );
