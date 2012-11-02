@@ -1312,6 +1312,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.removeAll();
 
 		sidePanel.revalidate();
+		this.revalidate();
 		this.repaint();
 	}
 
