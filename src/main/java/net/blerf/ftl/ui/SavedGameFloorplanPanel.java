@@ -383,15 +383,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.reset();
 		clearSidePanel();
 
-		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
-		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
-		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
-		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
-		shipGfxBaseName = shipState.getShipGraphicsBaseName();
-		originX = shipChassis.getImageBounds().x * -1;
-		originY = shipChassis.getImageBounds().y * -1;
-		ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
-
 		for (RoomSprite roomSprite : roomSprites)
 			shipPanel.remove( roomSprite );
 		roomSprites.clear();
@@ -415,6 +406,30 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for (CrewSprite crewSprite : crewSprites)
 			shipPanel.remove( crewSprite );
 		crewSprites.clear();
+
+		if ( gameState == null ) {
+			roomRegions.clear();
+			squareRegions.clear();
+			blockedRegions.clear();
+			baseLbl.setIcon(null);
+			floorLbl.setIcon(null);
+
+			for (JComponent roomDecor : roomDecorations)
+				shipPanel.remove( roomDecor );
+			roomDecorations.clear();
+
+			wallLbl.setIcon(null);
+			return;
+		}
+
+		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
+		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
+		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
+		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
+		shipGfxBaseName = shipState.getShipGraphicsBaseName();
+		originX = shipChassis.getImageBounds().x * -1;
+		originY = shipChassis.getImageBounds().y * -1;
+		ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
 		if ( shipGfxBaseName != prevGfxBaseName ) {
 			// Associate graphical regions with roomIds and squares.
