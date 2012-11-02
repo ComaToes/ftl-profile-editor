@@ -1721,9 +1721,12 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class DoorState {
-		private boolean open;
-		private boolean walkingThrough;
+	public static class DoorState {
+		private boolean open = false;
+		private boolean walkingThrough = false;
+
+		public DoorState() {
+		}
 
 		public DoorState( boolean open, boolean walkingThrough ) {
 			this.open = open;

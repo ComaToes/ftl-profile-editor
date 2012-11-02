@@ -23,7 +23,9 @@ import java.awt.Stroke;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
@@ -74,8 +76,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final Integer SYSTEM_LAYER = new Integer(16);
 	private static final Integer BREACH_LAYER = new Integer(17);
 	private static final Integer FIRE_LAYER = new Integer(18);
-	private static final Integer DOOR_LAYER = new Integer(30);
-	private static final Integer CREW_LAYER = new Integer(40);
+	private static final Integer CREW_LAYER = new Integer(30);
+	private static final Integer DOOR_LAYER = new Integer(40);
 	private static final Integer SQUARE_SELECTION_LAYER = new Integer(50);
 	private static final int squareSize = 35, tileEdge = 1;
 	private static final Logger log = LogManager.getLogger(SavedGameFloorplanPanel.class);
@@ -112,6 +114,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private JLabel wallLbl = null;
 	private JLabel crewLbl = null;
 	private SquareSelector squareSelector = null;
+	private MouseListener doorSelectListener = null;
 
 	public SavedGameFloorplanPanel( FTLFrame frame ) {
 		super( new BorderLayout() );
@@ -347,6 +350,28 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sideScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		sideScroll.setVisible( false );
 		this.add( sideScroll, BorderLayout.EAST );
+
+		doorSelectListener = new MouseAdapter() {
+			public void mouseEntered(MouseEvent e) {
+				Object source = e.getSource();
+				if ( source instanceof DoorSprite ) {
+					((DoorSprite)source).setSelectionRectVisible(true);
+					((DoorSprite)source).repaint();
+				}
+			}
+			public void mouseExited(MouseEvent e) {
+				Object source = e.getSource();
+				if ( source instanceof DoorSprite ) {
+					((DoorSprite)source).setSelectionRectVisible(false);
+					((DoorSprite)source).repaint();
+				}
+			}
+			public void mouseClicked(MouseEvent e) {
+				Object source = e.getSource();
+				if ( source instanceof DoorSprite )
+					showDoorEditor( (DoorSprite)source );
+			}
+		};
 	}
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
@@ -511,7 +536,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		}
 
-		// Add doors and draw walls and floor crevices.
+		// Draw walls and floor crevices.
 		BufferedImage wallImage = gc.createCompatibleImage( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight(), Transparency.BITMASK );
 		Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
 		drawWalls( wallG, originX, originY, shipState, shipLayout );
@@ -613,6 +638,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		}
 
+		// Add doors.
+		int doorLevel = shipState.getSystem("Doors").getCapacity()-1;  // Convert to 0-based.
+		for (Map.Entry<ShipLayout.DoorCoordinate, SavedGameParser.DoorState> entry : shipState.getDoorMap().entrySet()) {
+			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+			SavedGameParser.DoorState doorState = entry.getValue();
+			int doorX = originX + doorCoord.x*squareSize + (doorCoord.v==1 ? 0 : squareSize/2);
+			int doorY = originY + doorCoord.y*squareSize + (doorCoord.v==1 ? squareSize/2 : 0);
+
+			addDoorSprite( doorX, doorY, doorLevel, doorCoord, doorState );
+		}
+
 		// Add crew.
 		for (SavedGameParser.CrewState crewState : shipState.getCrewList()) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( crewState.getRoomId() );
@@ -676,6 +712,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			SavedGameParser.RoomState roomState = shipState.getRoom( fireSprite.getRoomId() );
 			int [] squareState = roomState.getSquareList().get( fireSprite.getSquareId() );
 			squareState[0] = fireSprite.getHealth();
+		}
+
+		// Doors.
+		Map<ShipLayout.DoorCoordinate, SavedGameParser.DoorState> shipDoorMap = shipState.getDoorMap();
+		shipDoorMap.clear();
+		for (DoorSprite doorSprite : doorSprites) {
+			SavedGameParser.DoorState doorState = new SavedGameParser.DoorState();
+			doorState.setOpen( doorSprite.isOpen() );
+			doorState.setWalkingThrough( doorSprite.isWalkingThrough() );
+			shipDoorMap.put( doorSprite.getCoordinate(), doorState );
 		}
 
 		// Crew.
@@ -925,7 +971,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible(true);
 	}
 
-	/** Gets a cropped area of an image and caches the result. */
+	/**
+	 * Gets a cropped area of an image and caches the result.
+	 *
+	 * If something goes wrong, a dummy image will be created with
+	 * the expected dimensions.
+	 */
 	private BufferedImage getCroppedImage( String innerPath, int x, int y, int w, int h) {
 		Rectangle keyRect = new Rectangle( x, y, w, h );
 		BufferedImage result = null;
@@ -966,7 +1017,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 		return result;
 	}
 
-	/** Gets an image, scaling if necessary, and caches the result. */
+	/**
+	 * Gets an image, scaling if necessary, and caches the result.
+	 *
+	 * If something goes wrong, a dummy image will be created with
+	 * the expected dimensions.
+	 *
+	 * If the dimensions are negative, the original unscaled image
+	 * will be returned if possible, or the absolute values will be
+	 * used for the dummy image.
+	 */
 	private BufferedImage getScaledImage( String innerPath, int w, int h) {
 		Rectangle keyRect = new Rectangle( 0, 0, w, h );
 		BufferedImage result = null;
@@ -981,7 +1041,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			in = DataManager.get().getResourceInputStream( innerPath );
 			BufferedImage origImage = ImageIO.read(in);
 
-			if ( origImage.getWidth() == w && origImage.getHeight() == h ) {
+			if ( w <= 0 || h <= 0 || (origImage.getWidth() == w && origImage.getHeight() == h) ) {
 				result = origImage;
 			} else {
 				BufferedImage scaledImage = new BufferedImage(w, h, Transparency.TRANSLUCENT);
@@ -1002,6 +1062,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
+			w = Math.abs(w);
+			h = Math.abs(h);
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
 			Graphics2D g2d = (Graphics2D)result.createGraphics();
 			g2d.setColor( new Color(150, 150, 200) );
@@ -1018,41 +1080,38 @@ public class SavedGameFloorplanPanel extends JPanel {
 		return result;
 	}
 
-	private void addDoorSprite( int centerX, int centerY, int level, boolean vertical, boolean open ) {
+	private void addDoorSprite( int centerX, int centerY, int level, ShipLayout.DoorCoordinate doorCoord, SavedGameParser.DoorState doorState ) {
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
-		// Grr. Caching would be awkward with this.
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream( "img/effects/door_sheet.png" );
-			BufferedImage bigImage = ImageIO.read(in);
+		int levelCount = 3;
 
-			BufferedImage[] closedImages = new BufferedImage[3];
-			BufferedImage[] openImages = new BufferedImage[3];
+		// Dom't scale the image, but pass negative size to define the fallback dummy image.
+		BufferedImage bigImage = getScaledImage( "img/effects/door_sheet.png", -1*((offsetX+4*w)+w), -1*((offsetY+(levelCount-1)*h)+h) );
 
-			for (int i=0; i < openImages.length; i++) {
-				closedImages[i] = bigImage.getSubimage(offsetX, offsetY+i*h, w, h);
-				openImages[i] = bigImage.getSubimage(offsetX+4*w, offsetY+i*h, w, h);
-			}
+		BufferedImage[] closedImages = new BufferedImage[levelCount];
+		BufferedImage[] openImages = new BufferedImage[levelCount];
 
-			DoorSprite doorSprite = new DoorSprite( closedImages, openImages, level, vertical, open );
-			doorSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
-			doorSprites.add( doorSprite );
-			shipPanel.add( doorSprite, DOOR_LAYER );
-
-		} catch (RasterFormatException e) {
-			log.error( "Failed to load and crop door images (door_sheet)", e );
-		} catch (IOException e) {
-			log.error( "Failed to load and crop door images (door_sheet)", e );
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
+		for (int i=0; i < levelCount; i++) {
+			int chop = 10;  // Chop 10 pixels off the sides for skinny doors.
+			closedImages[i] = bigImage.getSubimage(offsetX+chop, offsetY+i*h, w-chop*2, h);
+			openImages[i] = bigImage.getSubimage(offsetX+4*w+chop, offsetY+i*h, w-chop*2, h);
 		}
+
+		DoorSprite doorSprite = new DoorSprite( closedImages, openImages, level, doorCoord, doorState );
+		if ( doorCoord.v == 1 )
+			doorSprite.setSize( closedImages[level].getWidth(), closedImages[level].getHeight() );
+		else
+			doorSprite.setSize( closedImages[level].getHeight(), closedImages[level].getWidth() );
+
+		placeSprite( centerX, centerY, doorSprite );
+		doorSprites.add( doorSprite );
+		shipPanel.add( doorSprite, DOOR_LAYER );
+
+		doorSprite.addMouseListener(doorSelectListener);
 	}
 
 	private void addSystemSprite( int centerX, int centerY, String overlayBaseName ) {
-		int offsetX = 0, offsetY = 0, w = 32, h = 32;
-		// Cropping isn't necessary, but this keeps caching simple.
-		BufferedImage overlayImage = getCroppedImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", offsetX, offsetY, w, h );
+		int w = 32, h = 32;
+		BufferedImage overlayImage = getScaledImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", w, h );
 
 		// Darken the white icon to gray...
 		BufferedImage canvas = gc.createCompatibleImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -1149,8 +1208,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 					wallG.setColor( roomBorderColor );
 				  wallG.drawLine( fromX, fromY, toX, fromY+(toY-fromY)/8 );
 				  wallG.drawLine( fromX, fromY+(toY-fromY)/8*7, toX, toY );
-
-					addDoorSprite( fromX, fromY+(toY-fromY)/2, doorLevel, true, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1169,8 +1226,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 					wallG.setColor( roomBorderColor );
 				  wallG.drawLine( fromX, fromY, toX, fromY+(toY-fromY)/8 );
 				  wallG.drawLine( fromX, fromY+(toY-fromY)/8*7, toX, toY );
-
-					addDoorSprite( fromX, fromY+(toY-fromY)/2, doorLevel, true, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1193,8 +1248,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 					wallG.setColor( roomBorderColor );
 				  wallG.drawLine( fromX, fromY, fromX+(toX-fromX)/8, fromY );
 				  wallG.drawLine( fromX+(toX-fromX)/8*7, fromY, toX, toY );
-
-					addDoorSprite( fromX+(toX-fromX)/2, fromY, doorLevel, false, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1213,8 +1266,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 					wallG.setColor( roomBorderColor );
 				  wallG.drawLine( fromX, fromY, fromX+(toX-fromX)/8, fromY );
 				  wallG.drawLine( fromX+(toX-fromX)/8*7, fromY, toX, toY );
-
-					addDoorSprite( fromX+(toX-fromX)/2, fromY, doorLevel, false, doorState.isOpen() );
 				} else {
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1394,6 +1445,34 @@ public class SavedGameFloorplanPanel extends JPanel {
 				shipPanel.remove( fireSprite );
 			}
 		});
+
+		showSidePanel();
+	}
+
+	private void showDoorEditor( final DoorSprite doorSprite ) {
+		final String OPEN = "Open";
+		final String WALKING_THROUGH = "Walking Through";
+
+		String title = "Door";
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( OPEN, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(OPEN).setSelected( doorSprite.isOpen() );
+		editorPanel.addRow( WALKING_THROUGH, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(WALKING_THROUGH).setSelected( doorSprite.isWalkingThrough() );
+		editorPanel.getBoolean(WALKING_THROUGH).addMouseListener( new StatusbarMouseListener(frame, "Momentarily open as someone walks through.") );
+
+		sidePanel.add( editorPanel );
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				doorSprite.setOpen( editorPanel.getBoolean(OPEN).isSelected() );
+				doorSprite.setWalkingThrough( editorPanel.getBoolean(WALKING_THROUGH).isSelected() );
+
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
 
 		showSidePanel();
 	}
@@ -1700,37 +1779,47 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private BufferedImage[] closedImages;
 		private BufferedImage[] openImages;
 		private int level;
-		private boolean vertical;
+		private ShipLayout.DoorCoordinate doorCoord;
 		private boolean open;
+		private boolean walkingThrough;
 
-		public DoorSprite( BufferedImage[] closedImages, BufferedImage[] openImages, int level, boolean vertical, boolean open ) {
+		private Color validColor = Color.GREEN.darker();
+		private boolean selectionRectVisible = false;
+
+		public DoorSprite( BufferedImage[] closedImages, BufferedImage[] openImages, int level, ShipLayout.DoorCoordinate doorCoord, SavedGameParser.DoorState doorState ) {
 			this.closedImages = closedImages;
 			this.openImages = openImages;
 			this.level = level;
-			this.vertical = vertical;
-			this.open = open;
+			this.doorCoord = doorCoord;
+			this.open = doorState.isOpen();
+			this.walkingThrough = doorState.isWalkingThrough();
 			this.setOpaque(false);
 		}
 
 		public void setLevel( int n ) { level = n; }
-		public int getLevel() { return level; }
-		public void setVertical( boolean b ) { vertical = b; }
-		public boolean isVertical() { return vertical; }
+		public void setCoordinate( ShipLayout.DoorCoordinate c ) { doorCoord = c; }
 		public void setOpen( boolean b ) { open = b; }
+		public void setWalkingThrough( boolean b ) { walkingThrough = b; }
+
+		public int getLevel() { return level; }
+		public ShipLayout.DoorCoordinate getCoordinate() { return doorCoord; }
 		public boolean isOpen() { return open; }
+		public boolean isWalkingThrough() { return walkingThrough; }
+
+		public void setSelectionRectVisible( boolean b ) { selectionRectVisible = b; }
 
 		@Override
 		public void paintComponent( Graphics g ) {
 			super.paintComponent(g);
 
 			Graphics2D g2d = (Graphics2D)g;
+			Color prevColor = g2d.getColor();
 			int w = this.getSize().width, h = this.getSize().height;
 
-			if ( !vertical ) {  // Use rotated coordinates to draw AS IF vertical.
+			if ( doorCoord.v == 0 ) {  // Use rotated coordinates to draw AS IF vertical.
 				g2d.rotate( Math.toRadians(90) );   // Clockwise.
 				w = this.getSize().height; h = this.getSize().width;
 				g2d.translate( 0, -(h-1) );
-				//g2d.translate( (w-1)/2, (h-1)/2 );  // Down+Right (Right+Up in that perspective).
 			}
 
 			BufferedImage doorImage;
@@ -1739,7 +1828,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			else
 				doorImage = closedImages[level];
 
-			g2d.drawImage( doorImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
+			g2d.drawImage( doorImage, 0, 0, this);
+
+			if ( selectionRectVisible ) {
+				g2d.setColor( validColor );
+				g2d.drawRect( 0, 0, w-1, h-1 );
+				g2d.drawRect( 1, 1, (w-1)-2, (h-1)-2 );
+				g2d.drawRect( 2, 2, (w-1)-4, (h-1)-4 );
+			}
+
+			g2d.setColor( prevColor );
 		}
 	}
 
