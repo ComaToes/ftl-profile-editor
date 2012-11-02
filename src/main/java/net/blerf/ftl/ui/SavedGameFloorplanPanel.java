@@ -268,6 +268,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				} else if (source == addFireBtn ) {
 					addFire();
 				} else if (source == resetOxygenBtn ) {
+					clearSidePanel();
 					for (RoomSprite roomSprite : roomSprites) {
 						if ( roomSprite.getOxygen() != 100 ) {
 							roomSprite.setOxygen(100);
@@ -276,6 +277,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					shipPanel.repaint();
 
 				} else if (source == resetIntrudersBtn ) {
+					clearSidePanel();
 					for (ListIterator<CrewSprite> it = crewSprites.listIterator(); it.hasNext(); ) {
 						CrewSprite crewSprite = it.next();
 						if ( !crewSprite.isPlayerControlled() ) {
@@ -286,12 +288,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 					shipPanel.repaint();
 
 				} else if (source == resetBreachesBtn ) {
+					clearSidePanel();
 					for (BreachSprite breachSprite : breachSprites)
 						shipPanel.remove( breachSprite );
 					breachSprites.clear();
 					shipPanel.repaint();
 
 				} else if (source == resetFiresBtn ) {
+					clearSidePanel();
 					for (FireSprite fireSprite : fireSprites)
 						shipPanel.remove( fireSprite );
 					fireSprites.clear();
@@ -534,15 +538,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 					}
 				}
 			}
-		}
 
-		// Draw walls and floor crevices.
-		BufferedImage wallImage = gc.createCompatibleImage( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight(), Transparency.BITMASK );
-		Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
-		drawWalls( wallG, originX, originY, shipState, shipLayout );
-		wallG.dispose();
-		wallLbl.setIcon( new ImageIcon(wallImage) );
-		wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
+			// Draw walls and floor crevices.
+			BufferedImage wallImage = gc.createCompatibleImage( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight(), Transparency.BITMASK );
+			Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
+			drawWalls( wallG, originX, originY, shipState, shipLayout );
+			wallG.dispose();
+			wallLbl.setIcon( new ImageIcon(wallImage) );
+			wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
+		}
 
 		// Add oxygen.
 		for (int i=0; i < shipLayout.getRoomCount(); i++) {
