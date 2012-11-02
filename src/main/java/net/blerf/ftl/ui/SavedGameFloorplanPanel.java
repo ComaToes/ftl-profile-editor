@@ -61,6 +61,7 @@ import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
+import net.blerf.ftl.xml.SystemBlueprint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -581,22 +582,22 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Associate systems' normal names with their image basenames.
-		HashMap<String, String> systemNames = new HashMap<String, String>();
-		systemNames.put( ShipBlueprint.SystemList.NAME_PILOT, "pilot" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_DOORS, "doors" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_SENSORS, "sensors" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_MEDBAY, "medbay" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_OXYGEN, "oxygen" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_SHIELDS, "shields" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_ENGINES, "engines" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_WEAPONS, "weapons" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_DRONE_CTRL, "drones" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_TELEPORTER, "teleporter" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_CLOAKING, "cloaking" );
-		systemNames.put( ShipBlueprint.SystemList.NAME_ARTILLERY, "artillery" );
+		ArrayList<String> systemIds = new ArrayList<String>();
+		systemIds.add( SystemBlueprint.ID_PILOT );
+		systemIds.add( SystemBlueprint.ID_DOORS );
+		systemIds.add( SystemBlueprint.ID_SENSORS );
+		systemIds.add( SystemBlueprint.ID_MEDBAY );
+		systemIds.add( SystemBlueprint.ID_OXYGEN );
+		systemIds.add( SystemBlueprint.ID_SHIELDS );
+		systemIds.add( SystemBlueprint.ID_ENGINES );
+		systemIds.add( SystemBlueprint.ID_WEAPONS );
+		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
+		systemIds.add( SystemBlueprint.ID_TELEPORTER );
+		systemIds.add( SystemBlueprint.ID_CLOAKING );
+		systemIds.add( SystemBlueprint.ID_ARTILLERY );
 
-		for (Map.Entry<String, String> entry : systemNames.entrySet()) {
-			int[] roomIds = shipBlueprint.getSystemList().getRoomIdBySystemName( entry.getKey() );
+		for (String systemId : systemIds) {
+			int[] roomIds = shipBlueprint.getSystemList().getRoomIdBySystemId( systemId );
 			if ( roomIds != null ) {
 				for (int i=0; i < roomIds.length; i++) {
 					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomIds[i] );
@@ -606,9 +607,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 					int roomY = originY + squareSize * roomLocY;
 					int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
 					int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+
 					int systemX = roomX + tileEdge + squaresH*squareSize/2;
 					int systemY = roomY + tileEdge + squaresV*squareSize/2;
-					addSystemSprite( systemX, systemY, entry.getValue() );
+					addSystemSprite( systemX, systemY, systemId );  // Assumes systemId is the image basename.
 				}
 			}
 		}
@@ -658,7 +660,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add doors.
-		int doorLevel = shipState.getSystem("Doors").getCapacity()-1;  // Convert to 0-based.
+		int doorLevel = shipState.getSystem(SystemBlueprint.ID_DOORS).getCapacity()-1;  // Convert to 0-based.
 		for (Map.Entry<ShipLayout.DoorCoordinate, SavedGameParser.DoorState> entry : shipState.getDoorMap().entrySet()) {
 			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 			SavedGameParser.DoorState doorState = entry.getValue();
@@ -1185,7 +1187,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	/** Draws each room's walls, door openings, and floor crevices. */
 	private void drawWalls( Graphics2D wallG, int originX, int originY, SavedGameParser.ShipState shipState, ShipLayout shipLayout ) {
-		int doorLevel = shipState.getSystem("Doors").getCapacity()-1;  // Convert to 0-based.
 
 		Color prevColor = wallG.getColor();
 		Stroke prevStroke = wallG.getStroke();
@@ -1473,7 +1474,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String OPEN = "Open";
 		final String WALKING_THROUGH = "Walking Through";
 
-		String title = "Door";
+		ShipLayout.DoorCoordinate doorCoord = doorSprite.getCoordinate();
+		String title = String.format("Door (%2d,%2d, %s)", doorCoord.x, doorCoord.y, (doorCoord.v==1 ? "V" : "H"));
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( OPEN, FieldEditorPanel.ContentType.BOOLEAN );

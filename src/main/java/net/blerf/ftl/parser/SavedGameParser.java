@@ -20,6 +20,7 @@ import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
@@ -278,13 +279,23 @@ public class SavedGameParser extends DatParser {
 		}
 
 		// System info is stored in this order.
-		String[] systemNames = new String[] {"Shields", "Engines", "Oxygen",
-		                                     "Weapons", "Drone Ctrl", "Medbay",
-		                                     "Pilot", "Sensors", "Doors",
-		                                     "Teleporter", "Cloaking", "Artillery"};
+		ArrayList<String> systemIds = new ArrayList<String>();
+		systemIds.add( SystemBlueprint.ID_SHIELDS );
+		systemIds.add( SystemBlueprint.ID_ENGINES );
+		systemIds.add( SystemBlueprint.ID_OXYGEN );
+		systemIds.add( SystemBlueprint.ID_WEAPONS );
+		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
+		systemIds.add( SystemBlueprint.ID_MEDBAY );
+		systemIds.add( SystemBlueprint.ID_PILOT );
+		systemIds.add( SystemBlueprint.ID_SENSORS );
+		systemIds.add( SystemBlueprint.ID_DOORS );
+		systemIds.add( SystemBlueprint.ID_TELEPORTER );
+		systemIds.add( SystemBlueprint.ID_CLOAKING );
+		systemIds.add( SystemBlueprint.ID_ARTILLERY );
+
 		shipState.setReservePowerCapacity( readInt(in) );
-		for (String name : systemNames) {
-			shipState.addSystem( readSystem(in, name) );
+		for (String systemId : systemIds) {
+			shipState.addSystem( readSystem(in, systemId) );
 		}
 
 		int roomCount = shipLayout.getRoomCount();
@@ -381,17 +392,28 @@ public class SavedGameParser extends DatParser {
 			writeCrewMember( out, crew );
 		}
 
-		String[] systemNames = new String[] {"Shields", "Engines", "Oxygen",
-		                                     "Weapons", "Drone Ctrl", "Medbay",
-		                                     "Pilot", "Sensors", "Doors",
-		                                     "Teleporter", "Cloaking", "Artillery"};
+		// System info is stored in this order.
+		ArrayList<String> systemIds = new ArrayList<String>();
+		systemIds.add( SystemBlueprint.ID_SHIELDS );
+		systemIds.add( SystemBlueprint.ID_ENGINES );
+		systemIds.add( SystemBlueprint.ID_OXYGEN );
+		systemIds.add( SystemBlueprint.ID_WEAPONS );
+		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
+		systemIds.add( SystemBlueprint.ID_MEDBAY );
+		systemIds.add( SystemBlueprint.ID_PILOT );
+		systemIds.add( SystemBlueprint.ID_SENSORS );
+		systemIds.add( SystemBlueprint.ID_DOORS );
+		systemIds.add( SystemBlueprint.ID_TELEPORTER );
+		systemIds.add( SystemBlueprint.ID_CLOAKING );
+		systemIds.add( SystemBlueprint.ID_ARTILLERY );
+
 		writeInt( out, shipState.getReservePowerCapacity() );
 
 		Map<String, SystemState> systemMap = shipState.getSystemMap();
-		for (String name : systemNames) {
-			SystemState system = systemMap.get(name);
-			if ( system != null )
-				writeSystem( out, system );
+		for (String systemId : systemIds) {
+			SystemState systemState = systemMap.get(systemId);
+			if ( systemState != null )
+				writeSystem( out, systemState );
 			else
 				writeInt( out, 0 );
 		}
@@ -511,8 +533,8 @@ public class SavedGameParser extends DatParser {
 		writeInt( out, crew.getSkillMasteries() );
 	}
 
-	private SystemState readSystem( InputStream in, String name ) throws IOException {
-		SystemState system = new SystemState( name );
+	private SystemState readSystem( InputStream in, String systemId ) throws IOException {
+		SystemState system = new SystemState( systemId );
 		int capacity = readInt(in);
 
 		// Normally systems are 28 bytes, but if not present on the
@@ -1218,10 +1240,10 @@ public class SavedGameParser extends DatParser {
 		public int getReservePowerCapacity() { return reservePowerCapacity; }
 
 		public void addSystem( SystemState s ) {
-			systemMap.put( s.getName(), s );
+			systemMap.put( s.getSystemId(), s );
 		}
-		public SystemState getSystem( String name ) {
-			return systemMap.get( name );
+		public SystemState getSystem( String systemId ) {
+			return systemMap.get( systemId );
 		}
 
 		public LinkedHashMap<String, SystemState> getSystemMap() { return systemMap; }
@@ -1350,9 +1372,12 @@ public class SavedGameParser extends DatParser {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				int roomId = it.nextIndex();
-				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
-				if (roomName == null) roomName = "Empty";
-				result.append(String.format("RoomId: %2d (%s)\n", roomId, roomName));
+
+				String systemId = blueprintSystems.getSystemIdByRoomId( roomId );
+				if (systemId == null)
+					systemId = "empty";
+
+				result.append(String.format("RoomId: %2d (%s)\n", roomId, systemId));
 				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
@@ -1612,7 +1637,7 @@ public class SavedGameParser extends DatParser {
 
 
 	public class SystemState {
-		private String name;
+		private String systemId;
 		private int capacity = 0;
 		private int power = 0;
 		private int damagedBars = 0;      // Number of unusable power bars.
@@ -1639,11 +1664,11 @@ public class SavedGameParser extends DatParser {
 		// set such values. Might be unspecified garbage when not actively
 		// counting. Sometimes has huge positive and negative values.
 
-		public SystemState( String name ) {
-			this.name = name;
+		public SystemState( String systemId ) {
+			this.systemId = systemId;
 		}
 
-		public String getName() { return name; }
+		public String getSystemId() { return systemId; }
 
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
@@ -1665,14 +1690,15 @@ public class SavedGameParser extends DatParser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
-				result.append(String.format("%s: %d/%d Power\n", name, power, capacity));
+				result.append(String.format("SystemId:        %s\n", systemId));
+				result.append(String.format("Power:           %d/%d\n", power, capacity));
 				result.append(String.format("Damaged Bars:    %3d\n", damagedBars));
 				result.append(String.format("Ionized Bars:    %3d\n", ionizedBars));
 				result.append(String.format("Repair Progress: %3d%%\n", repairProgress));
 				result.append(String.format("Burn Progress:   %3d%%\n", burnProgress));
 				result.append(String.format("Misc Ticks:      %s\n", (miscTicks==Integer.MIN_VALUE ? "N/A" : miscTicks) ));
 			} else {
-				result.append(String.format("%s: N/A\n", name));
+				result.append(String.format("%s: N/A\n", systemId));
 			}
 			return result.toString();
 		}
@@ -2191,10 +2217,11 @@ public class SavedGameParser extends DatParser {
 				int roomId = entry.getKey().intValue();
 				int occupantCount = entry.getValue().intValue();
 
-				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
-				if (roomName == null) roomName = "Empty";
+				String systemId = blueprintSystems.getSystemIdByRoomId( roomId );
+				if (systemId == null)
+					systemId = "empty";
 
-				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, roomName, occupantCount) );
+				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, systemId, occupantCount) );
 			}
 
 			return result.toString();

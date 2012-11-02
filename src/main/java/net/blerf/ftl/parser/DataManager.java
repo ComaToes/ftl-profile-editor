@@ -17,6 +17,7 @@ import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
+import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +42,7 @@ public class DataManager implements Closeable {
 	private Blueprints blueprints;
 	private Blueprints autoBlueprints;
 
+	private Map<String, SystemBlueprint> systems;
 	private Map<String, WeaponBlueprint> weapons;	
 	private Map<String, ShipBlueprint> ships;
 	private Map<String, ShipBlueprint> autoShips;
@@ -81,6 +83,10 @@ public class DataManager implements Closeable {
 			for( Achievement ach : achievements )
 				if ( ach.getShipId() == null )
 					generalAchievements.add(ach);
+
+			systems = new HashMap<String, SystemBlueprint>();
+			for ( SystemBlueprint system : blueprints.getSystemBlueprint() )
+				systems.put( system.getId(), system );
 
 			weapons = new HashMap<String, WeaponBlueprint>();
 			for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprint() )
@@ -169,6 +175,13 @@ public class DataManager implements Closeable {
 		return achievements;
 	}
 	
+	public SystemBlueprint getSystem( String id ) {
+		SystemBlueprint result = systems.get(id);
+		if ( result == null )
+			log.error( "No SystemBlueprint found for id: "+ id );
+		return result;
+	}
+
 	public WeaponBlueprint getWeapon( String id ) {
 		WeaponBlueprint result = weapons.get(id);
 		if ( result == null )
