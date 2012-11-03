@@ -1515,11 +1515,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(IONIZED_BARS).addMouseListener( new StatusbarMouseListener(frame, String.format("Ionized bars (can exceed %d but the number won't appear in-game).", SavedGameParser.SystemState.MAX_IONIZED_BARS)) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( REPAIR_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(REPAIR_PROGRESS).setMaximum( 100 );
+		editorPanel.getSlider(REPAIR_PROGRESS).setMaximum( (systemSprite.getDamagedBars() == 0 ? 0 : 100) );
 		editorPanel.getSlider(REPAIR_PROGRESS).setValue( systemSprite.getRepairProgress() );
 		editorPanel.getSlider(REPAIR_PROGRESS).addMouseListener( new StatusbarMouseListener(frame, "Turns a damaged bar yellow until restored.") );
 		editorPanel.addRow( DAMAGE_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(DAMAGE_PROGRESS).setMaximum( 100 );
+		editorPanel.getSlider(DAMAGE_PROGRESS).setMaximum( (systemSprite.getDamagedBars() >= systemSprite.getCapacity() ? 0 : 100) );
 		editorPanel.getSlider(DAMAGE_PROGRESS).setValue( systemSprite.getDamageProgress() );
 		editorPanel.getSlider(DAMAGE_PROGRESS).addMouseListener( new StatusbarMouseListener(frame, "Turns an undamaged bar red until damaged.") );
 		editorPanel.addRow( DEIONIZATION_TICKS, FieldEditorPanel.ContentType.INTEGER );
