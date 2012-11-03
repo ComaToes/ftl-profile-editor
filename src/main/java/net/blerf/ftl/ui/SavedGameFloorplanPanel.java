@@ -1550,6 +1550,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			private JSlider repairProgressSlider = editorPanel.getSlider(REPAIR_PROGRESS);
 			private JSlider damageProgressSlider = editorPanel.getSlider(DAMAGE_PROGRESS);
 			private boolean ignoreChanges = false;
+			// Avoid getValueIsAdjusting() checks, which can fail on brief drags.
 
 			public void stateChanged(ChangeEvent e) {
 				if ( ignoreChanges ) return;
@@ -1570,24 +1571,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			private void syncProgress( Object source ) {
 				if ( source == repairProgressSlider ) {
-					// Reset this slider if no damage to fix. Fight DamageProgess.
-					if ( repairProgressSlider.getValueIsAdjusting() ) return;  // Wait until dragging ends.
-					if ( damagedBarsSlider.getValue() == 0 ) {
-						enqueueSliderReset( repairProgressSlider );
-						return;
-					}
+					// Fight DamageProgess.
+
 					if ( repairProgressSlider.getValue() > 0 )
-						damageProgressSlider.setValue( 0 );  // Mutually exclusive.
+						damageProgressSlider.setValue( 0 );   // Mutually exclusive.
 				}
 				else if ( source == damageProgressSlider ) {
-					// Reset this slider if maximally damaged. Fight RepairProgress.
-					if ( damageProgressSlider.getValueIsAdjusting() ) return;  // Wait until dragging ends.
-					int capacity = capacitySlider.getValue();
-					int damage = damagedBarsSlider.getValue();
-					if ( damage >= capacity ) {
-						enqueueSliderReset( damageProgressSlider );
-						return;
-					}
+					// Fight RepairProgress.
+
 					if ( damageProgressSlider.getValue() > 0 )
 						repairProgressSlider.setValue( 0 );   // Mutually exclusive.
 				}
@@ -1604,13 +1595,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 					drainReserve();
 				}
 				else if ( source == capacitySlider ) {
-					// Set caps. Reset DamageProgress if maximally damaged.
+					// Set caps.
 					int reserveCapacity = reserveCapacitySlider.getValue();
 					int capacity = capacitySlider.getValue();
 
 					damagedBarsSlider.setMaximum( capacity );
 					int damage = damagedBarsSlider.getValue();
-					if ( damage >= capacity ) damageProgressSlider.setValue( 0 );
+					repairProgressSlider.setMaximum( (damage == 0 ? 0 : 100 ) );
+					damageProgressSlider.setMaximum( (damage >= capacity ? 0 : 100 ) );
 
 					if ( isSubsystem ) {  // Power ~= Capacity.
 						powerSlider.setMaximum( capacity );
@@ -1625,15 +1617,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 					int power = powerSlider.getValue();
 					damagedBarsSlider.setValue(Math.min( damagedBarsSlider.getValue(), Math.max(0, (capacity-power)) ));
 					int damage = damagedBarsSlider.getValue();
-					if ( damage >= capacity ) damageProgressSlider.setValue( 0 );
+					repairProgressSlider.setMaximum( (damage == 0 ? 0 : 100 ) );
+					damageProgressSlider.setMaximum( (damage >= capacity ? 0 : 100 ) );
+
 					drainReserve();
 				}
 				else if ( source == damagedBarsSlider ) {
-					// Reset RepairProgress if undamaged, DamageProgress if max damaged. Interfere with Power.
+					// Interfere with Power.
 					int capacity = capacitySlider.getValue();
 					int damage = damagedBarsSlider.getValue();
-					if ( damage == 0 ) repairProgressSlider.setValue( 0 );
-					if ( damage >= capacity ) damageProgressSlider.setValue( 0 );
+					repairProgressSlider.setMaximum( (damage == 0 ? 0 : 100 ) );
+					damageProgressSlider.setMaximum( (damage >= capacity ? 0 : 100 ) );
 
 					if ( isSubsystem ) {  // Power ~= Capacity.
 						powerSlider.setValue(Math.min( capacity, Math.max(0, (capacity-damage)) ));
@@ -1648,15 +1642,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 				int power = powerSlider.getValue();
 				int reserveCapacity = reserveCapacitySlider.getValue();
 				reservePowerSlider.setValue( reserveCapacity - otherPower - power );
-			}
-
-			// The source slider's always currently busy, so reset it later.
-			public void enqueueSliderReset( final JSlider slider) {
-				SwingUtilities.invokeLater(new Runnable() {
-					public void run() {
-						slider.setValue( 0 );
-					}
-				});
 			}
 		};
 		editorPanel.getSlider(RESERVE_CAPACITY).addChangeListener(barListener);
