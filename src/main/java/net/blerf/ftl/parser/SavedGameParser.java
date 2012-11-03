@@ -594,10 +594,10 @@ public class SavedGameParser extends DatParser {
 	public void writeRoom( OutputStream out, RoomState room ) throws IOException {
 		writeInt( out, room.getOxygen() );
 
-		for (int[] square : room.getSquareList()) {
-			writeInt( out, square[0] );
-			writeInt( out, square[1] );
-			writeInt( out, square[2] );
+		for (SquareState square : room.getSquareList()) {
+			writeInt( out, square.fireHealth );
+			writeInt( out, square.ignitionProgress );
+			writeInt( out, square.gamma );
 		}
 	}
 
@@ -1712,9 +1712,9 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class RoomState {
+	public static class RoomState {
 		private int oxygen = 100;
-		private ArrayList<int[]> squareList = new ArrayList<int[]>();
+		private ArrayList<SquareState> squareList = new ArrayList<SquareState>();
 
 		public void setOxygen( int n ) { oxygen = n; }
 		public int getOxygen() { return oxygen; }
@@ -1732,22 +1732,36 @@ public class SavedGameParser extends DatParser {
 		 * @param gamma -1?
 		 */
 		public void addSquare( int fireHealth, int ignitionProgress, int gamma ) {
-			squareList.add( new int[] {fireHealth, ignitionProgress, gamma} );
+			squareList.add( new SquareState( fireHealth, ignitionProgress, gamma ) );
 		}
-		public int[] getSquare( int n ) {
+		public SquareState getSquare( int n ) {
 			return squareList.get(n);
 		}
 
-		public ArrayList<int[]> getSquareList() { return squareList; }
+		public ArrayList<SquareState> getSquareList() { return squareList; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
-			for (int[] square : squareList) {
-				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%% %2d?\n", square[0], square[1], square[2]));
+			for (SquareState square : squareList) {
+				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%%, Gamma?: %2d\n", square.fireHealth, square.ignitionProgress, square.gamma));
 			}
 			return result.toString();
+		}
+	}
+
+	public static class SquareState {
+		public int fireHealth = 0;
+		public int ignitionProgress = 0;
+		public int gamma = -1;
+
+		public SquareState( int fireHealth, int ignitionProgress, int gamma ) {
+			this.fireHealth = fireHealth;
+			this.ignitionProgress = ignitionProgress;
+			this.gamma = gamma;
+		}
+		public SquareState() {
 		}
 	}
 

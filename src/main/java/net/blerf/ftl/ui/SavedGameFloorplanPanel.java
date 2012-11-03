@@ -78,7 +78,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private static final Integer BASE_LAYER = new Integer(10);
 	private static final Integer FLOOR_LAYER = new Integer(11);
-	private static final Integer OXYGEN_LAYER = new Integer(12);
+	private static final Integer ROOM_LAYER = new Integer(12);
 	private static final Integer DECOR_LAYER = new Integer(13);
 	private static final Integer WALL_LAYER = new Integer(15);
 	private static final Integer SYSTEM_LAYER = new Integer(16);
@@ -351,7 +351,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		resetFiresBtn.addActionListener( ctrlListener );
 
 		resetOxygenBtn.addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
-		resetSystemsBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all system damage.") );
+		resetSystemsBtn.addMouseListener( new StatusbarMouseListener(frame, "Clear all system damage.") );
 		resetIntrudersBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all NPC crew.") );
 		resetBreachesBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all breaches.") );
 		resetFiresBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all fires.") );
@@ -597,7 +597,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
 		}
 
-		// Add oxygen.
+		// Add rooms.
 		for (int i=0; i < shipLayout.getRoomCount(); i++) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
 			int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
@@ -608,12 +608,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
 			int oxygen = shipState.getRoom(i).getOxygen();
 
-			RoomSprite roomSprite = new RoomSprite( i, oxygen );
+			RoomSprite roomSprite = new RoomSprite( i, shipState.getRoom(i) );
 			roomSprite.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
 			roomSprites.add( roomSprite );
-			shipPanel.add( roomSprite, OXYGEN_LAYER );
+			shipPanel.add( roomSprite, ROOM_LAYER );
 		}
 
+		// Add systems.
 		ArrayList<String> systemIds = new ArrayList<String>();
 		systemIds.add( SystemBlueprint.ID_PILOT );
 		systemIds.add( SystemBlueprint.ID_DOORS );
@@ -684,7 +685,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			SavedGameParser.RoomState roomState = shipState.getRoom(i);
 			for (int s=0; s < squaresH*squaresV; s++) {
-				int fireHealth = roomState.getSquare(s)[0];
+				int fireHealth = roomState.getSquare(s).fireHealth;
 				if ( fireHealth > 0 ) {
 					int fireX = roomX+tileEdge + (s%squaresH)*squareSize + squareSize/2;
 					int fireY = roomY+tileEdge + (s/squaresH)*squareSize + squareSize/2;
@@ -733,10 +734,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
 
-		// Oxygen.
+		// Rooms (This must come before Fires to avoid clobbering).
 		for (int i=0; i < shipLayout.getRoomCount(); i++) {
 			SavedGameParser.RoomState roomState = shipState.getRoom(i);
 			roomState.setOxygen( roomSprites.get(i).getOxygen() );
+			ArrayList<SavedGameParser.SquareState> squareList = roomState.getSquareList();
+			squareList.clear();
+			squareList.addAll( roomSprites.get(i).getSquareList() );
 		}
 
 		// Systems.
@@ -775,13 +779,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Fires.
 		for (int i=0; i < shipLayout.getRoomCount(); i++) {
 			SavedGameParser.RoomState roomState = shipState.getRoom(i);
-			for (int[] squareState : roomState.getSquareList())
-				squareState[0] = 0;
+			for (SavedGameParser.SquareState squareState : roomState.getSquareList())
+				squareState.fireHealth = 0;
 		}
 		for (FireSprite fireSprite : fireSprites) {
 			SavedGameParser.RoomState roomState = shipState.getRoom( fireSprite.getRoomId() );
-			int [] squareState = roomState.getSquareList().get( fireSprite.getSquareId() );
-			squareState[0] = fireSprite.getHealth();
+			SavedGameParser.SquareState squareState = roomState.getSquareList().get( fireSprite.getSquareId() );
+			squareState.fireHealth = fireSprite.getHealth();
 		}
 
 		// Doors.
@@ -843,7 +847,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCallback(new SquareSelectionCallback() {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				RoomSprite roomSprite = roomSprites.get( roomId );
-				showRoomEditor( roomSprite );
+				showRoomEditor( roomSprite, squareId );
 				return true;
 			}
 		});
@@ -1454,21 +1458,40 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add( Box.createVerticalStrut( spacerSize ) );
 	}
 
-	private void showRoomEditor( final RoomSprite roomSprite ) {
+	private void showRoomEditor( final RoomSprite roomSprite, final int squareId ) {
 		final String OXYGEN = "Oxygen";
+		final String IGNITION = "Ignition Progress";
+		final String GAMMA = "Gamma?";
 
 		int roomId = roomSprite.getRoomId();
-		String title = String.format("Room %2d", roomId);
+		String title = String.format("Room %2d (Square %d)", roomId, squareId);
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( OXYGEN, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(OXYGEN).setMaximum( 100 );
 		editorPanel.getSlider(OXYGEN).setValue( roomSprite.getOxygen() );
+		editorPanel.getSlider(OXYGEN).addMouseListener( new StatusbarMouseListener(frame, "Oxygen level for the room as a whole.") );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( IGNITION, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(IGNITION).setMaximum( 100 );
+		editorPanel.getSlider(IGNITION).setValue( roomSprite.getSquare(squareId).ignitionProgress );
+		editorPanel.getSlider(IGNITION).addMouseListener( new StatusbarMouseListener(frame, "A new fire spawns in this square at 100.") );
+		editorPanel.addRow( GAMMA, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(GAMMA).setText( ""+roomSprite.getSquare(squareId).gamma );
+		editorPanel.getInt(GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown square field. Always -1?") );
 		sidePanel.add( editorPanel );
 
 		final Runnable applyCallback = new Runnable() {
 			public void run() {
+				String newString;
 				roomSprite.setOxygen( editorPanel.getSlider(OXYGEN).getValue() );
+
+				roomSprite.getSquare(squareId).ignitionProgress = editorPanel.getSlider(IGNITION).getValue();
+
+				newString = editorPanel.getInt(GAMMA).getText();
+				try { roomSprite.getSquare(squareId).gamma = Integer.parseInt(newString); }
+				catch (NumberFormatException e) {}
 
 				clearSidePanel();
 			}
@@ -1985,11 +2008,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		private int roomId;
 		private int oxygen;
+		private ArrayList<SavedGameParser.SquareState> squareList = new ArrayList<SavedGameParser.SquareState>();
 		private Color bgColor;
 
-		public RoomSprite( int roomId, int oxygen ) {
+		public RoomSprite( int roomId, SavedGameParser.RoomState roomState) {
 			this.roomId = roomId;
-			setOxygen( oxygen );
+			setOxygen( roomState.getOxygen() );
+			for (SavedGameParser.SquareState squareState : roomState.getSquareList()) {
+				SavedGameParser.SquareState tmpSquare = new SavedGameParser.SquareState();
+				tmpSquare.fireHealth = squareState.fireHealth;
+				tmpSquare.ignitionProgress = squareState.ignitionProgress;
+				tmpSquare.gamma = squareState.gamma;
+				squareList.add( tmpSquare );
+			}
 			this.setOpaque(true);
 		}
 
@@ -2014,6 +2045,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		}
 		public int getOxygen() { return oxygen; }
+
+		public SavedGameParser.SquareState getSquare( int n ) {
+			return squareList.get(n);
+		}
+
+		public ArrayList<SavedGameParser.SquareState> getSquareList() { return squareList; }
 
 		@Override
 		public void paintComponent( Graphics g ) {
