@@ -235,6 +235,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		resetOxygenBtn.setMargin(ctrlInsets);
 		resetPanel.add( resetOxygenBtn );
 		resetPanel.add( Box.createHorizontalStrut(5) );
+		final JButton resetSystemsBtn = new JButton("Systems");
+		resetSystemsBtn.setMargin(ctrlInsets);
+		resetPanel.add( resetSystemsBtn );
+		resetPanel.add( Box.createHorizontalStrut(5) );
 		final JButton resetIntrudersBtn = new JButton("Intruders");
 		resetIntrudersBtn.setMargin(ctrlInsets);
 		resetPanel.add( resetIntrudersBtn );
@@ -291,6 +295,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 					}
 					shipPanel.repaint();
 
+				} else if (source == resetSystemsBtn ) {
+					clearSidePanel();
+					for (SystemSprite systemSprite : systemSprites) {
+						systemSprite.setDamagedBars(0);
+						systemSprite.setIonizedBars(0);
+						systemSprite.setRepairProgress(0);
+						systemSprite.setDamageProgress(0);
+						systemSprite.setDeionizationTicks(Integer.MIN_VALUE);
+					}
+					shipPanel.repaint();
+
 				} else if (source == resetIntrudersBtn ) {
 					clearSidePanel();
 					for (ListIterator<CrewSprite> it = crewSprites.listIterator(); it.hasNext(); ) {
@@ -330,11 +345,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		addFireBtn.addActionListener( ctrlListener );
 
 		resetOxygenBtn.addActionListener( ctrlListener );
+		resetSystemsBtn.addActionListener( ctrlListener );
 		resetIntrudersBtn.addActionListener( ctrlListener );
 		resetBreachesBtn.addActionListener( ctrlListener );
 		resetFiresBtn.addActionListener( ctrlListener );
 
 		resetOxygenBtn.addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
+		resetSystemsBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all system damage.") );
 		resetIntrudersBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all NPC crew.") );
 		resetBreachesBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all breaches.") );
 		resetFiresBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all fires.") );
