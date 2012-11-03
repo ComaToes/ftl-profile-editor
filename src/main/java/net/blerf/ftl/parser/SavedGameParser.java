@@ -547,13 +547,13 @@ public class SavedGameParser extends DatParser {
 			system.setDamagedBars( readInt(in) );
 			system.setIonizedBars( readInt(in) );
 
-			int miscTicks = readInt(in);
-			if ( miscTicks == -2147483648 )
-				miscTicks = Integer.MIN_VALUE;
-			system.setMiscTicks( miscTicks );
+			int deionizationTicks = readInt(in);
+			if ( deionizationTicks == -2147483648 )
+				deionizationTicks = Integer.MIN_VALUE;
+			system.setDeionizationTicks( deionizationTicks );
 
 			system.setRepairProgress( readInt(in) );
-			system.setBurnProgress( readInt(in) );
+			system.setDamageProgress( readInt(in) );
 		}
 		return system;
 	}
@@ -565,13 +565,13 @@ public class SavedGameParser extends DatParser {
 			writeInt( out, system.getDamagedBars() );
 			writeInt( out, system.getIonizedBars() );
 
-			if ( system.getMiscTicks() == Integer.MIN_VALUE )
+			if ( system.getDeionizationTicks() == Integer.MIN_VALUE )
 				writeInt( out, -2147483648 );
 			else
-				writeInt( out, system.getMiscTicks() );
+				writeInt( out, system.getDeionizationTicks() );
 
 			writeInt( out, system.getRepairProgress() );
-			writeInt( out, system.getBurnProgress() );
+			writeInt( out, system.getDamageProgress() );
 		}
 	}
 
@@ -1163,6 +1163,8 @@ public class SavedGameParser extends DatParser {
 
 
 	public class ShipState {
+		public static final int MAX_RESERVE_POWER = 25;  // TODO: Magic number.
+
 		private boolean auto = false;  // Is autoShip.
 		private String shipName, shipBlueprintId, shipLayoutId;
 		private String shipGfxBaseName;
@@ -1636,27 +1638,27 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class SystemState {
+	public static class SystemState {
 		private String systemId;
 		private int capacity = 0;
 		private int power = 0;
 		private int damagedBars = 0;      // Number of unusable power bars.
 		private int ionizedBars = 0;      // Number of disabled power bars; -1 while cloaked.
 		private int repairProgress = 0;   // Turns bar yellow.
-		private int burnProgress = 0;     // Turns bar red.
-		private int miscTicks = Integer.MIN_VALUE;  // Millisecond counter.
+		private int damageProgress = 0;   // Turns bar red.
+		private int deionizationTicks = Integer.MIN_VALUE;  // Millisecond counter.
 
 		// ionizedBars may briefly be -1 initially when a system
 		// disables itself. Then ionizedBars will be set to capacity+1.
 
-		// miscTicks is reset upon loading.
-		// Whatever needs timing will respond to it as it increments,
-		// including resetting after intervals. If nothing needs it,
-		// it may be 0, or more often, MIN_INT (signed 32bit \x0000_0080)
-		// of the compiler that built FTL. This parser will translate that
+		// deionizationTicks is reset upon loading.
+		// The game's interface responds as it increments, including
+		// resetting after intervals. If not needed, it may be 0, or
+		// more often, MIN_INT (signed 32bit \x0000_0080) of the
+		// compiler that built FTL. This parser will translate that
 		// to Java's equivalent minimum during reading, and back during
 		// writing.
-		//   Deionization: each bar counts to 5000.
+		//   Deionization of each bar counts to 5000.
 		//
 		// TODO:
 		// Nearly every system has been observed with non-zero values,
@@ -1675,28 +1677,28 @@ public class SavedGameParser extends DatParser {
 		public void setDamagedBars( int n ) { damagedBars = n; }
 		public void setIonizedBars( int n ) { ionizedBars = n; }
 		public void setRepairProgress( int n ) { repairProgress = n; }
-		public void setBurnProgress( int n ) { burnProgress = n; }
-		public void setMiscTicks( int n ) { miscTicks = n; }
+		public void setDamageProgress( int n ) { damageProgress = n; }
+		public void setDeionizationTicks( int n ) { deionizationTicks = n; }
 
 		public int getCapacity() { return capacity; }
 		public int getPower() { return power; }
 		public int getDamagedBars() { return damagedBars; }
 		public int getIonizedBars() { return ionizedBars; }
 		public int getRepairProgress() { return repairProgress; }
-		public int getBurnProgress() { return burnProgress; }
-		public int getMiscTicks() { return miscTicks; }
+		public int getDamageProgress() { return damageProgress; }
+		public int getDeionizationTicks() { return deionizationTicks; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
-				result.append(String.format("SystemId:        %s\n", systemId));
-				result.append(String.format("Power:           %d/%d\n", power, capacity));
-				result.append(String.format("Damaged Bars:    %3d\n", damagedBars));
-				result.append(String.format("Ionized Bars:    %3d\n", ionizedBars));
-				result.append(String.format("Repair Progress: %3d%%\n", repairProgress));
-				result.append(String.format("Burn Progress:   %3d%%\n", burnProgress));
-				result.append(String.format("Misc Ticks:      %s\n", (miscTicks==Integer.MIN_VALUE ? "N/A" : miscTicks) ));
+				result.append(String.format("SystemId:           %s\n", systemId));
+				result.append(String.format("Power:              %d/%d\n", power, capacity));
+				result.append(String.format("Damaged Bars:       %3d\n", damagedBars));
+				result.append(String.format("Ionized Bars:       %3d\n", ionizedBars));
+				result.append(String.format("Repair Progress:    %3d%%\n", repairProgress));
+				result.append(String.format("Damage Progress:    %3d%%\n", damageProgress));
+				result.append(String.format("Deionization Ticks: %s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ));
 			} else {
 				result.append(String.format("%s: N/A\n", systemId));
 			}

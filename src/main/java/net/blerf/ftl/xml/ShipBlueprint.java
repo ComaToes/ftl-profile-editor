@@ -28,10 +28,10 @@ public class ShipBlueprint {
 	
 	private SystemList systemList;
 	private Health health;
-	
+	private MaxPower maxPower;
 	private int weaponSlots, droneSlots;
 	
-	private Object weaponList, maxPower, crewCount; // TODO model
+	private Object weaponList, crewCount; // TODO model
 	
 	@XmlRootElement
 	@XmlAccessorType(XmlAccessType.FIELD)
@@ -286,6 +286,13 @@ public class ShipBlueprint {
 		public int amount;
 	}
 
+	@XmlRootElement
+	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class MaxPower {
+		@XmlAttribute
+		public int amount;
+	}
+
 	public String getId() {
 		return id;
 	}
@@ -374,11 +381,11 @@ public class ShipBlueprint {
 		this.health = health;
 	}
 
-	public Object getMaxPower() {
+	public MaxPower getMaxPower() {
 		return maxPower;
 	}
 
-	public void setMaxPower(Object maxPower) {
+	public void setMaxPower(MaxPower maxPower) {
 		this.maxPower = maxPower;
 	}
 

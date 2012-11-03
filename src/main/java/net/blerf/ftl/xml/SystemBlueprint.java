@@ -25,6 +25,14 @@ public class SystemBlueprint {
 	public static final String ID_CLOAKING = "cloaking";
 	public static final String ID_ARTILLERY = "artillery";
 
+	public static boolean isSubsystem( String systemId ) {
+		if ( systemId == null ) return false;
+		if ( systemId.equals(ID_PILOT) ) return true;
+		if ( systemId.equals(ID_DOORS) ) return true;
+		if ( systemId.equals(ID_SENSORS) ) return true;
+		return false;
+	}
+
 	@XmlAttribute(name="name")
 	private String id;
 	private String type, title, desc;

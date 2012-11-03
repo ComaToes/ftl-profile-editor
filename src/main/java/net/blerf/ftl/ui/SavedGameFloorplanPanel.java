@@ -49,15 +49,22 @@ import javax.swing.JComponent;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
-import javax.swing.JScrollPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JSlider;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
+import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
@@ -93,6 +100,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private ShipLayout shipLayout = null;
 	private ShipChassis shipChassis = null;
 	private String shipGfxBaseName = null;
+	private int shipReservePowerCapacity = 0;
 	private int originX=0, originY=0;
 	private HashMap<Rectangle, Integer> roomRegions = new HashMap<Rectangle, Integer>();
 	private HashMap<Rectangle, Integer> squareRegions = new HashMap<Rectangle, Integer>();
@@ -189,6 +197,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		selectRoomBtn.setMargin(ctrlInsets);
 		selectPanel.add( selectRoomBtn );
 		selectPanel.add( Box.createHorizontalStrut(5) );
+		final JButton selectSystemBtn = new JButton("System");
+		selectSystemBtn.setMargin(ctrlInsets);
+		selectPanel.add( selectSystemBtn );
+		selectPanel.add( Box.createHorizontalStrut(5) );
 		final JButton selectCrewBtn = new JButton("Crew");
 		selectCrewBtn.setMargin(ctrlInsets);
 		selectPanel.add( selectCrewBtn );
@@ -256,6 +268,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				Object source = e.getSource();
 				if ( source == selectRoomBtn ) {
 					selectRoom();
+				} else if (source == selectSystemBtn ) {
+					selectSystem();
 				} else if (source == selectCrewBtn ) {
 					selectCrew();
 				} else if (source == selectBreachBtn ) {
@@ -306,6 +320,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 
 		selectRoomBtn.addActionListener( ctrlListener );
+		selectSystemBtn.addActionListener( ctrlListener );
 		selectCrewBtn.addActionListener( ctrlListener );
 		selectBreachBtn.addActionListener( ctrlListener );
 		selectFireBtn.addActionListener( ctrlListener );
@@ -428,6 +443,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
 		shipGfxBaseName = shipState.getShipGraphicsBaseName();
+		shipReservePowerCapacity = shipState.getReservePowerCapacity();
 		originX = shipChassis.getImageBounds().x * -1;
 		originY = shipChassis.getImageBounds().y * -1;
 		ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
@@ -609,7 +625,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 					int systemX = roomX + tileEdge + squaresH*squareSize/2;
 					int systemY = roomY + tileEdge + squaresV*squareSize/2;
-					addSystemSprite( systemX, systemY, systemId );  // Assumes systemId is the image basename.
+
+					SavedGameParser.SystemState systemState = shipState.getSystem( systemId );
+					addSystemSprite( systemX, systemY, systemState );
 				}
 			}
 		}
@@ -704,6 +722,21 @@ public class SavedGameFloorplanPanel extends JPanel {
 			roomState.setOxygen( roomSprites.get(i).getOxygen() );
 		}
 
+		// Systems.
+		Map<String, SavedGameParser.SystemState> systemMap = shipState.getSystemMap();
+		systemMap.clear();
+		for (SystemSprite systemSprite : systemSprites) {
+			SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemSprite.getSystemId() );
+			systemState.setCapacity( systemSprite.getCapacity() );
+			systemState.setPower( systemSprite.getPower() );
+			systemState.setDamagedBars( systemSprite.getDamagedBars() );
+			systemState.setIonizedBars( systemSprite.getIonizedBars() );
+			systemState.setRepairProgress( systemSprite.getRepairProgress() );
+			systemState.setDamageProgress( systemSprite.getDamageProgress() );
+			systemState.setDeionizationTicks( systemSprite.getDeionizationTicks() );
+			systemMap.put( systemState.getSystemId(), systemState );
+		}
+
 		// Breaches.
 		Map<Point, Integer> breachMap = shipState.getBreachMap();
 		breachMap.clear();
@@ -794,6 +827,38 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				RoomSprite roomSprite = roomSprites.get( roomId );
 				showRoomEditor( roomSprite );
+				return true;
+			}
+		});
+		squareSelector.setVisible(true);
+	}
+
+	private void selectSystem() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
+				if ( roomId < 0 || squareId < 0 ) return false;
+				RoomSprite roomSprite = roomSprites.get( roomId );
+
+				// See if this room has a system in it, literally.
+				for (SystemSprite systemSprite : systemSprites) {
+					if ( roomSprite.getBounds().contains( systemSprite.getBounds() ) ) {
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				RoomSprite roomSprite = roomSprites.get( roomId );
+
+				for (SystemSprite systemSprite : systemSprites) {
+					if ( roomSprite.getBounds().contains( systemSprite.getBounds() ) ) {
+						showSystemEditor( systemSprite );
+						break;
+					}
+				}
 				return true;
 			}
 		});
@@ -1129,8 +1194,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 		doorSprite.addMouseListener(doorSelectListener);
 	}
 
-	private void addSystemSprite( int centerX, int centerY, String overlayBaseName ) {
+	private void addSystemSprite( int centerX, int centerY, SavedGameParser.SystemState systemState ) {
 		int w = 32, h = 32;
+		String overlayBaseName = systemState.getSystemId();  // Assuming these are interchangeable.
 		BufferedImage overlayImage = getScaledImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", w, h );
 
 		// Darken the white icon to gray...
@@ -1141,7 +1207,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		RescaleOp op = new RescaleOp(new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 }, null);
 		overlayImage = op.filter(canvas, null);
 
-		SystemSprite systemSprite = new SystemSprite( overlayImage );
+		SystemSprite systemSprite = new SystemSprite( overlayImage, systemState );
 		systemSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
 		systemSprites.add( systemSprite );
 		shipPanel.add( systemSprite, SYSTEM_LAYER );
@@ -1391,6 +1457,218 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		};
 		createSidePanel( title, editorPanel, applyCallback );
+
+		showSidePanel();
+	}
+
+	private void showSystemEditor( final SystemSprite systemSprite ) {
+		final String RESERVE_CAPACITY = "Reserve Capacity";
+		final String RESERVE_POWER = "Reserve Power";
+		final String CAPACITY = "System Capacity";
+		final String POWER = "System Power";
+		final String DAMAGED_BARS = "Damaged Bars";
+		final String IONIZED_BARS = "Ionized Bars";
+		final String REPAIR_PROGRESS = "Repair Progress";
+		final String DAMAGE_PROGRESS = "Damage Progress";
+		final String DEIONIZATION_TICKS = "Deionization Ticks";
+
+		final SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemSprite.getSystemId() );
+
+		int z = 0;  // Sum up all the other systems' power usage.
+		for (SystemSprite otherSprite : systemSprites) {
+			if ( otherSprite != systemSprite )
+				if ( !SystemBlueprint.isSubsystem( otherSprite.getSystemId() ) )
+					z += otherSprite.getPower();
+		}
+		final int otherPower = z;
+		// Subsystems ignore the reserve, and power can't be directly changed.
+		final boolean isSubsystem = SystemBlueprint.isSubsystem( systemSprite.getSystemId() );
+
+		String title = systemBlueprint.getTitle();
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( RESERVE_CAPACITY, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(RESERVE_CAPACITY).setMaximum( SavedGameParser.ShipState.MAX_RESERVE_POWER );
+		editorPanel.getSlider(RESERVE_CAPACITY).setMinimum( otherPower );
+		editorPanel.getSlider(RESERVE_CAPACITY).setValue( shipReservePowerCapacity );
+		editorPanel.getSlider(RESERVE_CAPACITY).addMouseListener( new StatusbarMouseListener(frame, "Total possible reactor bars (Increase to upgrade).") );
+		editorPanel.addRow( RESERVE_POWER, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(RESERVE_POWER).setMaximum( shipReservePowerCapacity );
+		// Reserve power's value is set later.
+		editorPanel.getSlider(RESERVE_POWER).setEnabled(false);
+		editorPanel.getSlider(RESERVE_POWER).addMouseListener( new StatusbarMouseListener(frame, "Unallocated power.") );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( CAPACITY, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(CAPACITY).setMaximum( systemBlueprint.getMaxPower() );
+		editorPanel.getSlider(CAPACITY).setValue( systemSprite.getCapacity() );
+		editorPanel.getSlider(CAPACITY).addMouseListener( new StatusbarMouseListener(frame, "Possible system bars (Increase to buy/upgrade, 0=absent).") );
+		editorPanel.addRow( POWER, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(POWER).addMouseListener( new StatusbarMouseListener(frame, "System power.") );
+		editorPanel.addRow( DAMAGED_BARS, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(DAMAGED_BARS).setMaximum( systemSprite.getCapacity() );
+		editorPanel.getSlider(DAMAGED_BARS).setValue( systemSprite.getDamagedBars() );
+		editorPanel.getSlider(DAMAGED_BARS).addMouseListener( new StatusbarMouseListener(frame, "Completely damaged bars.") );
+		editorPanel.addRow( IONIZED_BARS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(IONIZED_BARS).setDocument( new RegexDocument("-?1?|[0-9]*") );
+		editorPanel.getInt(IONIZED_BARS).setText( ""+systemSprite.getIonizedBars() );
+		editorPanel.getInt(IONIZED_BARS).addMouseListener( new StatusbarMouseListener(frame, "Ionized bars (-1 becomes capacity+1 when loaded).") );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( REPAIR_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(REPAIR_PROGRESS).setMaximum( 100 );
+		editorPanel.getSlider(REPAIR_PROGRESS).setValue( systemSprite.getRepairProgress() );
+		editorPanel.getSlider(REPAIR_PROGRESS).addMouseListener( new StatusbarMouseListener(frame, "Turns a damaged bar yellow until restored.") );
+		editorPanel.addRow( DAMAGE_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(DAMAGE_PROGRESS).setMaximum( 100 );
+		editorPanel.getSlider(DAMAGE_PROGRESS).setValue( systemSprite.getDamageProgress() );
+		editorPanel.getSlider(DAMAGE_PROGRESS).addMouseListener( new StatusbarMouseListener(frame, "Turns an undamaged bar red until damaged.") );
+		editorPanel.addRow( DEIONIZATION_TICKS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(DEIONIZATION_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(DEIONIZATION_TICKS).setText( ""+systemSprite.getDeionizationTicks() );
+		editorPanel.getInt(DEIONIZATION_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Milliseconds spent deionizing a bar: 0-5000 (Resets upon loading, weird values sometimes, -2147...=N/A).") );
+
+		if ( isSubsystem ) {
+			editorPanel.getSlider(RESERVE_CAPACITY).setEnabled(false);
+			editorPanel.getSlider(RESERVE_POWER).setValue( shipReservePowerCapacity-otherPower );
+			editorPanel.getSlider(POWER).setMaximum( systemSprite.getCapacity() );
+			editorPanel.getSlider(POWER).setValue( systemSprite.getPower() );
+			editorPanel.getSlider(POWER).setEnabled(false);
+		} else {
+			editorPanel.getSlider(RESERVE_POWER).setValue( shipReservePowerCapacity-otherPower-systemSprite.getPower() );
+			editorPanel.getSlider(POWER).setMaximum(Math.min( systemSprite.getCapacity(), (shipReservePowerCapacity-otherPower) ));
+			editorPanel.getSlider(POWER).setValue( systemSprite.getPower() );
+		}
+
+		sidePanel.add( editorPanel );
+
+		ChangeListener barListener = new ChangeListener() {
+			private JSlider reserveCapacitySlider = editorPanel.getSlider(RESERVE_CAPACITY);
+			private JSlider reservePowerSlider = editorPanel.getSlider(RESERVE_POWER);
+			private JSlider capacitySlider = editorPanel.getSlider(CAPACITY);
+			private JSlider powerSlider = editorPanel.getSlider(POWER);
+			private JSlider damagedBarsSlider = editorPanel.getSlider(DAMAGED_BARS);
+			private JSlider repairProgressSlider = editorPanel.getSlider(REPAIR_PROGRESS);
+			private JSlider damageProgressSlider = editorPanel.getSlider(DAMAGE_PROGRESS);
+			private boolean ignoreChanges = false;
+
+			public void stateChanged(ChangeEvent e) {
+				ignoreChanges = true;
+
+				Object source = e.getSource();
+				if ( source == repairProgressSlider ) {
+					damageProgressSlider.setValue( 0 );
+				}  // Mutually exclusive.
+				if ( source == damageProgressSlider ) {
+					repairProgressSlider.setValue( 0 );
+				}
+				else {
+					syncBars( source );
+				}
+
+				// After all the secondary slider events, resume monitoring.
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						ignoreChanges = false;
+					}
+				});
+			}
+
+			private void syncBars( Object source ) {
+				if ( source == reserveCapacitySlider ) {  // Non-subystem only.
+					// Set caps.
+					int reserveCapacity = reserveCapacitySlider.getValue();
+					capacitySlider.setMaximum(Math.min( systemBlueprint.getMaxPower(), reserveCapacity ));
+					// Repeat the capacity block.
+					int capacity = capacitySlider.getValue();
+					damagedBarsSlider.setMaximum( capacity );
+					powerSlider.setMaximum(Math.min( capacity, reserveCapacity - otherPower ));
+					powerSlider.setValue(Math.min( powerSlider.getValue(), Math.max(0, (reserveCapacity-otherPower)) ));
+					drainReserve();
+				}
+				else if ( source == capacitySlider ) {
+					// Set caps.
+					int reserveCapacity = reserveCapacitySlider.getValue();
+					int capacity = capacitySlider.getValue();
+					damagedBarsSlider.setMaximum( capacity );
+					int damage = damagedBarsSlider.getValue();
+					if ( isSubsystem ) {  // Power ~= Capacity.
+						powerSlider.setMaximum( capacity );
+						powerSlider.setValue(Math.min( capacity, Math.max(0, (capacity-damage)) ));
+					} else {              // Power merely capped.
+						powerSlider.setMaximum(Math.min( capacity, reserveCapacity - otherPower ));
+						drainReserve();
+					}
+				}
+				else if ( source == powerSlider ) {  // Non-subystem only.
+					int capacity = capacitySlider.getValue();
+					int power = powerSlider.getValue();
+					damagedBarsSlider.setValue(Math.min( damagedBarsSlider.getValue(), Math.max(0, (capacity-power)) ));
+					drainReserve();
+				}
+				else if ( source == damagedBarsSlider ) {
+					int capacity = capacitySlider.getValue();
+					int damage = damagedBarsSlider.getValue();
+
+					if ( isSubsystem ) {  // Power ~= Capacity.
+						powerSlider.setValue(Math.min( capacity, Math.max(0, (capacity-damage)) ));
+					} else {              // Power merely capped.
+						powerSlider.setValue(Math.min( powerSlider.getValue(), Math.max(0, (capacity-damage)) ));
+						drainReserve();
+					}
+				}
+			}
+
+			public void drainReserve() {
+				int power = powerSlider.getValue();
+				int reserveCapacity = reserveCapacitySlider.getValue();
+				reservePowerSlider.setValue( reserveCapacity - otherPower - power );
+			}
+		};
+		editorPanel.getSlider(RESERVE_CAPACITY).addChangeListener(barListener);
+		editorPanel.getSlider(CAPACITY).addChangeListener(barListener);
+		editorPanel.getSlider(POWER).addChangeListener(barListener);
+		editorPanel.getSlider(DAMAGED_BARS).addChangeListener(barListener);
+		editorPanel.getSlider(REPAIR_PROGRESS).addChangeListener(barListener);
+		editorPanel.getSlider(DAMAGE_PROGRESS).addChangeListener(barListener);
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				String newString;
+				shipReservePowerCapacity = editorPanel.getSlider(RESERVE_CAPACITY).getValue();
+
+				systemSprite.setCapacity( editorPanel.getSlider(CAPACITY).getValue() );
+				systemSprite.setPower( editorPanel.getSlider(POWER).getValue() );
+				systemSprite.setDamagedBars( editorPanel.getSlider(DAMAGED_BARS).getValue() );
+
+				newString = editorPanel.getInt(IONIZED_BARS).getText();
+				try { systemSprite.setIonizedBars( Integer.parseInt(newString) ); }
+				catch (NumberFormatException e) {}
+
+				systemSprite.setRepairProgress( editorPanel.getSlider(REPAIR_PROGRESS).getValue() );
+				systemSprite.setDamageProgress( editorPanel.getSlider(DAMAGE_PROGRESS).getValue() );
+
+				newString = editorPanel.getInt(DEIONIZATION_TICKS).getText();
+				try { systemSprite.setDeionizationTicks( Integer.parseInt(newString) ); }
+				catch (NumberFormatException e) {}
+
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		if ( isSubsystem ) {
+			addSidePanelSeparator(8);
+			String notice = "";
+			notice += "* This is a subsystem, which means reserves are ignored, ";
+			notice += "and power is always as full as possible.";
+			JTextArea noticeArea = new JTextArea( notice );
+			noticeArea.setBackground(null);
+			noticeArea.setEditable(false);
+			noticeArea.setBorder(null);
+			noticeArea.setLineWrap(true);
+			noticeArea.setWrapStyleWord(true);
+			noticeArea.setFocusable(false);
+			sidePanel.add( noticeArea );
+		}
 
 		showSidePanel();
 	}
@@ -1713,11 +1991,45 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	public class SystemSprite extends JComponent {
 		private BufferedImage overlayImage;
+		private String systemId;
+		private int capacity;
+		private int power;
+		private int damagedBars;
+		private int ionizedBars;
+		private int repairProgress;
+		private int damageProgress;
+		private int deionizationTicks;
 
-		public SystemSprite( BufferedImage overlayImage ) {
+		public SystemSprite( BufferedImage overlayImage, SavedGameParser.SystemState systemState ) {
 			this.overlayImage = overlayImage;
+			this.systemId = systemState.getSystemId();
+			this.capacity = systemState.getCapacity();
+			this.power = systemState.getPower();
+			this.damagedBars = systemState.getDamagedBars();
+			this.ionizedBars = systemState.getIonizedBars();
+			this.repairProgress = systemState.getRepairProgress();
+			this.damageProgress = systemState.getDamageProgress();
+			this.deionizationTicks = systemState.getDeionizationTicks();
 			this.setOpaque(false);
 		}
+
+		public String getSystemId() { return systemId; }
+
+		public void setCapacity( int n ) { capacity = n; }
+		public void setPower( int n ) { power = n; }
+		public void setDamagedBars( int n ) { damagedBars = n; }
+		public void setIonizedBars( int n ) { ionizedBars = n; }
+		public void setRepairProgress( int n ) { repairProgress = n; }
+		public void setDamageProgress( int n ) { damageProgress = n; }
+		public void setDeionizationTicks( int n ) { deionizationTicks = n; }
+
+		public int getCapacity() { return capacity; }
+		public int getPower() { return power; }
+		public int getDamagedBars() { return damagedBars; }
+		public int getIonizedBars() { return ionizedBars; }
+		public int getRepairProgress() { return repairProgress; }
+		public int getDamageProgress() { return damageProgress; }
+		public int getDeionizationTicks() { return deionizationTicks; }
 
 		@Override
 		public void paintComponent( Graphics g ) {
