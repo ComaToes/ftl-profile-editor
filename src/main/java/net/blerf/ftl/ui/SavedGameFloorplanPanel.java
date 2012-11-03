@@ -1508,10 +1508,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getSlider(DAMAGED_BARS).setMaximum( systemSprite.getCapacity() );
 		editorPanel.getSlider(DAMAGED_BARS).setValue( systemSprite.getDamagedBars() );
 		editorPanel.getSlider(DAMAGED_BARS).addMouseListener( new StatusbarMouseListener(frame, "Completely damaged bars.") );
+		editorPanel.addBlankRow();
 		editorPanel.addRow( IONIZED_BARS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(IONIZED_BARS).setDocument( new RegexDocument("-?1?|[0-9]*") );
 		editorPanel.getInt(IONIZED_BARS).setText( ""+systemSprite.getIonizedBars() );
-		editorPanel.getInt(IONIZED_BARS).addMouseListener( new StatusbarMouseListener(frame, "Ionized bars (-1 becomes capacity+1 when loaded).") );
+		editorPanel.getInt(IONIZED_BARS).addMouseListener( new StatusbarMouseListener(frame, String.format("Ionized bars (can exceed %d but the number won't appear in-game).", SavedGameParser.SystemState.MAX_IONIZED_BARS)) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( REPAIR_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(REPAIR_PROGRESS).setMaximum( 100 );
@@ -1524,7 +1525,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( DEIONIZATION_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(DEIONIZATION_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.getInt(DEIONIZATION_TICKS).setText( ""+systemSprite.getDeionizationTicks() );
-		editorPanel.getInt(DEIONIZATION_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Milliseconds spent deionizing a bar: 0-5000 (Resets upon loading, weird values sometimes, -2147...=N/A).") );
+		editorPanel.getInt(DEIONIZATION_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Milliseconds spent deionizing a bar: 0-5000 (Resets upon loading, weird values sometimes, -2147...=N/A, 0's safe too).") );
 
 		if ( isSubsystem ) {
 			editorPanel.getSlider(RESERVE_CAPACITY).setEnabled(false);
@@ -1551,18 +1552,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			private boolean ignoreChanges = false;
 
 			public void stateChanged(ChangeEvent e) {
+				if ( ignoreChanges ) return;
 				ignoreChanges = true;
 
 				Object source = e.getSource();
-				if ( source == repairProgressSlider ) {
-					damageProgressSlider.setValue( 0 );
-				}  // Mutually exclusive.
-				if ( source == damageProgressSlider ) {
-					repairProgressSlider.setValue( 0 );
-				}
-				else {
-					syncBars( source );
-				}
+
+				syncProgress( source );
+				syncBars( source );
 
 				// After all the secondary slider events, resume monitoring.
 				SwingUtilities.invokeLater(new Runnable() {
@@ -1572,24 +1568,50 @@ public class SavedGameFloorplanPanel extends JPanel {
 				});
 			}
 
+			private void syncProgress( Object source ) {
+				if ( source == repairProgressSlider ) {
+					// Reset this slider if no damage to fix. Fight DamageProgess.
+					if ( repairProgressSlider.getValueIsAdjusting() ) return;  // Wait until dragging ends.
+					if ( damagedBarsSlider.getValue() == 0 ) {
+						enqueueSliderReset( repairProgressSlider );
+						return;
+					}
+					if ( repairProgressSlider.getValue() > 0 )
+						damageProgressSlider.setValue( 0 );  // Mutually exclusive.
+				}
+				else if ( source == damageProgressSlider ) {
+					// Reset this slider if maximally damaged. Fight RepairProgress.
+					if ( damageProgressSlider.getValueIsAdjusting() ) return;  // Wait until dragging ends.
+					int capacity = capacitySlider.getValue();
+					int damage = damagedBarsSlider.getValue();
+					if ( damage >= capacity ) {
+						enqueueSliderReset( damageProgressSlider );
+						return;
+					}
+					if ( damageProgressSlider.getValue() > 0 )
+						repairProgressSlider.setValue( 0 );   // Mutually exclusive.
+				}
+			}
+
 			private void syncBars( Object source ) {
 				if ( source == reserveCapacitySlider ) {  // Non-subystem only.
-					// Set caps.
+					// Cap power based on reserves.
 					int reserveCapacity = reserveCapacitySlider.getValue();
-					capacitySlider.setMaximum(Math.min( systemBlueprint.getMaxPower(), reserveCapacity ));
-					// Repeat the capacity block.
 					int capacity = capacitySlider.getValue();
-					damagedBarsSlider.setMaximum( capacity );
+
 					powerSlider.setMaximum(Math.min( capacity, reserveCapacity - otherPower ));
 					powerSlider.setValue(Math.min( powerSlider.getValue(), Math.max(0, (reserveCapacity-otherPower)) ));
 					drainReserve();
 				}
 				else if ( source == capacitySlider ) {
-					// Set caps.
+					// Set caps. Reset DamageProgress if maximally damaged.
 					int reserveCapacity = reserveCapacitySlider.getValue();
 					int capacity = capacitySlider.getValue();
+
 					damagedBarsSlider.setMaximum( capacity );
 					int damage = damagedBarsSlider.getValue();
+					if ( damage >= capacity ) damageProgressSlider.setValue( 0 );
+
 					if ( isSubsystem ) {  // Power ~= Capacity.
 						powerSlider.setMaximum( capacity );
 						powerSlider.setValue(Math.min( capacity, Math.max(0, (capacity-damage)) ));
@@ -1602,11 +1624,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 					int capacity = capacitySlider.getValue();
 					int power = powerSlider.getValue();
 					damagedBarsSlider.setValue(Math.min( damagedBarsSlider.getValue(), Math.max(0, (capacity-power)) ));
+					int damage = damagedBarsSlider.getValue();
+					if ( damage >= capacity ) damageProgressSlider.setValue( 0 );
 					drainReserve();
 				}
 				else if ( source == damagedBarsSlider ) {
+					// Reset RepairProgress if undamaged, DamageProgress if max damaged. Interfere with Power.
 					int capacity = capacitySlider.getValue();
 					int damage = damagedBarsSlider.getValue();
+					if ( damage == 0 ) repairProgressSlider.setValue( 0 );
+					if ( damage >= capacity ) damageProgressSlider.setValue( 0 );
 
 					if ( isSubsystem ) {  // Power ~= Capacity.
 						powerSlider.setValue(Math.min( capacity, Math.max(0, (capacity-damage)) ));
@@ -1621,6 +1648,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 				int power = powerSlider.getValue();
 				int reserveCapacity = reserveCapacitySlider.getValue();
 				reservePowerSlider.setValue( reserveCapacity - otherPower - power );
+			}
+
+			// The source slider's always currently busy, so reset it later.
+			public void enqueueSliderReset( final JSlider slider) {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						slider.setValue( 0 );
+					}
+				});
 			}
 		};
 		editorPanel.getSlider(RESERVE_CAPACITY).addChangeListener(barListener);
@@ -1655,20 +1691,30 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
+		addSidePanelSeparator(8);
+		String notice = "";
 		if ( isSubsystem ) {
-			addSidePanelSeparator(8);
-			String notice = "";
 			notice += "* This is a subsystem, which means reserves are ignored, ";
-			notice += "and power is always as full as possible.";
-			JTextArea noticeArea = new JTextArea( notice );
-			noticeArea.setBackground(null);
-			noticeArea.setEditable(false);
-			noticeArea.setBorder(null);
-			noticeArea.setLineWrap(true);
-			noticeArea.setWrapStyleWord(true);
-			noticeArea.setFocusable(false);
-			sidePanel.add( noticeArea );
+			notice += "and power is always as full as possible.\n\n";
 		}
+		notice += "* Partialy powered shields will steal an extra bar upon loading, ";
+		notice += "from another system if need be.\n";
+
+		notice += "* Ion -1: in Cloaking initates cloak; ";
+		notice += "in Teleporter might not be useful; ";
+		notice += "elsewhere locks indefinitely.\n";
+
+		notice += "* Don't reduce power on Weapons and Drone Ctrl! ";
+		notice += "This tool can't disarm yet.";
+
+		JTextArea noticeArea = new JTextArea( notice );
+		noticeArea.setBackground(null);
+		noticeArea.setEditable(false);
+		noticeArea.setBorder(null);
+		noticeArea.setLineWrap(true);
+		noticeArea.setWrapStyleWord(true);
+		noticeArea.setFocusable(false);
+		sidePanel.add( noticeArea );
 
 		showSidePanel();
 	}

@@ -1639,6 +1639,10 @@ public class SavedGameParser extends DatParser {
 
 
 	public static class SystemState {
+		// Above this number, FTL can't find a number image to use.
+		// A warning pic will appear in its place.
+		public static final int MAX_IONIZED_BARS = 9;  // TODO: Magic number.
+
 		private String systemId;
 		private int capacity = 0;
 		private int power = 0;
