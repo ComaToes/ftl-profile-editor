@@ -27,6 +27,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
+import java.awt.font.LineMetrics;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
 import java.awt.image.RescaleOp;
@@ -189,12 +190,22 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 			@Override
+			public void mouseEntered(MouseEvent e) {
+				miscSelector.setDescriptionVisible( true );
+			}
+			@Override
 			public void mouseExited(MouseEvent e) {
+				miscSelector.setDescriptionVisible( false );
 				miscSelector.setMousePoint( -1, -1 );
 			}
 		};
 		miscSelector.addMouseListener( miscListener );
 		miscSelector.addMouseMotionListener( miscListener );
+
+		miscSelector.setCriteria(new SpriteCriteria() {
+			private final String desc = "Select: Door or Weapon";
+			public String getDescription() { return desc; }
+		});
 
 		miscSelector.setCallback(new SpriteSelectionCallback() {
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
@@ -234,7 +245,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 			@Override
+			public void mouseEntered(MouseEvent e) {
+				squareSelector.setDescriptionVisible( true );
+			}
+			@Override
 			public void mouseExited(MouseEvent e) {
+				squareSelector.setDescriptionVisible( false );
 				squareSelector.setMousePoint( -1, -1 );
 			}
 		};
@@ -444,6 +460,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
 		String prevGfxBaseName = shipGfxBaseName;
+		miscSelector.setVisible( false );
 		miscSelector.setMousePoint( -1, -1 );
 		squareSelector.reset();
 		clearSidePanel();
@@ -778,6 +795,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		shipPanel.setPreferredSize( new Dimension(floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight()) );
 
+		miscSelector.setVisible( true );
+
 		shipPanel.revalidate();
 		shipPanel.repaint();
 	}
@@ -910,6 +929,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void selectRoom() {
 		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Select: Room";
+			public String getDescription() { return desc; }
+		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				RoomSprite roomSprite = roomSprites.get( roomId );
@@ -923,6 +946,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void selectSystem() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Select: System";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				RoomSprite roomSprite = roomSprites.get( roomId );
@@ -955,6 +982,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void selectCrew() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Select: Crew";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for (CrewSprite crewSprite : crewSprites) {
@@ -982,6 +1013,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void selectBreach() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Select: Breach";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for (BreachSprite breachSprite : breachSprites) {
@@ -1009,6 +1044,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void selectFire() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Select: Fire";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for (FireSprite fireSprite : fireSprites) {
@@ -1036,6 +1075,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addCrew() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Add: Crew";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -1067,6 +1110,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addBreach() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Add: Breach";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -1093,6 +1140,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addFire() {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Add: Fire";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -1119,6 +1170,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void moveCrew( final CrewSprite mobileSprite ) {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Move: Crew";
+
+			public String getDescription() { return desc; }
+
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -2310,9 +2365,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int w = this.getWidth(), h = this.getHeight();
 			g2d.drawRect( 0, 0, w-1, h-1 );
 
-			// Technically it should be Ascent + Descent, but these are numbers.
+			LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics(slotString, g2d);
 			int slotStringWidth = g2d.getFontMetrics().stringWidth(slotString);
-			int slotStringHeight = (int)g2d.getFontMetrics().getLineMetrics(slotString, g2d).getAscent();
+			int slotStringHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
 			int margin = 6;
 			if ( rotated ) {
 				int slotStringX = (w-1) - slotStringWidth;
@@ -2742,6 +2797,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private SquareSelectionCallback callback = null;
 		private Point mousePoint = new Point( -1, -1 );
 		private Rectangle currentRect = null;
+		private boolean paintDescription = false;
 
 		public SquareSelector( HashMap<Rectangle, Integer> roomRegions, HashMap<Rectangle, Integer> squareRegions ) {
 			this.roomRegions = roomRegions;
@@ -2819,8 +2875,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			return callback;
 		}
 
+		public void setDescriptionVisible( boolean b ) {
+			if ( paintDescription != b ) {
+				paintDescription = b;
+				this.repaint();
+			}
+		}
+
 		public void reset() {
 			this.setVisible(false);
+			setDescriptionVisible(false);
 			setCriteria(null);
 			setCallback(null);
 			setMousePoint( -1, -1 );
@@ -2832,6 +2896,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			Graphics2D g2d = (Graphics2D)g;
 			Color prevColor = g2d.getColor();
+
+			if ( paintDescription && squareCriteria != null ) {
+				String desc = squareCriteria.getDescription();
+				if ( desc != null ) {
+					LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics(desc, g2d);
+					int descHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
+					int descX = 8;
+					int descY = descHeight + 6;
+					g2d.setColor( Color.BLACK );
+					g2d.drawString( desc, descX, descY );
+				}
+			}
 
 			if ( currentRect != null ) {
 				Color squareColor = squareCriteria.getSquareColor( this, getRoomId(), getSquareId() );
@@ -2852,6 +2928,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 	public class SquareCriteria {
 		private Color validColor = Color.GREEN.darker();
 		private Color invalidColor = Color.RED.darker();
+
+		/** Returns a message describing what will be selected. */
+		public String getDescription() {
+			return null;
+		}
 
 		/** Returns a highlight color when hovering over a square, or null for none. */
 		public Color getSquareColor( SquareSelector squareSelector, int roomId, int squareId ) {
@@ -2892,6 +2973,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private SpriteSelectionCallback callback = null;
 		private Point mousePoint = new Point( -1, -1 );
 		private JComponent currentSprite = null;
+		private boolean paintDescription = false;
 
 		public SpriteSelector( ArrayList[] spriteLists ) {
 			this.spriteLists = spriteLists;
@@ -2945,8 +3027,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			return callback;
 		}
 
+		public void setDescriptionVisible( boolean b ) {
+			if ( paintDescription != b ) {
+				paintDescription = b;
+				this.repaint();
+			}
+		}
+
 		public void reset() {
 			this.setVisible(false);
+			setDescriptionVisible(false);
 			setCriteria(null);
 			setCallback(null);
 			setMousePoint( -1, -1 );
@@ -2958,6 +3048,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			Graphics2D g2d = (Graphics2D)g;
 			Color prevColor = g2d.getColor();
+
+			if ( paintDescription && spriteCriteria != null ) {
+				String desc = spriteCriteria.getDescription();
+				if ( desc != null ) {
+					LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics(desc, g2d);
+					int descHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
+					int descX = 8;
+					int descY = descHeight + 6;
+					g2d.setColor( Color.BLACK );
+					g2d.drawString( desc, descX, descY );
+				}
+			}
 
 			if ( currentSprite != null ) {
 				Color spriteColor = spriteCriteria.getSpriteColor( this, currentSprite );
@@ -2979,6 +3081,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 	public class SpriteCriteria {
 		private Color validColor = Color.GREEN.darker();
 		private Color invalidColor = Color.RED.darker();
+
+		/** Returns a message describing what will be selected. */
+		public String getDescription() {
+			return null;
+		}
 
 		/** Returns a highlight color when hovering over a sprite, or null for none. */
 		public Color getSpriteColor( SpriteSelector spriteSelector, JComponent sprite ) {
