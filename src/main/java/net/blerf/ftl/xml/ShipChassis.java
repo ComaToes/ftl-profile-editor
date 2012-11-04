@@ -13,25 +13,27 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class ShipChassis {
 	@XmlElement(name="img")
 	private ChassisImageBounds imageBounds;
+	@XmlElement(name="weaponMounts")
 	private WeaponMountList weaponMountList;
 
-	@XmlRootElement(name="img")
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class ChassisImageBounds {
 		@XmlAttribute
 		public int x, y, w, h;
 	}
 
-	@XmlRootElement(name="weaponMounts")
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class WeaponMountList {
-		private List<WeaponMount> mount;
+		@XmlElement(name="mount")
+		public List<WeaponMount> mount;
 
-		@XmlRootElement(name="mount")
 		@XmlAccessorType(XmlAccessType.FIELD)
 		public static class WeaponMount {
+			@XmlAttribute
 			public int x, y, gib;
+			@XmlAttribute
 			public boolean rotate, mirror;
+			@XmlAttribute
 			public String slide;
 		}
 	}
@@ -51,6 +53,7 @@ public class ShipChassis {
 
 			@XmlAccessorType(XmlAccessType.FIELD)
 			public static class FloatRange {
+				@XmlAttribute
 				private float min, max;
 			}
 		}

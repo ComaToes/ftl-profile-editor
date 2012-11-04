@@ -16,6 +16,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
@@ -27,10 +28,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class FieldEditorPanel extends JPanel {
-	public enum ContentType { STRING, INTEGER, BOOLEAN, SLIDER, COMBO };
+	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO };
 
 	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
 
+	private HashMap<String, JTextArea> wrappedLabelMap = new HashMap<String, JTextArea>();
+	private HashMap<String, JLabel> labelMap = new HashMap<String, JLabel>();
 	private HashMap<String, JTextField> stringMap = new HashMap<String, JTextField>();
 	private HashMap<String, JTextField> intMap = new HashMap<String, JTextField>();
 	private HashMap<String, JCheckBox> boolMap = new HashMap<String, JCheckBox>();
@@ -97,7 +100,27 @@ public class FieldEditorPanel extends JPanel {
 		this.add( new JLabel( valueName +":" ), gridC );
 
 		gridC.gridx++;
-		if ( contentType == ContentType.STRING ) {
+		if ( contentType == ContentType.WRAPPED_LABEL ) {
+			gridC.anchor = GridBagConstraints.WEST;
+			JTextArea valueArea = new JTextArea();
+			valueArea.setBackground(null);
+			valueArea.setEditable( false );
+			valueArea.setBorder(null);
+			valueArea.setLineWrap( true );
+			valueArea.setWrapStyleWord( true );
+			valueArea.setFocusable( false );
+
+			wrappedLabelMap.put( valueName, valueArea );
+			this.add( valueArea, gridC );
+		}
+		else if ( contentType == ContentType.LABEL ) {
+			gridC.anchor = GridBagConstraints.WEST;
+			JLabel valueLbl = new JLabel();
+			valueLbl.setHorizontalAlignment( SwingConstants.CENTER );
+			labelMap.put( valueName, valueLbl );
+			this.add( valueLbl, gridC );
+		}
+		else if ( contentType == ContentType.STRING ) {
 			gridC.anchor = GridBagConstraints.WEST;
 			JTextField valueField = new JTextField();
 			stringMap.put( valueName, valueField );
@@ -216,6 +239,14 @@ public class FieldEditorPanel extends JPanel {
 		if ( valueReminder != null ) valueReminder.setText( "( "+ s +" )" );
 	}
 
+	public JTextArea getWrappedLabel( String valueName ) {
+		return wrappedLabelMap.get( valueName );
+	}
+
+	public JLabel getLabel( String valueName ) {
+		return labelMap.get( valueName );
+	}
+
 	public JTextField getString( String valueName ) {
 		return stringMap.get( valueName );
 	}
@@ -237,6 +268,12 @@ public class FieldEditorPanel extends JPanel {
 	}
 
 	public void reset() {
+		for (JTextArea valueArea : wrappedLabelMap.values())
+			valueArea.setText("");
+
+		for (JLabel valueLbl : labelMap.values())
+			valueLbl.setText("");
+
 		for (JTextField valueField : stringMap.values())
 			valueField.setText("");
 

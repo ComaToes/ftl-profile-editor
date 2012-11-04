@@ -47,6 +47,8 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
@@ -69,6 +71,7 @@ import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
+import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,6 +79,7 @@ import org.apache.logging.log4j.Logger;
 
 public class SavedGameFloorplanPanel extends JPanel {
 
+	private static final Integer WEAPON_LAYER = new Integer(5);
 	private static final Integer BASE_LAYER = new Integer(10);
 	private static final Integer FLOOR_LAYER = new Integer(11);
 	private static final Integer ROOM_LAYER = new Integer(12);
@@ -86,7 +90,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final Integer FIRE_LAYER = new Integer(18);
 	private static final Integer CREW_LAYER = new Integer(30);
 	private static final Integer DOOR_LAYER = new Integer(40);
-	private static final Integer SQUARE_SELECTION_LAYER = new Integer(50);
+	private static final Integer MISC_SELECTION_LAYER = new Integer(50);
+	private static final Integer SQUARE_SELECTION_LAYER = new Integer(60);
 	private static final int squareSize = 35, tileEdge = 1;
 	private static final Logger log = LogManager.getLogger(SavedGameFloorplanPanel.class);
 
@@ -106,6 +111,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private HashMap<Rectangle, Integer> squareRegions = new HashMap<Rectangle, Integer>();
 	private ArrayList<Rectangle> blockedRegions = new ArrayList<Rectangle>();
 	private ArrayList<JComponent> roomDecorations = new ArrayList<JComponent>();
+	private ArrayList<WeaponSprite> weaponSprites = new ArrayList<WeaponSprite>();
 	private ArrayList<RoomSprite> roomSprites = new ArrayList<RoomSprite>();
 	private ArrayList<SystemSprite> systemSprites = new ArrayList<SystemSprite>();
 	private ArrayList<BreachSprite> breachSprites = new ArrayList<BreachSprite>();
@@ -122,8 +128,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private JLabel floorLbl = null;
 	private JLabel wallLbl = null;
 	private JLabel crewLbl = null;
+	private SpriteSelector miscSelector = null;
 	private SquareSelector squareSelector = null;
-	private MouseListener doorSelectListener = null;
 
 	public SavedGameFloorplanPanel( FTLFrame frame ) {
 		super( new BorderLayout() );
@@ -152,6 +158,53 @@ public class SavedGameFloorplanPanel extends JPanel {
 		wallLbl.setOpaque(false);
 		wallLbl.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( wallLbl, WALL_LAYER );
+
+		miscSelector = new SpriteSelector( new ArrayList[] {weaponSprites, doorSprites} );
+		miscSelector.setOpaque(false);
+		miscSelector.setBounds( 0, 0, 50, 50 );
+		shipPanel.add( miscSelector, MISC_SELECTION_LAYER );
+
+		MouseInputAdapter miscListener = new MouseInputAdapter() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				miscSelector.setMousePoint( e.getX(), e.getY() );
+			}
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				// Left-click triggers callback. Other buttons cancel.
+
+				if ( e.getButton() == MouseEvent.BUTTON1 ) {
+					if ( !miscSelector.isCurrentSpriteValid() ) return;
+					boolean keepSelecting = false;
+					SpriteSelectionCallback callback = miscSelector.getCallback();
+					if ( callback != null )
+						keepSelecting = callback.spriteSelected( miscSelector, miscSelector.getSprite() );
+					//if ( keepSelecting == false )
+						//miscSelector.reset();  // Never stop selecting.
+					miscSelector.setMousePoint( -1, -1 );
+				}
+				else if ( e.getButton() != MouseEvent.NOBUTTON ) {
+					//miscSelector.reset();  // Never stop selecting.
+					miscSelector.setMousePoint( -1, -1 );
+				}
+			}
+			@Override
+			public void mouseExited(MouseEvent e) {
+				miscSelector.setMousePoint( -1, -1 );
+			}
+		};
+		miscSelector.addMouseListener( miscListener );
+		miscSelector.addMouseMotionListener( miscListener );
+
+		miscSelector.setCallback(new SpriteSelectionCallback() {
+			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
+				if ( sprite instanceof WeaponSprite )
+					showWeaponEditor( (WeaponSprite)sprite );
+				else if ( sprite instanceof DoorSprite )
+					showDoorEditor( (DoorSprite)sprite );
+				return true;
+			}
+		});
 
 		squareSelector = new SquareSelector( roomRegions, squareRegions );
 		squareSelector.setOpaque(false);
@@ -387,34 +440,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sideScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		sideScroll.setVisible( false );
 		this.add( sideScroll, BorderLayout.EAST );
-
-		doorSelectListener = new MouseAdapter() {
-			public void mouseEntered(MouseEvent e) {
-				Object source = e.getSource();
-				if ( source instanceof DoorSprite ) {
-					((DoorSprite)source).setSelectionRectVisible(true);
-					((DoorSprite)source).repaint();
-				}
-			}
-			public void mouseExited(MouseEvent e) {
-				Object source = e.getSource();
-				if ( source instanceof DoorSprite ) {
-					((DoorSprite)source).setSelectionRectVisible(false);
-					((DoorSprite)source).repaint();
-				}
-			}
-			public void mouseClicked(MouseEvent e) {
-				Object source = e.getSource();
-				if ( source instanceof DoorSprite )
-					showDoorEditor( (DoorSprite)source );
-			}
-		};
 	}
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
 		String prevGfxBaseName = shipGfxBaseName;
+		miscSelector.setMousePoint( -1, -1 );
 		squareSelector.reset();
 		clearSidePanel();
+
+		for (WeaponSprite weaponSprite : weaponSprites)
+			shipPanel.remove( weaponSprite );
+		weaponSprites.clear();
 
 		for (RoomSprite roomSprite : roomSprites)
 			shipPanel.remove( roomSprite );
@@ -597,6 +633,23 @@ public class SavedGameFloorplanPanel extends JPanel {
 			wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
 		}
 
+		List<ShipChassis.WeaponMountList.WeaponMount> weaponMounts = shipChassis.getWeaponMountList().mount;
+		ArrayList<SavedGameParser.WeaponState> weaponList = shipState.getWeaponList();
+		if ( weaponMounts.size() < shipBlueprint.getWeaponSlots() )
+			log.error( String.format("Ship blueprint claimed %d mounts, but chassis only has %d", shipBlueprint.getWeaponSlots(), weaponMounts.size()) );
+		for (int i=0; i < shipBlueprint.getWeaponSlots(); i++) {
+			ShipChassis.WeaponMountList.WeaponMount weaponMount = null;
+			SavedGameParser.WeaponState weaponState = null;
+
+			if ( weaponMounts.size() > i ) weaponMount = weaponMounts.get(i);
+			if ( weaponMount == null ) continue;  // *shrug*
+
+			if ( weaponList.size() > i ) weaponState = weaponList.get(i);
+			// It's fine if weaponState is null. Empty slot.
+
+			addWeaponSprite( i, weaponMount, weaponState );
+		}
+
 		// Add rooms.
 		for (int i=0; i < shipLayout.getRoomCount(); i++) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
@@ -720,6 +773,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			addCrewSprite( crewX, crewY, crewState );
 		}
 
+		miscSelector.setSize( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight() );
 		squareSelector.setSize( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight() );
 
 		shipPanel.setPreferredSize( new Dimension(floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight()) );
@@ -733,6 +787,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
+
+		ArrayList<SavedGameParser.WeaponState> weaponList = shipState.getWeaponList();
+		weaponList.clear();
+		for (WeaponSprite weaponSprite : weaponSprites) {
+			if ( weaponSprite.getWeaponId() != null ) {
+				SavedGameParser.WeaponState weaponState = new SavedGameParser.WeaponState();
+				weaponState.setWeaponId( weaponSprite.getWeaponId() );
+				weaponState.setArmed( weaponSprite.isArmed() );
+				weaponState.setCooldownTicks( weaponSprite.getCooldownTicks() );
+				weaponList.add( weaponState );
+			}
+		}
 
 		// Rooms (This must come before Fires to avoid clobbering).
 		for (int i=0; i < shipLayout.getRoomCount(); i++) {
@@ -1186,6 +1252,20 @@ public class SavedGameFloorplanPanel extends JPanel {
 		return result;
 	}
 
+	private void addWeaponSprite( int slot, ShipChassis.WeaponMountList.WeaponMount weaponMount, SavedGameParser.WeaponState weaponState ) {
+		WeaponSprite weaponSprite = new WeaponSprite( weaponMount.rotate, slot, weaponState );
+
+		if ( weaponMount.rotate ) {
+			// Right of x,y and centered vertically.
+			weaponSprite.setLocation( weaponMount.x, weaponMount.y - weaponSprite.getHeight()/2 );
+		} else {
+			// Above x,y and centered horizontally.
+			weaponSprite.setLocation( weaponMount.x - weaponSprite.getWidth()/2, weaponMount.y - weaponSprite.getHeight() );
+		}
+		weaponSprites.add( weaponSprite );
+		shipPanel.add( weaponSprite, WEAPON_LAYER );
+	}
+
 	private void addDoorSprite( int centerX, int centerY, int level, ShipLayout.DoorCoordinate doorCoord, SavedGameParser.DoorState doorState ) {
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
 		int levelCount = 3;
@@ -1211,8 +1291,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		placeSprite( centerX, centerY, doorSprite );
 		doorSprites.add( doorSprite );
 		shipPanel.add( doorSprite, DOOR_LAYER );
-
-		doorSprite.addMouseListener(doorSelectListener);
 	}
 
 	private void addSystemSprite( int centerX, int centerY, SavedGameParser.SystemState systemState ) {
@@ -1458,6 +1536,168 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add( Box.createVerticalStrut( spacerSize ) );
 	}
 
+	/**
+	 * Adds a wrapped label the side panel.
+	 */
+	private void addSidePanelNote( String s ) {
+		JTextArea labelArea = new JTextArea( s );
+		labelArea.setBackground(null);
+		labelArea.setEditable(false);
+		labelArea.setBorder(null);
+		labelArea.setLineWrap(true);
+		labelArea.setWrapStyleWord(true);
+		labelArea.setFocusable(false);
+		sidePanel.add( labelArea );
+	}
+
+	private void showWeaponEditor( final WeaponSprite weaponSprite ) {
+		final String AVAILABLE_POWER = "Available Power";
+		final String ID = "WeaponId";
+		final String DESC = "Desc";
+		final String POWER_REQ = "Power Req";
+		final String ARMED = "Armed";
+		final String COOLDOWN_TICKS = "Cooldown Ticks";
+
+		final Map<String, WeaponBlueprint> allWeaponsMap = DataManager.get().getWeapons();
+
+		int weaponSystemCapacity = 0;
+		int z = 0;  // Sum up all the other weapons' power usage, and Weapons system damage.
+		for (SystemSprite otherSprite : systemSprites) {
+			if ( !SystemBlueprint.isSubsystem( otherSprite.getSystemId() ) ) {
+				if ( SystemBlueprint.ID_WEAPONS.equals( otherSprite.getSystemId() ) ) {
+					weaponSystemCapacity = otherSprite.getCapacity();
+					z += otherSprite.getDamagedBars();
+				} else {
+					z += otherSprite.getPower();
+				}
+			}
+		}
+		for (WeaponSprite otherSprite : weaponSprites) {
+			if ( otherSprite != weaponSprite && otherSprite.getWeaponId() != null && otherSprite.isArmed() )
+				z += allWeaponsMap.get( otherSprite.getWeaponId() ).getPower();
+		}
+		final int availablePower = Math.min( shipReservePowerCapacity - z, weaponSystemCapacity );
+
+		String title = "Weapon";
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( AVAILABLE_POWER, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(AVAILABLE_POWER).setMaximum( shipReservePowerCapacity );
+		editorPanel.getSlider(AVAILABLE_POWER).setValue( availablePower );
+		editorPanel.getSlider(AVAILABLE_POWER).setEnabled( false );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( ID, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.addRow( DESC, FieldEditorPanel.ContentType.WRAPPED_LABEL );
+		editorPanel.getWrappedLabel(DESC).setRows(8);  // Help layoutmanagers calc height.
+		editorPanel.getWrappedLabel(DESC).setMinimumSize( new Dimension(0, editorPanel.getWrappedLabel(DESC).getPreferredSize().height) );
+		editorPanel.addRow( POWER_REQ, FieldEditorPanel.ContentType.LABEL );
+		editorPanel.addRow( ARMED, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(ARMED).setEnabled( false );
+		editorPanel.addRow( COOLDOWN_TICKS, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(COOLDOWN_TICKS).setMaximum( 0 );
+		editorPanel.getSlider(COOLDOWN_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Seconds spent cooling down.") );
+
+		editorPanel.getCombo(ID).addItem("");
+		for (WeaponBlueprint weaponBlueprint : allWeaponsMap.values())
+			editorPanel.getCombo(ID).addItem(weaponBlueprint);
+
+		if ( weaponSprite.getWeaponId() != null ) {
+			WeaponBlueprint selectedBlueprint = allWeaponsMap.get(weaponSprite.getWeaponId());
+			boolean armable = (availablePower >= selectedBlueprint.getPower());
+
+			editorPanel.getSlider(AVAILABLE_POWER).setValue( availablePower - (weaponSprite.isArmed() ? selectedBlueprint.getPower() : 0) );
+			editorPanel.getCombo(ID).setSelectedItem( selectedBlueprint );
+			editorPanel.getWrappedLabel(DESC).setText( selectedBlueprint.getTooltip() );
+			editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
+			editorPanel.getBoolean(ARMED).setSelected( (weaponSprite.isArmed() && availablePower >= selectedBlueprint.getPower()) );
+			editorPanel.getBoolean(ARMED).setEnabled( (availablePower >= selectedBlueprint.getPower()) );
+			editorPanel.getSlider(COOLDOWN_TICKS).setMaximum( selectedBlueprint.getCooldown() );
+			editorPanel.getSlider(COOLDOWN_TICKS).setValue( weaponSprite.getCooldownTicks() );
+
+			editorPanel.revalidate();
+		}
+
+		sidePanel.add( editorPanel );
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				Object blueprintObj = editorPanel.getCombo(ID).getSelectedItem();
+				String weaponId = null;
+				if ( blueprintObj instanceof WeaponBlueprint )
+					weaponId = ((WeaponBlueprint)blueprintObj).getId();
+				weaponSprite.setWeaponId( weaponId );
+
+				weaponSprite.setArmed( editorPanel.getBoolean(ARMED).isSelected() );
+				weaponSprite.setCooldownTicks( editorPanel.getSlider(COOLDOWN_TICKS).getValue() );
+
+				// Set the Weapons system power based on all armed weapons.
+				int neededPower = 0;
+				for (WeaponSprite otherSprite : weaponSprites) {
+					if ( otherSprite.getWeaponId() != null && otherSprite.isArmed() )
+						neededPower += allWeaponsMap.get( otherSprite.getWeaponId() ).getPower();
+				}
+				for (SystemSprite otherSprite : systemSprites) {
+					if ( SystemBlueprint.ID_WEAPONS.equals( otherSprite.getSystemId() ) ) {
+						otherSprite.setPower( neededPower );
+						break;
+					}
+				}
+
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		ActionListener weaponListener = new ActionListener() {
+			private JSlider availablePowerSlider = editorPanel.getSlider(AVAILABLE_POWER);
+			private JComboBox idCombo = editorPanel.getCombo(ID);
+			private JCheckBox armedCheck = editorPanel.getBoolean(ARMED);
+			private JSlider cooldownSlider = editorPanel.getSlider(COOLDOWN_TICKS);
+
+			public void actionPerformed(ActionEvent e) {
+				Object source = e.getSource();
+				if ( source == idCombo ) {
+					availablePowerSlider.setValue( availablePower );
+					editorPanel.getWrappedLabel(DESC).setText("");
+					editorPanel.getLabel(POWER_REQ).setText("");
+					armedCheck.setSelected( false );
+					armedCheck.setEnabled( false );
+					cooldownSlider.setMaximum( 0 );
+
+					Object blueprintObj = idCombo.getSelectedItem();
+					if ( blueprintObj instanceof WeaponBlueprint ) {
+						WeaponBlueprint selectedBlueprint = (WeaponBlueprint)blueprintObj;
+						boolean armable = (availablePower >= selectedBlueprint.getPower());
+
+						editorPanel.getWrappedLabel(DESC).setText( selectedBlueprint.getTooltip() );
+						editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
+						if ( armable ) {
+							armedCheck.setEnabled( true );
+							cooldownSlider.setMaximum( selectedBlueprint.getCooldown() );
+						}
+					}
+					editorPanel.revalidate();
+				}
+				else if ( source == armedCheck ) {
+					Object blueprintObj = idCombo.getSelectedItem();
+					if ( blueprintObj instanceof WeaponBlueprint ) {
+						WeaponBlueprint selectedBlueprint = (WeaponBlueprint)blueprintObj;
+						availablePowerSlider.setValue( availablePower - (armedCheck.isSelected() ? selectedBlueprint.getPower() : 0) );
+					}
+				}
+			}
+		};
+		editorPanel.getCombo(ID).addActionListener( weaponListener );
+		editorPanel.getBoolean(ARMED).addActionListener( weaponListener );
+
+		addSidePanelSeparator(8);
+		String notice = "";
+		notice += "* Available power is Reserve power, minus other armed weapons' power, minus Weapons system damage, capped by Weapons system capacity.";
+		addSidePanelNote( notice );
+
+		showSidePanel();
+	}
+
 	private void showRoomEditor( final RoomSprite roomSprite, final int squareId ) {
 		final String OXYGEN = "Oxygen";
 		final String IGNITION = "Ignition Progress";
@@ -1576,7 +1816,20 @@ public class SavedGameFloorplanPanel extends JPanel {
 		} else {
 			editorPanel.getSlider(RESERVE_POWER).setValue( shipReservePowerCapacity-otherPower-systemSprite.getPower() );
 			editorPanel.getSlider(POWER).setMaximum(Math.min( systemSprite.getCapacity(), (shipReservePowerCapacity-otherPower) ));
-			editorPanel.getSlider(POWER).setValue( systemSprite.getPower() );
+
+			// Some non-subsystems determine their power from outside the system sprite...
+			int neededPower = 0;
+			if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
+				neededPower = 0;
+				for (WeaponSprite otherSprite : weaponSprites) {
+					if ( otherSprite.getWeaponId() != null && otherSprite.isArmed() )
+						neededPower += DataManager.get().getWeapon( otherSprite.getWeaponId() ).getPower();
+				}
+				editorPanel.getSlider(POWER).setEnabled( false );
+			} else {
+				neededPower = systemSprite.getPower();
+			}
+			editorPanel.getSlider(POWER).setValue( neededPower );
 		}
 
 		sidePanel.add( editorPanel );
@@ -1711,6 +1964,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 				try { systemSprite.setDeionizationTicks( Integer.parseInt(newString) ); }
 				catch (NumberFormatException e) {}
 
+				int neededPower = systemSprite.getPower();
+				if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
+					// Disarm everything rightward of first underpowered weapon.
+					int foundPower = 0;
+					for (WeaponSprite otherSprite : weaponSprites) {
+						if ( otherSprite.getWeaponId() != null && otherSprite.isArmed() ) {
+							foundPower += DataManager.get().getWeapon( otherSprite.getWeaponId() ).getPower();
+							if ( foundPower > neededPower ) otherSprite.setArmed( false );
+						}
+					}
+				}
+
 				clearSidePanel();
 			}
 		};
@@ -1722,24 +1987,27 @@ public class SavedGameFloorplanPanel extends JPanel {
 			notice += "* This is a subsystem, which means reserves are ignored, ";
 			notice += "and power is always as full as possible.\n\n";
 		}
-		notice += "* Partialy powered shields will steal an extra bar upon loading, ";
-		notice += "from another system if need be.\n";
+		if ( SystemBlueprint.ID_SHIELDS.equals( systemSprite.getSystemId() ) ) {
+			notice += "* Partialy powered shields will steal an extra bar upon loading, ";
+			notice += "from another system if need be.\n\n";
+		}
+		if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
+			notice += "* Power can't be directly changed for ";
+			notice += "the Weapons system. ";
+			notice += "Toggle paraphernalia separately. ";
+			notice += "If capacity/damage reduce power, ";
+			notice += "things will get disarmed.\n\n";
+		}
+		if ( SystemBlueprint.ID_DRONE_CTRL.equals( systemSprite.getSystemId() ) ) {
+			notice += "* This tool can't handle Drone Ctrl safely yet!\n\n";
+		}
 
 		notice += "* Ion -1: in Cloaking initates cloak; ";
 		notice += "in Teleporter might not be useful; ";
-		notice += "elsewhere locks indefinitely.\n";
+		notice += "elsewhere sets a locked appearance indefinitely ";
+		notice += "until hit with an ion weapon.\n";
 
-		notice += "* Don't reduce power on Weapons and Drone Ctrl! ";
-		notice += "This tool can't disarm yet.";
-
-		JTextArea noticeArea = new JTextArea( notice );
-		noticeArea.setBackground(null);
-		noticeArea.setEditable(false);
-		noticeArea.setBorder(null);
-		noticeArea.setLineWrap(true);
-		noticeArea.setWrapStyleWord(true);
-		noticeArea.setFocusable(false);
-		sidePanel.add( noticeArea );
+		addSidePanelNote( notice );
 
 		showSidePanel();
 	}
@@ -2001,6 +2269,65 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 
 
+	public class WeaponSprite extends JComponent {
+		private int imageWidth = 64, imageHeight = 25;
+		private boolean rotated;
+		private String slotString;
+		private String weaponId = null;
+		private boolean armed = false;
+		private int cooldownTicks = 0;
+
+		public WeaponSprite( boolean rotated, int slot, SavedGameParser.WeaponState weaponState ) {
+			this.rotated = rotated;
+			this.slotString = Integer.toString( slot+1 );
+			if ( weaponState != null ) {
+				weaponId = weaponState.getWeaponId();
+				armed = weaponState.isArmed();
+				cooldownTicks = weaponState.getCooldownTicks();
+			}
+			if ( rotated )
+				this.setSize( imageWidth, imageHeight );
+			else
+				this.setSize( imageHeight, imageWidth );
+			this.setOpaque(false);
+		}
+
+		public void setWeaponId( String s ) { weaponId = s; }
+		public void setArmed( boolean b ) { armed = b; }
+		public void setCooldownTicks( int n ) { cooldownTicks = n; }
+
+		public int getImageWidth() { return imageWidth; }
+		public int getImageHeight() { return imageHeight; }
+		public String getWeaponId() { return weaponId; }
+		public boolean isArmed() { return armed; }
+		public int getCooldownTicks() { return cooldownTicks; }
+
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent(g);
+
+			Graphics2D g2d = (Graphics2D)g;
+			int w = this.getWidth(), h = this.getHeight();
+			g2d.drawRect( 0, 0, w-1, h-1 );
+
+			// Technically it should be Ascent + Descent, but these are numbers.
+			int slotStringWidth = g2d.getFontMetrics().stringWidth(slotString);
+			int slotStringHeight = (int)g2d.getFontMetrics().getLineMetrics(slotString, g2d).getAscent();
+			int margin = 6;
+			if ( rotated ) {
+				int slotStringX = (w-1) - slotStringWidth;
+				int slotStringY = (h-1)/2 + slotStringHeight/2;  // drawString draws text above Y.
+				g2d.drawString( slotString, slotStringX - margin, slotStringY );
+			} else {
+				int slotStringX = (w-1)/2 - slotStringWidth/2;
+				int slotStringY = 0 + slotStringHeight;  // drawString draws text above Y.
+				g2d.drawString( slotString, slotStringX, slotStringY + margin );
+			}
+		}
+	}
+
+
+
 	public class RoomSprite extends JComponent {
 		private final Color maxColor = new Color( 230, 226, 219 );
 		private final Color minColor = new Color( 255, 176, 169 );
@@ -2232,11 +2559,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			Graphics2D g2d = (Graphics2D)g;
 			Color prevColor = g2d.getColor();
-			int w = this.getSize().width, h = this.getSize().height;
+			int w = this.getWidth(), h = this.getHeight();
 
 			if ( doorCoord.v == 0 ) {  // Use rotated coordinates to draw AS IF vertical.
 				g2d.rotate( Math.toRadians(90) );   // Clockwise.
-				w = this.getSize().height; h = this.getSize().width;
+				w = this.getHeight(); h = this.getWidth();
 				g2d.translate( 0, -(h-1) );
 			}
 
@@ -2543,8 +2870,136 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 
+
 	public interface SquareSelectionCallback {
 		/** Responds to a clicked square, returning true to continue selecting. */
 		public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId );
+	}
+
+
+
+	/**
+	 * A glasspane-like layer to select scattered non-overlapping sprites.
+	 *
+	 * Usage: setVisible(), setCriteria(), setCallback()
+	 * To cancel selection, call reset();
+	 */
+	public class SpriteSelector extends JComponent {
+		private SpriteCriteria defaultCriteria = new SpriteCriteria();
+
+		private ArrayList[] spriteLists;
+		private SpriteCriteria spriteCriteria = defaultCriteria;
+		private SpriteSelectionCallback callback = null;
+		private Point mousePoint = new Point( -1, -1 );
+		private JComponent currentSprite = null;
+
+		public SpriteSelector( ArrayList[] spriteLists ) {
+			this.spriteLists = spriteLists;
+		}
+
+		public void setMousePoint( int x, int y ) {
+			if ( mousePoint.x != x || mousePoint.y != y) {
+				mousePoint.x = x;
+				mousePoint.y = y;
+
+				JComponent newSprite = null;
+				if ( mousePoint.x > 0 && mousePoint.y > 0 ) {
+					for (ArrayList spriteList : spriteLists) {
+						for (JComponent sprite : (ArrayList<JComponent>)spriteList) {
+							if ( sprite.getBounds().contains( mousePoint ) ) {
+								newSprite = sprite;
+								break;
+							}
+						}
+						if ( newSprite != null ) break;
+					}
+				}
+				if ( newSprite != currentSprite ) {
+					if ( currentSprite != null ) this.repaint( currentSprite.getBounds() );
+					currentSprite = newSprite;
+					if ( currentSprite != null ) this.repaint( currentSprite.getBounds() );
+				}
+			}
+		}
+
+		public JComponent getSprite() {
+			return currentSprite;
+		}
+
+		/** Sets the logic which decides sprite color and selectability. */
+		public void setCriteria( SpriteCriteria sc ) {
+			if (sc != null)
+				spriteCriteria = sc;
+			else
+				spriteCriteria = defaultCriteria;
+		}
+
+		public boolean isCurrentSpriteValid() {
+			return spriteCriteria.isSpriteValid( this, currentSprite );
+		}
+
+		public void setCallback( SpriteSelectionCallback cb ) {
+			callback = cb;
+		}
+		public SpriteSelectionCallback getCallback() {
+			return callback;
+		}
+
+		public void reset() {
+			this.setVisible(false);
+			setCriteria(null);
+			setCallback(null);
+			setMousePoint( -1, -1 );
+		}
+
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent(g);
+
+			Graphics2D g2d = (Graphics2D)g;
+			Color prevColor = g2d.getColor();
+
+			if ( currentSprite != null ) {
+				Color spriteColor = spriteCriteria.getSpriteColor( this, currentSprite );
+				if ( spriteColor != null ) {
+					Rectangle currentRect = currentSprite.getBounds();
+					g2d.setColor( spriteColor );
+					g2d.drawRect( currentRect.x, currentRect.y, (currentRect.width-1), (currentRect.height-1) );
+					g2d.drawRect( currentRect.x+1, currentRect.y+1, (currentRect.width-1)-2, (currentRect.height-1)-2 );
+					g2d.drawRect( currentRect.x+2, currentRect.y+2, (currentRect.width-1)-4, (currentRect.height-1)-4 );
+				}
+			}
+
+			g2d.setColor( prevColor );
+		}
+	}
+
+
+
+	public class SpriteCriteria {
+		private Color validColor = Color.GREEN.darker();
+		private Color invalidColor = Color.RED.darker();
+
+		/** Returns a highlight color when hovering over a sprite, or null for none. */
+		public Color getSpriteColor( SpriteSelector spriteSelector, JComponent sprite ) {
+			if ( sprite == null ) return null;
+			if ( isSpriteValid(spriteSelector, sprite) )
+				return validColor;
+			else
+				return invalidColor;
+		}
+
+		/** Returns true if a square can be selected, false otherwise. */
+		public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
+			if ( sprite == null ) return false;
+			return true;
+		}
+	}
+
+
+
+	public interface SpriteSelectionCallback {
+		/** Responds to a clicked sprite, returning true to continue selecting. */
+		public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite );
 	}
 }

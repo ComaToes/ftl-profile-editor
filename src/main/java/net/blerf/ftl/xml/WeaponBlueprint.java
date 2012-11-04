@@ -154,4 +154,8 @@ public class WeaponBlueprint {
 	public void setRarity( int rarity ) {
 		this.rarity = rarity;
 	}
+
+	public String toString() {
+		return ""+title;
+	}
 }

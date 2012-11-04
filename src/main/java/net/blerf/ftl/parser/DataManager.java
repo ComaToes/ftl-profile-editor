@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -88,7 +89,7 @@ public class DataManager implements Closeable {
 			for ( SystemBlueprint system : blueprints.getSystemBlueprint() )
 				systems.put( system.getId(), system );
 
-			weapons = new HashMap<String, WeaponBlueprint>();
+			weapons = new LinkedHashMap<String, WeaponBlueprint>();
 			for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprint() )
 				weapons.put( weapon.getId(), weapon );
 
@@ -174,7 +175,7 @@ public class DataManager implements Closeable {
 	public List<Achievement> getAchievements() {
 		return achievements;
 	}
-	
+
 	public SystemBlueprint getSystem( String id ) {
 		SystemBlueprint result = systems.get(id);
 		if ( result == null )
@@ -187,6 +188,10 @@ public class DataManager implements Closeable {
 		if ( result == null )
 			log.error( "No WeaponBlueprint found for id: "+ id );
 		return result;
+	}
+
+	public Map<String, WeaponBlueprint> getWeapons() {
+		return weapons;
 	}
 
 	public ShipBlueprint getShip( String id ) {

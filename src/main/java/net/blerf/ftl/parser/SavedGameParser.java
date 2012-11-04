@@ -1795,10 +1795,13 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class WeaponState {
-		private String weaponId;
-		private boolean armed;
-		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown. 0 when not armed.
+	public static class WeaponState {
+		private String weaponId = null;
+		private boolean armed = false;
+		private int cooldownTicks = 0;
+
+		public WeaponState() {
+		}
 
 		public WeaponState( String weaponId, boolean armed, int cooldownTicks ) {
 			this.weaponId = weaponId;
@@ -1806,6 +1809,7 @@ public class SavedGameParser extends DatParser {
 			this.cooldownTicks = cooldownTicks;
 		}
 
+		public void setWeaponId( String s ) { weaponId = s; }
 		public String getWeaponId() { return weaponId; }
 
 		public void setArmed( boolean b ) {
@@ -1814,6 +1818,11 @@ public class SavedGameParser extends DatParser {
 		}
 		public boolean isArmed() { return armed; }
 
+		/**
+		 * Sets the weapon's cooldown ticks.
+		 * This increments from 0 each second until the
+		 * weapon blueprint's cooldown. 0 when not armed.
+		 */
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 		public int getCooldownTicks() { return cooldownTicks; }
 
