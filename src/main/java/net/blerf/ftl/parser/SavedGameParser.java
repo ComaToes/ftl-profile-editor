@@ -20,6 +20,7 @@ import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
@@ -278,13 +279,23 @@ public class SavedGameParser extends DatParser {
 		}
 
 		// System info is stored in this order.
-		String[] systemNames = new String[] {"Shields", "Engines", "Oxygen",
-		                                     "Weapons", "Drone Ctrl", "Medbay",
-		                                     "Pilot", "Sensors", "Doors",
-		                                     "Teleporter", "Cloaking", "Artillery"};
+		ArrayList<String> systemIds = new ArrayList<String>();
+		systemIds.add( SystemBlueprint.ID_SHIELDS );
+		systemIds.add( SystemBlueprint.ID_ENGINES );
+		systemIds.add( SystemBlueprint.ID_OXYGEN );
+		systemIds.add( SystemBlueprint.ID_WEAPONS );
+		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
+		systemIds.add( SystemBlueprint.ID_MEDBAY );
+		systemIds.add( SystemBlueprint.ID_PILOT );
+		systemIds.add( SystemBlueprint.ID_SENSORS );
+		systemIds.add( SystemBlueprint.ID_DOORS );
+		systemIds.add( SystemBlueprint.ID_TELEPORTER );
+		systemIds.add( SystemBlueprint.ID_CLOAKING );
+		systemIds.add( SystemBlueprint.ID_ARTILLERY );
+
 		shipState.setReservePowerCapacity( readInt(in) );
-		for (String name : systemNames) {
-			shipState.addSystem( readSystem(in, name) );
+		for (String systemId : systemIds) {
+			shipState.addSystem( readSystem(in, systemId) );
 		}
 
 		int roomCount = shipLayout.getRoomCount();
@@ -381,17 +392,28 @@ public class SavedGameParser extends DatParser {
 			writeCrewMember( out, crew );
 		}
 
-		String[] systemNames = new String[] {"Shields", "Engines", "Oxygen",
-		                                     "Weapons", "Drone Ctrl", "Medbay",
-		                                     "Pilot", "Sensors", "Doors",
-		                                     "Teleporter", "Cloaking", "Artillery"};
+		// System info is stored in this order.
+		ArrayList<String> systemIds = new ArrayList<String>();
+		systemIds.add( SystemBlueprint.ID_SHIELDS );
+		systemIds.add( SystemBlueprint.ID_ENGINES );
+		systemIds.add( SystemBlueprint.ID_OXYGEN );
+		systemIds.add( SystemBlueprint.ID_WEAPONS );
+		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
+		systemIds.add( SystemBlueprint.ID_MEDBAY );
+		systemIds.add( SystemBlueprint.ID_PILOT );
+		systemIds.add( SystemBlueprint.ID_SENSORS );
+		systemIds.add( SystemBlueprint.ID_DOORS );
+		systemIds.add( SystemBlueprint.ID_TELEPORTER );
+		systemIds.add( SystemBlueprint.ID_CLOAKING );
+		systemIds.add( SystemBlueprint.ID_ARTILLERY );
+
 		writeInt( out, shipState.getReservePowerCapacity() );
 
 		Map<String, SystemState> systemMap = shipState.getSystemMap();
-		for (String name : systemNames) {
-			SystemState system = systemMap.get(name);
-			if ( system != null )
-				writeSystem( out, system );
+		for (String systemId : systemIds) {
+			SystemState systemState = systemMap.get(systemId);
+			if ( systemState != null )
+				writeSystem( out, systemState );
 			else
 				writeInt( out, 0 );
 		}
@@ -467,8 +489,8 @@ public class SavedGameParser extends DatParser {
 		crew.setRace( readString(in) );
 		crew.setEnemyBoardingDrone( readBool(in) );
 		crew.setHealth( readInt(in) );
-		crew.setX( readInt(in) );
-		crew.setY( readInt(in) );
+		crew.setSpriteX( readInt(in) );
+		crew.setSpriteY( readInt(in) );
 		crew.setRoomId( readInt(in) );
 		crew.setRoomSquare( readInt(in) );
 		crew.setPlayerControlled( readBool(in) );
@@ -478,7 +500,7 @@ public class SavedGameParser extends DatParser {
 		crew.setWeaponSkill( readInt(in) );
 		crew.setRepairSkill( readInt(in) );
 		crew.setCombatSkill( readInt(in) );
-		crew.setGender( readInt(in) );
+		crew.setMale( readBool(in) );
 		crew.setRepairs( readInt(in) );
 		crew.setCombatKills( readInt(in) );
 		crew.setPilotedEvasions( readInt(in) );
@@ -492,8 +514,8 @@ public class SavedGameParser extends DatParser {
 		writeString( out, crew.getRace() );
 		writeBool( out, crew.isEnemyBoardingDrone() );
 		writeInt( out, crew.getHealth() );
-		writeInt( out, crew.getX() );
-		writeInt( out, crew.getY() );
+		writeInt( out, crew.getSpriteX() );
+		writeInt( out, crew.getSpriteY() );
 		writeInt( out, crew.getRoomId() );
 		writeInt( out, crew.getRoomSquare() );
 		writeBool( out, crew.isPlayerControlled() );
@@ -503,7 +525,7 @@ public class SavedGameParser extends DatParser {
 		writeInt( out, crew.getWeaponSkill() );
 		writeInt( out, crew.getRepairSkill() );
 		writeInt( out, crew.getCombatSkill() );
-		writeInt( out, crew.getGender() );
+		writeBool( out, crew.isMale() );
 		writeInt( out, crew.getRepairs() );
 		writeInt( out, crew.getCombatKills() );
 		writeInt( out, crew.getPilotedEvasions() );
@@ -511,8 +533,8 @@ public class SavedGameParser extends DatParser {
 		writeInt( out, crew.getSkillMasteries() );
 	}
 
-	private SystemState readSystem( InputStream in, String name ) throws IOException {
-		SystemState system = new SystemState( name );
+	private SystemState readSystem( InputStream in, String systemId ) throws IOException {
+		SystemState system = new SystemState( systemId );
 		int capacity = readInt(in);
 
 		// Normally systems are 28 bytes, but if not present on the
@@ -525,13 +547,13 @@ public class SavedGameParser extends DatParser {
 			system.setDamagedBars( readInt(in) );
 			system.setIonizedBars( readInt(in) );
 
-			int miscTicks = readInt(in);
-			if ( miscTicks == -2147483648 )
-				miscTicks = Integer.MIN_VALUE;
-			system.setMiscTicks( miscTicks );
+			int deionizationTicks = readInt(in);
+			if ( deionizationTicks == -2147483648 )
+				deionizationTicks = Integer.MIN_VALUE;
+			system.setDeionizationTicks( deionizationTicks );
 
 			system.setRepairProgress( readInt(in) );
-			system.setBurnProgress( readInt(in) );
+			system.setDamageProgress( readInt(in) );
 		}
 		return system;
 	}
@@ -543,13 +565,13 @@ public class SavedGameParser extends DatParser {
 			writeInt( out, system.getDamagedBars() );
 			writeInt( out, system.getIonizedBars() );
 
-			if ( system.getMiscTicks() == Integer.MIN_VALUE )
+			if ( system.getDeionizationTicks() == Integer.MIN_VALUE )
 				writeInt( out, -2147483648 );
 			else
-				writeInt( out, system.getMiscTicks() );
+				writeInt( out, system.getDeionizationTicks() );
 
 			writeInt( out, system.getRepairProgress() );
-			writeInt( out, system.getBurnProgress() );
+			writeInt( out, system.getDamageProgress() );
 		}
 	}
 
@@ -572,10 +594,10 @@ public class SavedGameParser extends DatParser {
 	public void writeRoom( OutputStream out, RoomState room ) throws IOException {
 		writeInt( out, room.getOxygen() );
 
-		for (int[] square : room.getSquareList()) {
-			writeInt( out, square[0] );
-			writeInt( out, square[1] );
-			writeInt( out, square[2] );
+		for (SquareState square : room.getSquareList()) {
+			writeInt( out, square.fireHealth );
+			writeInt( out, square.ignitionProgress );
+			writeInt( out, square.gamma );
 		}
 	}
 
@@ -595,8 +617,8 @@ public class SavedGameParser extends DatParser {
 		DroneState drone = new DroneState( readString(in) );
 		drone.setArmed( readBool(in) );
 		drone.setPlayerControlled( readBool(in) );
-		drone.setX( readInt(in) );
-		drone.setY( readInt(in) );
+		drone.setSpriteX( readInt(in) );
+		drone.setSpriteY( readInt(in) );
 		drone.setRoomId( readInt(in) );
 		drone.setRoomSquare( readInt(in) );
 		drone.setHealth( readInt(in) );
@@ -607,8 +629,8 @@ public class SavedGameParser extends DatParser {
 		writeString( out, drone.getDroneId() );
 		writeBool( out, drone.isArmed() );
 		writeBool( out, drone.isPlayerControlled() );
-		writeInt( out, drone.getX() );
-		writeInt( out, drone.getY() );
+		writeInt( out, drone.getSpriteX() );
+		writeInt( out, drone.getSpriteY() );
 		writeInt( out, drone.getRoomId() );
 		writeInt( out, drone.getRoomSquare() );
 		writeInt( out, drone.getHealth() );
@@ -1141,6 +1163,8 @@ public class SavedGameParser extends DatParser {
 
 
 	public class ShipState {
+		public static final int MAX_RESERVE_POWER = 25;  // TODO: Magic number.
+
 		private boolean auto = false;  // Is autoShip.
 		private String shipName, shipBlueprintId, shipLayoutId;
 		private String shipGfxBaseName;
@@ -1218,10 +1242,10 @@ public class SavedGameParser extends DatParser {
 		public int getReservePowerCapacity() { return reservePowerCapacity; }
 
 		public void addSystem( SystemState s ) {
-			systemMap.put( s.getName(), s );
+			systemMap.put( s.getSystemId(), s );
 		}
-		public SystemState getSystem( String name ) {
-			return systemMap.get( name );
+		public SystemState getSystem( String systemId ) {
+			return systemMap.get( systemId );
 		}
 
 		public LinkedHashMap<String, SystemState> getSystemMap() { return systemMap; }
@@ -1350,9 +1374,12 @@ public class SavedGameParser extends DatParser {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				int roomId = it.nextIndex();
-				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
-				if (roomName == null) roomName = "Empty";
-				result.append(String.format("RoomId: %2d (%s)\n", roomId, roomName));
+
+				String systemId = blueprintSystems.getSystemIdByRoomId( roomId );
+				if (systemId == null)
+					systemId = "empty";
+
+				result.append(String.format("RoomId: %2d (%s)\n", roomId, systemId));
 				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
@@ -1439,31 +1466,54 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class CrewState {
+	public static class CrewState {
 		// TODO: magic numbers.
-		// Make these static when the class gets its own file.
-		public final int MASTERY_INTERVAL_PILOT = 15;
-		public final int MASTERY_INTERVAL_ENGINE = 15;
-		public final int MASTERY_INTERVAL_SHIELD = 55;
-		public final int MASTERY_INTERVAL_WEAPON = 65;
-		public final int MASTERY_INTERVAL_REPAIR = 18;
-		public final int MASTERY_INTERVAL_COMBAT = 8;
+		// Might be worth putting in the config file.
+		public static final int MASTERY_INTERVAL_PILOT = 15;
+		public static final int MASTERY_INTERVAL_ENGINE = 15;
+		public static final int MASTERY_INTERVAL_SHIELD = 55;
+		public static final int MASTERY_INTERVAL_WEAPON = 65;
+		public static final int MASTERY_INTERVAL_REPAIR = 18;
+		public static final int MASTERY_INTERVAL_COMBAT = 8;
+
+		public static final int MAX_HEALTH_CRYSTAL = 120;
+		public static final int MAX_HEALTH_ENGI = 100;
+		public static final int MAX_HEALTH_ENERGY = 70;
+		public static final int MAX_HEALTH_HUMAN = 100;
+		public static final int MAX_HEALTH_MANTIS = 100;
+		public static final int MAX_HEALTH_ROCK = 150;
+		public static final int MAX_HEALTH_SLUG = 100;
+		public static final int MAX_HEALTH_BATTLE = 150;
+		public static final int MAX_HEALTH_REPAIR = 25;  // Might not be a race.
+
+		public static int getMaxHealth( String race ) {
+			if ( race.equals("crystal") ) return MAX_HEALTH_CRYSTAL;
+			else if ( race.equals("engi") ) return MAX_HEALTH_ENGI;
+			else if ( race.equals("energy") ) return MAX_HEALTH_ENERGY;
+			else if ( race.equals("human") ) return MAX_HEALTH_HUMAN;
+			else if ( race.equals("mantis") ) return MAX_HEALTH_MANTIS;
+			else if ( race.equals("rock") ) return MAX_HEALTH_ROCK;
+			else if ( race.equals("slug") ) return MAX_HEALTH_SLUG;
+			else if ( race.equals("battle") ) return MAX_HEALTH_BATTLE;
+			else if ( race.equals("repair") ) return MAX_HEALTH_REPAIR;
+			else throw new RuntimeException( "No max health known for race: "+ race );
+		}
 
 		// Neither Crystal crews' lockdown, nor its cooldown is stored.
 		// Zoltan-produced power is not stored in SystemState.
 
-		private String name, race;
+		private String name="Frank", race="human";
 		private boolean enemyBoardingDrone = false;
-		private int health;
+		private int health=0;
 		private int blueprintRoomId;
 		private int roomSquare;  // 0-based, L-to-R wrapped row.
-		private boolean playerControlled;
-		private int pilotSkill, engineSkill, shieldSkill;
-		private int weaponSkill, repairSkill, combatSkill;
-		private int repairs, combatKills, pilotedEvasions;
-		private int jumpsSurvived, skillMasteries;
-		private int x, y;
-		private int gender;  // 1=Male, 0=Female.
+		private boolean playerControlled=false;
+		private int pilotSkill=0, engineSkill=0, shieldSkill=0;
+		private int weaponSkill=0, repairSkill=0, combatSkill=0;
+		private int repairs=0, combatKills=0, pilotedEvasions=0;
+		private int jumpsSurvived=0, skillMasteries=0;
+		private int spriteX, spriteY;
+		private boolean male=true;
 
 		public CrewState() {
 		}
@@ -1471,8 +1521,6 @@ public class SavedGameParser extends DatParser {
 		public void setName( String s ) {name = s; }
 		public void setRace( String s ) {race = s; }
 		public void setHealth( int n ) {health = n; }
-		public void setX( int x ) { this.x = x; };
-		public void setY( int y ) { this.y = y; };
 		public void setRoomId( int n ) {blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
@@ -1482,7 +1530,6 @@ public class SavedGameParser extends DatParser {
 		public void setWeaponSkill( int n ) {weaponSkill = n; }
 		public void setRepairSkill( int n ) {repairSkill = n; }
 		public void setCombatSkill( int n ) {combatSkill = n; }
-		public void setGender( int gender ) { this.gender = gender; }
 		public void setRepairs( int n ) { repairs = n; }
 		public void setCombatKills( int n ) { combatKills = n; }
 		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
@@ -1492,8 +1539,6 @@ public class SavedGameParser extends DatParser {
 		public String getName() { return name; }
 		public String getRace() { return race; }
 		public int getHealth() { return health; }
-		public int getX() { return x; }
-		public int getY() { return y; }
 		public int getRoomId() { return blueprintRoomId; }
 		public int getRoomSquare() { return roomSquare; }
 		public boolean isPlayerControlled() { return playerControlled; }
@@ -1503,7 +1548,6 @@ public class SavedGameParser extends DatParser {
 		public int getWeaponSkill() { return weaponSkill; }
 		public int getRepairSkill() { return repairSkill; }
 		public int getCombatSkill() { return combatSkill; }
-		public int getGender() { return gender; }
 		public int getRepairs() { return repairs; }
 		public int getCombatKills() { return combatKills; }
 		public int getPilotedEvasions() { return pilotedEvasions; }
@@ -1511,11 +1555,47 @@ public class SavedGameParser extends DatParser {
 		public int getSkillMasteries() { return skillMasteries; }
 
 		/**
+		 * Sets the position of the crew's image.
+		 *
+		 * Technically the roomId/square fields set the
+		 * crew's desired location. This field is where
+		 * the crew realy is, possibly en route.
+		 *
+		 * It's the position of the crew image's center,
+		 * relative to the top-left square's corner, in
+		 * pixels, plus (the ShipLayout's offset times
+		 * the square-size, which is 35).
+		 */
+		public void setSpriteX( int n ) { spriteX = n; };
+		public void setSpriteY( int n ) { spriteY = n; };
+		public int getSpriteX() { return spriteX; }
+		public int getSpriteY() { return spriteY; }
+
+
+		/**
+		 * Toggles gender.
+		 * Humans with this set to false have a
+		 * female image. Other races accept the
+		 * flag but ignore it.
+		 *
+		 * No Andorians in the game, so this is
+		 * only a two-state boolean.
+		 */
+		public void setMale( boolean b ) {
+			male = b;
+		}
+		public boolean isMale() { return male; }
+
+		/**
 		 * Sets whether this crew member is a hostile drone.
 		 * Upon loading after setting this on your crew,
 		 * name will change to "Anti-Personnel Drone", race
 		 * will be "battle", and playerControlled will be
 		 * false.
+		 *
+		 * If after loading in-game, you re-edit this to false
+		 * and leave the "battle" race, the game will change
+		 * it to "human".
 		 *
 		 * Presumably this is so intruders can persist without
 		 * a ship, which would normally have a drones section
@@ -1535,12 +1615,12 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Name:              %s\n", name));
 			result.append(String.format("Race:              %s\n", race));
 			result.append(String.format("Enemy Drone:       %b\n", enemyBoardingDrone));
-			result.append(String.format("Gender:            %s\n", (gender == 1 ? "Male" : "Female") ));
+			result.append(String.format("Gender:            %s\n", (male ? "Male" : "Female") ));
 			result.append(String.format("Health:            %3d\n", health));
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
-			result.append(String.format("Position:          %3d,%3d\n", x, y));
+			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
 			result.append(String.format("Pilot Skill:       %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
 			result.append(String.format("Engine Skill:      %3d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
 			result.append(String.format("Shield Skill:      %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
@@ -1558,27 +1638,31 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class SystemState {
-		private String name;
+	public static class SystemState {
+		// Above this number, FTL can't find a number image to use.
+		// A warning pic will appear in its place.
+		public static final int MAX_IONIZED_BARS = 9;  // TODO: Magic number.
+
+		private String systemId;
 		private int capacity = 0;
 		private int power = 0;
 		private int damagedBars = 0;      // Number of unusable power bars.
 		private int ionizedBars = 0;      // Number of disabled power bars; -1 while cloaked.
 		private int repairProgress = 0;   // Turns bar yellow.
-		private int burnProgress = 0;     // Turns bar red.
-		private int miscTicks = Integer.MIN_VALUE;  // Millisecond counter.
+		private int damageProgress = 0;   // Turns bar red.
+		private int deionizationTicks = Integer.MIN_VALUE;  // Millisecond counter.
 
 		// ionizedBars may briefly be -1 initially when a system
 		// disables itself. Then ionizedBars will be set to capacity+1.
 
-		// miscTicks is reset upon loading.
-		// Whatever needs timing will respond to it as it increments,
-		// including resetting after intervals. If nothing needs it,
-		// it may be 0, or more often, MIN_INT (signed 32bit \x0000_0080)
-		// of the compiler that built FTL. This parser will translate that
+		// deionizationTicks is reset upon loading.
+		// The game's interface responds as it increments, including
+		// resetting after intervals. If not needed, it may be 0, or
+		// more often, MIN_INT (signed 32bit \x0000_0080) of the
+		// compiler that built FTL. This parser will translate that
 		// to Java's equivalent minimum during reading, and back during
 		// writing.
-		//   Deionization: each bar counts to 5000.
+		//   Deionization of each bar counts to 5000.
 		//
 		// TODO:
 		// Nearly every system has been observed with non-zero values,
@@ -1586,40 +1670,41 @@ public class SavedGameParser extends DatParser {
 		// set such values. Might be unspecified garbage when not actively
 		// counting. Sometimes has huge positive and negative values.
 
-		public SystemState( String name ) {
-			this.name = name;
+		public SystemState( String systemId ) {
+			this.systemId = systemId;
 		}
 
-		public String getName() { return name; }
+		public String getSystemId() { return systemId; }
 
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
 		public void setDamagedBars( int n ) { damagedBars = n; }
 		public void setIonizedBars( int n ) { ionizedBars = n; }
 		public void setRepairProgress( int n ) { repairProgress = n; }
-		public void setBurnProgress( int n ) { burnProgress = n; }
-		public void setMiscTicks( int n ) { miscTicks = n; }
+		public void setDamageProgress( int n ) { damageProgress = n; }
+		public void setDeionizationTicks( int n ) { deionizationTicks = n; }
 
 		public int getCapacity() { return capacity; }
 		public int getPower() { return power; }
 		public int getDamagedBars() { return damagedBars; }
 		public int getIonizedBars() { return ionizedBars; }
 		public int getRepairProgress() { return repairProgress; }
-		public int getBurnProgress() { return burnProgress; }
-		public int getMiscTicks() { return miscTicks; }
+		public int getDamageProgress() { return damageProgress; }
+		public int getDeionizationTicks() { return deionizationTicks; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
-				result.append(String.format("%s: %d/%d Power\n", name, power, capacity));
-				result.append(String.format("Damaged Bars:    %3d\n", damagedBars));
-				result.append(String.format("Ionized Bars:    %3d\n", ionizedBars));
-				result.append(String.format("Repair Progress: %3d%%\n", repairProgress));
-				result.append(String.format("Burn Progress:   %3d%%\n", burnProgress));
-				result.append(String.format("Misc Ticks:      %s\n", (miscTicks==Integer.MIN_VALUE ? "N/A" : miscTicks) ));
+				result.append(String.format("SystemId:           %s\n", systemId));
+				result.append(String.format("Power:              %d/%d\n", power, capacity));
+				result.append(String.format("Damaged Bars:       %3d\n", damagedBars));
+				result.append(String.format("Ionized Bars:       %3d\n", ionizedBars));
+				result.append(String.format("Repair Progress:    %3d%%\n", repairProgress));
+				result.append(String.format("Damage Progress:    %3d%%\n", damageProgress));
+				result.append(String.format("Deionization Ticks: %s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ));
 			} else {
-				result.append(String.format("%s: N/A\n", name));
+				result.append(String.format("%s: N/A\n", systemId));
 			}
 			return result.toString();
 		}
@@ -1627,9 +1712,9 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class RoomState {
+	public static class RoomState {
 		private int oxygen = 100;
-		private ArrayList<int[]> squareList = new ArrayList<int[]>();
+		private ArrayList<SquareState> squareList = new ArrayList<SquareState>();
 
 		public void setOxygen( int n ) { oxygen = n; }
 		public int getOxygen() { return oxygen; }
@@ -1647,30 +1732,47 @@ public class SavedGameParser extends DatParser {
 		 * @param gamma -1?
 		 */
 		public void addSquare( int fireHealth, int ignitionProgress, int gamma ) {
-			squareList.add( new int[] {fireHealth, ignitionProgress, gamma} );
+			squareList.add( new SquareState( fireHealth, ignitionProgress, gamma ) );
 		}
-		public int[] getSquare( int n ) {
+		public SquareState getSquare( int n ) {
 			return squareList.get(n);
 		}
 
-		public ArrayList<int[]> getSquareList() { return squareList; }
+		public ArrayList<SquareState> getSquareList() { return squareList; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
-			for (int[] square : squareList) {
-				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%% %2d?\n", square[0], square[1], square[2]));
+			for (SquareState square : squareList) {
+				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%%, Gamma?: %2d\n", square.fireHealth, square.ignitionProgress, square.gamma));
 			}
 			return result.toString();
 		}
 	}
 
+	public static class SquareState {
+		public int fireHealth = 0;
+		public int ignitionProgress = 0;
+		public int gamma = -1;
+
+		public SquareState( int fireHealth, int ignitionProgress, int gamma ) {
+			this.fireHealth = fireHealth;
+			this.ignitionProgress = ignitionProgress;
+			this.gamma = gamma;
+		}
+		public SquareState() {
+		}
+	}
 
 
-	public class DoorState {
-		private boolean open;
-		private boolean walkingThrough;
+
+	public static class DoorState {
+		private boolean open = false;
+		private boolean walkingThrough = false;
+
+		public DoorState() {
+		}
 
 		public DoorState( boolean open, boolean walkingThrough ) {
 			this.open = open;
@@ -1693,10 +1795,13 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class WeaponState {
-		private String weaponId;
-		private boolean armed;
-		private int cooldownTicks;  // Increments from 0 until the weapon's cooldown. 0 when not armed.
+	public static class WeaponState {
+		private String weaponId = null;
+		private boolean armed = false;
+		private int cooldownTicks = 0;
+
+		public WeaponState() {
+		}
 
 		public WeaponState( String weaponId, boolean armed, int cooldownTicks ) {
 			this.weaponId = weaponId;
@@ -1704,6 +1809,7 @@ public class SavedGameParser extends DatParser {
 			this.cooldownTicks = cooldownTicks;
 		}
 
+		public void setWeaponId( String s ) { weaponId = s; }
 		public String getWeaponId() { return weaponId; }
 
 		public void setArmed( boolean b ) {
@@ -1712,6 +1818,11 @@ public class SavedGameParser extends DatParser {
 		}
 		public boolean isArmed() { return armed; }
 
+		/**
+		 * Sets the weapon's cooldown ticks.
+		 * This increments from 0 each second until the
+		 * weapon blueprint's cooldown. 0 when not armed.
+		 */
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 		public int getCooldownTicks() { return cooldownTicks; }
 
@@ -1735,9 +1846,9 @@ public class SavedGameParser extends DatParser {
 		private String droneId;
 		private boolean armed = false;
 		private boolean playerControlled = true;  // False when not armed.
-		private int x = -1, y = -1;        // -1 when not armed.
-		private int blueprintRoomId = -1;  // -1 when not armed.
-		private int roomSquare = -1;       // -1 when not armed.
+		private int spriteX = -1, spriteY = -1;   // -1 when body not present.
+		private int blueprintRoomId = -1;  // -1 when body not present.
+		private int roomSquare = -1;       // -1 when body not present.
 		private int health = 1;
 
 
@@ -1749,16 +1860,16 @@ public class SavedGameParser extends DatParser {
 
 		public void setArmed( boolean b ) { armed = b; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
-		public void setX( int n ) { x = n; }
-		public void setY( int n ) { y = n; }
+		public void setSpriteX( int n ) { spriteX = n; }
+		public void setSpriteY( int n ) { spriteY = n; }
 		public void setRoomId( int n ) { blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setHealth( int n ) { health = n; }
 
 		public boolean isArmed() { return armed; }
 		public boolean isPlayerControlled() { return playerControlled; }
-		public int getX() { return x; }
-		public int getY() { return y; }
+		public int getSpriteX() { return spriteX; }
+		public int getSpriteY() { return spriteY; }
 		public int getRoomId() { return blueprintRoomId; }
 		public int getRoomSquare() { return roomSquare; }
 		public int getHealth() { return health; }
@@ -1772,7 +1883,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
-			result.append(String.format("Position:          %3d,%3d\n", x, y));
+			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
 			return result.toString();
 		}
 	}
@@ -2135,10 +2246,11 @@ public class SavedGameParser extends DatParser {
 				int roomId = entry.getKey().intValue();
 				int occupantCount = entry.getValue().intValue();
 
-				String roomName = blueprintSystems.getSystemNameByRoomId( roomId );
-				if (roomName == null) roomName = "Empty";
+				String systemId = blueprintSystems.getSystemIdByRoomId( roomId );
+				if (systemId == null)
+					systemId = "empty";
 
-				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, roomName, occupantCount) );
+				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, systemId, occupantCount) );
 			}
 
 			return result.toString();

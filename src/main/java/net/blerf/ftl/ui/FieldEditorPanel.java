@@ -11,10 +11,12 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
@@ -26,14 +28,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class FieldEditorPanel extends JPanel {
-	public enum ContentType { STRING, INTEGER, BOOLEAN, SLIDER };
+	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO };
 
 	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
 
+	private HashMap<String, JTextArea> wrappedLabelMap = new HashMap<String, JTextArea>();
+	private HashMap<String, JLabel> labelMap = new HashMap<String, JLabel>();
 	private HashMap<String, JTextField> stringMap = new HashMap<String, JTextField>();
 	private HashMap<String, JTextField> intMap = new HashMap<String, JTextField>();
 	private HashMap<String, JCheckBox> boolMap = new HashMap<String, JCheckBox>();
 	private HashMap<String, JSlider> sliderMap = new HashMap<String, JSlider>();
+	private HashMap<String, JComboBox> comboMap = new HashMap<String, JComboBox>();
 	private HashMap<String, JLabel> reminderMap = new HashMap<String, JLabel>();
 
 	private GridBagConstraints gridC = new GridBagConstraints();
@@ -90,11 +95,32 @@ public class FieldEditorPanel extends JPanel {
 	public void addRow( String valueName, ContentType contentType ) {
 		gridC.fill = GridBagConstraints.HORIZONTAL;
 		gridC.gridwidth = 1;
+		gridC.weighty = 0.0;
 		gridC.gridx = 0;
 		this.add( new JLabel( valueName +":" ), gridC );
 
 		gridC.gridx++;
-		if ( contentType == ContentType.STRING ) {
+		if ( contentType == ContentType.WRAPPED_LABEL ) {
+			gridC.anchor = GridBagConstraints.WEST;
+			JTextArea valueArea = new JTextArea();
+			valueArea.setBackground(null);
+			valueArea.setEditable( false );
+			valueArea.setBorder(null);
+			valueArea.setLineWrap( true );
+			valueArea.setWrapStyleWord( true );
+			valueArea.setFocusable( false );
+
+			wrappedLabelMap.put( valueName, valueArea );
+			this.add( valueArea, gridC );
+		}
+		else if ( contentType == ContentType.LABEL ) {
+			gridC.anchor = GridBagConstraints.WEST;
+			JLabel valueLbl = new JLabel();
+			valueLbl.setHorizontalAlignment( SwingConstants.CENTER );
+			labelMap.put( valueName, valueLbl );
+			this.add( valueLbl, gridC );
+		}
+		else if ( contentType == ContentType.STRING ) {
 			gridC.anchor = GridBagConstraints.WEST;
 			JTextField valueField = new JTextField();
 			stringMap.put( valueName, valueField );
@@ -136,6 +162,13 @@ public class FieldEditorPanel extends JPanel {
 					valueField.setText( ""+valueSlider.getValue() );
 				}
 			});
+		}
+		else if ( contentType == ContentType.COMBO ) {
+			gridC.anchor = GridBagConstraints.CENTER;
+			JComboBox valueCombo = new JComboBox();
+			valueCombo.setEditable(false);
+			comboMap.put( valueName, valueCombo );
+			this.add( valueCombo, gridC );
 		}
 		gridC.gridx++;
 
@@ -192,9 +225,26 @@ public class FieldEditorPanel extends JPanel {
 		if ( remindersVisible ) setReminder( valueName, s );
 	}
 
+	public void setComboAndReminder( String valueName, Object o ) {
+		setSliderAndReminder( valueName, o, o.toString() );
+	}
+	public void setSliderAndReminder( String valueName, Object o, String s ) {
+		JComboBox valueCombo = comboMap.get( valueName );
+		if ( valueCombo != null ) valueCombo.setSelectedItem(o);
+		if ( remindersVisible ) setReminder( valueName, s );
+	}
+
 	public void setReminder( String valueName, String s ) {
 		JLabel valueReminder = reminderMap.get( valueName );
 		if ( valueReminder != null ) valueReminder.setText( "( "+ s +" )" );
+	}
+
+	public JTextArea getWrappedLabel( String valueName ) {
+		return wrappedLabelMap.get( valueName );
+	}
+
+	public JLabel getLabel( String valueName ) {
+		return labelMap.get( valueName );
 	}
 
 	public JTextField getString( String valueName ) {
@@ -213,7 +263,17 @@ public class FieldEditorPanel extends JPanel {
 		return sliderMap.get( valueName );
 	}
 
+	public JComboBox getCombo( String valueName ) {
+		return comboMap.get( valueName );
+	}
+
 	public void reset() {
+		for (JTextArea valueArea : wrappedLabelMap.values())
+			valueArea.setText("");
+
+		for (JLabel valueLbl : labelMap.values())
+			valueLbl.setText("");
+
 		for (JTextField valueField : stringMap.values())
 			valueField.setText("");
 
@@ -225,6 +285,9 @@ public class FieldEditorPanel extends JPanel {
 
 		for (JSlider valueSlider : sliderMap.values())
 			valueSlider.setValue(0);
+
+		for (JComboBox valueSlider : comboMap.values())
+			valueSlider.removeAllItems();
 
 		for (JLabel valueReminder : reminderMap.values())
 			valueReminder.setText("");

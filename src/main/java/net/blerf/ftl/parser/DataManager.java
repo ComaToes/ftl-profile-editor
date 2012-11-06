@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +18,7 @@ import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
+import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +43,7 @@ public class DataManager implements Closeable {
 	private Blueprints blueprints;
 	private Blueprints autoBlueprints;
 
+	private Map<String, SystemBlueprint> systems;
 	private Map<String, WeaponBlueprint> weapons;	
 	private Map<String, ShipBlueprint> ships;
 	private Map<String, ShipBlueprint> autoShips;
@@ -82,7 +85,11 @@ public class DataManager implements Closeable {
 				if ( ach.getShipId() == null )
 					generalAchievements.add(ach);
 
-			weapons = new HashMap<String, WeaponBlueprint>();
+			systems = new HashMap<String, SystemBlueprint>();
+			for ( SystemBlueprint system : blueprints.getSystemBlueprint() )
+				systems.put( system.getId(), system );
+
+			weapons = new LinkedHashMap<String, WeaponBlueprint>();
 			for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprint() )
 				weapons.put( weapon.getId(), weapon );
 
@@ -168,12 +175,23 @@ public class DataManager implements Closeable {
 	public List<Achievement> getAchievements() {
 		return achievements;
 	}
-	
+
+	public SystemBlueprint getSystem( String id ) {
+		SystemBlueprint result = systems.get(id);
+		if ( result == null )
+			log.error( "No SystemBlueprint found for id: "+ id );
+		return result;
+	}
+
 	public WeaponBlueprint getWeapon( String id ) {
 		WeaponBlueprint result = weapons.get(id);
 		if ( result == null )
 			log.error( "No WeaponBlueprint found for id: "+ id );
 		return result;
+	}
+
+	public Map<String, WeaponBlueprint> getWeapons() {
+		return weapons;
 	}
 
 	public ShipBlueprint getShip( String id ) {
