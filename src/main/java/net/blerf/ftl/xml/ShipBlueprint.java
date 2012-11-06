@@ -138,7 +138,8 @@ public class ShipBlueprint {
 					engineRoom, weaponRoom, droneRoom, teleporterRoom, cloakRoom };
 			List<SystemRoom> list = new ArrayList<SystemRoom>();
 			for (SystemRoom room : rooms) {
-				list.add(room);
+				if( room != null )
+					list.add(room);
 			}
 			if( artilleryRooms != null )
 				list.addAll(artilleryRooms);
