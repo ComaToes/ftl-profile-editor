@@ -19,6 +19,7 @@ import java.util.Map;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
+import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
@@ -1484,7 +1485,6 @@ public class SavedGameParser extends DatParser {
 		public static final int MAX_HEALTH_ROCK = 150;
 		public static final int MAX_HEALTH_SLUG = 100;
 		public static final int MAX_HEALTH_BATTLE = 150;
-		public static final int MAX_HEALTH_REPAIR = 25;  // Might not be a race.
 
 		public static int getMaxHealth( String race ) {
 			if ( race.equals("crystal") ) return MAX_HEALTH_CRYSTAL;
@@ -1495,7 +1495,6 @@ public class SavedGameParser extends DatParser {
 			else if ( race.equals("rock") ) return MAX_HEALTH_ROCK;
 			else if ( race.equals("slug") ) return MAX_HEALTH_SLUG;
 			else if ( race.equals("battle") ) return MAX_HEALTH_BATTLE;
-			else if ( race.equals("repair") ) return MAX_HEALTH_REPAIR;
 			else throw new RuntimeException( "No max health known for race: "+ race );
 		}
 
@@ -1842,8 +1841,27 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class DroneState {
-		private String droneId;
+	public static class DroneState {
+		// TODO: magic numbers.
+		// Might be worth putting in the config file.
+		public static final int MAX_HEALTH_BATTLE = 150;
+		public static final int MAX_HEALTH_REPAIR = 25;
+		public static final int MAX_HEALTH_BOARDER = 1;
+		public static final int MAX_HEALTH_COMBAT = 1;
+		public static final int MAX_HEALTH_DEFENSE = 1;
+		public static final int MAX_HEALTH_SHIP_REPAIR = 1;
+
+		public static int getMaxHealth( String type ) {
+			if ( type.equals(DroneBlueprint.TYPE_BATTLE) ) return MAX_HEALTH_BATTLE;
+			else if ( type.equals(DroneBlueprint.TYPE_REPAIR) ) return MAX_HEALTH_REPAIR;
+			else if ( type.equals(DroneBlueprint.TYPE_BOARDER) ) return MAX_HEALTH_BOARDER;
+			else if ( type.equals(DroneBlueprint.TYPE_COMBAT) ) return MAX_HEALTH_COMBAT;
+			else if ( type.equals(DroneBlueprint.TYPE_DEFENSE) ) return MAX_HEALTH_DEFENSE;
+			else if ( type.equals(DroneBlueprint.TYPE_SHIP_REPAIR) ) return MAX_HEALTH_SHIP_REPAIR;
+			else throw new RuntimeException( "No max health known for drone: "+ type );
+		}
+
+		private String droneId = null;
 		private boolean armed = false;
 		private boolean playerControlled = true;  // False when not armed.
 		private int spriteX = -1, spriteY = -1;   // -1 when body not present.
@@ -1851,13 +1869,14 @@ public class SavedGameParser extends DatParser {
 		private int roomSquare = -1;       // -1 when body not present.
 		private int health = 1;
 
+		public DroneState() {
+		}
 
 		public DroneState( String droneId ) {
 			this.droneId = droneId;
 		}
 
-		public String getDroneId() { return droneId; }
-
+		public void setDroneId( String s ) { droneId = s; }
 		public void setArmed( boolean b ) { armed = b; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public void setSpriteX( int n ) { spriteX = n; }
@@ -1866,6 +1885,7 @@ public class SavedGameParser extends DatParser {
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setHealth( int n ) { health = n; }
 
+		public String getDroneId() { return droneId; }
 		public boolean isArmed() { return armed; }
 		public boolean isPlayerControlled() { return playerControlled; }
 		public int getSpriteX() { return spriteX; }

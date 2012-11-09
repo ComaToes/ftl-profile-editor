@@ -16,6 +16,7 @@ import javax.xml.bind.JAXBException;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
+import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
@@ -43,6 +44,7 @@ public class DataManager implements Closeable {
 	private Blueprints blueprints;
 	private Blueprints autoBlueprints;
 
+	private Map<String, DroneBlueprint> drones;	
 	private Map<String, SystemBlueprint> systems;
 	private Map<String, WeaponBlueprint> weapons;	
 	private Map<String, ShipBlueprint> ships;
@@ -84,6 +86,10 @@ public class DataManager implements Closeable {
 			for( Achievement ach : achievements )
 				if ( ach.getShipId() == null )
 					generalAchievements.add(ach);
+
+			drones = new LinkedHashMap<String, DroneBlueprint>();
+			for ( DroneBlueprint drone : blueprints.getDroneBlueprint() )
+				drones.put( drone.getId(), drone );
 
 			systems = new HashMap<String, SystemBlueprint>();
 			for ( SystemBlueprint system : blueprints.getSystemBlueprint() )
@@ -174,6 +180,17 @@ public class DataManager implements Closeable {
 	
 	public List<Achievement> getAchievements() {
 		return achievements;
+	}
+
+	public DroneBlueprint getDrone( String id ) {
+		DroneBlueprint result = drones.get(id);
+		if ( result == null )
+			log.error( "No DroneBlueprint found for id: "+ id );
+		return result;
+	}
+
+	public Map<String, DroneBlueprint> getDrones() {
+		return drones;
 	}
 
 	public SystemBlueprint getSystem( String id ) {
