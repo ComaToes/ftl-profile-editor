@@ -6,10 +6,13 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.font.LineMetrics;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
 import java.io.BufferedReader;
@@ -71,6 +74,7 @@ import net.blerf.ftl.parser.ProfileParser;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.ExtensionFileFilter;
 import net.blerf.ftl.ui.GeneralAchievementsPanel;
+import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.ProfileStatsPanel;
 import net.blerf.ftl.ui.SavedGameDumpPanel;
 import net.blerf.ftl.ui.SavedGameGeneralPanel;
@@ -253,23 +257,28 @@ public class FTLFrame extends JFrame {
 		}
 	}
 	
-	public Image getScaledImage( InputStream in ) throws IOException {
-		BufferedImage img = ImageIO.read( in );
-		int width = img.getWidth();
-		int height = img.getHeight();
+	public BufferedImage getScaledImage( InputStream in ) throws IOException {
+		BufferedImage origImage = ImageIO.read( in );
+		int width = origImage.getWidth();
+		int height = origImage.getHeight();
 		
 		if ( width <= maxIconWidth && height < maxIconHeight )
-			return img;
+			return origImage;
 		
 		if ( width > height ) {
-			height /= width/maxIconWidth;
+			height /= width / maxIconWidth;
 			width = maxIconWidth;
 		} else {
-			width /= height/maxIconHeight;
+			width /= height / maxIconHeight;
 			height = maxIconHeight;
 		}
-		Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-		return scaled;
+		BufferedImage scaledImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2d = scaledImage.createGraphics();
+		g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g2d.drawImage(origImage, 0, 0, width, height, null);
+		g2d.dispose();
+
+		return scaledImage;
 	}
 
 	public ImageIcon getCrewIcon(String race) {
@@ -318,28 +327,61 @@ public class FTLFrame extends JFrame {
 	}
 
 	
-	public void setCheckboxIcons( JCheckBox box, String baseImagePath ) {
+	public IconCycleButton createCycleButton( String baseImagePath, boolean cycleDifficulty ) {
 		InputStream stream = null;
 		try {
 			stream = DataManager.get().getResourceInputStream(baseImagePath);
-			Image scaled = getScaledImage(stream);
-			int scaledYoffset = (maxIconHeight-scaled.getHeight(null))/2;
-			BufferedImage unlocked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
-			unlocked.getGraphics().drawImage(scaled, 0, scaledYoffset, null);
-			BufferedImage locked = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
-			locked.getGraphics().drawImage(scaled, 0, scaledYoffset, null);
-			locked.getGraphics().drawImage(iconShadeImage, 0, 0, null);
-			box.setSelectedIcon( new ImageIcon( unlocked ) );
-			box.setIcon( new ImageIcon( locked ) );
-			
+			BufferedImage origImage = getScaledImage(stream);
+			int centeringOffsetX = (maxIconWidth-origImage.getWidth())/2;
+			int centeringOffsetY = (maxIconHeight-origImage.getHeight())/2;
+
+			BufferedImage lockedImage = new BufferedImage( maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB );
+			Graphics2D lockedG = lockedImage.createGraphics();
+			lockedG.drawImage( origImage, centeringOffsetX, centeringOffsetY, null );
+			lockedG.drawImage( iconShadeImage, 0, 0, null );
+			lockedG.dispose();
+
+			String[] labels = null;
+			if ( cycleDifficulty == true )
+				labels = new String[] { "EASY", "NORMAL" };  // Locked / Easy / Normal.
+			else
+				labels = new String[] { null };              // Locked / Unlocked.
+
+			ImageIcon[] icons = new ImageIcon[ 1+labels.length ];
+			icons[0] = new ImageIcon( lockedImage );
+
+			for (int i=0; i < labels.length; i++) {  // Create icons, drawing any non-null labels.
+				String label = labels[i];
+				BufferedImage tempImage = new BufferedImage( maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB );
+				Graphics2D tempG = tempImage.createGraphics();
+				tempG.drawImage( origImage, centeringOffsetX, centeringOffsetY, null );
+				if ( label != null ) {
+					LineMetrics labelMetrics = tempG.getFontMetrics().getLineMetrics(label, tempG);
+					int labelWidth = tempG.getFontMetrics().stringWidth(label);
+					int labelHeight = (int)labelMetrics.getAscent() + (int)labelMetrics.getDescent();
+					int labelX = tempImage.getWidth()/2 - labelWidth/2;
+					int labelY = tempImage.getHeight() - (int)labelMetrics.getDescent();
+					tempG.setColor( Color.BLACK );
+					tempG.fillRect( labelX-4, tempImage.getHeight() - labelHeight, labelWidth+8, labelHeight );
+					tempG.setColor( Color.WHITE );
+					tempG.drawString( label, labelX, labelY );
+				}
+				tempG.dispose();
+				icons[1+i] = new ImageIcon( tempImage );
+			}
+
+			return new IconCycleButton( icons );
+
 		} catch (IOException e) {
-			log.error( "Error reading checkbox image (" + baseImagePath + ")" , e );
+			log.error( "Error reading cycle button image (" + baseImagePath + ")" , e );
 
 		}	finally {
 			try {if (stream != null) stream.close();}
 			catch (IOException f) {}
 		}
+		return null;
 	}
+
 	
 	private void setupProfileToolbar( JToolBar toolbar ) {
 		log.trace( "Initialising Profile toolbar" );

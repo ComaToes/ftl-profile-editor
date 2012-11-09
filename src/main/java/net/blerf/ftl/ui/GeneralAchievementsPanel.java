@@ -16,6 +16,7 @@ import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FTLFrame;
+import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 
@@ -25,14 +26,15 @@ import org.apache.logging.log4j.Logger;
 
 public class GeneralAchievementsPanel extends JPanel {
 
+	private static final int ICON_LOCKED = 0;
+	private static final int ICON_EASY = 1;
+	private static final int ICON_NORMAL = 2;
+
 	private static final Logger log = LogManager.getLogger(GeneralAchievementsPanel.class);
 
 	private FTLFrame frame;
 
-	private HashMap<Achievement, JCheckBox> generalAchBoxes = new HashMap<Achievement, JCheckBox>();
-
-	// TODO: allow user selection of difficulty.
-	private Difficulty difficulty = Difficulty.EASY;
+	private HashMap<Achievement, IconCycleButton> generalAchBoxes = new HashMap<Achievement, IconCycleButton>();
 
 	public GeneralAchievementsPanel( FTLFrame frame ) {
 		this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
@@ -57,10 +59,9 @@ public class GeneralAchievementsPanel extends JPanel {
 		// TODO: magic number 7.
 		for (int i = 0; i < 7; i++) {
 			Achievement ach = achievements.get( i+offset );
-			log.trace( "Setting icons for checkbox. Base image: " + "img/" + ach.getImagePath() );
+			log.trace( "Setting icons for cycle button. Base image: " + "img/" + ach.getImagePath() );
 
-			JCheckBox box = new JCheckBox();
-			frame.setCheckboxIcons(box, "img/" + ach.getImagePath());
+			IconCycleButton box = frame.createCycleButton( "img/" + ach.getImagePath(), true );
 			box.setToolTipText( ach.getName() );
 
 			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
@@ -75,15 +76,20 @@ public class GeneralAchievementsPanel extends JPanel {
 
 	public void setProfile( Profile p ) {
 
-		for ( Map.Entry<Achievement, JCheckBox> entry : generalAchBoxes.entrySet() ) {
+		for ( Map.Entry<Achievement, IconCycleButton> entry : generalAchBoxes.entrySet() ) {
 			String achId = entry.getKey().getId();
-			JCheckBox box = entry.getValue();
+			IconCycleButton box = entry.getValue();
 
-			box.setSelected(false);
+			box.setSelectedState( ICON_LOCKED );
 
-			for ( AchievementRecord rec : p.getAchievements() )
-				if ( rec.getAchievementId().equals( achId ) )
-					box.setSelected(true);
+			for ( AchievementRecord rec : p.getAchievements() ) {
+				if ( rec.getAchievementId().equals( achId ) ) {
+					if ( rec.getDifficulty() == Difficulty.NORMAL )
+						box.setSelectedState( ICON_NORMAL );
+					else
+						box.setSelectedState( ICON_EASY );
+				}
+			}
 		}
 		this.repaint();
 	}
@@ -92,14 +98,26 @@ public class GeneralAchievementsPanel extends JPanel {
 		ArrayList<AchievementRecord> newAchRecs = new ArrayList<AchievementRecord>();
 		newAchRecs.addAll( p.getAchievements() );
 
-		for ( Map.Entry<Achievement, JCheckBox> entry : generalAchBoxes.entrySet() ) {
+		for ( Map.Entry<Achievement, IconCycleButton> entry : generalAchBoxes.entrySet() ) {
 			String achId = entry.getKey().getId();
-			JCheckBox box = entry.getValue();
-			if ( box.isSelected() ) {
+			IconCycleButton box = entry.getValue();
+			if ( box.getSelectedState() != ICON_LOCKED ) {
 				// Add selected achievement recs if not already present.
-				if ( !AchievementRecord.listContainsId( newAchRecs, achId ) ) {
-					newAchRecs.add( new AchievementRecord(achId, difficulty) );
+
+				Difficulty difficulty = null;
+				if ( box.getSelectedState() == ICON_NORMAL )
+					difficulty = Difficulty.NORMAL;
+				else
+					difficulty = Difficulty.EASY;
+
+				AchievementRecord newAch = AchievementRecord.getFromListById( newAchRecs, achId );
+				if ( newAch != null ) {
+					newAch.setDifficulty( difficulty );
+				} else {
+					newAch = new AchievementRecord( achId, difficulty );
+					newAchRecs.add( newAch );
 				}
+
 			} else {
 				// Remove achievement recs that are not selected.
 				AchievementRecord.removeFromListById( newAchRecs, achId );

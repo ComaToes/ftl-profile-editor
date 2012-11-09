@@ -8,8 +8,9 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JCheckBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import net.blerf.ftl.model.AchievementRecord;
@@ -17,6 +18,7 @@ import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FTLFrame;
+import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.ShipBlueprint;
@@ -27,15 +29,18 @@ import org.apache.logging.log4j.Logger;
 
 public class ShipUnlockPanel extends JPanel {
 
+	private static final int ACH_LOCKED = 0;
+	private static final int ACH_EASY = 1;
+	private static final int ACH_NORMAL = 2;
+	private static final int SHIP_LOCKED = 0;
+	private static final int SHIP_UNLOCKED = 1;
+
 	private static final Logger log = LogManager.getLogger(ShipUnlockPanel.class);
 
 	private FTLFrame frame;
 
-	private ArrayList<JCheckBox> shipBoxes = new ArrayList<JCheckBox>();
-	private HashMap<Achievement, JCheckBox> shipAchBoxes = new HashMap<Achievement, JCheckBox>();
-
-	// TODO: allow user selection of difficulty.
-	private Difficulty difficulty = Difficulty.EASY;
+	private ArrayList<IconCycleButton> shipBoxes = new ArrayList<IconCycleButton>();
+	private HashMap<Achievement, IconCycleButton> shipAchBoxes = new HashMap<Achievement, IconCycleButton>();
 
 	public ShipUnlockPanel( FTLFrame frame ) {
 		this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
@@ -51,10 +56,21 @@ public class ShipUnlockPanel extends JPanel {
 		this.add( shipPanel );
 
 		for ( ShipBlueprint ship : DataManager.get().getPlayerShips() ) {
-			JCheckBox shipBox = new JCheckBox( ship.getShipClass() );
-			frame.setCheckboxIcons(shipBox, "img/ship/" + ship.getImg() + "_base.png");
+			JPanel boxPanel = new JPanel();
+			boxPanel.setLayout( new BoxLayout(boxPanel, BoxLayout.X_AXIS) );
+
+			boxPanel.add( Box.createHorizontalStrut(5) );
+			IconCycleButton shipBox = frame.createCycleButton( "img/ship/" + ship.getImg() + "_base.png", false );
+			boxPanel.add( shipBox );
+			boxPanel.add( Box.createHorizontalStrut(10) );
+			JLabel shipLbl = new JLabel();
+			shipLbl.setText( ship.getShipClass() );
+			boxPanel.add( shipLbl );
+			boxPanel.add( Box.createHorizontalGlue() );
+			boxPanel.add( Box.createHorizontalStrut(5) );
+
 			shipBoxes.add(shipBox);
-			shipPanel.add(shipBox);
+			shipPanel.add(boxPanel);
 		}
 
 		log.trace("Adding ship achievements");
@@ -77,14 +93,13 @@ public class ShipUnlockPanel extends JPanel {
 		panel.setBorder( BorderFactory.createTitledBorder( ship.getShipClass() ) );
 		
 		for ( Achievement shipAch : DataManager.get().getShipAchievements(ship) ) {
-			JCheckBox box = new JCheckBox();
-			frame.setCheckboxIcons(box, "img/" + shipAch.getImagePath() );
+			IconCycleButton box = frame.createCycleButton( "img/" + shipAch.getImagePath(), true );
 			box.setToolTipText( shipAch.getName() );
 
 			String achDesc = shipAch.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
 			box.addMouseListener( new StatusbarMouseListener(frame, achDesc) );
 
-			shipAchBoxes.put(shipAch, box);
+			shipAchBoxes.put( shipAch, box );
 			panel.add( box );
 		}
 		
@@ -92,31 +107,40 @@ public class ShipUnlockPanel extends JPanel {
 	}
 
 	public void unlockAllShips() {
-		for ( JCheckBox box : shipBoxes )
-			box.setSelected(true);
+		for ( IconCycleButton box : shipBoxes ) {
+			if ( box.getSelectedState() == SHIP_LOCKED )
+				box.setSelectedState( SHIP_UNLOCKED );
+		}
 	}
 
 	public void unlockAllShipAchievements() {
-		for ( JCheckBox box : shipAchBoxes.values() )
-			box.setSelected(true);
+		for ( IconCycleButton box : shipAchBoxes.values() ) {
+			if ( box.getSelectedState() == ACH_LOCKED )
+				box.setSelectedState( ACH_EASY );
+		}
 	}
 
 	public void setProfile( Profile p ) {
 
 		boolean[] unlocks = p.getShipUnlocks();
 		for (int i = 0; i < shipBoxes.size(); i++) {
-			shipBoxes.get(i).setSelected( unlocks[i] );
+			shipBoxes.get(i).setSelectedState( (unlocks[i] ? SHIP_UNLOCKED : SHIP_LOCKED) );
 		}
 
-		for ( Map.Entry<Achievement, JCheckBox> entry : shipAchBoxes.entrySet() ) {
+		for ( Map.Entry<Achievement, IconCycleButton> entry : shipAchBoxes.entrySet() ) {
 			String achId = entry.getKey().getId();
-			JCheckBox box = entry.getValue();
+			IconCycleButton box = entry.getValue();
 
-			box.setSelected(false);
+			box.setSelectedState( ACH_LOCKED );
 
-			for ( AchievementRecord rec : p.getAchievements() )
-				if ( rec.getAchievementId().equals( achId ) )
-					box.setSelected(true);
+			for ( AchievementRecord rec : p.getAchievements() ) {
+				if ( rec.getAchievementId().equals( achId ) ) {
+					if ( rec.getDifficulty() == Difficulty.NORMAL )
+						box.setSelectedState( ACH_NORMAL );
+					else
+						box.setSelectedState( ACH_EASY );
+				}
+			}
 		}
 		this.repaint();
 	}
@@ -126,14 +150,26 @@ public class ShipUnlockPanel extends JPanel {
 		ArrayList<AchievementRecord> newAchRecs = new ArrayList<AchievementRecord>();
 		newAchRecs.addAll( p.getAchievements() );
 
-		for ( Map.Entry<Achievement, JCheckBox> entry : shipAchBoxes.entrySet() ) {
+		for ( Map.Entry<Achievement, IconCycleButton> entry : shipAchBoxes.entrySet() ) {
 			String achId = entry.getKey().getId();
-			JCheckBox box = entry.getValue();
-			if ( box.isSelected() ) {
+			IconCycleButton box = entry.getValue();
+			if ( box.getSelectedState() != ACH_LOCKED ) {
 				// Add selected achievement recs if not already present.
-				if ( !AchievementRecord.listContainsId( newAchRecs, achId ) ) {
-					newAchRecs.add( new AchievementRecord(achId, difficulty) );
+
+				Difficulty difficulty = null;
+				if ( box.getSelectedState() == ACH_NORMAL )
+					difficulty = Difficulty.NORMAL;
+				else
+					difficulty = Difficulty.EASY;
+
+				AchievementRecord newAch = AchievementRecord.getFromListById( newAchRecs, achId );
+				if ( newAch != null ) {
+					newAch.setDifficulty( difficulty );
+				} else {
+					newAch = new AchievementRecord( achId, difficulty );
+					newAchRecs.add( newAch );
 				}
+
 			} else {
 				// Remove achievement recs that are not selected.
 				AchievementRecord.removeFromListById( newAchRecs, achId );
@@ -142,7 +178,7 @@ public class ShipUnlockPanel extends JPanel {
 
 		boolean[] unlocks = p.getShipUnlocks();
 		for (int i=0; i < shipBoxes.size(); i++) {
-			unlocks[i] = shipBoxes.get(i).isSelected();
+			unlocks[i] = ( shipBoxes.get(i).getSelectedState() == SHIP_UNLOCKED );
 
 			// Remove ship achievements for locked ships
 			if ( !unlocks[i] ) {

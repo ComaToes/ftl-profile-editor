@@ -3,8 +3,8 @@ package net.blerf.ftl.ui;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
-import java.awt.Image;
 import java.awt.Insets;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ public class ProfileStatsPanel extends JPanel {
 			try {
 				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
 				stream = DataManager.get().getResourceInputStream("img/ship/"+ship.getImg()+"_base.png");
-				Image img = frame.getScaledImage( stream );
+				BufferedImage img = frame.getScaledImage( stream );
 				TopScorePanel tsp = new TopScorePanel( ++i, img, s.getShipName(), s.getScore(), s.getSector(), s.getDifficulty() );
 				topScoresPanel.add( tsp );
 

@@ -33,15 +33,13 @@ public class AchievementRecord {
 	}
 
 	
-	public static boolean listContainsId(List<AchievementRecord> achList, String achievementId) {
-		boolean found = false;
+	public static AchievementRecord getFromListById(List<AchievementRecord> achList, String achievementId) {
 		for ( AchievementRecord rec : achList ) {
 			if ( rec.getAchievementId().equals(achievementId) ) {
-				found = true;
-				break;
+				return rec;
 			}
 		}
-		return found;
+		return null;
 	}
 
 	public static void removeFromListById(List<AchievementRecord> achList, String achievementId) {

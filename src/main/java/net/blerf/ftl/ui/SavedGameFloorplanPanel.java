@@ -1353,7 +1353,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			if ( w <= 0 || h <= 0 || (origImage.getWidth() == w && origImage.getHeight() == h) ) {
 				result = origImage;
 			} else {
-				BufferedImage scaledImage = new BufferedImage(w, h, Transparency.TRANSLUCENT);
+				BufferedImage scaledImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
 				Graphics2D g2d = scaledImage.createGraphics();
 				g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
 				g2d.drawImage(origImage, 0, 0, w, h, null);
