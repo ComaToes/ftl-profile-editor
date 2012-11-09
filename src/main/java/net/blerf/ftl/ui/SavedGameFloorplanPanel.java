@@ -57,6 +57,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTextArea;
+import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -125,6 +126,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private HashMap<String, HashMap<Rectangle, BufferedImage>> cachedImages = new HashMap<String, HashMap<Rectangle, BufferedImage>>();
 
 	private JLayeredPane shipPanel = null;
+	private StatusViewport shipViewport = null;
 	private JPanel sidePanel = null;
 	private JScrollPane sideScroll = null;
 
@@ -194,11 +196,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 			@Override
 			public void mouseEntered(MouseEvent e) {
-				miscSelector.setDescriptionVisible( true );
+				//miscSelector.setDescriptionVisible( true );
+				shipViewport.setStatusString( miscSelector.getCriteria().getDescription() );
 			}
 			@Override
 			public void mouseExited(MouseEvent e) {
-				miscSelector.setDescriptionVisible( false );
+				//miscSelector.setDescriptionVisible( false );
+				shipViewport.setStatusString( null );
 				miscSelector.setMousePoint( -1, -1 );
 			}
 		};
@@ -252,11 +256,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 			@Override
 			public void mouseEntered(MouseEvent e) {
-				squareSelector.setDescriptionVisible( true );
+				//squareSelector.setDescriptionVisible( true );
+				shipViewport.setStatusString( squareSelector.getCriteria().getDescription() );
 			}
 			@Override
 			public void mouseExited(MouseEvent e) {
-				squareSelector.setDescriptionVisible( false );
+				//squareSelector.setDescriptionVisible( false );
+				shipViewport.setStatusString( null );
 				squareSelector.setMousePoint( -1, -1 );
 			}
 		};
@@ -435,14 +441,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		GridBagConstraints gridC = new GridBagConstraints();
 
+		shipViewport = new StatusViewport();
+
 		gridC.fill = GridBagConstraints.BOTH;
 		gridC.weightx = 1.0;
 		gridC.weighty = 1.0;
 		gridC.gridx = 0;
 		gridC.gridy = 0;
-		JScrollPane shipScroll = new JScrollPane( shipPanel );
+		JScrollPane shipScroll = new JScrollPane();
 		shipScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
 		shipScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
+		shipScroll.setViewport( shipViewport );
+		shipScroll.setViewportView( shipPanel );
 		centerPanel.add( shipScroll, gridC );
 
 		gridC.insets = new Insets(4, 4, 4, 4);
@@ -469,6 +479,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		miscSelector.setVisible( false );
 		miscSelector.setMousePoint( -1, -1 );
 		squareSelector.reset();
+		shipViewport.setStatusString( null );
 		clearSidePanel();
 
 		for (DroneSprite droneSprite : droneSprites) {
@@ -3312,6 +3323,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				squareCriteria = defaultCriteria;
 		}
 
+		public SquareCriteria getCriteria() { return squareCriteria; }
+
 		public boolean isCurrentSquareValid() {
 			return squareCriteria.isSquareValid( this, getRoomId(), getSquareId() );
 		}
@@ -3464,6 +3477,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				spriteCriteria = defaultCriteria;
 		}
 
+		public SpriteCriteria getCriteria() { return spriteCriteria; }
+
 		public boolean isCurrentSpriteValid() {
 			return spriteCriteria.isSpriteValid( this, currentSprite );
 		}
@@ -3556,5 +3571,41 @@ public class SavedGameFloorplanPanel extends JPanel {
 	public interface SpriteSelectionCallback {
 		/** Responds to a clicked sprite, returning true to continue selecting. */
 		public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite );
+	}
+
+
+
+	public class StatusViewport extends JViewport {
+		private Color statusBgColor = new Color(212, 208, 200);
+		private String statusString = null;
+
+		public void setStatusString( String s ) {
+			if ( statusString != s ) {
+				statusString = s;
+				this.repaint();
+			}
+		}
+		public String getStatusString() { return statusString; }
+
+		@Override
+		public void paintChildren( Graphics g ) {
+			super.paintChildren(g);
+			Graphics2D g2d = (Graphics2D)g;
+			Color prevColor = g2d.getColor();
+
+			if ( statusString != null ) {
+				LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics(statusString, g2d);
+				int statusWidth = g2d.getFontMetrics().stringWidth(statusString);
+				int statusHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
+				int statusX = 8;
+				int statusY = statusHeight + 6;
+				g2d.setColor( statusBgColor );
+				g2d.fillRect( statusX-3, statusY-((int)lineMetrics.getAscent())-3, statusWidth+6, statusHeight+6 );
+				g2d.setColor( Color.BLACK );
+				g2d.drawString( statusString, statusX, statusY );
+			}
+
+			g2d.setColor( prevColor );
+		}
 	}
 }
