@@ -849,6 +849,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		shipPanel.revalidate();
 		shipPanel.repaint();
+
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				shipViewport.setViewPosition(new Point(0,0));
+			}
+		});
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
@@ -1610,6 +1616,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		this.revalidate();
 		this.repaint();
+
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				sideScroll.getVerticalScrollBar().setValue(0);
+			}
+		});
 	}
 
 	private void clearSidePanel() {
