@@ -662,6 +662,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	    }
 
 			// Load the interior image.
+			floorLbl.setIcon(null);
 			try {
 				in = DataManager.get().getResourceInputStream("img/ship/"+ shipGfxBaseName +"_floor.png");
 				BufferedImage floorImage = ImageIO.read( in );
