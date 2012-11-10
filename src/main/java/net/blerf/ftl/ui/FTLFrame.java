@@ -1008,8 +1008,9 @@ public class FTLFrame extends JFrame {
 		savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
 		savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
 
-		// Sync session's ship name with player ship's name.
-		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
+		// Sync session's redundant ship info with player ship.
+		gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
+		gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
 
 		loadGameState(gs);
 	}
