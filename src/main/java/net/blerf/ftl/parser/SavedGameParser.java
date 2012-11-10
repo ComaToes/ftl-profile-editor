@@ -972,6 +972,7 @@ public class SavedGameParser extends DatParser {
 
 		/**
 		 * Delays/alerts the rebel fleet (-/+).
+		 * This adjusts the thickness of the warning zone.
 		 * Example: Hiring a merc ship to distract sets -2.
 		 */
 		public void setRebelPursuitMod( int n ) { rebelPursuitMod = n; }

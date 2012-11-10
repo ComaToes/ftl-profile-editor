@@ -44,6 +44,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String ALPHA = "Alpha?";
 	private static final String DIFFICULTY_EASY = "Easy Difficulty";
 
+	private static final String REBEL_PURSUIT_MOD = "Rebel Pursuit Mod";
 	private static final String HAZARDS_VISIBLE = "Hazards Visible";
 
 	private FTLFrame frame;
@@ -70,9 +71,12 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		sectorPanel = new FieldEditorPanel( true );
 		sectorPanel.setBorder( BorderFactory.createTitledBorder("Sector") );
+		sectorPanel.addRow( REBEL_PURSUIT_MOD, FieldEditorPanel.ContentType.INTEGER );
+		sectorPanel.getInt(REBEL_PURSUIT_MOD).setDocument( new RegexDocument("-?[0-9]*") );
 		sectorPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
 		sectorPanel.addBlankRow();
 
+		sectorPanel.getInt(REBEL_PURSUIT_MOD).addMouseListener( new StatusbarMouseListener(frame, "Delay/alert the fleet, changing the warning zone thickness (e.g., merc distraction = -2).") );
 		sectorPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
 
 		JPanel otherBorderPanel = new JPanel( new BorderLayout() );
@@ -132,6 +136,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			sessionPanel.setIntAndReminder( ALPHA, gameState.getHeaderAlpha() );
 			sessionPanel.setBoolAndReminder( DIFFICULTY_EASY, gameState.isDifficultyEasy() );
 
+			sectorPanel.setIntAndReminder( REBEL_PURSUIT_MOD, gameState.getRebelPursuitMod() );
 			sectorPanel.setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
 		}
 
@@ -163,6 +168,10 @@ public class SavedGameGeneralPanel extends JPanel {
 		catch (NumberFormatException e) {}
 
 		gameState.setDifficultyEasy( sessionPanel.getBoolean(DIFFICULTY_EASY).isSelected() );
+
+		newString = sectorPanel.getInt(REBEL_PURSUIT_MOD).getText();
+		try { gameState.setRebelPursuitMod(Integer.parseInt(newString)); }
+		catch (NumberFormatException e) {}
 
 		gameState.setSectorHazardsVisible( sectorPanel.getBoolean(HAZARDS_VISIBLE).isSelected() );
 	}
