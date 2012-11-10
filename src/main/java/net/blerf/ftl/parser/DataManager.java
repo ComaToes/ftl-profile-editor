@@ -16,6 +16,7 @@ import javax.xml.bind.JAXBException;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Blueprints;
+import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
@@ -44,9 +45,10 @@ public class DataManager implements Closeable {
 	private Blueprints blueprints;
 	private Blueprints autoBlueprints;
 
-	private Map<String, DroneBlueprint> drones;	
+	private Map<String, AugBlueprint> augments;
+	private Map<String, DroneBlueprint> drones;
 	private Map<String, SystemBlueprint> systems;
-	private Map<String, WeaponBlueprint> weapons;	
+	private Map<String, WeaponBlueprint> weapons;
 	private Map<String, ShipBlueprint> ships;
 	private Map<String, ShipBlueprint> autoShips;
 	private List<ShipBlueprint> playerShips; // Type A's
@@ -86,6 +88,10 @@ public class DataManager implements Closeable {
 			for( Achievement ach : achievements )
 				if ( ach.getShipId() == null )
 					generalAchievements.add(ach);
+
+			augments = new LinkedHashMap<String, AugBlueprint>();
+			for ( AugBlueprint augment : blueprints.getAugBlueprint() )
+				augments.put( augment.getId(), augment );
 
 			drones = new LinkedHashMap<String, DroneBlueprint>();
 			for ( DroneBlueprint drone : blueprints.getDroneBlueprint() )
@@ -180,6 +186,17 @@ public class DataManager implements Closeable {
 	
 	public List<Achievement> getAchievements() {
 		return achievements;
+	}
+
+	public AugBlueprint getAugment( String id ) {
+		AugBlueprint result = augments.get(id);
+		if ( result == null )
+			log.error( "No AugBlueprint found for id: "+ id );
+		return result;
+	}
+
+	public Map<String, AugBlueprint> getAugments() {
+		return augments;
 	}
 
 	public DroneBlueprint getDrone( String id ) {

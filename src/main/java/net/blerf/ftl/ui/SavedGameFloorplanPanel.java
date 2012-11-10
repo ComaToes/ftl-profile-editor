@@ -70,6 +70,7 @@ import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.StatusbarMouseListener;
+import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
@@ -110,6 +111,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private ShipChassis shipChassis = null;
 	private String shipGfxBaseName = null;
 	private int shipReservePowerCapacity = 0;
+	private List<String> shipAugmentIdList = new ArrayList<String>();
+
 	private int originX=0, originY=0;
 	private HashMap<Rectangle, Integer> roomRegions = new HashMap<Rectangle, Integer>();
 	private HashMap<Rectangle, Integer> squareRegions = new HashMap<Rectangle, Integer>();
@@ -332,6 +335,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		resetFiresBtn.setMargin(ctrlInsets);
 		resetPanel.add( resetFiresBtn );
 
+		JPanel otherPanel = new JPanel();
+		otherPanel.setLayout( new BoxLayout(otherPanel, BoxLayout.X_AXIS) );
+		otherPanel.setBorder( BorderFactory.createTitledBorder("Other") );
+		final JButton otherAugmentsBtn = new JButton("Augments");
+		otherAugmentsBtn.setMargin(ctrlInsets);
+		otherPanel.add( otherAugmentsBtn );
+
 		JPanel ctrlRowOnePanel = new JPanel();
 		ctrlRowOnePanel.setLayout( new BoxLayout(ctrlRowOnePanel, BoxLayout.X_AXIS) );
 		ctrlRowOnePanel.add( selectPanel );
@@ -341,6 +351,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		JPanel ctrlRowTwoPanel = new JPanel();
 		ctrlRowTwoPanel.setLayout( new BoxLayout(ctrlRowTwoPanel, BoxLayout.X_AXIS) );
 		ctrlRowTwoPanel.add( resetPanel );
+		ctrlRowTwoPanel.add( Box.createHorizontalStrut(15) );
+		ctrlRowTwoPanel.add( otherPanel );
 
 		JPanel ctrlPanel = new JPanel();
 		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS) );
@@ -411,6 +423,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 						shipPanel.remove( fireSprite );
 					fireSprites.clear();
 					shipPanel.repaint();
+				} else if (source == otherAugmentsBtn ) {
+					if ( shipBlueprint != null )
+						showAugmentsEditor( shipAugmentIdList );
 				}
 			}
 		};
@@ -431,11 +446,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		resetBreachesBtn.addActionListener( ctrlListener );
 		resetFiresBtn.addActionListener( ctrlListener );
 
+		otherAugmentsBtn.addActionListener( ctrlListener );
+
 		resetOxygenBtn.addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
 		resetSystemsBtn.addMouseListener( new StatusbarMouseListener(frame, "Clear all system damage.") );
 		resetIntrudersBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all NPC crew.") );
 		resetBreachesBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all breaches.") );
 		resetFiresBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all fires.") );
+
+		otherAugmentsBtn.addMouseListener( new StatusbarMouseListener(frame, "Edit Augments.") );
 
 		JPanel centerPanel = new JPanel( new GridBagLayout() );
 
@@ -482,6 +501,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipViewport.setStatusString( null );
 		clearSidePanel();
 
+		shipAugmentIdList.clear();
+
 		for (DroneSprite droneSprite : droneSprites) {
 			shipPanel.remove( droneSprite );
 			shipPanel.remove( droneSprite.getBody() );
@@ -517,6 +538,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		crewSprites.clear();
 
 		if ( gameState == null ) {
+			shipBlueprint = null;
+			shipLayout = null;
+			shipChassis = null;
+			shipGfxBaseName = null;
+			shipReservePowerCapacity = 0;
+
 			roomRegions.clear();
 			squareRegions.clear();
 			blockedRegions.clear();
@@ -537,6 +564,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
 		shipGfxBaseName = shipState.getShipGraphicsBaseName();
 		shipReservePowerCapacity = shipState.getReservePowerCapacity();
+		shipAugmentIdList.addAll( shipState.getAugmentIdList() );
 		originX = shipChassis.getImageBounds().x * -1;
 		originY = shipChassis.getImageBounds().y * -1;
 		ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
@@ -862,6 +890,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
+
+		// Augments.
+		shipState.getAugmentIdList().clear();
+		shipState.getAugmentIdList().addAll( shipAugmentIdList );
 
 		// Drones.
 		ArrayList<SavedGameParser.DroneState> droneList = shipState.getDroneList();
@@ -1700,6 +1732,79 @@ public class SavedGameFloorplanPanel extends JPanel {
 		labelArea.setWrapStyleWord(true);
 		labelArea.setFocusable(false);
 		sidePanel.add( labelArea );
+	}
+
+	private void showAugmentsEditor( final List<String> shipAugmentIdList ) {
+		final String DESC = "Desc";
+		final String ID_ONE = "#1";
+		final String ID_TWO = "#2";
+		final String ID_THREE = "#3";
+		final String[] augSlots = new String[] { ID_ONE, ID_TWO, ID_THREE };
+
+		final Map<String, AugBlueprint> allAugmentsMap = DataManager.get().getAugments();
+
+		String title = String.format("Augments");
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( DESC, FieldEditorPanel.ContentType.WRAPPED_LABEL );
+		editorPanel.getWrappedLabel(DESC).setRows(12);  // Help layoutmanagers calc height.
+		editorPanel.getWrappedLabel(DESC).setMinimumSize( new Dimension(0, editorPanel.getWrappedLabel(DESC).getPreferredSize().height) );
+		editorPanel.addBlankRow();
+
+		for (int i=0; i < augSlots.length; i++) {
+			editorPanel.addRow( augSlots[i], FieldEditorPanel.ContentType.COMBO );
+
+			editorPanel.getCombo(augSlots[i]).addItem("");
+			for (AugBlueprint augBlueprint : allAugmentsMap.values()) {
+				editorPanel.getCombo(augSlots[i]).addItem( augBlueprint );
+			}
+			if ( shipAugmentIdList.size() > i)
+				editorPanel.getCombo(augSlots[i]).setSelectedItem( allAugmentsMap.get(shipAugmentIdList.get(i)) );
+		}
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				shipAugmentIdList.clear();
+
+				for (int i=0; i < augSlots.length; i++) {
+					Object augObj = editorPanel.getCombo(augSlots[i]).getSelectedItem();
+					if ( augObj instanceof AugBlueprint )
+						shipAugmentIdList.add( ((AugBlueprint)augObj).getId() );
+				}
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		ActionListener augListener = new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Object source = e.getSource();
+				for (int i=0; i < augSlots.length; i++) {
+					JComboBox augCombo = editorPanel.getCombo(augSlots[i]);
+					if ( source == augCombo ) {
+						Object augObj = augCombo.getSelectedItem();
+						if ( augObj instanceof AugBlueprint ) {
+							editorPanel.getWrappedLabel(DESC).setText( ((AugBlueprint)augObj).getDescription() );
+
+							if ( ((AugBlueprint)augObj).isStackable() == false ) {
+								// Clear other slots' copies of this unique augment.
+								for (int j=0; j < augSlots.length; j++) {
+									if ( j == i ) continue;
+									if ( editorPanel.getCombo(augSlots[j]).getSelectedItem() == augObj )
+										editorPanel.getCombo(augSlots[j]).setSelectedItem("");
+								}
+							}
+						}
+						break;
+					}
+				}
+			}
+		};
+		for (int i=0; i < augSlots.length; i++) {
+			editorPanel.getCombo(augSlots[i]).addActionListener( augListener );
+		}
+
+		showSidePanel();
 	}
 
 	private void showDroneEditor( final DroneSprite droneSprite ) {
