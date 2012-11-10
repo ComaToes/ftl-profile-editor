@@ -31,6 +31,7 @@ import java.awt.font.LineMetrics;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
 import java.awt.image.RescaleOp;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -508,7 +509,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		this.add( sideScroll, BorderLayout.EAST );
 	}
 
-	public void setGameState( SavedGameParser.SavedGameState gameState ) {
+	public void setShipState( SavedGameParser.ShipState shipState ) {
 		String prevGfxBaseName = shipGfxBaseName;
 		miscSelector.setVisible( false );
 		miscSelector.setMousePoint( -1, -1 );
@@ -552,7 +553,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			shipPanel.remove( crewSprite );
 		crewSprites.clear();
 
-		if ( gameState == null ) {
+		if ( shipState == null ) {
 			shipBlueprint = null;
 			shipLayout = null;
 			shipChassis = null;
@@ -578,7 +579,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 			return;
 		}
 
-		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
@@ -669,6 +669,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 				floorLbl.setIcon( new ImageIcon(floorImage) );
 				floorLbl.setSize( new Dimension(floorImage.getWidth(), floorImage.getHeight()) );
 
+			} catch (FileNotFoundException e) {
+				log.warn( "No ship floor image for ("+ shipGfxBaseName +")" );
+
 			} catch (IOException e) {
 				log.error( "Failed to load ship floor image ("+ shipGfxBaseName +")", e );
 
@@ -719,7 +722,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 
 			// Draw walls and floor crevices.
-			BufferedImage wallImage = gc.createCompatibleImage( floorLbl.getIcon().getIconWidth(), floorLbl.getIcon().getIconHeight(), Transparency.BITMASK );
+			BufferedImage wallImage = gc.createCompatibleImage( baseLbl.getIcon().getIconWidth(), baseLbl.getIcon().getIconHeight(), Transparency.BITMASK );
 			Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
 			drawWalls( wallG, originX, originY, shipState, shipLayout );
 			wallG.dispose();
@@ -729,17 +732,25 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add Drones.
 		ArrayList<SavedGameParser.DroneState> droneList = shipState.getDroneList();
-		if ( droneList.size() > shipBlueprint.getDroneSlots() )
-			log.warn( String.format("Ship state has %d drones, but its blueprint only expects %d", droneList.size(), shipBlueprint.getDroneSlots()) );
+		Integer blueprintDroneSlots = shipBlueprint.getDroneSlots();
 
-		for (int i=0; i < shipBlueprint.getDroneSlots(); i++) {
+		int actualDroneSlots = droneList.size();
+		if ( blueprintDroneSlots != null ) {
+			if ( droneList.size() > blueprintDroneSlots.intValue() )
+				log.warn( String.format("Ship state has %d drones, but its blueprint only expects %d", droneList.size(), shipBlueprint.getDroneSlots()) );
+
+			// Blueprint may restrict usable slots.
+			actualDroneSlots = Math.min( droneList.size(), blueprintDroneSlots );
+		}
+
+		for (int i=0; i < actualDroneSlots; i++) {
 			SavedGameParser.DroneState droneState = null;
 
 			if ( droneList.size() > i ) droneState = droneList.get(i);
 			// It's fine if droneState is null. Empty slot.
 
 			int droneX = 100 + i*75;
-			int droneY = floorLbl.getIcon().getIconHeight();
+			int droneY = baseLbl.getIcon().getIconHeight();
 
 			addDroneSprite( droneX, droneY, i, droneState );
 		}
@@ -747,18 +758,29 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Add Weapons.
 		List<ShipChassis.WeaponMountList.WeaponMount> weaponMounts = shipChassis.getWeaponMountList().mount;
 		ArrayList<SavedGameParser.WeaponState> weaponList = shipState.getWeaponList();
-		if ( weaponMounts.size() < shipBlueprint.getWeaponSlots() )
-			log.warn( String.format("Ship blueprint expects %d mounts, but its chassis only has %d", shipBlueprint.getWeaponSlots(), weaponMounts.size()) );
+		Integer blueprintWeaponSlots = shipBlueprint.getWeaponSlots();
 
-		if ( weaponList.size() > shipBlueprint.getWeaponSlots() )
-			log.warn( String.format("Ship state has %d weapons, but its blueprint only expects %d", weaponList.size(), shipBlueprint.getWeaponSlots()) );
+		if ( blueprintWeaponSlots == null )       // TODO: Magic number (not set in autoBlueprints.xml).
+			blueprintWeaponSlots = new Integer(4);  // But rebel_long's chassis has extra mounts!
 
-		for (int i=0; i < shipBlueprint.getWeaponSlots(); i++) {
+		int actualWeaponSlots = weaponMounts.size();
+		if ( blueprintWeaponSlots != null ) {     // Check in case magic number is removed someday.
+			if ( weaponMounts.size() < blueprintWeaponSlots.intValue() )
+				log.warn( String.format("Ship blueprint expects %d mounts, but its chassis only has %d", shipBlueprint.getWeaponSlots(), weaponMounts.size()) );
+
+			// Blueprint may restrict usable chassis mounts.
+			actualWeaponSlots = Math.min( weaponMounts.size(), blueprintWeaponSlots.intValue() );
+		}
+
+		if ( weaponList.size() > weaponMounts.size() )
+			log.warn( String.format("Ship state has %d weapons, but its chassis only has %d", weaponList.size(), weaponMounts.size()) );
+
+		for (int i=0; i < actualWeaponSlots; i++) {
 			ShipChassis.WeaponMountList.WeaponMount weaponMount = null;
 			SavedGameParser.WeaponState weaponState = null;
 
 			if ( weaponMounts.size() > i ) weaponMount = weaponMounts.get(i);
-			if ( weaponMount == null ) continue;  // *shrug*
+			if ( weaponMount == null ) continue;  // *shrug* Truncate extra weapons.
 
 			if ( weaponList.size() > i ) weaponState = weaponList.get(i);
 			// It's fine if weaponState is null. Empty slot.
@@ -865,6 +887,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add doors.
 		int doorLevel = shipState.getSystem(SystemBlueprint.ID_DOORS).getCapacity()-1;  // Convert to 0-based.
+		if ( doorLevel < 0 ) doorLevel = 0;  // Door subsystem was absent, 0-Capacity.
 		for (Map.Entry<ShipLayout.DoorCoordinate, SavedGameParser.DoorState> entry : shipState.getDoorMap().entrySet()) {
 			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 			SavedGameParser.DoorState doorState = entry.getValue();
@@ -911,8 +934,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 		});
 	}
 
-	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
-		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
+	public void updateShipState( SavedGameParser.ShipState shipState ) {
+		if ( shipState == null ) return;
+
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );

@@ -29,7 +29,8 @@ public class ShipBlueprint {
 	private SystemList systemList;
 	private Health health;
 	private MaxPower maxPower;
-	private int weaponSlots, droneSlots;
+	@XmlElement(required=false)  // Not present in autoBlueprints.xml.
+	private Integer weaponSlots, droneSlots;
 	
 	private Object weaponList, crewCount; // TODO model
 	
@@ -350,19 +351,19 @@ public class ShipBlueprint {
 		this.systemList = systemList;
 	}
 
-	public int getWeaponSlots() {
+	public Integer getWeaponSlots() {
 		return weaponSlots;
 	}
 
-	public void setWeaponSlots(int weaponSlots) {
+	public void setWeaponSlots(Integer weaponSlots) {
 		this.weaponSlots = weaponSlots;
 	}
 
-	public int getDroneSlots() {
+	public Integer getDroneSlots() {
 		return droneSlots;
 	}
 
-	public void setDroneSlots(int droneSlots) {
+	public void setDroneSlots(Integer droneSlots) {
 		this.droneSlots = droneSlots;
 	}
 

@@ -123,7 +123,8 @@ public class FTLFrame extends JFrame {
 	private ProfileStatsPanel statsPanel;
 	private SavedGameDumpPanel savedGameDumpPanel;
 	private SavedGameGeneralPanel savedGameGeneralPanel;
-	private SavedGameFloorplanPanel savedGameFloorplanPanel;
+	private SavedGameFloorplanPanel savedGamePlayerFloorplanPanel;
+	private SavedGameFloorplanPanel savedGameNearbyFloorplanPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -199,11 +200,13 @@ public class FTLFrame extends JFrame {
 
 		savedGameDumpPanel = new SavedGameDumpPanel(this);
 		savedGameGeneralPanel = new SavedGameGeneralPanel(this);
-		savedGameFloorplanPanel = new SavedGameFloorplanPanel(this);
+		savedGamePlayerFloorplanPanel = new SavedGameFloorplanPanel(this);
+		savedGameNearbyFloorplanPanel = new SavedGameFloorplanPanel(this);
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
 		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
-		savedGameTabsPane.add( "Player Ship", savedGameFloorplanPanel );
+		savedGameTabsPane.add( "Player Ship", savedGamePlayerFloorplanPanel );
+		savedGameTabsPane.add( "Nearby Ship", savedGameNearbyFloorplanPanel );
 
 
 		JPanel statusPanel = new JPanel();
@@ -991,8 +994,9 @@ public class FTLFrame extends JFrame {
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
 
 		savedGameDumpPanel.setGameState( gs );
-		savedGameFloorplanPanel.setGameState( gs );
 		savedGameGeneralPanel.setGameState( gs );
+		savedGamePlayerFloorplanPanel.setShipState( gs.getPlayerShipState() );
+		savedGameNearbyFloorplanPanel.setShipState( gs.getNearbyShipState() );
 
 		gameState = gs;
 	}
@@ -1001,9 +1005,10 @@ public class FTLFrame extends JFrame {
 
 		// savedGameDumpPanel doesn't modify anything.
 		savedGameGeneralPanel.updateGameState( gs );
-		savedGameFloorplanPanel.updateGameState( gs );
+		savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
+		savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
 
-		// Sync ship names.
+		// Sync session's ship name with player ship's name.
 		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
 
 		loadGameState(gs);
