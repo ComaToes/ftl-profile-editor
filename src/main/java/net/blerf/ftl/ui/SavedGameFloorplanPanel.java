@@ -3286,7 +3286,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			if ( doorCoord.v == 0 ) {  // Use rotated coordinates to draw AS IF vertical.
 				g2d.rotate( Math.toRadians(90) );   // Clockwise.
 				w = this.getHeight(); h = this.getWidth();
-				g2d.translate( 0, -(h-1) );
+				g2d.translate( 0, -h );
 			}
 
 			BufferedImage doorImage;
