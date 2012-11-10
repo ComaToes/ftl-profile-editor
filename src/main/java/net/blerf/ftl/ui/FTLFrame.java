@@ -1015,6 +1015,35 @@ public class FTLFrame extends JFrame {
 		loadGameState(gs);
 	}
 
+	// It'd be cleaner if FTLFrame created a tab of its own for stuff
+	// that hacks the game state and immediately triggers a reload,
+	// but there's just this single func at the moment. So a button
+	// was stuck in the general tab.
+	public void stealNearbyShip() {
+		if ( gameState == null ) return;
+
+		// Apply all other pending changes.
+		updateGameState( gameState );
+
+		if ( gameState.getNearbyShipState() == null ) {
+			JOptionPane.showMessageDialog(this, "There is no nearby ship to steal.", "Steal Nearby Ship", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+
+		int response = JOptionPane.showConfirmDialog(this, "The player ship is about to be replaced with the nearby one.\nImages for the shield oval and floor outline will be missing.\nAre you sure you want to do this?", "Steal Nearby Ship", JOptionPane.YES_NO_OPTION);
+		if ( response != JOptionPane.YES_OPTION ) return;
+
+		// Squee.
+		gameState.setPlayerShipState( gameState.getNearbyShipState() );
+		gameState.setNearbyShipState( null );
+
+		// Sync session's redundant ship info with player ship.
+		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
+		gameState.setPlayerShipBlueprintId( gameState.getPlayerShipState().getShipBlueprintId() );
+
+		loadGameState( gameState );
+	}
+
 	public void setStatusText( String text ) {
 		if (text.length() > 0)
 			statusLbl.setText(text);

@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -73,6 +75,23 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		sectorPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
 
+		JPanel otherBorderPanel = new JPanel( new BorderLayout() );
+		otherBorderPanel.setBorder( BorderFactory.createTitledBorder("Other") );
+		JPanel otherPanel = new JPanel();
+		otherPanel.setLayout( new BoxLayout(otherPanel, BoxLayout.Y_AXIS) );
+		otherPanel.setBorder( BorderFactory.createEmptyBorder(4, 4, 4, 4) );
+		JButton stealNearbyShipBtn = new JButton( "Steal Nearby Ship" );
+		otherPanel.add( stealNearbyShipBtn );
+		otherBorderPanel.add( otherPanel, BorderLayout.CENTER );
+
+		stealNearbyShipBtn.addMouseListener( new StatusbarMouseListener(frame, "Take the ship parked nearby.") );
+
+		stealNearbyShipBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				SavedGameGeneralPanel.this.frame.stealNearbyShip();
+			}
+		});
+
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.fill = GridBagConstraints.NONE;
 		thisC.weightx = 0.0;
@@ -83,6 +102,9 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		thisC.gridy++;
 		this.add( sectorPanel, thisC );
+
+		thisC.gridy++;
+		this.add( otherBorderPanel, thisC );
 
 		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weighty = 1.0;
