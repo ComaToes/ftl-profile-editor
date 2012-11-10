@@ -203,7 +203,7 @@ public class FTLFrame extends JFrame {
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
 		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
-		savedGameTabsPane.add( "Ship", savedGameFloorplanPanel );
+		savedGameTabsPane.add( "Player Ship", savedGameFloorplanPanel );
 
 
 		JPanel statusPanel = new JPanel();
@@ -1000,8 +1000,11 @@ public class FTLFrame extends JFrame {
 	public void updateGameState( SavedGameParser.SavedGameState gs ) {
 
 		// savedGameDumpPanel doesn't modify anything.
-		savedGameFloorplanPanel.updateGameState( gs );
 		savedGameGeneralPanel.updateGameState( gs );
+		savedGameFloorplanPanel.updateGameState( gs );
+
+		// Sync ship names.
+		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
 
 		loadGameState(gs);
 	}

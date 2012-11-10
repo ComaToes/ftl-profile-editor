@@ -111,6 +111,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private ShipChassis shipChassis = null;
 	private String shipGfxBaseName = null;
 	private int shipReservePowerCapacity = 0;
+	private String shipName = null;
+	private int shipHull = 0;
+	private int shipFuel = 0;
+	private int shipDroneParts = 0;
+	private int shipMissiles = 0;
+	private int shipScrap = 0;
 	private List<String> shipAugmentIdList = new ArrayList<String>();
 
 	private int originX=0, originY=0;
@@ -338,6 +344,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		JPanel otherPanel = new JPanel();
 		otherPanel.setLayout( new BoxLayout(otherPanel, BoxLayout.X_AXIS) );
 		otherPanel.setBorder( BorderFactory.createTitledBorder("Other") );
+		final JButton otherGeneralBtn = new JButton("General");
+		otherGeneralBtn.setMargin(ctrlInsets);
+		otherPanel.add( otherGeneralBtn );
+		otherPanel.add( Box.createHorizontalStrut(5) );
 		final JButton otherAugmentsBtn = new JButton("Augments");
 		otherAugmentsBtn.setMargin(ctrlInsets);
 		otherPanel.add( otherAugmentsBtn );
@@ -426,6 +436,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 					fireSprites.clear();
 					shipPanel.repaint();
 
+				} else if (source == otherGeneralBtn ) {
+					showGeneralEditor();
 				} else if (source == otherAugmentsBtn ) {
 					showAugmentsEditor( shipAugmentIdList );
 				}
@@ -448,6 +460,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		resetBreachesBtn.addActionListener( ctrlListener );
 		resetFiresBtn.addActionListener( ctrlListener );
 
+		otherGeneralBtn.addActionListener( ctrlListener );
 		otherAugmentsBtn.addActionListener( ctrlListener );
 
 		resetOxygenBtn.addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
@@ -545,7 +558,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 			shipChassis = null;
 			shipGfxBaseName = null;
 			shipReservePowerCapacity = 0;
-
+			shipName = null;
+			shipHull = 0;
+			shipFuel = 0;
+			shipDroneParts = 0;
+			shipMissiles = 0;
+			shipScrap = 0;
 			roomRegions.clear();
 			squareRegions.clear();
 			blockedRegions.clear();
@@ -566,6 +584,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
 		shipGfxBaseName = shipState.getShipGraphicsBaseName();
 		shipReservePowerCapacity = shipState.getReservePowerCapacity();
+		shipName = shipState.getShipName();
+		shipHull = shipState.getHullAmt();
+		shipFuel = shipState.getFuelAmt();
+		shipDroneParts = shipState.getDronePartsAmt();
+		shipMissiles = shipState.getMissilesAmt();
+		shipScrap = shipState.getScrapAmt();
 		shipAugmentIdList.addAll( shipState.getAugmentIdList() );
 		originX = shipChassis.getImageBounds().x * -1;
 		originY = shipChassis.getImageBounds().y * -1;
@@ -892,6 +916,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
+
+		// General.
+		shipState.setShipName( shipName );
+		shipState.setHullAmt( shipHull );
+		shipState.setFuelAmt( shipFuel );
+		shipState.setDronePartsAmt( shipDroneParts );
+		shipState.setMissilesAmt( shipMissiles );
+		shipState.setScrapAmt( shipScrap );
 
 		// Augments.
 		shipState.getAugmentIdList().clear();
@@ -1736,6 +1768,63 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add( labelArea );
 	}
 
+	private void showGeneralEditor() {
+		final String SHIP_NAME="Ship Name";
+		final String HULL="Hull";
+		final String FUEL="Fuel";
+		final String DRONE_PARTS="Drone Parts";
+		final String MISSILES="Missiles";
+		final String SCRAP="Scrap";
+
+		String title = "General";
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
+		editorPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
+		editorPanel.getString(SHIP_NAME).setText( shipName );
+		editorPanel.addRow( HULL, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(HULL).setMaximum( shipBlueprint.getHealth().amount );
+		editorPanel.getSlider(HULL).setValue( shipHull );
+		editorPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(FUEL).setText( ""+shipFuel );
+		editorPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(DRONE_PARTS).setText( ""+shipDroneParts );
+		editorPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(MISSILES).setText( ""+shipMissiles );
+		editorPanel.addRow( SCRAP, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(SCRAP).setText( ""+shipScrap );
+
+		final Runnable applyCallback = new Runnable() {
+			public void run() {
+				String newString;
+				newString = editorPanel.getString(SHIP_NAME).getText();
+				if ( newString.length() > 0 ) shipName = newString;
+
+				shipHull = editorPanel.getSlider(HULL).getValue();
+
+				newString = editorPanel.getInt(FUEL).getText();
+				try { shipFuel = Integer.parseInt(newString); }
+				catch (NumberFormatException e) {}
+
+				newString = editorPanel.getInt(DRONE_PARTS).getText();
+				try { shipDroneParts = Integer.parseInt(newString); }
+				catch (NumberFormatException e) {}
+
+				newString = editorPanel.getInt(MISSILES).getText();
+				try { shipMissiles = Integer.parseInt(newString); }
+				catch (NumberFormatException e) {}
+
+				newString = editorPanel.getInt(SCRAP).getText();
+				try { shipScrap = Integer.parseInt(newString); }
+				catch (NumberFormatException e) {}
+
+				clearSidePanel();
+			}
+		};
+		createSidePanel( title, editorPanel, applyCallback );
+
+		showSidePanel();
+	}
+
 	private void showAugmentsEditor( final List<String> shipAugmentIdList ) {
 		final String DESC = "Desc";
 		final String ID_ONE = "#1";
@@ -1745,7 +1834,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final Map<String, AugBlueprint> allAugmentsMap = DataManager.get().getAugments();
 
-		String title = String.format("Augments");
+		String title = "Augments";
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( DESC, FieldEditorPanel.ContentType.WRAPPED_LABEL );

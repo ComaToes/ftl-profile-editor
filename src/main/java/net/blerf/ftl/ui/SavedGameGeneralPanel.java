@@ -35,40 +35,43 @@ public class SavedGameGeneralPanel extends JPanel {
 
 	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
 
-	private static final String SHIP_NAME="Ship Name", HULL="Hull", FUEL="Fuel", DRONE_PARTS="Drone Parts",
-	                            MISSILES="Missiles", SCRAP="Scrap", HAZARDS_VISIBLE="Sector Hazards Visible";
+	private static final String TOTAL_SHIPS_DEFEATED = "Total Ships Defeated";
+	private static final String TOTAL_BEACONS = "Total Beacons";
+	private static final String TOTAL_SCRAP = "Total Scrap";
+	private static final String TOTAL_CREW_HIRED = "Total Crew Hired";
+	private static final String ALPHA = "Alpha?";
+	private static final String DIFFICULTY_EASY = "Easy Difficulty";
+
+	private static final String HAZARDS_VISIBLE = "Hazards Visible";
 
 	private FTLFrame frame;
-	private FieldEditorPanel generalPanel = null;
+	private FieldEditorPanel sessionPanel = null;
+	private FieldEditorPanel sectorPanel = null;
 
 	public SavedGameGeneralPanel( FTLFrame frame ) {
 		this.setLayout( new GridBagLayout() );
 
 		this.frame = frame;
 
-		GridBagConstraints gridC = new GridBagConstraints();
-		gridC.anchor = GridBagConstraints.WEST;
-		gridC.fill = GridBagConstraints.HORIZONTAL;
-		gridC.weightx = 0.0;
-		gridC.weighty = 0.0;
-		gridC.gridwidth = 1;
-		gridC.gridx = 0;
-		gridC.gridy = 0;
+		sessionPanel = new FieldEditorPanel( true );
+		sessionPanel.setBorder( BorderFactory.createTitledBorder("Session") );
+		sessionPanel.addRow( TOTAL_SHIPS_DEFEATED, FieldEditorPanel.ContentType.INTEGER );
+		sessionPanel.addRow( TOTAL_BEACONS, FieldEditorPanel.ContentType.INTEGER );
+		sessionPanel.addRow( TOTAL_SCRAP, FieldEditorPanel.ContentType.INTEGER );
+		sessionPanel.addRow( TOTAL_CREW_HIRED, FieldEditorPanel.ContentType.INTEGER );
+		sessionPanel.addRow( ALPHA, FieldEditorPanel.ContentType.INTEGER );
+		sessionPanel.addRow( DIFFICULTY_EASY, FieldEditorPanel.ContentType.BOOLEAN );
+		sessionPanel.addBlankRow();
 
-		generalPanel = new FieldEditorPanel( true );
-		generalPanel.setBorder( BorderFactory.createTitledBorder("General") );
+		sessionPanel.getInt(ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown session field. Always 0?") );
+		sessionPanel.getBoolean(DIFFICULTY_EASY).addMouseListener( new StatusbarMouseListener(frame, "Uncheck for normal difficulty.") );
 
-		generalPanel.addBlankRow();
-		generalPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
-		generalPanel.addRow( HULL, FieldEditorPanel.ContentType.SLIDER );
-		generalPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
-		generalPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
-		generalPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
-		generalPanel.addRow( SCRAP, FieldEditorPanel.ContentType.INTEGER );
-		generalPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
-		generalPanel.addBlankRow();
+		sectorPanel = new FieldEditorPanel( true );
+		sectorPanel.setBorder( BorderFactory.createTitledBorder("Sector") );
+		sectorPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
+		sectorPanel.addBlankRow();
 
-		generalPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
+		sectorPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.fill = GridBagConstraints.NONE;
@@ -76,7 +79,10 @@ public class SavedGameGeneralPanel extends JPanel {
 		thisC.weighty = 0.0;
 		thisC.gridx = 0;
 		thisC.gridy = 0;
-		this.add( generalPanel, thisC );
+		this.add( sessionPanel, thisC );
+
+		thisC.gridy++;
+		this.add( sectorPanel, thisC );
 
 		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weighty = 1.0;
@@ -88,7 +94,8 @@ public class SavedGameGeneralPanel extends JPanel {
 	}
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
-		generalPanel.reset();
+		sessionPanel.reset();
+		sectorPanel.reset();
 
 		if ( gameState != null ) {
 			SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
@@ -96,16 +103,14 @@ public class SavedGameGeneralPanel extends JPanel {
 			if ( shipBlueprint == null )
 				throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
 
-			generalPanel.setStringAndReminder( SHIP_NAME, gameState.getPlayerShipName() );
+			sessionPanel.setIntAndReminder( TOTAL_SHIPS_DEFEATED, gameState.getTotalShipsDefeated() );
+			sessionPanel.setIntAndReminder( TOTAL_BEACONS, gameState.getTotalBeaconsExplored() );
+			sessionPanel.setIntAndReminder( TOTAL_SCRAP, gameState.getTotalScrapCollected() );
+			sessionPanel.setIntAndReminder( TOTAL_CREW_HIRED, gameState.getTotalCrewHired() );
+			sessionPanel.setIntAndReminder( ALPHA, gameState.getHeaderAlpha() );
+			sessionPanel.setBoolAndReminder( DIFFICULTY_EASY, gameState.isDifficultyEasy() );
 
-			generalPanel.getSlider(HULL).setMaximum( shipBlueprint.getHealth().amount );
-			generalPanel.setSliderAndReminder( HULL, shipState.getHullAmt() );
-
-			generalPanel.setIntAndReminder( FUEL, shipState.getFuelAmt() );
-			generalPanel.setIntAndReminder( DRONE_PARTS, shipState.getDronePartsAmt() );
-			generalPanel.setIntAndReminder( MISSILES, shipState.getMissilesAmt() );
-			generalPanel.setIntAndReminder( SCRAP, shipState.getScrapAmt() );
-			generalPanel.setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
+			sectorPanel.setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
 		}
 
 		this.repaint();
@@ -115,30 +120,28 @@ public class SavedGameGeneralPanel extends JPanel {
 		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 		String newString = null;
 
-		newString = generalPanel.getString(SHIP_NAME).getText();
-		if ( newString.length() > 0 ) {
-			gameState.setPlayerShipName( newString );
-			shipState.setShipName( newString );
-		}
-
-		shipState.setHullAmt( generalPanel.getSlider(HULL).getValue() );
-
-		newString = generalPanel.getInt(FUEL).getText();
-		try { shipState.setFuelAmt(Integer.parseInt(newString)); }
+		newString = sessionPanel.getInt(TOTAL_SHIPS_DEFEATED).getText();
+		try { gameState.setTotalShipsDefeated(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		newString = generalPanel.getInt(DRONE_PARTS).getText();
-		try { shipState.setDronePartsAmt(Integer.parseInt(newString)); }
+		newString = sessionPanel.getInt(TOTAL_BEACONS).getText();
+		try { gameState.setTotalBeaconsExplored(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		newString = generalPanel.getInt(MISSILES).getText();
-		try { shipState.setMissilesAmt(Integer.parseInt(newString)); }
+		newString = sessionPanel.getInt(TOTAL_SCRAP).getText();
+		try { gameState.setTotalScrapCollected(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		newString = generalPanel.getInt(SCRAP).getText();
-		try { shipState.setScrapAmt(Integer.parseInt(newString)); }
+		newString = sessionPanel.getInt(TOTAL_CREW_HIRED).getText();
+		try { gameState.setTotalCrewHired(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		gameState.setSectorHazardsVisible( generalPanel.getBoolean(HAZARDS_VISIBLE).isSelected() );
+		newString = sessionPanel.getInt(ALPHA).getText();
+		try { gameState.setHeaderAlpha(Integer.parseInt(newString)); }
+		catch (NumberFormatException e) {}
+
+		gameState.setDifficultyEasy( sessionPanel.getBoolean(DIFFICULTY_EASY).isSelected() );
+
+		gameState.setSectorHazardsVisible( sectorPanel.getBoolean(HAZARDS_VISIBLE).isSelected() );
 	}
 }
