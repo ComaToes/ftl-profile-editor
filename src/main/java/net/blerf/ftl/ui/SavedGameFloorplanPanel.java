@@ -1268,6 +1268,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				Point center = squareSelector.getSquareCenter();
 				SavedGameParser.CrewState crewState = new SavedGameParser.CrewState();
+				crewState.setHealth( SavedGameParser.CrewState.getMaxHealth( crewState.getRace() ) );
 				crewState.setRoomId( roomId );
 				crewState.setRoomSquare( squareId );
 				crewState.setSpriteX( center.x - originX - tileEdge + shipLayout.getOffsetX()*squareSize );
