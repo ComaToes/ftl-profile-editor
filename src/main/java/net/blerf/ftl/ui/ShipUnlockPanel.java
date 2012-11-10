@@ -56,21 +56,10 @@ public class ShipUnlockPanel extends JPanel {
 		this.add( shipPanel );
 
 		for ( ShipBlueprint ship : DataManager.get().getPlayerShips() ) {
-			JPanel boxPanel = new JPanel();
-			boxPanel.setLayout( new BoxLayout(boxPanel, BoxLayout.X_AXIS) );
-
-			boxPanel.add( Box.createHorizontalStrut(5) );
 			IconCycleButton shipBox = frame.createCycleButton( "img/ship/" + ship.getImg() + "_base.png", false );
-			boxPanel.add( shipBox );
-			boxPanel.add( Box.createHorizontalStrut(10) );
-			JLabel shipLbl = new JLabel();
-			shipLbl.setText( ship.getShipClass() );
-			boxPanel.add( shipLbl );
-			boxPanel.add( Box.createHorizontalGlue() );
-			boxPanel.add( Box.createHorizontalStrut(5) );
-
+			shipBox.setText( ship.getShipClass() );
 			shipBoxes.add(shipBox);
-			shipPanel.add(boxPanel);
+			shipPanel.add(shipBox);
 		}
 
 		log.trace("Adding ship achievements");

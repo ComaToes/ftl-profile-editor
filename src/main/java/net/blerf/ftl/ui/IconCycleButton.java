@@ -3,12 +3,14 @@ package net.blerf.ftl.ui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.SwingConstants;
 
 
 /**
- * A button that cycles throw an array of icons when clicked.
+ * A button that cycles through an array of icons when clicked.
  */
 public class IconCycleButton extends JButton implements ActionListener {
 	private ImageIcon[] icons;
@@ -16,7 +18,10 @@ public class IconCycleButton extends JButton implements ActionListener {
 
 	public IconCycleButton( ImageIcon[] icons ) {
 		this.icons = icons;
-		this.setBorder( null );
+		this.setBorder( BorderFactory.createEmptyBorder( 2, 4, 2, 4 ) );
+		this.setFocusPainted( false );
+		this.setContentAreaFilled( false );
+		this.setHorizontalAlignment( SwingConstants.LEADING );
 		setSelectedState( 0 );
 		this.addActionListener( this );
 	}
