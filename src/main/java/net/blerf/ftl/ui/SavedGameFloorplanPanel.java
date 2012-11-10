@@ -362,6 +362,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		ActionListener ctrlListener = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if ( shipBlueprint == null ) return;  // No ship to edit!
+
 				Object source = e.getSource();
 				if ( source == selectRoomBtn ) {
 					selectRoom();
@@ -423,9 +425,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 						shipPanel.remove( fireSprite );
 					fireSprites.clear();
 					shipPanel.repaint();
+
 				} else if (source == otherAugmentsBtn ) {
-					if ( shipBlueprint != null )
-						showAugmentsEditor( shipAugmentIdList );
+					showAugmentsEditor( shipAugmentIdList );
 				}
 			}
 		};
