@@ -2824,6 +2824,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
+		ActionListener crewListener = new ActionListener() {
+			private JComboBox raceCombo = editorPanel.getCombo(RACE);
+			private JSlider healthSlider = editorPanel.getSlider(HEALTH);
+
+			public void actionPerformed(ActionEvent e) {
+				Object source = e.getSource();
+				if ( source == raceCombo ) {
+					healthSlider.setMaximum( SavedGameParser.CrewState.getMaxHealth( (String)raceCombo.getSelectedItem() ) );
+				}
+			}
+		};
+		editorPanel.getCombo(RACE).addActionListener( crewListener );
+
 		addSidePanelSeparator(6);
 
 		JButton moveBtn = new JButton("Move To...");
