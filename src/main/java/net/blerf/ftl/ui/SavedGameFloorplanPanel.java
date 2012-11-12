@@ -621,25 +621,26 @@ public class SavedGameFloorplanPanel extends JPanel {
 			ShipBlueprint.SystemList.SystemRoom medicalSystem = blueprintSystems.getMedicalRoom();
 			if ( medicalSystem != null ) {
 				ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
-				if ( medicalSlot != null ) {
-					int badRoomId = medicalSystem.getRoomId();
-					int badSquareId = medicalSlot.getNumber();
-					if ( badSquareId >= 0 ) {
-						log.trace(String.format("Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId) );
+				int badRoomId = medicalSystem.getRoomId();
+				int badSquareId = 1;       // TODO: Magic number (when omitted, slot is #1).
+				if ( medicalSlot != null )
+					badSquareId = medicalSlot.getNumber();
 
-						EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(badRoomId);
-						int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-						int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-						int roomX = originX + roomLocX*squareSize;
-						int roomY = originY + roomLocY*squareSize;
-						int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-						int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+				if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
+					log.trace(String.format("Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId) );
 
-						int squareX = roomX + tileEdge + (badSquareId%squaresH)*squareSize;
-						int squareY = roomY + tileEdge + (badSquareId/squaresH)*squareSize;
-						Rectangle squareRect = new Rectangle(squareX, squareY, squareSize, squareSize);
-						blockedRegions.add( squareRect );
-					}
+					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(badRoomId);
+					int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
+					int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
+					int roomX = originX + roomLocX*squareSize;
+					int roomY = originY + roomLocY*squareSize;
+					int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+					int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+
+					int squareX = roomX + tileEdge + (badSquareId%squaresH)*squareSize;
+					int squareY = roomY + tileEdge + (badSquareId/squaresH)*squareSize;
+					Rectangle squareRect = new Rectangle(squareX, squareY, squareSize, squareSize);
+					blockedRegions.add( squareRect );
 				}
 			}
 
@@ -699,6 +700,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				int roomY = originY + roomLocY*squareSize;
 				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
 				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+
+				// TODO: Looks like when medbay omits img, it's "room_medbay.png".
 
 				if ( roomImgPath != null ) {
 					// Gotta scale because Zoltan #2's got a tall Doors image for a wide room. :/
