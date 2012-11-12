@@ -956,7 +956,7 @@ public class SavedGameParser extends DatParser {
 		public int getRebelFleetOffset() { return rebelFleetOffset; }
 
 		/**
-		 * This is always a positive number around 100-300 that,
+		 * This is always a positive number around 75-310 that,
 		 * when added to rebelFleetOffset, equals how far in
 		 * from the left the warning circle has encroached.
 		 *
@@ -1023,6 +1023,12 @@ public class SavedGameParser extends DatParser {
 		 * Beacons are indexed top-to-bottom for each column,
 		 * left-to-right. They're randomly offset a little
 		 * when shown on screen to disguise the columns.
+		 *
+		 * The grid is approsimately 6 x 4, but each column
+		 * can vary.
+		 *
+		 * Indexes can range from 0 to... presumably 23, but
+		 * the sector layout seed may generate fewer.
 		 */
 		public void addBeacon( BeaconState beacon ) {
 			beaconList.add( beacon );
