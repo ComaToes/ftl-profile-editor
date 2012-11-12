@@ -267,7 +267,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			@Override
 			public void mouseEntered(MouseEvent e) {
 				//squareSelector.setDescriptionVisible( true );
-				shipViewport.setStatusString( squareSelector.getCriteria().getDescription() );
+				shipViewport.setStatusString( squareSelector.getCriteria().getDescription() +"   (Right-click to cancel)" );
 			}
 			@Override
 			public void mouseExited(MouseEvent e) {
@@ -1399,6 +1399,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				return false;
 			}
 		});
+		shipViewport.setStatusString( squareSelector.getCriteria().getDescription() +"   (Right-click to cancel)" );
 		squareSelector.setVisible(true);
 	}
 
