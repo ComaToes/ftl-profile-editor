@@ -78,6 +78,7 @@ public class AugBlueprint {
 		value = n;
 	}
 
+	@Override
 	public String toString() {
 		return ""+title;
 	}

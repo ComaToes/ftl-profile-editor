@@ -148,6 +148,7 @@ public class DroneBlueprint {
 		this.rarity = rarity;
 	}
 
+	@Override
 	public String toString() {
 		return ""+title;
 	}

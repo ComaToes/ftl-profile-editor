@@ -120,14 +120,15 @@ public class MappedDatParser extends Parser implements Closeable {
 		boolean comment = false, inShipShields = false, inSlot = false;
 		while( (line = in.readLine()) != null ) {
 			// blueprints.xml
-			line = line.replaceAll("^<!-- sardonyx$", "<!-- sardonyx -->");  // Error above one shipBlueprint
+			line = line.replaceAll("^<!-- sardonyx$", "<!-- sardonyx -->");  // Error above one shipBlueprint.
 			line = line.replaceAll("<!--.*-->", "");
 			line = line.replaceAll("<\\?xml[^>]*>", "");
-			line = line.replaceAll("<title>([^<]*)</[^>]*>", "<title>$1</title>");  // Error present in systemBlueprint and itemBlueprint
-			line = line.replaceAll("<tooltip>([^<]*)</[^>]*>(-->)?", "<tooltip>$1</tooltip>");  // Error present in weaponBlueprint
-			line = line.replaceAll("<speed>([^<]*)</[^>]*>", "<speed>$1</speed>");  // Error present in weaponBlueprint
-			line = line.replaceAll("\"img=", "\" img=");  // ahhhh
-			line = line.replaceAll("</ship>", "</shipBlueprint>");  // Error in one shipBlueprint
+			line = line.replaceAll("<title>([^<]*)</[^>]*>", "<title>$1</title>");  // Error in systemBlueprint and itemBlueprint.
+			line = line.replaceAll("<tooltip>([^<]*)</[^>]*>(-->)?", "<tooltip>$1</tooltip>");  // Error in weaponBlueprint.
+			line = line.replaceAll("<speed>([^<]*)</[^>]*>", "<speed>$1</speed>");  // Error in weaponBlueprint.
+			line = line.replaceAll("\"img=", "\" img=");  // ahhhh.
+			line = line.replaceAll("</ship>", "</shipBlueprint>");  // Error in one shipBlueprint.
+			line = line.replaceAll(" img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"");  // Error in two shipBlueprints.
 
 			// Multi-line error in shipBlueprint
 			if ( line.matches(".*<shields [^\\/>]*>") ) {

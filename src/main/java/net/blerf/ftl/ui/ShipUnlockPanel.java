@@ -56,7 +56,7 @@ public class ShipUnlockPanel extends JPanel {
 		this.add( shipPanel );
 
 		for ( ShipBlueprint ship : DataManager.get().getPlayerShips() ) {
-			IconCycleButton shipBox = frame.createCycleButton( "img/ship/" + ship.getImg() + "_base.png", false );
+			IconCycleButton shipBox = frame.createCycleButton( "img/ship/" + ship.getGraphicsBaseName() + "_base.png", false );
 			shipBox.setText( ship.getShipClass() );
 			shipBoxes.add(shipBox);
 			shipPanel.add(shipBox);

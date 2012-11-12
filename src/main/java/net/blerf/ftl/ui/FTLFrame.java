@@ -14,7 +14,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.LineMetrics;
 import java.awt.image.BufferedImage;
-import java.awt.image.RasterFormatException;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -78,6 +77,7 @@ import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.ProfileStatsPanel;
 import net.blerf.ftl.ui.SavedGameDumpPanel;
 import net.blerf.ftl.ui.SavedGameGeneralPanel;
+import net.blerf.ftl.ui.SavedGameHangarPanel;
 import net.blerf.ftl.ui.SavedGameFloorplanPanel;
 import net.blerf.ftl.ui.ShipUnlockPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
@@ -125,6 +125,7 @@ public class FTLFrame extends JFrame {
 	private SavedGameGeneralPanel savedGameGeneralPanel;
 	private SavedGameFloorplanPanel savedGamePlayerFloorplanPanel;
 	private SavedGameFloorplanPanel savedGameNearbyFloorplanPanel;
+	private SavedGameHangarPanel savedGameHangarPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -202,12 +203,13 @@ public class FTLFrame extends JFrame {
 		savedGameGeneralPanel = new SavedGameGeneralPanel(this);
 		savedGamePlayerFloorplanPanel = new SavedGameFloorplanPanel(this);
 		savedGameNearbyFloorplanPanel = new SavedGameFloorplanPanel(this);
+		savedGameHangarPanel = new SavedGameHangarPanel(this);
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
 		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
 		savedGameTabsPane.add( "Player Ship", savedGamePlayerFloorplanPanel );
 		savedGameTabsPane.add( "Nearby Ship", savedGameNearbyFloorplanPanel );
-
+		savedGameTabsPane.add( "Change Ship", savedGameHangarPanel );
 
 		JPanel statusPanel = new JPanel();
 		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
@@ -242,7 +244,7 @@ public class FTLFrame extends JFrame {
 
 		log.trace( "Initialising checkbox locked icon" );
 		iconShadeImage = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
-		Graphics g = iconShadeImage.getGraphics();
+		Graphics g = iconShadeImage.createGraphics();
 		g.setColor( new Color(0, 0, 0, 150) );
 		g.fillRect(0, 0, maxIconWidth, maxIconHeight);
 		InputStream stream = null;
@@ -258,6 +260,7 @@ public class FTLFrame extends JFrame {
 			try {if (stream != null) stream.close();}
 			catch (IOException f) {}
 		}
+		g.dispose();
 	}
 	
 	public BufferedImage getScaledImage( InputStream in ) throws IOException {
@@ -283,52 +286,6 @@ public class FTLFrame extends JFrame {
 
 		return scaledImage;
 	}
-
-	public ImageIcon getCrewIcon(String race) {
-		if (race == null || race.length() == 0) return null;
-
-		ImageIcon result = null;
-		int offsetX = 0, offsetY = 0, w = 35, h = 35;
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream("img/people/"+ race +"_player_yellow.png");
-			BufferedImage bigImage = ImageIO.read( in );
-			BufferedImage croppedImage = bigImage.getSubimage(offsetX, offsetY, w, h);
-
-			// Shrink the crop area until non-transparent pixels are hit.
-			int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
-			int highX = -1, highY = -1;
-			for (int testY=0; testY < h; testY++) {
-				for (int testX=0; testX < w; testX++) {
-					int pixel = croppedImage.getRGB(testX, testY);
-					int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
-					if (alpha != 0) {
-						if (testX > highX) highX = testX;
-						if (testY > highY) highY = testY;
-						if (testX < lowX) lowX = testX;
-						if (testY < lowY) lowY = testY;
-					}
-				}
-			}
-			log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
-			if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
-				croppedImage = croppedImage.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
-			}
-			result = new ImageIcon(croppedImage);
-
-		} catch (RasterFormatException e) {
-			log.error( "Failed to load and crop race ("+ race +")", e );
-
-		} catch (IOException e) {
-			log.error( "Failed to load and crop race ("+ race +")", e );
-
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
-    }
-		return result;
-	}
-
 	
 	public IconCycleButton createCycleButton( String baseImagePath, boolean cycleDifficulty ) {
 		InputStream stream = null;
@@ -991,6 +948,17 @@ public class FTLFrame extends JFrame {
 		loadProfile(p);
 	}
 
+	/**
+	 * Returns the currently loaded game state.
+	 *
+	 * This method should only be called when a panel
+	 * needs to pull the state, make a major change,
+	 * and reload it.
+	 */
+	public SavedGameParser.SavedGameState getGameState() {
+		return gameState;
+	}
+
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
 
 		savedGameDumpPanel.setGameState( gs );
@@ -1013,35 +981,6 @@ public class FTLFrame extends JFrame {
 		gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
 
 		loadGameState(gs);
-	}
-
-	// It'd be cleaner if FTLFrame created a tab of its own for stuff
-	// that hacks the game state and immediately triggers a reload,
-	// but there's just this single func at the moment. So a button
-	// was stuck in the general tab.
-	public void stealNearbyShip() {
-		if ( gameState == null ) return;
-
-		// Apply all other pending changes.
-		updateGameState( gameState );
-
-		if ( gameState.getNearbyShipState() == null ) {
-			JOptionPane.showMessageDialog(this, "There is no nearby ship to steal.", "Steal Nearby Ship", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-
-		int response = JOptionPane.showConfirmDialog(this, "The player ship is about to be replaced with the nearby one.\nImages for the shield oval and floor outline will be missing.\nAre you sure you want to do this?", "Steal Nearby Ship", JOptionPane.YES_NO_OPTION);
-		if ( response != JOptionPane.YES_OPTION ) return;
-
-		// Squee.
-		gameState.setPlayerShipState( gameState.getNearbyShipState() );
-		gameState.setNearbyShipState( null );
-
-		// Sync session's redundant ship info with player ship.
-		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
-		gameState.setPlayerShipBlueprintId( gameState.getPlayerShipState().getShipBlueprintId() );
-
-		loadGameState( gameState );
 	}
 
 	public void setStatusText( String text ) {

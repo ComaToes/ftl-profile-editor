@@ -97,7 +97,7 @@ public class DataManager implements Closeable {
 			for ( DroneBlueprint drone : blueprints.getDroneBlueprint() )
 				drones.put( drone.getId(), drone );
 
-			systems = new HashMap<String, SystemBlueprint>();
+			systems = new LinkedHashMap<String, SystemBlueprint>();
 			for ( SystemBlueprint system : blueprints.getSystemBlueprint() )
 				systems.put( system.getId(), system );
 
@@ -105,11 +105,11 @@ public class DataManager implements Closeable {
 			for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprint() )
 				weapons.put( weapon.getId(), weapon );
 
-			ships = new HashMap<String, ShipBlueprint>();
+			ships = new LinkedHashMap<String, ShipBlueprint>();
 			for ( ShipBlueprint ship : blueprints.getShipBlueprint() )
 				ships.put( ship.getId(), ship );
 
-			autoShips = new HashMap<String, ShipBlueprint>();
+			autoShips = new LinkedHashMap<String, ShipBlueprint>();
 			for ( ShipBlueprint ship : autoBlueprints.getShipBlueprint() )
 				autoShips.put( ship.getId(), ship );
 
@@ -237,6 +237,14 @@ public class DataManager implements Closeable {
 		return result;
 	}
 	
+	public Map<String, ShipBlueprint> getShips() {
+		return ships;
+	}
+
+	public Map<String, ShipBlueprint> getAutoShips() {
+		return autoShips;
+	}
+
 	public List<ShipBlueprint> getPlayerShips() {
 		return playerShips;
 	}

@@ -155,6 +155,7 @@ public class WeaponBlueprint {
 		this.rarity = rarity;
 	}
 
+	@Override
 	public String toString() {
 		return ""+title;
 	}

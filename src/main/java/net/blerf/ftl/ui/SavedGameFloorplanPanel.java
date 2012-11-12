@@ -645,6 +645,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 
 			// Load the fuselage image.
+			baseLbl.setIcon(null);
 			InputStream in = null;
 			try {
 				in = DataManager.get().getResourceInputStream("img/ship/"+ shipGfxBaseName +"_base.png");
@@ -652,6 +653,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 				in.close();
 				baseLbl.setIcon( new ImageIcon(baseImage) );
 				baseLbl.setSize( new Dimension(baseImage.getWidth(), baseImage.getHeight()) );
+
+			} catch (FileNotFoundException e) {
+				log.warn( "No ship base image for ("+ shipGfxBaseName +")" );
 
 			} catch (IOException e) {
 				log.error( "Failed to load ship base image ("+ shipGfxBaseName +")", e );
@@ -723,7 +727,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 
 			// Draw walls and floor crevices.
-			BufferedImage wallImage = gc.createCompatibleImage( baseLbl.getIcon().getIconWidth(), baseLbl.getIcon().getIconHeight(), Transparency.BITMASK );
+			BufferedImage wallImage = gc.createCompatibleImage( shipChassis.getImageBounds().w, shipChassis.getImageBounds().h, Transparency.BITMASK );
 			Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
 			drawWalls( wallG, originX, originY, shipState, shipLayout );
 			wallG.dispose();
@@ -735,13 +739,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		ArrayList<SavedGameParser.DroneState> droneList = shipState.getDroneList();
 		Integer blueprintDroneSlots = shipBlueprint.getDroneSlots();
 
+		if ( blueprintDroneSlots == null )       // TODO: Magic number (not set in autoBlueprints.xml).
+			blueprintDroneSlots = new Integer(3);  // In-game GUI shows 2 or 3.
+
 		int actualDroneSlots = droneList.size();
 		if ( blueprintDroneSlots != null ) {
-			if ( droneList.size() > blueprintDroneSlots.intValue() )
+			if ( blueprintDroneSlots.intValue() >= droneList.size() )
+				actualDroneSlots = blueprintDroneSlots.intValue();
+			else
 				log.warn( String.format("Ship state has %d drones, but its blueprint only expects %d", droneList.size(), shipBlueprint.getDroneSlots()) );
-
-			// Blueprint may restrict usable slots.
-			actualDroneSlots = Math.min( droneList.size(), blueprintDroneSlots );
 		}
 
 		for (int i=0; i < actualDroneSlots; i++) {
@@ -751,7 +757,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			// It's fine if droneState is null. Empty slot.
 
 			int droneX = 100 + i*75;
-			int droneY = baseLbl.getIcon().getIconHeight();
+			int droneY = shipChassis.getImageBounds().h;
 
 			addDroneSprite( droneX, droneY, i, droneState );
 		}
@@ -763,6 +769,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		if ( blueprintWeaponSlots == null )       // TODO: Magic number (not set in autoBlueprints.xml).
 			blueprintWeaponSlots = new Integer(4);  // But rebel_long's chassis has extra mounts!
+		                                          // In-game GUI shows 3 or 4.
 
 		int actualWeaponSlots = weaponMounts.size();
 		if ( blueprintWeaponSlots != null ) {     // Check in case magic number is removed someday.
@@ -1002,6 +1009,20 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Systems.
+		ArrayList<String> systemIds = new ArrayList<String>();
+		systemIds.add( SystemBlueprint.ID_PILOT );
+		systemIds.add( SystemBlueprint.ID_DOORS );
+		systemIds.add( SystemBlueprint.ID_SENSORS );
+		systemIds.add( SystemBlueprint.ID_MEDBAY );
+		systemIds.add( SystemBlueprint.ID_OXYGEN );
+		systemIds.add( SystemBlueprint.ID_SHIELDS );
+		systemIds.add( SystemBlueprint.ID_ENGINES );
+		systemIds.add( SystemBlueprint.ID_WEAPONS );
+		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
+		systemIds.add( SystemBlueprint.ID_TELEPORTER );
+		systemIds.add( SystemBlueprint.ID_CLOAKING );
+		systemIds.add( SystemBlueprint.ID_ARTILLERY );
+
 		Map<String, SavedGameParser.SystemState> systemMap = shipState.getSystemMap();
 		systemMap.clear();
 		for (SystemSprite systemSprite : systemSprites) {
@@ -1014,6 +1035,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 			systemState.setDamageProgress( systemSprite.getDamageProgress() );
 			systemState.setDeionizationTicks( systemSprite.getDeionizationTicks() );
 			systemMap.put( systemState.getSystemId(), systemState );
+		}
+		// Add omitted systems.
+		for (String systemId : systemIds) {
+			if ( !systemMap.containsKey( systemId ))
+				systemMap.put( systemId, new SavedGameParser.SystemState( systemId ) );
 		}
 
 		// Breaches.
@@ -1269,6 +1295,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				Point center = squareSelector.getSquareCenter();
 				SavedGameParser.CrewState crewState = new SavedGameParser.CrewState();
 				crewState.setHealth( SavedGameParser.CrewState.getMaxHealth( crewState.getRace() ) );
+				crewState.setPlayerControlled( true );
 				crewState.setRoomId( roomId );
 				crewState.setRoomSquare( squareId );
 				crewState.setSpriteX( center.x - originX - tileEdge + shipLayout.getOffsetX()*squareSize );
@@ -2310,6 +2337,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemSprite.getSystemId() );
 
+		int maxSystemCapacity = systemBlueprint.getMaxPower();
+		Integer maxPowerOverride = shipBlueprint.getSystemList().getSystemRoom( systemSprite.getSystemId() )[0].getMaxPower();
+		if ( maxPowerOverride != null )
+			maxSystemCapacity = maxPowerOverride.intValue();
+
 		int z = 0;  // Sum up all the other systems' power usage.
 		for (SystemSprite otherSystemSprite : systemSprites) {
 			if ( otherSystemSprite == systemSprite ) continue;
@@ -2349,7 +2381,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getSlider(RESERVE_POWER).addMouseListener( new StatusbarMouseListener(frame, "Unallocated power.") );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( CAPACITY, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(CAPACITY).setMaximum( systemBlueprint.getMaxPower() );
+		editorPanel.getSlider(CAPACITY).setMaximum( maxSystemCapacity );
 		editorPanel.getSlider(CAPACITY).setValue( systemSprite.getCapacity() );
 		editorPanel.getSlider(CAPACITY).addMouseListener( new StatusbarMouseListener(frame, "Possible system bars (Increase to buy/upgrade, 0=absent).") );
 		editorPanel.addRow( POWER, FieldEditorPanel.ContentType.SLIDER );

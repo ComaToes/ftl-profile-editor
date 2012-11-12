@@ -260,8 +260,7 @@ public class SavedGameParser extends DatParser {
 		if ( shipLayout == null )
 			throw new RuntimeException( String.format("Could not find layout for%s ship: %s", (auto ? " auto" : ""), shipName) );
 
-		ShipState shipState = new ShipState(shipName, shipBlueprintId, shipLayoutId, auto);
-		shipState.setShipGraphicsBaseName( shipGfxBaseName );
+		ShipState shipState = new ShipState( shipName, shipBlueprintId, shipLayoutId, shipGfxBaseName, auto );
 
 		int startingCrewCount = readInt(in);
 		for (int i=0; i < startingCrewCount; i++) {
@@ -807,7 +806,7 @@ public class SavedGameParser extends DatParser {
 
 	// Stash state classes here until they're finalized.
 
-	public class SavedGameState {
+	public static class SavedGameState {
 		private boolean difficultyEasy = false;
 		private int totalShipsDefeated = 0;
 		private int totalBeaconsExplored = 0;
@@ -1163,17 +1162,16 @@ public class SavedGameParser extends DatParser {
 	}
 
 
-
-	public class ShipState {
+	public static class ShipState {
 		public static final int MAX_RESERVE_POWER = 25;  // TODO: Magic number.
 
 		private boolean auto = false;  // Is autoShip.
 		private String shipName, shipBlueprintId, shipLayoutId;
 		private String shipGfxBaseName;
 		private ArrayList<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
-		private int hullAmt, fuelAmt, dronePartsAmt, missilesAmt, scrapAmt;
+		private int hullAmt=0, fuelAmt=0, dronePartsAmt=0, missilesAmt=0, scrapAmt=0;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
-		private int reservePowerCapacity;
+		private int reservePowerCapacity = 0;
 		private LinkedHashMap<String, SystemState> systemMap = new LinkedHashMap<String, SystemState>();
 		private ArrayList<RoomState> roomList = new ArrayList<RoomState>();
 		private LinkedHashMap<Point, Integer> breachMap = new LinkedHashMap<Point, Integer>();
@@ -1182,10 +1180,19 @@ public class SavedGameParser extends DatParser {
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
 
-		public ShipState(String shipName, String shipBlueprintId, String shipLayoutId, boolean auto) {
+		public ShipState( String shipName, ShipBlueprint shipBlueprint, boolean auto ) {
+			this.shipName = shipName;
+			this.shipBlueprintId = shipBlueprint.getId();
+			this.shipLayoutId = shipBlueprint.getLayout();
+			this.shipGfxBaseName = shipBlueprint.getGraphicsBaseName();
+			this.auto = auto;
+		}
+
+		public ShipState( String shipName, String shipBlueprintId, String shipLayoutId, String shipGfxBaseName, boolean auto ) {
 			this.shipName = shipName;
 			this.shipBlueprintId = shipBlueprintId;
 			this.shipLayoutId = shipLayoutId;
+			this.shipGfxBaseName = shipGfxBaseName;
 			this.auto = auto;
 		}
 
@@ -1441,7 +1448,7 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class StartingCrewState {
+	public static class StartingCrewState {
 		private String name, race;
 
 		public StartingCrewState(String name, String race) {
@@ -1911,9 +1918,9 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
+	public static enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
 
-	public class BeaconState {
+	public static class BeaconState {
 		
 		private boolean visited;
 		private String bgStarscapeImageInnerPath;
@@ -2062,7 +2069,7 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class StoreState {
+	public static class StoreState {
 		
 		private int fuel, missiles, droneParts;
 		private StoreShelf topShelf, bottomShelf;
@@ -2119,7 +2126,7 @@ public class SavedGameParser extends DatParser {
 
 	public enum StoreItemType { WEAPON, DRONE, AUGMENT, CREW, SYSTEM };
 	
-	public class StoreShelf {
+	public static class StoreShelf {
 		
 		private StoreItemType itemType;
 		
@@ -2159,7 +2166,7 @@ public class SavedGameParser extends DatParser {
 		
 	}
 	
-	public class StoreItem {
+	public static class StoreItem {
 		private boolean available;
 		private String itemId;
 
@@ -2184,7 +2191,7 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public class RebelFlagshipState {
+	public static class RebelFlagshipState {
 		private String[] shipBlueprintIds;
 		private int pendingStage = 1;
 		private LinkedHashMap<Integer, Integer> occupancyMap = new LinkedHashMap<Integer, Integer>();

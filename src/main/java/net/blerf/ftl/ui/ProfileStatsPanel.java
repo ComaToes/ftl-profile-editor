@@ -5,6 +5,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.image.BufferedImage;
+import java.awt.image.RasterFormatException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -83,7 +85,7 @@ public class ProfileStatsPanel extends JPanel {
 			InputStream stream = null;
 			try {
 				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
-				stream = DataManager.get().getResourceInputStream("img/ship/"+ship.getImg()+"_base.png");
+				stream = DataManager.get().getResourceInputStream("img/ship/"+ ship.getGraphicsBaseName() +"_base.png");
 				BufferedImage img = frame.getScaledImage( stream );
 				TopScorePanel tsp = new TopScorePanel( ++i, img, s.getShipName(), s.getScore(), s.getSector(), s.getDifficulty() );
 				topScoresPanel.add( tsp );
@@ -110,11 +112,11 @@ public class ProfileStatsPanel extends JPanel {
 		CrewRecord jumpsCrewRecord = stats.getMostJumps();
 		CrewRecord skillsCrewRecord = stats.getMostSkills();
 
-		crewRecordsPanel.addRow("Most Repairs", frame.getCrewIcon(repairCrewRecord.getRace()), repairCrewRecord.getName(), repairCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Combat Kills", frame.getCrewIcon(killsCrewRecord.getRace()), killsCrewRecord.getName(), killsCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Piloted Evasions", frame.getCrewIcon(evasionsCrewRecord.getRace()), evasionsCrewRecord.getName(), evasionsCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Jumps Survived", frame.getCrewIcon(jumpsCrewRecord.getRace()), jumpsCrewRecord.getName(), jumpsCrewRecord.getScore());
-		crewRecordsPanel.addRow("Most Skill Masteries", frame.getCrewIcon(skillsCrewRecord.getRace()), skillsCrewRecord.getName(), skillsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Repairs", getCrewIcon(repairCrewRecord.getRace()), repairCrewRecord.getName(), repairCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Combat Kills", getCrewIcon(killsCrewRecord.getRace()), killsCrewRecord.getName(), killsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Piloted Evasions", getCrewIcon(evasionsCrewRecord.getRace()), evasionsCrewRecord.getName(), evasionsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Jumps Survived", getCrewIcon(jumpsCrewRecord.getRace()), jumpsCrewRecord.getName(), jumpsCrewRecord.getScore());
+		crewRecordsPanel.addRow("Most Skill Masteries", getCrewIcon(skillsCrewRecord.getRace()), skillsCrewRecord.getName(), skillsCrewRecord.getScore());
 		crewRecordsPanel.addFillRow();
 
 		totalStatsPanel.removeAll();
@@ -128,6 +130,54 @@ public class ProfileStatsPanel extends JPanel {
 		totalStatsPanel.addFillRow();
 
 		this.repaint();
+	}
+
+	/**
+	 * Gets a crew icon, cropped as small as possible.
+	 */
+	public ImageIcon getCrewIcon(String race) {
+		if (race == null || race.length() == 0) return null;
+
+		ImageIcon result = null;
+		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		InputStream in = null;
+		try {
+			in = DataManager.get().getResourceInputStream("img/people/"+ race +"_player_yellow.png");
+			BufferedImage bigImage = ImageIO.read( in );
+			BufferedImage croppedImage = bigImage.getSubimage(offsetX, offsetY, w, h);
+
+			// Shrink the crop area until non-transparent pixels are hit.
+			int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
+			int highX = -1, highY = -1;
+			for (int testY=0; testY < h; testY++) {
+				for (int testX=0; testX < w; testX++) {
+					int pixel = croppedImage.getRGB(testX, testY);
+					int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
+					if (alpha != 0) {
+						if (testX > highX) highX = testX;
+						if (testY > highY) highY = testY;
+						if (testX < lowX) lowX = testX;
+						if (testY < lowY) lowY = testY;
+					}
+				}
+			}
+			log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ race);
+			if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
+				croppedImage = croppedImage.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
+			}
+			result = new ImageIcon(croppedImage);
+
+		} catch (RasterFormatException e) {
+			log.error( "Failed to load and crop race ("+ race +")", e );
+
+		} catch (IOException e) {
+			log.error( "Failed to load and crop race ("+ race +")", e );
+
+		} finally {
+			try {if (in != null) in.close();}
+			catch (IOException f) {}
+    }
+		return result;
 	}
 
 
