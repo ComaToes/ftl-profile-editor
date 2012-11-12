@@ -8,7 +8,6 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 
 import net.blerf.ftl.xml.SystemBlueprint;
 
@@ -324,8 +323,7 @@ public class ShipBlueprint {
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class WeaponList {
-		@XmlTransient
-		private int count;
+		// 'count' isn't an independent field; a getter/setter calc's it.
 
 		@XmlAttribute
 		public int missiles;
@@ -364,8 +362,7 @@ public class ShipBlueprint {
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class DroneList {
-		@XmlTransient
-		private int count;
+		// 'count' isn't an independent field; a getter/setter calc's it.
 
 		@XmlAttribute
 		public int drones;
