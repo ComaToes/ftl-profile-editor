@@ -412,6 +412,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						systemSprite.setRepairProgress(0);
 						systemSprite.setDamageProgress(0);
 						systemSprite.setDeionizationTicks(Integer.MIN_VALUE);
+						systemSprite.makeSane();
 					}
 					shipPanel.repaint();
 
@@ -1595,10 +1596,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		String overlayBaseName = systemState.getSystemId();  // Assuming these are interchangeable.
 		BufferedImage overlayImage = getScaledImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", w, h );
 
-		// Darken the white icon to gray...
-		Tint tint = new Tint( new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 } );
-		overlayImage = getTintedImage( overlayImage, tint );
-
 		SystemSprite systemSprite = new SystemSprite( overlayImage, systemState );
 		systemSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
 		systemSprites.add( systemSprite );
@@ -2079,6 +2076,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				for (SystemSprite otherSprite : systemSprites) {
 					if ( SystemBlueprint.ID_DRONE_CTRL.equals( otherSprite.getSystemId() ) ) {
 						otherSprite.setPower( neededPower );
+						otherSprite.makeSane();
 						break;
 					}
 				}
@@ -2243,6 +2241,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				for (SystemSprite otherSprite : systemSprites) {
 					if ( SystemBlueprint.ID_WEAPONS.equals( otherSprite.getSystemId() ) ) {
 						otherSprite.setPower( neededPower );
+						otherSprite.makeSane();
 						break;
 					}
 				}
@@ -2600,6 +2599,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				newString = editorPanel.getInt(DEIONIZATION_TICKS).getText();
 				try { systemSprite.setDeionizationTicks( Integer.parseInt(newString) ); }
 				catch (NumberFormatException e) {}
+
+				systemSprite.makeSane();
 
 				int neededPower = systemSprite.getPower();
 				if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
@@ -3233,6 +3234,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private int repairProgress;
 		private int damageProgress;
 		private int deionizationTicks;
+		private BufferedImage currentImage;
 
 		public SystemSprite( BufferedImage overlayImage, SavedGameParser.SystemState systemState ) {
 			this.overlayImage = overlayImage;
@@ -3245,6 +3247,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			this.damageProgress = systemState.getDamageProgress();
 			this.deionizationTicks = systemState.getDeionizationTicks();
 			this.setOpaque(false);
+			makeSane();
 		}
 
 		public String getSystemId() { return systemId; }
@@ -3265,12 +3268,42 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public int getDamageProgress() { return damageProgress; }
 		public int getDeionizationTicks() { return deionizationTicks; }
 
+		public void makeSane() {
+			// The original overlayImage is white with a black border.
+			Tint tint = null;
+
+			if ( getCapacity() == 0 ) {
+				// Absent, selectively darken to brown.
+				tint = new Tint( new float[] { 0.792f, 0.467f, 0.275f, 1f }, new float[] { 0, 0, 0, 0 } );
+			}
+			else if ( getIonizedBars() > 0 ) {
+				// Ionized, selectively darken to blue.
+				tint = new Tint( new float[] { 0.51f, 0.898f, 0.937f, 1f }, new float[] { 0, 0, 0, 0 } );
+			}
+			else if ( getDamagedBars() == getCapacity() ) {
+				// Crippled, selectively darken to red (softer shade than in-game).
+				tint = new Tint( new float[] { 0.85f, 0.24f, 0.24f, 1f }, new float[] { 0, 0, 0, 0 } );
+			}
+			else if ( getDamagedBars() > 0 ) {
+				// Damaged, selectively darken to orange.
+				tint = new Tint( new float[] { 0.99f, 0.6f, 0.3f, 1f }, new float[] { 0, 0, 0, 0 } );
+			}
+			else {
+				// Darken to gray...
+				tint = new Tint( new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 } );
+			}
+
+			currentImage = overlayImage;
+			if ( tint != null )
+				currentImage = getTintedImage( currentImage, tint );
+		}
+
 		@Override
 		public void paintComponent( Graphics g ) {
 			super.paintComponent(g);
 
 			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( overlayImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
+			g2d.drawImage( currentImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
 		}
 	}
 
