@@ -133,7 +133,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private ArrayList<FireSprite> fireSprites = new ArrayList<FireSprite>();
 	private ArrayList<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
 	private ArrayList<CrewSprite> crewSprites = new ArrayList<CrewSprite>();
+
 	private HashMap<String, HashMap<Rectangle, BufferedImage>> cachedImages = new HashMap<String, HashMap<Rectangle, BufferedImage>>();
+	private HashMap<BufferedImage, HashMap<Tint, BufferedImage>> cachedTintedImages = new HashMap<BufferedImage, HashMap<Tint, BufferedImage>>();
 
 	private JLayeredPane shipPanel = null;
 	private StatusViewport shipViewport = null;
@@ -1409,7 +1411,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	 * If something goes wrong, a dummy image will be created with
 	 * the expected dimensions.
 	 */
-	private BufferedImage getCroppedImage( String innerPath, int x, int y, int w, int h) {
+	private BufferedImage getCroppedImage( String innerPath, int x, int y, int w, int h ) {
 		Rectangle keyRect = new Rectangle( x, y, w, h );
 		BufferedImage result = null;
 		HashMap<Rectangle, BufferedImage> cacheMap = cachedImages.get(innerPath);
@@ -1459,7 +1461,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	 * will be returned if possible, or the absolute values will be
 	 * used for the dummy image.
 	 */
-	private BufferedImage getScaledImage( String innerPath, int w, int h) {
+	private BufferedImage getScaledImage( String innerPath, int w, int h ) {
 		Rectangle keyRect = new Rectangle( 0, 0, w, h );
 		BufferedImage result = null;
 		HashMap<Rectangle, BufferedImage> cacheMap = cachedImages.get(innerPath);
@@ -1508,6 +1510,31 @@ public class SavedGameFloorplanPanel extends JPanel {
 			cachedImages.put( innerPath, cacheMap );
 		}
 		cacheMap.put( keyRect, result );
+
+		return result;
+	}
+
+	/**
+	 * Applies a RescaleOp to the palette of an image, and caches the result.
+	 */
+	private BufferedImage getTintedImage( BufferedImage srcImage, Tint tint ) {
+		BufferedImage result = null;
+		HashMap<Tint, BufferedImage> cacheMap = cachedTintedImages.get( srcImage );
+		if ( cacheMap != null ) result = cacheMap.get( tint );
+		if ( result != null ) return result;
+
+		BufferedImage canvas = gc.createCompatibleImage(srcImage.getWidth(), srcImage.getHeight(), Transparency.TRANSLUCENT);
+		Graphics2D g2d = canvas.createGraphics();
+		g2d.drawImage(srcImage, 0, 0, null);
+		g2d.dispose();
+		RescaleOp op = new RescaleOp( tint.scaleFactors, tint.offsets, null);
+		result = op.filter(canvas, null);
+
+		if ( cacheMap == null ) {
+			cacheMap = new HashMap<Tint, BufferedImage>();
+			cachedTintedImages.put( srcImage, cacheMap );
+		}
+		cacheMap.put( tint, result );
 
 		return result;
 	}
@@ -1568,12 +1595,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		BufferedImage overlayImage = getScaledImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", w, h );
 
 		// Darken the white icon to gray...
-		BufferedImage canvas = gc.createCompatibleImage(w, h, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = canvas.createGraphics();
-		g2d.drawImage(overlayImage, 0, 0, null);
-		g2d.dispose();
-		RescaleOp op = new RescaleOp(new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 }, null);
-		overlayImage = op.filter(canvas, null);
+		Tint tint = new Tint( new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 } );
+		overlayImage = getTintedImage( overlayImage, tint );
 
 		SystemSprite systemSprite = new SystemSprite( overlayImage, systemState );
 		systemSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
@@ -2776,6 +2799,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getCombo(RACE).addItem("crystal");
 		editorPanel.getCombo(RACE).addItem("energy");
 		editorPanel.getCombo(RACE).addItem("engi");
+		editorPanel.getCombo(RACE).addItem("ghost");
 		editorPanel.getCombo(RACE).addItem("human");
 		editorPanel.getCombo(RACE).addItem("mantis");
 		editorPanel.getCombo(RACE).addItem("rock");
@@ -3495,13 +3519,25 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int offsetX = 0, offsetY = 0, w = 35, h = 35;
 			String imgRace = race;
 			String suffix = "";
+			Tint tint = null;
 
 			if ( getRace().equals("battle") ) {
 				suffix = "_enemy_sheet";
 			} else {
-				// Only humans can be female. Other races keep the flag but ignore it.
-				if ( !isMale() && getRace().equals("human") ) {
-					imgRace = "female";  // Never an actual race?
+				if ( getRace().equals("human") ) {
+					// Only humans can be female. Most other races keep the flag but ignore it.
+					if ( !isMale() )
+						imgRace = "female";  // Never an actual race?
+				}
+				else if ( getRace().equals("ghost") ) {
+					// Ghosts look like translucent humans.
+					if ( isMale() )
+						imgRace = "human";
+					else
+						imgRace = "female";
+
+					// Not an exact color match, but close enough.
+					tint = new Tint( new float[] { 1f, 1f, 1f, 0.6f }, new float[] { 0, 0, 0, 0 } );
 				}
 
 				if ( isPlayerControlled() ) {
@@ -3511,6 +3547,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 			crewImage = getCroppedImage( "img/people/"+ imgRace + suffix +".png", offsetX, offsetY, w, h );
+			if ( tint != null )
+				crewImage = getTintedImage( crewImage, tint );
 		}
 
 		@Override
@@ -3889,6 +3927,28 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 
 			g2d.setColor( prevColor );
+		}
+	}
+
+
+
+	private class Tint {
+		public float[] scaleFactors;
+		public float[] offsets;
+
+		public Tint( float[] scaleFactors, float[] offsets ) {
+			this.scaleFactors = scaleFactors;
+			this.offsets = offsets;
+		}
+
+		public boolean equals( Object o ) {
+			if ( o == this ) return true;
+			if ( o instanceof Tint ) return this.hashCode() == o.hashCode();
+			return false;
+		}
+
+		public int hashCode() {
+			return ( java.util.Arrays.hashCode(scaleFactors) ^ java.util.Arrays.hashCode(offsets) );
 		}
 	}
 }

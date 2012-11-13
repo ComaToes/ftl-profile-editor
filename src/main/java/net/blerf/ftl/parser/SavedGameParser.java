@@ -1498,6 +1498,7 @@ public class SavedGameParser extends DatParser {
 		public static final int MAX_HEALTH_MANTIS = 100;
 		public static final int MAX_HEALTH_ROCK = 150;
 		public static final int MAX_HEALTH_SLUG = 100;
+		public static final int MAX_HEALTH_GHOST = 50;
 		public static final int MAX_HEALTH_BATTLE = 150;
 
 		public static int getMaxHealth( String race ) {
@@ -1508,6 +1509,7 @@ public class SavedGameParser extends DatParser {
 			else if ( race.equals("mantis") ) return MAX_HEALTH_MANTIS;
 			else if ( race.equals("rock") ) return MAX_HEALTH_ROCK;
 			else if ( race.equals("slug") ) return MAX_HEALTH_SLUG;
+			else if ( race.equals("ghost") ) return MAX_HEALTH_GHOST;
 			else if ( race.equals("battle") ) return MAX_HEALTH_BATTLE;
 			else throw new RuntimeException( "No max health known for race: "+ race );
 		}
