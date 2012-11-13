@@ -1602,15 +1602,21 @@ public class SavedGameParser extends DatParser {
 		public boolean isMale() { return male; }
 
 		/**
-		 * Sets whether this crew member is a hostile drone.
-		 * Upon loading after setting this on your crew,
+		 * Sets whether this crew member is a hostile boarding drone.
+		 *
+		 * Upon loading after setting this on a crew member,
 		 * name will change to "Anti-Personnel Drone", race
 		 * will be "battle", and playerControlled will be
-		 * false.
+		 * false on the player ship or true on a nearby ship.
 		 *
 		 * If after loading in-game, you re-edit this to false
 		 * and leave the "battle" race, the game will change
 		 * it to "human".
+		 *
+		 * Drones on nearby ships (which are playerControlled)
+		 * will not be preserved the next time the game saves,
+		 * even if you modify the player ship's drone list to
+		 * have an armed boarder.
 		 *
 		 * Presumably this is so intruders can persist without
 		 * a ship, which would normally have a drones section

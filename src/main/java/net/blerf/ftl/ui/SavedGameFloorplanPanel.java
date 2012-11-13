@@ -2141,7 +2141,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		notice += "minus other armed drones' power, minus Drone Ctrl system damage.\n";
 
 		notice += "* This tool doesn't alter nearby ships. It's unknown what will happen ";
-		notice += "if a boarding drone's armed state is changed (what happens to the body?).\n";
+		notice += "if a boarding drone's armed state is changed (what about the body?).\n";
 
 		notice += "* Player Ctrl works as expected while armed, but has the opposite ";
 		notice += "value when disarmed?";
@@ -2840,7 +2840,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getBoolean(PLAYER_CONTROLLED).addMouseListener( new StatusbarMouseListener(frame, "Player controlled vs NPC.") );
 		editorPanel.addRow( ENEMY_DRONE, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(ENEMY_DRONE).setSelected( crewSprite.isEnemyBoardingDrone() );
-		editorPanel.getBoolean(ENEMY_DRONE).addMouseListener( new StatusbarMouseListener(frame, "Turn into a boarding drone (clobbering other fields).") );
+		editorPanel.getBoolean(ENEMY_DRONE).addMouseListener( new StatusbarMouseListener(frame, "Turn into a boarding drone (clobbering other fields), hostile to this ship.") );
 		editorPanel.addRow( GENDER, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(GENDER).setSelected( crewSprite.isMale() );
 		editorPanel.getBoolean(GENDER).addMouseListener( new StatusbarMouseListener(frame, "Only humans can be female (no effect on other races).") );
@@ -3503,9 +3503,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			if ( isEnemyBoardingDrone() && !getName().equals("Anti-Personnel Drone") )
 				setName("Anti-Personnel Drone");  // The game would do this when loaded.
-
-			if ( isEnemyBoardingDrone() && isPlayerControlled() )
-				setPlayerControlled( false );     // The game would do this when loaded.
 
 			if ( isEnemyBoardingDrone() && !getRace().equals("battle") )
 
