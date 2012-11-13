@@ -72,6 +72,7 @@ import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.AugBlueprint;
+import net.blerf.ftl.xml.CrewBlueprint;
 import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
@@ -2795,15 +2796,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( NAME, FieldEditorPanel.ContentType.STRING );
 		editorPanel.getString(NAME).setText( crewSprite.getName() );
 		editorPanel.addRow( RACE, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(RACE).addItem("battle");
-		editorPanel.getCombo(RACE).addItem("crystal");
-		editorPanel.getCombo(RACE).addItem("energy");
-		editorPanel.getCombo(RACE).addItem("engi");
-		editorPanel.getCombo(RACE).addItem("ghost");
-		editorPanel.getCombo(RACE).addItem("human");
-		editorPanel.getCombo(RACE).addItem("mantis");
-		editorPanel.getCombo(RACE).addItem("rock");
-		editorPanel.getCombo(RACE).addItem("slug");
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_BATTLE );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_CRYSTAL );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_ENERGY );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_ENGI );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_GHOST );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_HUMAN );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_MANTIS );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_ROCK );
+		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_SLUG );
 		editorPanel.getCombo(RACE).setSelectedItem( crewSprite.getRace() );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(HEALTH).setMaximum( maxHealth );
@@ -3507,7 +3508,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			if ( isEnemyBoardingDrone() && !getRace().equals("battle") )
 
 			if ( getRace().equals("battle") && !isEnemyBoardingDrone() )
-				setRace( "human" );               // The game would do this when loaded.
+				setRace( CrewBlueprint.RACE_HUMAN );  // The game would do this when loaded.
 
 			// Cap the health at the race's max.
 			health = Math.min( health, SavedGameParser.CrewState.getMaxHealth(race) );
@@ -3518,15 +3519,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 			String suffix = "";
 			Tint tint = null;
 
-			if ( getRace().equals("battle") ) {
+			if ( CrewBlueprint.RACE_BATTLE.equals( getRace() ) ) {
 				suffix = "_enemy_sheet";
 			} else {
-				if ( getRace().equals("human") ) {
+				if ( CrewBlueprint.RACE_HUMAN.equals( getRace() ) ) {
 					// Only humans can be female. Most other races keep the flag but ignore it.
 					if ( !isMale() )
 						imgRace = "female";  // Never an actual race?
 				}
-				else if ( getRace().equals("ghost") ) {
+				else if ( CrewBlueprint.RACE_GHOST.equals( getRace() ) ) {
 					// Ghosts look like translucent humans.
 					if ( isMale() )
 						imgRace = "human";
