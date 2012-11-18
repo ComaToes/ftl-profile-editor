@@ -15,8 +15,9 @@ import javax.xml.bind.JAXBException;
 
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
-import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.AugBlueprint;
+import net.blerf.ftl.xml.Blueprints;
+import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
@@ -55,7 +56,9 @@ public class DataManager implements Closeable {
 	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
 	private Map<String, ShipLayout> shipLayouts;
 	private Map<String, ShipChassis> shipChassisMap;
-	
+	private List<CrewNameList.CrewName> crewNamesMale;
+	private List<CrewNameList.CrewName> crewNamesFemale;
+
 	private	MappedDatParser dataParser = null;
 	private	MappedDatParser resourceParser = null;
 	
@@ -67,7 +70,8 @@ public class DataManager implements Closeable {
 		InputStream achStream = null;
 		InputStream blueStream = null;
 		InputStream autoBlueStream = null;
-		
+		InputStream crewNamesStream = null;
+
 		try {
 			dataParser = new MappedDatParser( new File(ftlFolder, "resources/data.dat") );
 	 		resourceParser = new MappedDatParser( new File(ftlFolder, "resources/resource.dat") );
@@ -83,6 +87,10 @@ public class DataManager implements Closeable {
 			log.debug("Reading 'data/autoBlueprints.xml'");
 			autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
 			autoBlueprints = dataParser.readBlueprints( autoBlueStream );
+
+			log.debug("Reading 'data/names.xml'");
+			crewNamesStream = dataParser.getInputStream( "data/names.xml" );
+			List<CrewNameList> crewNameLists = dataParser.readCrewNames( crewNamesStream );
 
 			generalAchievements = new ArrayList<Achievement>();
 			for( Achievement ach : achievements )
@@ -137,6 +145,15 @@ public class DataManager implements Closeable {
 			shipLayouts = new HashMap<String, ShipLayout>();
 			shipChassisMap = new HashMap<String, ShipChassis>();
 
+			crewNamesMale = new ArrayList<CrewNameList.CrewName>();
+			crewNamesFemale = new ArrayList<CrewNameList.CrewName>();
+			for (CrewNameList crewNameList : crewNameLists) {
+				if ( "male".equals( crewNameList.getSex() ) )
+					crewNamesMale.addAll( crewNameList.getNames() );
+				else
+					crewNamesFemale.addAll( crewNameList.getNames() );
+			}
+
 		} catch (JAXBException e) {
 			meltdown = true;
 			throw e;
@@ -150,9 +167,10 @@ public class DataManager implements Closeable {
 			streams.add(achStream);
 			streams.add(blueStream);
 			streams.add(autoBlueStream);
+			streams.add(crewNamesStream);
 
 			for (InputStream stream : streams) {
-				try {if (stream != null) achStream.close();}
+				try {if (stream != null) stream.close();}
 				catch (IOException f) {}
 			}
 
@@ -308,5 +326,26 @@ public class DataManager implements Closeable {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Returns true (male) or false (female).
+	 * All possible names have equal
+	 * probability, which will skew the
+	 * male-to-female ratio.
+	 */
+	public boolean getCrewSex() {
+		int n = (int)(Math.random()*(crewNamesMale.size()+crewNamesFemale.size()));
+		boolean result = (n < crewNamesMale.size());
+		return result;
+	}
+
+	/**
+	 * Returns a random name for a given sex.
+	 */
+	public String getCrewName( boolean isMale ) {
+		List<CrewNameList.CrewName> crewNames = (isMale ? crewNamesMale : crewNamesFemale);
+		int n = (int)(Math.random()*crewNames.size());
+		return crewNames.get(n).name;
 	}
 }

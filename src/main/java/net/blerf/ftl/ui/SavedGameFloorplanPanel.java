@@ -73,6 +73,7 @@ import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.CrewBlueprint;
+import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
@@ -1307,6 +1308,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				crewState.setRoomSquare( squareId );
 				crewState.setSpriteX( center.x - originX - tileEdge + shipLayout.getOffsetX()*squareSize );
 				crewState.setSpriteY( center.y - originY - tileEdge + shipLayout.getOffsetY()*squareSize );
+				crewState.setMale( DataManager.get().getCrewSex() );
+				crewState.setName( DataManager.get().getCrewName(crewState.isMale()) );
 				addCrewSprite( center.x, center.y, crewState );
 				shipPanel.repaint();
 				return true;
@@ -2780,7 +2783,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String JUMPS_SURVIVED = "Jumps Survived";
 		final String PLAYER_CONTROLLED = "Player Ctrl";
 		final String ENEMY_DRONE = "Enemy Drone";
-		final String GENDER = "Male";
+		final String SEX = "Male";
 
 		int pilotInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_PILOT;
 		int engineInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_ENGINE;
@@ -2843,9 +2846,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( ENEMY_DRONE, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(ENEMY_DRONE).setSelected( crewSprite.isEnemyBoardingDrone() );
 		editorPanel.getBoolean(ENEMY_DRONE).addMouseListener( new StatusbarMouseListener(frame, "Turn into a boarding drone (clobbering other fields), hostile to this ship.") );
-		editorPanel.addRow( GENDER, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(GENDER).setSelected( crewSprite.isMale() );
-		editorPanel.getBoolean(GENDER).addMouseListener( new StatusbarMouseListener(frame, "Only humans can be female (no effect on other races).") );
+		editorPanel.addRow( SEX, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(SEX).setSelected( crewSprite.isMale() );
+		editorPanel.getBoolean(SEX).addMouseListener( new StatusbarMouseListener(frame, "Only human females have a distinct sprite (Other races look the same either way).") );
 
 		final Runnable applyCallback = new Runnable() {
 			public void run() {
@@ -2878,7 +2881,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				crewSprite.setPlayerControlled( editorPanel.getBoolean(PLAYER_CONTROLLED).isSelected() );
 				crewSprite.setEnemyBoardingDrone( editorPanel.getBoolean(ENEMY_DRONE).isSelected() );
-				crewSprite.setMale( editorPanel.getBoolean(GENDER).isSelected() );
+				crewSprite.setMale( editorPanel.getBoolean(SEX).isSelected() );
 
 				crewSprite.makeSane();
 				clearSidePanel();
@@ -3556,9 +3559,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 				suffix = "_enemy_sheet";
 			} else {
 				if ( CrewBlueprint.RACE_HUMAN.equals( getRace() ) ) {
-					// Only humans can be female. Most other races keep the flag but ignore it.
+					// Human females have a distinct sprite (Other races look the same either way).
 					if ( !isMale() )
-						imgRace = "female";  // Never an actual race?
+						imgRace = "female";  // Not an actual race.
 				}
 				else if ( CrewBlueprint.RACE_GHOST.equals( getRace() ) ) {
 					// Ghosts look like translucent humans.

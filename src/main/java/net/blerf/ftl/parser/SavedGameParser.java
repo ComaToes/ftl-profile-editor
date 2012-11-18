@@ -1590,10 +1590,10 @@ public class SavedGameParser extends DatParser {
 
 
 		/**
-		 * Toggles gender.
+		 * Toggles sex.
 		 * Humans with this set to false have a
 		 * female image. Other races accept the
-		 * flag but ignore it.
+		 * flag but use the same image as male.
 		 *
 		 * No Andorians in the game, so this is
 		 * only a two-state boolean.
@@ -1638,7 +1638,7 @@ public class SavedGameParser extends DatParser {
 			result.append(String.format("Name:              %s\n", name));
 			result.append(String.format("Race:              %s\n", race));
 			result.append(String.format("Enemy Drone:       %b\n", enemyBoardingDrone));
-			result.append(String.format("Gender:            %s\n", (male ? "Male" : "Female") ));
+			result.append(String.format("Sex:               %s\n", (male ? "Male" : "Female") ));
 			result.append(String.format("Health:            %3d\n", health));
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));

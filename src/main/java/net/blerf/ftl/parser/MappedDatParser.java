@@ -31,6 +31,8 @@ import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Achievements;
 import net.blerf.ftl.xml.Blueprints;
+import net.blerf.ftl.xml.CrewNameList;
+import net.blerf.ftl.xml.CrewNameLists;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 
@@ -259,6 +261,41 @@ public class MappedDatParser extends Parser implements Closeable {
 		ShipChassis sch = (ShipChassis)unmarshalFromSequence( ShipChassis.class, sb.toString() );
 
 		return sch;
+	}
+
+	public List<CrewNameList> readCrewNames(InputStream stream) throws IOException, JAXBException {
+		log.trace("Reading crew name list XML");
+
+		// Need to clean invalid XML and comments before JAXB parsing
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		StringBuilder sb = new StringBuilder();
+		String line;
+
+		boolean comment = false;
+		while( (line = in.readLine()) != null ) {
+			line = line.replaceAll("<!--.*-->", "");
+
+			// Remove multiline comments
+			if (comment && line.contains("-->"))
+				comment = false;
+			else if (line.contains("<!--"))
+				comment = true;
+			else if (!comment)
+				sb.append(line).append("\n");
+		}
+		in.close();
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<nameLists>\n");
+		sb.append("</nameLists>\n");
+
+		// Parse cleaned XML
+		CrewNameLists cnl = (CrewNameLists)unmarshalFromSequence( CrewNameLists.class, sb.toString() );
+
+		return cnl.getCrewNameLists();
 	}
 
 	/**
