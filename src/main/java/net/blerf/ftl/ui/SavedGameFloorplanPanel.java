@@ -2012,6 +2012,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		}
 		final int availablePower = Math.min( shipReservePowerCapacity - a, droneSystemCapacity ) - b;
+		if ( droneSystemCapacity == 0 ) {
+			frame.setStatusText( "A drone system must be present with capacity > 0 before adding drones." );
+			return;
+		}
 
 		String title = String.format("Drone %d", droneSprite.getSlot()+1);
 
@@ -2184,6 +2188,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		}
 		final int availablePower = Math.min( shipReservePowerCapacity - a, weaponSystemCapacity ) - b;
+		if ( weaponSystemCapacity == 0 ) {
+			frame.setStatusText( "A weapon system must be present with capacity > 0 before adding weapons." );
+			return;
+		}
 
 		String title = String.format("Weapon %d", weaponSprite.getSlot()+1);
 
@@ -2607,24 +2615,40 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				int neededPower = systemSprite.getPower();
 				if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
-					// Disarm everything rightward of first underpowered weapon.
-					int foundPower = 0;
-					for (WeaponSprite otherSprite : weaponSprites) {
-						if ( otherSprite.getWeaponId() != null && otherSprite.isArmed() ) {
-							foundPower += DataManager.get().getWeapon( otherSprite.getWeaponId() ).getPower();
-							if ( foundPower > neededPower ) otherSprite.setArmed( false );
+					if ( systemSprite.getCapacity() == 0 ) {
+						// When capacity is 0, nullify all weapons.
+						for (WeaponSprite weaponSprite : weaponSprites)
+							weaponSprite.setWeaponId( null );
+					}
+					else {
+						// Disarm everything rightward of first underpowered weapon.
+						int foundPower = 0;
+						for (WeaponSprite otherSprite : weaponSprites) {
+							if ( otherSprite.getWeaponId() != null && otherSprite.isArmed() ) {
+								foundPower += DataManager.get().getWeapon( otherSprite.getWeaponId() ).getPower();
+								if ( foundPower > neededPower ) otherSprite.setArmed( false );
+							}
 						}
 					}
 				}
 				else if ( SystemBlueprint.ID_DRONE_CTRL.equals( systemSprite.getSystemId() ) ) {
-					// Disarm everything rightward of first underpowered drone.
-					int foundPower = 0;
-					for (DroneSprite otherSprite : droneSprites) {
-						if ( otherSprite.getDroneId() != null && otherSprite.isArmed() ) {
-							foundPower += DataManager.get().getDrone( otherSprite.getDroneId() ).getPower();
-							if ( foundPower > neededPower ) {
-								otherSprite.setArmed( false );
-								otherSprite.makeSane();
+					if ( systemSprite.getCapacity() == 0 ) {
+						// When capacity is 0, nullify all drones.
+						for (DroneSprite droneSprite : droneSprites) {
+							droneSprite.setDroneId( null );
+							droneSprite.makeSane();
+						}
+					}
+					else {
+						// Disarm everything rightward of first underpowered drone.
+						int foundPower = 0;
+						for (DroneSprite otherSprite : droneSprites) {
+							if ( otherSprite.getDroneId() != null && otherSprite.isArmed() ) {
+								foundPower += DataManager.get().getDrone( otherSprite.getDroneId() ).getPower();
+								if ( foundPower > neededPower ) {
+									otherSprite.setArmed( false );
+									otherSprite.makeSane();
+								}
 							}
 						}
 					}
@@ -2945,7 +2969,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private String slotString;
 		private String droneId = null;
 		private boolean armed = false;
-		private boolean playerControlled;
+		private boolean playerControlled = false;
 		private int health = -1;
 		private int bodyX = -1, bodyY = -1;
 		private JLabel droneBody = new JLabel();
@@ -2971,7 +2995,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public void setSpriteX( int n ) { bodyX = n; }
 		public void setSpriteY( int n ) { bodyY = n; }
 		public void setSlot( int n ) { slot = n; }
-		public void setDroneId( String s ) { droneId = s; }
+
+		public void setDroneId( String s ) {
+			droneId = s;
+
+			if ( droneId == null ) {  // Reset on null id.
+				armed = false;
+				playerControlled = false;
+				health = -1;
+				bodyX = -1;
+				bodyY = -1;
+			}
+		}
+
 		public void setArmed( boolean b ) { armed = b; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public void setHealth( int n ) { health = n; }
@@ -3117,7 +3153,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		public void setSlot( int n ) { slot = n; }
-		public void setWeaponId( String s ) { weaponId = s; }
+
+		public void setWeaponId( String s ) {
+			weaponId = s;
+
+			if ( weaponId == null ) {  // Reset on null id.
+				armed = false;
+				cooldownTicks = 0;
+			}
+		}
+
 		public void setArmed( boolean b ) { armed = b; }
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 
