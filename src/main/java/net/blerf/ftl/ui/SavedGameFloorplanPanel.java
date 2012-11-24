@@ -2954,8 +2954,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		addSidePanelSeparator(8);
 		String notice = "";
+		notice += "* FTL will crash if you control more than 8 non-drone crew.\n";
+
 		notice += "* Boarding drones are drones on their owner's ship, and crew ";
 		notice += "(race='battle') on the attacked ship.";
+
 		addSidePanelNote( notice );
 
 		showSidePanel();
