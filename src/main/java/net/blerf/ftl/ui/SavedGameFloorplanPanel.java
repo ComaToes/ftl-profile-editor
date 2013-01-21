@@ -3036,10 +3036,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				if ( droneBlueprint.getType().equals( DroneBlueprint.TYPE_BATTLE ) ) {
 					newBodyImagePath = "img/people/battle_sheet.png";
+					// As of 1.01, "sheet" vs "enemy_sheet" images were available.
+					// As of 1.03.1, "player" vs "enemy_red" images were also available
 					needsBody = true;
 				}
 				else if ( droneBlueprint.getType().equals( DroneBlueprint.TYPE_REPAIR ) ) {
 					newBodyImagePath = "img/people/repair_sheet.png";
+					// As of 1.01, "sheet" vs "enemy_sheet" images were available.
+					// As of 1.03.1, "player" vs "enemy_red" images were also available.
 					needsBody = true;
 				}
 				else {
@@ -3605,6 +3609,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			if ( CrewBlueprint.RACE_BATTLE.equals( getRace() ) ) {
 				suffix = "_enemy_sheet";
+				// As of 1.01, "sheet" vs "enemy_sheet" images were available.
+				// As of 1.03.1, "player" vs "enemy_red" images were also available
+
 			} else {
 				if ( CrewBlueprint.RACE_HUMAN.equals( getRace() ) ) {
 					// Human females have a distinct sprite (Other races look the same either way).
@@ -3626,6 +3633,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					suffix = "_player_yellow";
 				} else {
 					suffix = "_enemy_red";
+					// As of FTL 1.03.1, females have the "enemy_red" image (but 1.01 lacked it).
 				}
 			}
 			crewImage = getCroppedImage( "img/people/"+ imgRace + suffix +".png", offsetX, offsetY, w, h );

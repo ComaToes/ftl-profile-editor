@@ -84,12 +84,15 @@ public class DatParser extends Parser {
 			
 			line = line.replaceAll( "<!--.*-->" , "" );
 			line = line.replaceAll( "<\\?xml[^>]*>" , "" );
+			line = line.replaceAll( "\"img=" , "\" img=" ); // ahhhh 
+			line = line.replaceAll( "</ship>" , "</shipBlueprint>" ); // Error in one shipBlueprint
+
+			// As of FTL 1.03.1, these were corrected.
 			line = line.replaceAll( "<title>([^<]*)</[^>]*>" , "<title>$1</title>" ); // Error present in systemBlueprint and itemBlueprint
 			line = line.replaceAll( "<tooltip>([^<]*)</[^>]*>(-->)?" , "<tooltip>$1</tooltip>" ); // Error present in weaponBlueprint
 			line = line.replaceAll( "<speed>([^<]*)</[^>]*>" , "<speed>$1</speed>" ); // Error present in weaponBlueprint
-			line = line.replaceAll( "\"img=" , "\" img=" ); // ahhhh 
-			line = line.replaceAll( "</ship>" , "</shipBlueprint>" ); // Error in one shipBlueprint
-			
+			// ---
+
 			// Multi-line error in shipBlueprint			
 			if( line.matches(".*<shields [^\\/>]*>") ) {
 				inShipShields = true;
