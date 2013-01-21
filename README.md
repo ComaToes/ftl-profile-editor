@@ -7,9 +7,9 @@ With this, you can unlock any or all ships and achievements in your user profile
 
 <img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot01.png" width="145px" height="auto" /> &nbsp; <img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png" width="145px" height="auto" />
 
-Do download compiled binaries, [click here](https://sourceforge.net/projects/ftleditor/).
+To download compiled binaries, [click here](https://sourceforge.net/projects/ftleditor/).
 
-Comments can be made on a forum thread [here](http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959).
+Comments can be made in a forum thread [here](http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959).
 
 
 Usage
