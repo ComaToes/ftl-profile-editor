@@ -27,7 +27,7 @@ Requirements
 ------------
 * Java 1.6 or higher
     * http://www.java.com/en/download/
-* FTL (Steam or GOG; tested with 1.01; any OS)
+* FTL (Steam or GOG; tested with 1.01 and 1.03.1; any OS)
     * http://www.ftlgame.com/
 
 
