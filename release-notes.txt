@@ -1,5 +1,5 @@
 12
-The saved game editor, can tweak nearly all aspects of a player's ship and crew.
+The saved game editor can tweak nearly all aspects of a player's ship and crew.
 The profile editor can unlock at specific difficulties.
 
 11
