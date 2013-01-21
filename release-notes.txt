@@ -1,3 +1,7 @@
+12
+The saved game editor, can tweak nearly all aspects of a player's ship and crew.
+The profile editor can unlock at specific difficulties.
+
 11
 Added saved game (continue.sav) parsing - Some general ship attributes (hull/fuel/scrap/etc) are editable. Fires, breaches and oxygen levels can be reset. More to come!
 Fixed crash when Type B Crystal ship appears in high scores

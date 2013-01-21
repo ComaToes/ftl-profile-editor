@@ -24,10 +24,12 @@ public class FTLProfileEditor {
 
 	private static final Logger log = LogManager.getLogger(FTLProfileEditor.class);
 	
-	private static final int VERSION = 11;
+	private static final int VERSION = 12;
 
 	public static void main(String[] args) {
-		
+		log.debug( System.getProperty("os.name") +" "+ System.getProperty("os.version") +" "+ System.getProperty("os.arch") );
+		log.debug( System.getProperty("java.vm.name") +", "+ System.getProperty("java.version") );
+
 		// Read config file and locate FTL install
 		File propFile = new File("ftl-editor.cfg");
 		File ftlPath = null;

@@ -105,10 +105,10 @@ public class FTLFrame extends JFrame {
 	private URL latestVersionTemplate = ClassLoader.getSystemResource("update.html");
 	private URL releaseNotesTemplate = ClassLoader.getSystemResource("release-notes.html");
 	
-	private String latestVersionUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/latest-version.txt";
-	private String versionHistoryUrl = "https://raw.github.com/ComaToes/ftl-profile-editor/master/release-notes.txt";
-	private String bugReportUrl = "https://github.com/ComaToes/ftl-profile-editor/issues/new";
-	private String forumThreadUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=2877";
+	private String latestVersionUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/latest-version.txt";
+	private String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
+	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
+	private String forumThreadUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959";
 	
 	// For checkbox icons
 	private static final int maxIconWidth = 64;
