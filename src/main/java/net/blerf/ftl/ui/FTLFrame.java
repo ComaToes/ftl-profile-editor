@@ -993,6 +993,10 @@ public class FTLFrame extends JFrame {
 	public File[] getPossibleUserDataLocations( String fileName ) {
 		if ( fileName == null ) fileName = "";
 
+		String xdgDataHome = System.getenv("XDG_DATA_HOME");
+		if (xdgDataHome == null)
+			xdgDataHome = System.getProperty("user.home") +"/.local/share";
+
 		File[] locations = new File[] {
 			// Windows XP
 			new File( System.getProperty("user.home") +"/My Documents/My Games/FasterThanLight/"+ fileName),
@@ -1001,7 +1005,7 @@ public class FTLFrame extends JFrame {
 			// Mac
 			new File( System.getProperty("user.home") +"/Library/Application Support/FasterThanLight/"+ fileName),
 			// Linux
-			new File( System.getProperty("user.home") +"/.local/share/FasterThanLight/"+ fileName)
+			new File( xdgDataHome +"/FasterThanLight/"+ fileName)
 		};
 
 		return locations;
