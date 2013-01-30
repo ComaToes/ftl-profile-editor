@@ -1,3 +1,9 @@
+13
+Revised how FTL's data.dat is located: cfg contains ftlDatsPath=.../(FTL dir)/resources/.
+Added automated finding of data.dat on Linux-Steam, and possibly OSX.
+Fixed crash when writing a saved game in which a store had been visited that sector.
+Added SectorMap editing: Store, Quest, and Beacon (partial).
+
 12
 The saved game editor can tweak nearly all aspects of a player's ship and crew.
 The profile editor can unlock at specific difficulties.
