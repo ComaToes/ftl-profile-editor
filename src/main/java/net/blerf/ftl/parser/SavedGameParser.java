@@ -29,7 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-public class SavedGameParser extends DatParser {
+public class SavedGameParser extends Parser {
 
 	private static final Logger log = LogManager.getLogger(SavedGameParser.class);
 
@@ -767,7 +767,7 @@ public class SavedGameParser extends DatParser {
 		for (int i=0; i < 3; i++) {
 			int available = -1;
 			String itemId = null;
-			if ( items.size() >= i ) {
+			if ( items.size() > i ) {
 				available = (items.get(i).isAvailable() ? 1 : 0);
 				itemId = items.get(i).getItemId();
 			}
@@ -1934,34 +1934,49 @@ public class SavedGameParser extends DatParser {
 
 
 
-	public static enum FleetPresence { NONE, REBEL, FEDERATION, BOTH }
+	public static enum FleetPresence {
+		NONE {
+			public String toString() { return "None"; }
+		},
+		REBEL {
+			public String toString() { return "Rebel"; }
+		},
+		FEDERATION {
+			public String toString() { return "Federation"; }
+		},
+		BOTH {
+			public String toString() { return "Both"; }
+		}
+	}
 
 	public static class BeaconState {
-		
-		private boolean visited;
-		private String bgStarscapeImageInnerPath;
-		private String bgSpriteImageInnerPath;
-		private int bgSpritePosX, bgSpritePosY;
-		private int unknownVisitedAlpha; // Sprite rotation in degrees? (observed values: 0, 180)
-		
-		private boolean seen; // True if player has been within one hop of beacon
-		
-		private boolean enemyPresent;
-		private String shipEventId; // <ship> event from events_ships.xml
-		private String shipBlueprintListId; // <blueprintList> to choose enemy ship from
+		private boolean visited = false;
+		private String bgStarscapeImageInnerPath = null;
+		private String bgSpriteImageInnerPath = null;
+		private int bgSpritePosX = -1, bgSpritePosY = -1;
+		private int unknownVisitedAlpha = 0;       // Sprite rotation in degrees? (observed values: 0, 180)
+
+		private boolean seen = false;              // True if player has been within one hop of beacon.
+
+		private boolean enemyPresent = false;
+		private String shipEventId = null;         // <ship> event from events_ships.xml.
+		private String shipBlueprintListId = null; // <blueprintList> to choose enemy ship from.
 		private int unknownEnemyPresentAlpha;
-		
-		private FleetPresence fleetPresence; // Determines which fleet image to use
-		
-		private boolean underAttack; // True if under attack by rebels (flashing red) in boss sector
-		
-		private boolean storePresent; // True if beacon contains a store (may require beacon to have been seen first)
-		private StoreState store;
+
+		private FleetPresence fleetPresence = FleetPresence.NONE; // Determines which fleet image to use.
+
+		private boolean underAttack = false;       // True if under attack by rebels (flashing red) in boss sector.
+
+		private boolean storePresent = false;      // True if beacon contains a store (may require beacon to have been seen first).
+		private StoreState store = null;
+
+		public BeaconState() {
+		}
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			
+
 			result.append(String.format("Visited:           %b\n", visited));
 			if ( visited ) {
 				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
@@ -1969,20 +1984,20 @@ public class SavedGameParser extends DatParser {
 				result.append(String.format("Bkg Sprite Coords: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
 				result.append(String.format("Unknown?:          %3d\n", unknownVisitedAlpha));
 			}
-			
+
 			result.append(String.format("Seen:              %b\n", seen));
-			
+
 			result.append(String.format("Enemy Present:     %b\n", enemyPresent));
 			if ( enemyPresent ) {
 				result.append(String.format("  Ship Event ID:          %s\n", shipEventId));
 				result.append(String.format("  Ship Blueprint List ID: %s\n", shipBlueprintListId));
 				result.append(String.format("  Unknown?:               %5d\n", unknownEnemyPresentAlpha));
 			}
-			
+
 			result.append(String.format("Fleets Present:    %s\n", fleetPresence));
-			
+
 			result.append(String.format("Under Attack:      %b\n", underAttack));
-			
+
 			result.append(String.format("Store Present:     %b\n", storePresent));
 			if ( storePresent ) {
 				result.append( store.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
@@ -2086,27 +2101,30 @@ public class SavedGameParser extends DatParser {
 
 
 	public static class StoreState {
-		
-		private int fuel, missiles, droneParts;
-		private StoreShelf topShelf, bottomShelf;
-		
+		private int fuel = 0, missiles = 0, droneParts = 0;
+		private StoreShelf topShelf = new StoreShelf();
+		private StoreShelf bottomShelf = new StoreShelf();
+
+		public StoreState() {
+		}
+
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
-			
+
 			result.append( String.format("Fuel:        %2d\n", fuel) );
 			result.append( String.format("Missiles:    %2d\n", missiles) );
 			result.append( String.format("Drone Parts: %2d\n", droneParts) );
-			
+
 			result.append( "\nTop Shelf...\n" );
 			result.append( topShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 
 			result.append( "\nBottom Shelf...\n" );
 			result.append( bottomShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
-			
+
 			return result.toString();
 		}
-		
+
 		public int getFuel() {
 			return fuel;
 		}
@@ -2137,21 +2155,33 @@ public class SavedGameParser extends DatParser {
 		public void setBottomShelf(StoreShelf bottomShelf) {
 			this.bottomShelf = bottomShelf;
 		}
-		
 	}
 
-	public enum StoreItemType { WEAPON, DRONE, AUGMENT, CREW, SYSTEM };
+	public static enum StoreItemType {
+		WEAPON {
+			public String toString() { return "Weapon"; }
+		},
+		DRONE {
+			public String toString() { return "Drone"; }
+		},
+		AUGMENT {
+			public String toString() { return "Augment"; }
+		},
+		CREW {
+			public String toString() { return "Crew"; }
+		},
+		SYSTEM {
+			public String toString() { return "System"; }
+		}
+	};
 	
 	public static class StoreShelf {
-		
-		private StoreItemType itemType;
-		
-		private List<StoreItem> items;
-		
+		private StoreItemType itemType = StoreItemType.WEAPON;
+		private List<StoreItem> items = new ArrayList<StoreItem>(3);
+
 		public StoreShelf() {
-			items = new ArrayList<StoreItem>(3);
 		}
-		
+
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
@@ -2163,7 +2193,7 @@ public class SavedGameParser extends DatParser {
 				else { result.append(",\n"); }
 				result.append( item.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 			}
-			
+
 			return result.toString();
 		}
 
@@ -2179,7 +2209,6 @@ public class SavedGameParser extends DatParser {
 		public void addItem( StoreItem item ) {
 			items.add( item );
 		}
-		
 	}
 	
 	public static class StoreItem {
