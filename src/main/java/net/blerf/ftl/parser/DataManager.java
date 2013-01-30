@@ -19,6 +19,9 @@ import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.DroneBlueprint;
+import net.blerf.ftl.xml.Encounters;
+import net.blerf.ftl.xml.FTLEvent;
+import net.blerf.ftl.xml.FTLEventList;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
@@ -26,6 +29,7 @@ import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 
 public class DataManager implements Closeable {
 	
@@ -45,6 +49,7 @@ public class DataManager implements Closeable {
 	private List<Achievement> generalAchievements;
 	private Blueprints blueprints;
 	private Blueprints autoBlueprints;
+	private HashMap<String, Encounters> events;
 
 	private Map<String, AugBlueprint> augments;
 	private Map<String, DroneBlueprint> drones;
@@ -71,26 +76,52 @@ public class DataManager implements Closeable {
 		InputStream blueStream = null;
 		InputStream autoBlueStream = null;
 		InputStream crewNamesStream = null;
+		ArrayList<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
 			dataParser = new MappedDatParser( new File(ftlFolder, "resources/data.dat") );
 	 		resourceParser = new MappedDatParser( new File(ftlFolder, "resources/resource.dat") );
 
+			log.info("Reading Achievements...");
 			log.debug("Reading 'data/achievements.xml'");
 			achStream = dataParser.getInputStream( "data/achievements.xml" );
+			streams.add(achStream);
 			achievements = dataParser.readAchievements( achStream );
 
+			log.info("Reading Blueprints...");
 			log.debug("Reading 'data/blueprints.xml'");
 			blueStream = dataParser.getInputStream( "data/blueprints.xml" );
+			streams.add(blueStream);
 			blueprints = dataParser.readBlueprints( blueStream );
 
 			log.debug("Reading 'data/autoBlueprints.xml'");
 			autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
+			streams.add(autoBlueStream);
 			autoBlueprints = dataParser.readBlueprints( autoBlueStream );
 
+			log.info("Reading Events...");
+			String[] eventsFileNames = new String[] { "events.xml", "newEvents.xml",
+				"events_crystal.xml", "events_engi.xml", "events_mantis.xml",
+				"events_rock.xml", "events_slug.xml", "events_zoltan.xml",
+				"events_nebula.xml", "events_pirate.xml", "events_rebel.xml",
+				"nameEvents.xml", "events_fuel.xml", "events_boss.xml" };
+
+			events = new LinkedHashMap<String, Encounters>();
+			for ( String eventsFileName : eventsFileNames ) {
+				InputStream tmpStream = null;
+				log.debug("Reading 'data/"+ eventsFileName +"'");
+				tmpStream = dataParser.getInputStream( "data/"+ eventsFileName );
+				streams.add(tmpStream);
+				Encounters tmpEncounters = dataParser.readEvents( tmpStream, eventsFileName );
+				events.put( eventsFileName, tmpEncounters );
+			}
+
+			log.info("Reading Crew Names...");
 			log.debug("Reading 'data/names.xml'");
 			crewNamesStream = dataParser.getInputStream( "data/names.xml" );
 			List<CrewNameList> crewNameLists = dataParser.readCrewNames( crewNamesStream );
+
+			log.info("Finished reading game resources.");
 
 			generalAchievements = new ArrayList<Achievement>();
 			for( Achievement ach : achievements )
@@ -133,7 +164,7 @@ public class DataManager implements Closeable {
 			playerShips.add( ships.get("PLAYER_SHIP_CRYSTAL") );
 
 			shipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
-			for (ShipBlueprint ship: playerShips) {
+			for ( ShipBlueprint ship : playerShips ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
 				for ( Achievement ach : achievements )
 					if ( ship.getId().equals( ach.getShipId() ) )
@@ -147,7 +178,7 @@ public class DataManager implements Closeable {
 
 			crewNamesMale = new ArrayList<CrewNameList.CrewName>();
 			crewNamesFemale = new ArrayList<CrewNameList.CrewName>();
-			for (CrewNameList crewNameList : crewNameLists) {
+			for ( CrewNameList crewNameList : crewNameLists ) {
 				if ( "male".equals( crewNameList.getSex() ) )
 					crewNamesMale.addAll( crewNameList.getNames() );
 				else
@@ -163,13 +194,9 @@ public class DataManager implements Closeable {
 			throw e;
 
 		} finally {
-			ArrayList<InputStream> streams = new ArrayList<InputStream>();
-			streams.add(achStream);
-			streams.add(blueStream);
-			streams.add(autoBlueStream);
 			streams.add(crewNamesStream);
 
-			for (InputStream stream : streams) {
+			for ( InputStream stream : streams ) {
 				try {if (stream != null) stream.close();}
 				catch (IOException f) {}
 			}
@@ -347,5 +374,44 @@ public class DataManager implements Closeable {
 		List<CrewNameList.CrewName> crewNames = (isMale ? crewNamesMale : crewNamesFemale);
 		int n = (int)(Math.random()*crewNames.size());
 		return crewNames.get(n).name;
+	}
+
+	/**
+	 * Returns all Encounters objects, mapped to xml file names.
+	 *
+	 * Each can be queried for its FTLEvent or FTLEventList members.
+	 */
+	public Map<String, Encounters> getEncounters() {
+		return events;
+	}
+
+	/**
+	 * Returns an Event with a given id.
+	 * All event xml files are searched.
+	 *
+	 * Events and EventLists share a namespace,
+	 * so an id could belong to either.
+	 */
+	public FTLEvent getEventById( String id ) {
+		for ( Map.Entry<String, Encounters> entry : events.entrySet() ) {
+			FTLEvent tmpEvent = entry.getValue().getEventById(id);
+			if ( tmpEvent != null ) return tmpEvent;
+		}
+		return null;
+	}
+
+	/**
+	 * Returns an EventList with a given id.
+	 * All event xml files are searched.
+	 *
+	 * Events and EventLists share a namespace,
+	 * so an id could belong to either.
+	 */
+	public FTLEventList getEventListById( String id ) {
+		for ( Map.Entry<String, Encounters> entry : events.entrySet() ) {
+			FTLEventList tmpEventList = entry.getValue().getEventListById(id);
+			if ( tmpEventList != null ) return tmpEventList;
+		}
+		return null;
 	}
 }

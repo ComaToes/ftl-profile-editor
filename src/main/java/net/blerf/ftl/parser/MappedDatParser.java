@@ -17,6 +17,8 @@ import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -33,6 +35,9 @@ import net.blerf.ftl.xml.Achievements;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.CrewNameLists;
+import net.blerf.ftl.xml.Encounters;
+import net.blerf.ftl.xml.FTLEvent;
+import net.blerf.ftl.xml.FTLEventList;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 
@@ -91,18 +96,32 @@ public class MappedDatParser extends Parser implements Closeable {
 		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		StringBuilder sb = new StringBuilder();
 		String line;
+		boolean comment = false;
+
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<!--[^>]*-->", "");  // TODO need a proper Matcher for multiline comments
+			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
+			line = line.replaceAll("<!--.*?-->", "");
 			line = line.replaceAll("<desc>([^<]*)</name>", "<desc>$1</desc>");
-			sb.append(line).append("\n");
+
+			// Remove multiline comments
+			if (comment && line.contains("-->"))
+				comment = false;
+			else if (line.contains("<!--"))
+				comment = true;
+			else if (!comment)
+				sb.append(line).append("\n");
 		}
 		in.close();
+
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
 			sb.replace(0, BOM_UTF8.length(), "");
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert(0, "<achievements>\n");
 		sb.append("</achievements>\n");
+
+		// Add the xml header.
+		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
 		// Parse cleaned XML
 		Achievements ach = (Achievements)unmarshalFromSequence( Achievements.class, sb );
@@ -118,35 +137,21 @@ public class MappedDatParser extends Parser implements Closeable {
 		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		StringBuilder sb = new StringBuilder();
 		String line;
+		boolean comment = false;
+		String ptn; Pattern p; Matcher m;
 
-		boolean comment = false, inShipShields = false, inSlot = false;
 		while( (line = in.readLine()) != null ) {
+			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
+			line = line.replaceAll("<!--.*?-->", "");
+
 			// blueprints.xml
-			line = line.replaceAll("^<!-- sardonyx$", "<!-- sardonyx -->");  // Error above one shipBlueprint.
-			line = line.replaceAll("<!--.*-->", "");
-			line = line.replaceAll("<\\?xml[^>]*>", "");
+			line = line.replaceAll("^<!-- sardonyx$", "");  // Error above one shipBlueprint.
 			line = line.replaceAll("<title>([^<]*)</[^>]*>", "<title>$1</title>");  // Error in systemBlueprint and itemBlueprint.
 			line = line.replaceAll("<tooltip>([^<]*)</[^>]*>(-->)?", "<tooltip>$1</tooltip>");  // Error in weaponBlueprint.
 			line = line.replaceAll("<speed>([^<]*)</[^>]*>", "<speed>$1</speed>");  // Error in weaponBlueprint.
 			line = line.replaceAll("\"img=", "\" img=");  // ahhhh.
 			line = line.replaceAll("</ship>", "</shipBlueprint>");  // Error in one shipBlueprint.
 			line = line.replaceAll(" img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"");  // Error in two shipBlueprints.
-
-			// Multi-line error in shipBlueprint
-			if ( line.matches(".*<shields [^\\/>]*>") ) {
-				inShipShields = true;
-			} else if (inShipShields) {
-				if (line.contains("<slot>"))
-					inSlot = true;
-				else if (line.contains("</slot>")) {
-					if (!inSlot) {
-						line = line.replace("</slot>", "</shields>");
-						inShipShields = false;
-					}
-					inSlot = false;
-				} else if (line.contains("</shields>"))
-					inShipShields = false;
-			}
 
 			// autoBlueprints.xml
 			line = line.replaceAll("\"max=", "\" max=");  // ahhhh
@@ -161,12 +166,34 @@ public class MappedDatParser extends Parser implements Closeable {
 				sb.append(line).append("\n");
 		}
 		in.close();
+
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
 			sb.replace(0, BOM_UTF8.length(), "");
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert(0, "<blueprints>\n");
 		sb.append("</blueprints>\n");
+
+		// Add the xml header.
+		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+
+		if ( 1 == 1) {
+			// blueprints.xml: PLAYER_SHIP_HARD_2 (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<shields *(?: [^>]*)?>\\s*";
+			ptn +=   "<slot *(?: [^>]*)?>\\s*";
+			ptn +=     "(?:<direction>[^<]*</direction>\\s*)?";
+			ptn +=     "(?:<number>[^<]*</number>\\s*)?";
+			ptn +=   "</slot>\\s*)";
+			ptn += "</slot>"; // Wrong closing tag.
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"</shields>");
+				m.reset();
+			}
+		}
 
 		// Parse cleaned XML
 		Blueprints bps = (Blueprints)unmarshalFromSequence( Blueprints.class, sb.toString() );
@@ -180,6 +207,8 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		String line = null;
 		boolean firstLine = true;
+		boolean comment = false;
+
 		while ( (line = in.readLine()) != null ) {
 			if ( firstLine ) {
 				if ( line.startsWith(BOM_UTF8) )
@@ -238,7 +267,8 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		boolean comment = false;
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<!--.*-->", "");
+			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
+			line = line.replaceAll("<!--.*?-->", "");
 			line = line.replaceAll("<(/?)gib[0-9]*>", "<$1gib>");
 
 			// Remove multiline comments
@@ -250,12 +280,16 @@ public class MappedDatParser extends Parser implements Closeable {
 				sb.append(line).append("\n");
 		}
 		in.close();
+
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
 			sb.replace(0, BOM_UTF8.length(), "");
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert(0, "<shipChassis>\n");
 		sb.append("</shipChassis>\n");
+
+		// Add the xml header.
+		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
 		// Parse cleaned XML
 		ShipChassis sch = (ShipChassis)unmarshalFromSequence( ShipChassis.class, sb.toString() );
@@ -271,10 +305,11 @@ public class MappedDatParser extends Parser implements Closeable {
 		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
 		StringBuilder sb = new StringBuilder();
 		String line;
-
 		boolean comment = false;
+
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<!--.*-->", "");
+			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
+			line = line.replaceAll("<!--.*?-->", "");
 
 			// Remove multiline comments
 			if (comment && line.contains("-->"))
@@ -285,6 +320,7 @@ public class MappedDatParser extends Parser implements Closeable {
 				sb.append(line).append("\n");
 		}
 		in.close();
+
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
 			sb.replace(0, BOM_UTF8.length(), "");
 
@@ -292,10 +328,248 @@ public class MappedDatParser extends Parser implements Closeable {
 		sb.insert(0, "<nameLists>\n");
 		sb.append("</nameLists>\n");
 
+		// Add the xml header.
+		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+
 		// Parse cleaned XML
 		CrewNameLists cnl = (CrewNameLists)unmarshalFromSequence( CrewNameLists.class, sb.toString() );
 
 		return cnl.getCrewNameLists();
+	}
+
+	public Encounters readEvents(InputStream stream, String fileName) throws IOException, JAXBException {
+		log.trace("Reading events XML");
+
+		// Need to clean invalid XML and comments before JAXB parsing
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		StringBuilder sb = new StringBuilder();
+		String line;
+		boolean comment = false;
+		String ptn; Pattern p; Matcher m;
+
+		while( (line = in.readLine()) != null ) {
+			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
+			line = line.replaceAll("<!--.*?-->", "");
+
+			if ( "events.xml".equals(fileName) || "events_nebula.xml".equals(fileName) ) {
+				// events.xml: PIRATE_CIVILIAN_BEACON (FTL 1.03.1)
+				// events_nebula.xml: NEBULA_REBEL_UNDETECTED (FTL 1.03.1)
+				line = line.replaceAll(" hidden=\"true\" hidden=\"true\"", " hidden=\"true\"");
+			}
+
+			if ( "events_engi.xml".equals(fileName) || "events_mantis.xml".equals(fileName) || "events_crystal.xml".equals(fileName) ) {
+				// events_engi.xml: DISTRESS_ENGI_REACTOR_LIST1 (FTL 1.03.1)
+				// events_mantis.xml: MANTIS_NAMED_THIEF_DEFEAT (FTL 1.03.1)
+				// events_crystal.xml: CRYSTAL_CACHE_BREAK (FTL 1.01)
+				line = line.replaceAll("(.*<text *( [^\\/>]*)?>[^<]*)</event>.*", "$1</text>");
+			}
+
+			// Remove multiline comments
+			if (comment && line.contains("-->"))
+				comment = false;
+			else if (line.contains("<!--"))
+				comment = true;
+			else if (!comment)
+				sb.append(line).append("\n");
+		}
+		in.close();
+
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<events>\n");
+		sb.append("</events>\n");
+
+		// Add the xml header.
+		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+
+		if ( "events.xml".equals(fileName) ) {
+			// events.xml: STORE_TEXT (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<textList *(?: [^>]*)?>\\s*";
+			ptn += "(?:<text *(?: [^>]*)?>[^<]*</text>\\s*)*)";
+			ptn += "</text>"; // Wrong closing tag.
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"</textList>");
+				m.reset();
+			}
+		}
+
+		if ( "events_fuel.xml".equals(fileName) ) {
+			// events_fuel.xml: FUEL_ON_MANTIS_ATTACK (FTL 1.03.1)
+			// events_fuel.xml: FUEL_ON_REBEL_ATTACK (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<textList *(?: [^>]*)?>\\s*";
+			ptn += "(?:<text *(?: [^>]*)?>[^<]*</text>\\s*)*)";
+			ptn += "</event>"; // Wrong closing tag.
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			while ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"</textList>");
+				m.reset();
+			}
+		}
+
+		if ( "events_engi.xml".equals(fileName) ) {
+			// events_engi.xml: DISTRESS_ENGI_REACTOR (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<event *(?: [^>]*)?>\\s*";
+			ptn +=   "<text>[^<]*</text>\\s*";
+			ptn +=   "<distressBeacon *(?: [^>]*)?/>\\s*";
+			ptn +=   "<choice *(?: [^>]*)?>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event *(?: [^>]*)?/>\\s*";
+			ptn +=   "</choice>\\s*";
+			ptn +=   "<choice *(?: [^>]*)?>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event>\\s*";
+			ptn +=       "<text>[^<]*</text>\\s*";
+			ptn +=     "</event>\\s*";
+			ptn +=   "</choice>\\s*";
+			ptn +=   "<choice *(?: [^>]*)?>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event *(?: [^>]*)?/>\\s*";
+			ptn +=   "</choice>\\s*";
+			ptn +=   "<choice *(?: [^>]*)?>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event *(?: [^>]*)?/>\\s*";
+			ptn +=   "</choice>\\s*)";
+			ptn += "</choice>"; // Wrong closing tag.
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"</event>");
+				m.reset();
+			}
+
+			// events_engi: ENGI_UNLOCK_2REAL_SURRENDER (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<event>\\s*";
+			ptn +=   "<text>[^<]*</text>\\s*";
+			ptn +=   "<quest *(?: [^>]*)?/>\\s*";
+			ptn +=   "<choice>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event>\\s*";
+			ptn +=       "<text>[^<]*</text>\\s*";
+			ptn +=       "<ship *(?: [^>]*)?/>\\s*";
+			ptn +=     "</event>\n)";
+			//        </choice> tag is missing.
+			ptn += "(\\s*</event>)";
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"\n</choice>\n"+ m.group(2));
+				m.reset();
+			}
+		}
+
+		if ( "events_mantis.xml".equals(fileName) ) {
+			// events_mantis.xml: MANTIS_NAMED_THIEF (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<event *(?: [^>]*)?>\\s*";
+			ptn +=   "<ship *(?: [^>]*)?/>\\s*";
+			ptn +=   "<text>[^<]*</text>\\s*";
+			ptn +=   "<choice *(?: [^>]*)?>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event>\\s*";
+			ptn +=       "<text>[^<]*</text>\\s*";
+			ptn +=       "<ship *(?: [^>]*)?/>\\s*";
+			ptn +=     "</event>\\s*";
+			ptn +=   "</choice>\\s*";
+			ptn +=   "<choice *(?: [^>]*)?>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event>\\s*";
+			ptn +=       "<ship *(?: [^>]*)?/>\\s*";
+			ptn +=     "</event>\\s*";
+			ptn +=   "</choice>\\s*)";
+			ptn += "</text>"; // Wrong closing tag.
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"</event>");
+				m.reset();
+			}
+		}
+
+		if ( "events_slug.xml".equals(fileName) ) {
+			// events_slug.xml: NEBULA_SLUG_CHOOSE_DEATH (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<choice *(?: [^>]*)?>\\s*";
+			ptn +=   "<text>[^<]*</text>\\s*";
+			ptn +=   "<event>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<ship *(?: [^>]*)?/>\\s*";
+			ptn +=     "<status *(?: [^>]*)?/>\\s*";
+			ptn +=   "</event>\\s*)";
+			ptn += "</event>";
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"\n</choice>\n");
+				m.reset();
+			}
+		}
+
+		if ( "events_zoltan.xml".equals(fileName) ) {
+			// events_zoltan.xml: ZOLTAN_LIFERAFT_HIRE (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<eventList *(?: [^>]*)?>\\s*";
+			ptn +=   "<event>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=   "</event>\\s*";
+			ptn +=   "<event>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<item_modify>\\s*";
+			ptn +=       "<item *(?: [^>]*)?/>\\s*";
+			ptn +=     "</item_modify>\\s*";
+			ptn +=     "<crewMember *(?: [^>]*)?/>\\s*";
+			ptn +=   "</event>\\s*)";
+			ptn += "</event>";
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"\n</eventList>\n");
+				m.reset();
+			}
+		}
+
+		if ( "events_pirate.xml".equals(fileName) ) {
+			// events_pirate.xml: PIRATE_ASTEROID (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<event *(?: [^>]*)?>\\s*";
+			ptn +=   "<img *(?: [^>]*)?/>\\s*";
+			ptn +=   "<environment *(?: [^>]*)?/>\\s*";
+			ptn +=   "<text>[^<]*</text>\\s*";
+			ptn +=   "<ship *(?: [^>]*)?/>\\s*";
+			ptn +=   "<choice>\\s*";
+			ptn +=     "<text>[^<]*</text>\\s*";
+			ptn +=     "<event *(?: [^>]*)?/>\\s*)";
+			//        </choice> tag is missing.
+			ptn += "(\\s*</event>)";
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"\n</choice>\n"+ m.group(2));
+				m.reset();
+			}
+		}
+
+		// Parse cleaned XML
+		Encounters evts = (Encounters)unmarshalFromSequence( Encounters.class, sb );
+
+		return evts;
 	}
 
 	/**
@@ -311,6 +585,9 @@ public class MappedDatParser extends Parser implements Closeable {
 			result = u.unmarshal( new StreamSource(new StringReader(seq.toString())) );
 
 		} catch (JAXBException e) {
+			log.debug("Error during xml parsing. Dumping document for review...");
+			log.debug(seq); // Dump all the xml to the log.
+
 			Throwable linkedException = e.getLinkedException();
 			if ( linkedException instanceof SAXParseException ) {
 				// Get the 1-based line number where the problem was.
