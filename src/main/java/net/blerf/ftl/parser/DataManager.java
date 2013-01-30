@@ -41,8 +41,8 @@ public class DataManager implements Closeable {
 		return instance;
 	}
 	
-	public static void init(File ftlFolder) throws IOException, JAXBException {
-		instance = new DataManager(ftlFolder);	
+	public static void init(File datsFolder) throws IOException, JAXBException {
+		instance = new DataManager(datsFolder);	
 	}
 
 	private List<Achievement> achievements;
@@ -67,7 +67,7 @@ public class DataManager implements Closeable {
 	private	MappedDatParser dataParser = null;
 	private	MappedDatParser resourceParser = null;
 	
-	private DataManager(File ftlFolder) throws IOException, JAXBException {
+	private DataManager(File datsFolder) throws IOException, JAXBException {
 		
 		log.trace("DataManager initialising");
 		
@@ -79,8 +79,8 @@ public class DataManager implements Closeable {
 		ArrayList<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
-			dataParser = new MappedDatParser( new File(ftlFolder, "resources/data.dat") );
-	 		resourceParser = new MappedDatParser( new File(ftlFolder, "resources/resource.dat") );
+			dataParser = new MappedDatParser( new File(datsFolder, "data.dat") );
+	 		resourceParser = new MappedDatParser( new File(datsFolder, "resource.dat") );
 
 			log.info("Reading Achievements...");
 			log.debug("Reading 'data/achievements.xml'");
