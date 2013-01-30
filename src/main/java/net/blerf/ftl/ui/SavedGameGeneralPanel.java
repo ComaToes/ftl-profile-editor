@@ -48,7 +48,6 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String REBEL_FLEET_OFFSET = "Rebel Fleet Offset";
 	private static final String REBEL_FLEET_FUDGE = "Rebel Fleet Fudge";
 	private static final String REBEL_PURSUIT_MOD = "Rebel Pursuit Mod";
-	private static final String PLAYER_BEACON = "Player BeaconId";
 	private static final String HAZARDS_VISIBLE = "Hazards Visible";
 
 	private FTLFrame frame;
@@ -83,7 +82,6 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.getInt(REBEL_FLEET_FUDGE).setDocument( new RegexDocument("-?[0-9]*") );
 		sectorPanel.addRow( REBEL_PURSUIT_MOD, FieldEditorPanel.ContentType.INTEGER );
 		sectorPanel.getInt(REBEL_PURSUIT_MOD).setDocument( new RegexDocument("-?[0-9]*") );
-		sectorPanel.addRow( PLAYER_BEACON, FieldEditorPanel.ContentType.INTEGER );
 		sectorPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
 		sectorPanel.addBlankRow();
 
@@ -91,7 +89,6 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.getInt(REBEL_FLEET_OFFSET).addMouseListener( new StatusbarMouseListener(frame, "A large negative var (-750,-250,...,-n*25, approaching 0) + fudge = the fleet circle's edge.") );
 		sectorPanel.getInt(REBEL_FLEET_FUDGE).addMouseListener( new StatusbarMouseListener(frame, "A random per-sector constant (usually around 75-310) + offset = the fleet circle's edge.") );
 		sectorPanel.getInt(REBEL_PURSUIT_MOD).addMouseListener( new StatusbarMouseListener(frame, "Delay/alert the fleet, changing the warning zone thickness (e.g., merc distraction = -2).") );
-		sectorPanel.getInt(PLAYER_BEACON).addMouseListener( new StatusbarMouseListener(frame, "A 0-based index (0 to 23ish) of the player ship's beacon, counting down the map in columns, left-to-right.") );
 		sectorPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
 
 		GridBagConstraints thisC = new GridBagConstraints();
@@ -135,7 +132,6 @@ public class SavedGameGeneralPanel extends JPanel {
 			sectorPanel.setIntAndReminder( REBEL_FLEET_OFFSET, gameState.getRebelFleetOffset() );
 			sectorPanel.setIntAndReminder( REBEL_FLEET_FUDGE, gameState.getRebelFleetFudge() );
 			sectorPanel.setIntAndReminder( REBEL_PURSUIT_MOD, gameState.getRebelPursuitMod() );
-			sectorPanel.setIntAndReminder( PLAYER_BEACON, gameState.getCurrentBeaconId() );
 			sectorPanel.setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
 		}
 
@@ -182,10 +178,6 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		newString = sectorPanel.getInt(REBEL_PURSUIT_MOD).getText();
 		try { gameState.setRebelPursuitMod(Integer.parseInt(newString)); }
-		catch (NumberFormatException e) {}
-
-		newString = sectorPanel.getInt(PLAYER_BEACON).getText();
-		try { gameState.setCurrentBeaconId(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
 		gameState.setSectorHazardsVisible( sectorPanel.getBoolean(HAZARDS_VISIBLE).isSelected() );

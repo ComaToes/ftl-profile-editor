@@ -76,9 +76,10 @@ import net.blerf.ftl.ui.GeneralAchievementsPanel;
 import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.ProfileStatsPanel;
 import net.blerf.ftl.ui.SavedGameDumpPanel;
+import net.blerf.ftl.ui.SavedGameFloorplanPanel;
 import net.blerf.ftl.ui.SavedGameGeneralPanel;
 import net.blerf.ftl.ui.SavedGameHangarPanel;
-import net.blerf.ftl.ui.SavedGameFloorplanPanel;
+import net.blerf.ftl.ui.SavedGameSectorMapPanel;
 import net.blerf.ftl.ui.ShipUnlockPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
@@ -126,6 +127,7 @@ public class FTLFrame extends JFrame {
 	private SavedGameFloorplanPanel savedGamePlayerFloorplanPanel;
 	private SavedGameFloorplanPanel savedGameNearbyFloorplanPanel;
 	private SavedGameHangarPanel savedGameHangarPanel;
+	private SavedGameSectorMapPanel savedGameSectorMapPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 	
@@ -204,12 +206,14 @@ public class FTLFrame extends JFrame {
 		savedGamePlayerFloorplanPanel = new SavedGameFloorplanPanel(this);
 		savedGameNearbyFloorplanPanel = new SavedGameFloorplanPanel(this);
 		savedGameHangarPanel = new SavedGameHangarPanel(this);
+		savedGameSectorMapPanel = new SavedGameSectorMapPanel(this);
 
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
 		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
 		savedGameTabsPane.add( "Player Ship", savedGamePlayerFloorplanPanel );
 		savedGameTabsPane.add( "Nearby Ship", savedGameNearbyFloorplanPanel );
 		savedGameTabsPane.add( "Change Ship", savedGameHangarPanel );
+		savedGameTabsPane.add( "Sector Map", savedGameSectorMapPanel );
 
 		JPanel statusPanel = new JPanel();
 		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
@@ -965,6 +969,7 @@ public class FTLFrame extends JFrame {
 		savedGameGeneralPanel.setGameState( gs );
 		savedGamePlayerFloorplanPanel.setShipState( gs.getPlayerShipState() );
 		savedGameNearbyFloorplanPanel.setShipState( gs.getNearbyShipState() );
+		savedGameSectorMapPanel.setGameState( gs );
 
 		gameState = gs;
 	}
@@ -975,6 +980,7 @@ public class FTLFrame extends JFrame {
 		savedGameGeneralPanel.updateGameState( gs );
 		savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
 		savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
+		savedGameSectorMapPanel.updateGameState( gs );
 
 		// Sync session's redundant ship info with player ship.
 		gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
