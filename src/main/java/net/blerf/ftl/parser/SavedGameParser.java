@@ -648,7 +648,7 @@ public class SavedGameParser extends Parser {
 			beacon.setBgSpriteImageInnerPath( readString(in) );
 			beacon.setBgSpritePosX( readInt(in) );
 			beacon.setBgSpritePosY( readInt(in) );
-			beacon.setUnknownVisitedAlpha( readInt(in) );
+			beacon.setAlpha( readInt(in) );
 		}
 		
 		beacon.setSeen( readBool(in) );
@@ -657,8 +657,8 @@ public class SavedGameParser extends Parser {
 		beacon.setEnemyPresent(enemyPresent);
 		if ( enemyPresent ) {
 			beacon.setShipEventId( readString(in) );
-			beacon.setShipBlueprintListId( readString(in) );
-			beacon.setUnknownEnemyPresentAlpha( readInt(in) );
+			beacon.setAutoBlueprintId( readString(in) );
+			beacon.setBeta( readInt(in) );
 		}
 		
 		int fleetPresence = readInt(in);
@@ -695,7 +695,7 @@ public class SavedGameParser extends Parser {
 			writeString( out, beacon.getBgSpriteImageInnerPath() );
 			writeInt( out, beacon.getBgSpritePosX() );
 			writeInt( out, beacon.getBgSpritePosY() );
-			writeInt( out, beacon.getUnknownVisitedAlpha() );
+			writeInt( out, beacon.getAlpha() );
 		}
 
 		writeBool( out, beacon.isSeen() );
@@ -703,8 +703,8 @@ public class SavedGameParser extends Parser {
 		writeBool( out, beacon.isEnemyPresent() );
 		if ( beacon.isEnemyPresent() ) {
 			writeString( out, beacon.getShipEventId() );
-			writeString( out, beacon.getShipBlueprintListId() );
-			writeInt( out, beacon.getUnknownEnemyPresentAlpha() );
+			writeString( out, beacon.getAutoBlueprintId() );
+			writeInt( out, beacon.getBeta() );
 		}
 
 		FleetPresence fleetPresence = beacon.getFleetPresence();
@@ -1954,18 +1954,18 @@ public class SavedGameParser extends Parser {
 		private String bgStarscapeImageInnerPath = null;
 		private String bgSpriteImageInnerPath = null;
 		private int bgSpritePosX = -1, bgSpritePosY = -1;
-		private int unknownVisitedAlpha = 0;       // Sprite rotation in degrees? (observed values: 0, 180)
+		private int alpha = 0;                     // Sprite rotation in degrees? (observed values: 0, 180)
 
 		private boolean seen = false;              // True if player has been within one hop of beacon.
 
 		private boolean enemyPresent = false;
-		private String shipEventId = null;         // <ship> event from events_ships.xml.
-		private String shipBlueprintListId = null; // <blueprintList> to choose enemy ship from.
-		private int unknownEnemyPresentAlpha;
+		private String shipEventId = null;         // Ship event from events_ships.xml.
+		private String autoBlueprintId = null;     // Blueprint, or BlueprintList to choose enemy ship from.
+		private int beta = 0;                      // Erratic int. (observed values: 126 to 32424)
 
-		private FleetPresence fleetPresence = FleetPresence.NONE; // Determines which fleet image to use.
+		private FleetPresence fleetPresence = FleetPresence.NONE; // Determines which fleet background sprites to use.
 
-		private boolean underAttack = false;       // True if under attack by rebels (flashing red) in boss sector.
+		private boolean underAttack = false;       // True if under attack by rebels (flashing red) in final sector.
 
 		private boolean storePresent = false;      // True if beacon contains a store (may require beacon to have been seen first).
 		private StoreState store = null;
@@ -1977,28 +1977,28 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Visited:           %b\n", visited));
+			result.append(String.format("Visited:        %b\n", visited));
 			if ( visited ) {
-				result.append(String.format("Bkg Starscape:     %s\n", bgStarscapeImageInnerPath));
-				result.append(String.format("Bkg Sprite:        %s\n", bgSpriteImageInnerPath));
-				result.append(String.format("Bkg Sprite Coords: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
-				result.append(String.format("Unknown?:          %3d\n", unknownVisitedAlpha));
+				result.append(String.format("  Bkg Starscape:       %s\n", bgStarscapeImageInnerPath));
+				result.append(String.format("  Bkg Sprite:          %s\n", bgSpriteImageInnerPath));
+				result.append(String.format("  Bkg Sprite Position: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
+				result.append(String.format("  Alpha?:              %3d\n", alpha));
 			}
 
-			result.append(String.format("Seen:              %b\n", seen));
+			result.append(String.format("Seen:           %b\n", seen));
 
-			result.append(String.format("Enemy Present:     %b\n", enemyPresent));
+			result.append(String.format("Enemy Present:  %b\n", enemyPresent));
 			if ( enemyPresent ) {
-				result.append(String.format("  Ship Event ID:          %s\n", shipEventId));
-				result.append(String.format("  Ship Blueprint List ID: %s\n", shipBlueprintListId));
-				result.append(String.format("  Unknown?:               %5d\n", unknownEnemyPresentAlpha));
+				result.append(String.format("  Ship Event ID:     %s\n", shipEventId));
+				result.append(String.format("  Auto Blueprint ID: %s\n", autoBlueprintId));
+				result.append(String.format("  Beta?:             %5d\n", beta));
 			}
 
-			result.append(String.format("Fleets Present:    %s\n", fleetPresence));
+			result.append(String.format("Fleets Present: %s\n", fleetPresence));
 
-			result.append(String.format("Under Attack:      %b\n", underAttack));
+			result.append(String.format("Under Attack:   %b\n", underAttack));
 
-			result.append(String.format("Store Present:     %b\n", storePresent));
+			result.append(String.format("Store Present:  %b\n", storePresent));
 			if ( storePresent ) {
 				result.append( store.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 			}
@@ -2009,91 +2009,91 @@ public class SavedGameParser extends Parser {
 		public String getBgSpriteImageInnerPath() {
 			return bgSpriteImageInnerPath;
 		}
-		public void setBgSpriteImageInnerPath(String bgSpriteImageInnerPath) {
+		public void setBgSpriteImageInnerPath( String bgSpriteImageInnerPath ) {
 			this.bgSpriteImageInnerPath = bgSpriteImageInnerPath;
 		}
 		public boolean isVisited() {
 			return visited;
 		}
-		public void setVisited(boolean visited) {
+		public void setVisited( boolean visited ) {
 			this.visited = visited;
 		}
 		public String getBgStarscapeImageInnerPath() {
 			return bgStarscapeImageInnerPath;
 		}
-		public void setBgStarscapeImageInnerPath(String bgStarscapeImageInnerPath) {
+		public void setBgStarscapeImageInnerPath( String bgStarscapeImageInnerPath ) {
 			this.bgStarscapeImageInnerPath = bgStarscapeImageInnerPath;
 		}
 		public int getBgSpritePosX() {
 			return bgSpritePosX;
 		}
-		public void setBgSpritePosX(int bgSpritePosX) {
+		public void setBgSpritePosX( int bgSpritePosX ) {
 			this.bgSpritePosX = bgSpritePosX;
 		}
 		public int getBgSpritePosY() {
 			return bgSpritePosY;
 		}
-		public void setBgSpritePosY(int bgSpritePosY) {
+		public void setBgSpritePosY( int bgSpritePosY ) {
 			this.bgSpritePosY = bgSpritePosY;
 		}
-		public int getUnknownVisitedAlpha() {
-			return unknownVisitedAlpha;
+		public int getAlpha() {
+			return alpha;
 		}
-		public void setUnknownVisitedAlpha(int unknownVisitedAlpha) {
-			this.unknownVisitedAlpha = unknownVisitedAlpha;
+		public void setAlpha( int alpha ) {
+			this.alpha = alpha;
 		}
 		public boolean isSeen() {
 			return seen;
 		}
-		public void setSeen(boolean seen) {
+		public void setSeen( boolean seen ) {
 			this.seen = seen;
 		}
 		public boolean isEnemyPresent() {
 			return enemyPresent;
 		}
-		public void setEnemyPresent(boolean enemyPresent) {
+		public void setEnemyPresent( boolean enemyPresent ) {
 			this.enemyPresent = enemyPresent;
 		}
 		public String getShipEventId() {
 			return shipEventId;
 		}
-		public void setShipEventId(String shipEventId) {
+		public void setShipEventId( String shipEventId ) {
 			this.shipEventId = shipEventId;
 		}
-		public String getShipBlueprintListId() {
-			return shipBlueprintListId;
+		public String getAutoBlueprintId() {
+			return autoBlueprintId;
 		}
-		public void setShipBlueprintListId(String shipBlueprintListId) {
-			this.shipBlueprintListId = shipBlueprintListId;
+		public void setAutoBlueprintId( String autoBlueprintId ) {
+			this.autoBlueprintId = autoBlueprintId;
 		}
-		public int getUnknownEnemyPresentAlpha() {
-			return unknownEnemyPresentAlpha;
+		public int getBeta() {
+			return beta;
 		}
-		public void setUnknownEnemyPresentAlpha(int unknownEnemyPresentAlpha) {
-			this.unknownEnemyPresentAlpha = unknownEnemyPresentAlpha;
+		public void setBeta( int beta ) {
+			this.beta = beta;
 		}
 		public FleetPresence getFleetPresence() {
 			return fleetPresence;
 		}
-		public void setFleetPresence(FleetPresence fleetPresence) {
+		public void setFleetPresence( FleetPresence fleetPresence ) {
 			this.fleetPresence = fleetPresence;
 		}
 		public boolean isUnderAttack() {
 			return underAttack;
 		}
-		public void setUnderAttack(boolean underAttack) {
+		public void setUnderAttack( boolean underAttack ) {
 			this.underAttack = underAttack;
 		}
 		public boolean isStorePresent() {
 			return storePresent;
 		}
-		public void setStorePresent(boolean storePresent) {
+		public void setStorePresent( boolean storePresent ) {
 			this.storePresent = storePresent;
 		}
 		public StoreState getStore() {
 			return store;
 		}
-		public void setStore(StoreState store) {
+		public void setStore( StoreState store ) {
 			this.store = store;
 		}
 	}
@@ -2128,31 +2128,31 @@ public class SavedGameParser extends Parser {
 		public int getFuel() {
 			return fuel;
 		}
-		public void setFuel(int fuel) {
+		public void setFuel( int fuel ) {
 			this.fuel = fuel;
 		}
 		public int getMissiles() {
 			return missiles;
 		}
-		public void setMissiles(int missiles) {
+		public void setMissiles( int missiles ) {
 			this.missiles = missiles;
 		}
 		public int getDroneParts() {
 			return droneParts;
 		}
-		public void setDroneParts(int droneParts) {
+		public void setDroneParts( int droneParts ) {
 			this.droneParts = droneParts;
 		}
 		public StoreShelf getTopShelf() {
 			return topShelf;
 		}
-		public void setTopShelf(StoreShelf topShelf) {
+		public void setTopShelf( StoreShelf topShelf ) {
 			this.topShelf = topShelf;
 		}
 		public StoreShelf getBottomShelf() {
 			return bottomShelf;
 		}
-		public void setBottomShelf(StoreShelf bottomShelf) {
+		public void setBottomShelf( StoreShelf bottomShelf ) {
 			this.bottomShelf = bottomShelf;
 		}
 	}
@@ -2203,7 +2203,7 @@ public class SavedGameParser extends Parser {
 		public StoreItemType getItemType() {
 			return itemType;
 		}
-		public void setItemType(StoreItemType itemType) {
+		public void setItemType( StoreItemType itemType ) {
 			this.itemType = itemType;
 		}
 		public void addItem( StoreItem item ) {
@@ -2215,7 +2215,7 @@ public class SavedGameParser extends Parser {
 		private boolean available;
 		private String itemId;
 
-		public StoreItem(boolean available, String itemId) {
+		public StoreItem( boolean available, String itemId ) {
 			this.available = available;
 			this.itemId = itemId;
 		}
