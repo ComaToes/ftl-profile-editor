@@ -28,6 +28,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -62,6 +63,7 @@ import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.Encounters;
 import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
+import net.blerf.ftl.xml.ShipEvent;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
@@ -406,6 +408,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 		// Reset Beacon states.
 		for ( SavedGameParser.BeaconState beaconState : beaconStateList ) {
 			beaconState.setSeen( false );
+
+			beaconState.setEnemyPresent( false );
+			beaconState.setShipEventId( null );
+			beaconState.setAutoBlueprintId( null );
+			beaconState.setBeta( 0 );
+
 			beaconState.setStorePresent( false );
 			beaconState.setStore( null );
 		}
@@ -415,7 +423,18 @@ public class SavedGameSectorMapPanel extends JPanel {
 			int beaconId = mapLayout.getBeaconId( beaconSprite );
 			if ( beaconId > 0 && beaconId < beaconStateList.size() ) {
 				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
+
 				beaconState.setSeen( beaconSprite.isSeen() );
+
+				if ( beaconSprite.isEnemyPresent() ) {
+					beaconState.setEnemyPresent( true );
+					beaconState.setShipEventId( beaconSprite.getShipEventId() );
+					beaconState.setAutoBlueprintId( beaconSprite.getAutoBlueprintId() );
+					beaconState.setBeta( beaconSprite.getBeta() );
+				}
+
+				beaconState.setFleetPresence( beaconSprite.getFleetPresence() );
+				beaconState.setUnderAttack( beaconSprite.isUnderAttack() );
 			}
 		}
 
@@ -824,17 +843,105 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private void showBeaconEditor( final BeaconSprite beaconSprite ) {
 		final String SEEN = "Seen";
+		final String ENEMY_PRESENT = "Enemy Present";
+		final String SHIP_EVENT = "Ship Event";
+		final String AUTO_SHIP = "Auto Ship";
+		final String BETA = "Beta?";
+		final String FLEET = "Fleet";
+		final String UNDER_ATTACK = "Under Attack";
+
+		Map<String, ShipEvent> allShipEventsMap = DataManager.get().getShipEvents();
 
 		String title = String.format( "Beacon %02d", mapLayout.getBeaconId(beaconSprite) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( SEEN, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(SEEN).setSelected( beaconSprite.isSeen() );
-		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener(frame, "Spoiled by sensor data, or player has been within one hop.") );
+		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener(frame, "The player has been within one hop, or the beacon was spoiled by other means.") );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( ENEMY_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( SHIP_EVENT, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.getCombo(SHIP_EVENT).setEnabled( false );
+		editorPanel.getCombo(SHIP_EVENT).addMouseListener( new StatusbarMouseListener(frame, "A ship event to trigger and forget upon arrival (spawning a new nearby ship).") );
+		editorPanel.addRow( AUTO_SHIP, FieldEditorPanel.ContentType.STRING );
+		editorPanel.getString(AUTO_SHIP).setEditable( false );
+		editorPanel.getString(AUTO_SHIP).setEnabled( false );
+		editorPanel.getString(AUTO_SHIP).addMouseListener( new StatusbarMouseListener(frame, "The blueprint (or blueprintList) of an auto ship to appear.") );
+		editorPanel.addRow( BETA, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(BETA).setText( "0" );
+		editorPanel.getInt(BETA).setEnabled( false );
+		editorPanel.getInt(BETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown erratic integer. (Observed values: 126 to 32424)") );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( FLEET, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.getCombo(FLEET).addMouseListener( new StatusbarMouseListener(frame, "Fleet background sprites.") );
+		editorPanel.addRow( UNDER_ATTACK, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconSprite.isUnderAttack() );
+		editorPanel.getBoolean(UNDER_ATTACK).addMouseListener( new StatusbarMouseListener(frame, "The beacon is under attack by rebels (flashing red).") );
+
+		editorPanel.getCombo(SHIP_EVENT).addItem( "" );
+		for ( ShipEvent shipEvent : allShipEventsMap.values() ) {
+			editorPanel.getCombo(SHIP_EVENT).addItem( shipEvent );
+		}
+
+		if ( beaconSprite.isEnemyPresent() ) {
+			editorPanel.getCombo(SHIP_EVENT).setEnabled( true );
+			editorPanel.getString(AUTO_SHIP).setEnabled( true );
+			editorPanel.getInt(BETA).setEnabled( true );
+
+			editorPanel.getBoolean(ENEMY_PRESENT).setSelected( true );
+
+			ShipEvent currentShipEvent = allShipEventsMap.get( beaconSprite.getShipEventId() );
+			if ( currentShipEvent != null )
+				editorPanel.getCombo(SHIP_EVENT).setSelectedItem( currentShipEvent );
+
+			editorPanel.getString(AUTO_SHIP).setText( beaconSprite.getAutoBlueprintId() );
+
+			editorPanel.getInt(BETA).setText( ""+ beaconSprite.getBeta() );
+		}
+
+		for ( SavedGameParser.FleetPresence fleetPresence : SavedGameParser.FleetPresence.class.getEnumConstants() ) {
+			editorPanel.getCombo(FLEET).addItem( fleetPresence );
+		}
+		editorPanel.getCombo(FLEET).setSelectedItem( beaconSprite.getFleetPresence() );
+
+		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconSprite.isUnderAttack() );
 
 		final Runnable applyCallback = new Runnable() {
 			public void run() {
+				String newString;
+
 				beaconSprite.setSeen( editorPanel.getBoolean(SEEN).isSelected() );
+
+				String shipEventId = null;
+				String autoBlueprintId = null;
+				int beta = 0;
+				boolean enemyPresent = editorPanel.getBoolean(ENEMY_PRESENT).isSelected();
+
+				Object shipEventObj = editorPanel.getCombo(SHIP_EVENT).getSelectedItem();
+				if ( shipEventObj instanceof ShipEvent )
+					shipEventId = ((ShipEvent)shipEventObj).getId();
+
+				autoBlueprintId = editorPanel.getString(AUTO_SHIP).getText();
+
+				newString = editorPanel.getInt(BETA).getText();
+				try { beta = Integer.parseInt(newString); }
+				catch (NumberFormatException e) {}
+
+				if ( enemyPresent && shipEventId != null && autoBlueprintId.length() > 0 && !"null".equals(autoBlueprintId) ) {
+					beaconSprite.setEnemyPresent( true );
+					beaconSprite.setShipEventId( shipEventId );
+					beaconSprite.setAutoBlueprintId( autoBlueprintId );
+					beaconSprite.setBeta( beta );
+				} else {
+					beaconSprite.setEnemyPresent( false );
+					beaconSprite.setShipEventId( null );
+					beaconSprite.setAutoBlueprintId( null );
+					beaconSprite.setBeta( 0 );
+				}
+
+				beaconSprite.setFleetPresence( (SavedGameParser.FleetPresence)editorPanel.getCombo(FLEET).getSelectedItem() );
+				beaconSprite.setUnderAttack( editorPanel.getBoolean(UNDER_ATTACK).isSelected() );
+
 				beaconSprite.makeSane();
 
 				clearSidePanel();
@@ -842,6 +949,39 @@ public class SavedGameSectorMapPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, applyCallback );
 
+		ActionListener shipEventListener = new ActionListener() {
+			private JCheckBox enemyPresentCheck = editorPanel.getBoolean(ENEMY_PRESENT);
+			private JComboBox shipEventCombo = editorPanel.getCombo(SHIP_EVENT);
+			private JTextField autoShipField = editorPanel.getString(AUTO_SHIP);
+			private JTextField betaField = editorPanel.getInt(BETA);
+
+			public void actionPerformed(ActionEvent e) {
+				Object source = e.getSource();
+				if ( source == enemyPresentCheck ) {
+					boolean enemyPresent = enemyPresentCheck.isSelected();
+					if ( !enemyPresent ) {
+						shipEventCombo.setSelectedItem( "" );
+						betaField.setText( "0" );
+					}
+					shipEventCombo.setEnabled( enemyPresent );
+					autoShipField.setEnabled( enemyPresent );
+					betaField.setEnabled( enemyPresent );
+				}
+				else if ( source == shipEventCombo ) {
+					Object shipEventObj = shipEventCombo.getSelectedItem();
+					if ( shipEventObj instanceof ShipEvent ) {
+						String autoBlueprintId = ((ShipEvent)shipEventObj).getAutoBlueprintId();
+						editorPanel.getString(AUTO_SHIP).setText( autoBlueprintId );
+					} else {
+						editorPanel.getString(AUTO_SHIP).setText( "" );
+					}
+				}
+			}
+		};
+		editorPanel.getBoolean(ENEMY_PRESENT).addActionListener( shipEventListener );
+		editorPanel.getCombo(SHIP_EVENT).addActionListener( shipEventListener );
+
+		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
 		showSidePanel();
 	}
 
@@ -1175,9 +1315,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		createSidePanel( title, editorPanel, applyCallback );
 
 		ActionListener questListener = new ActionListener() {
+			private JComboBox fileCombo = editorPanel.getCombo(ENCOUNTERS_FILE);
+			private JComboBox eventCombo = editorPanel.getCombo(EVENT);
+
 			public void actionPerformed(ActionEvent e) {
-				JComboBox fileCombo = editorPanel.getCombo(ENCOUNTERS_FILE);
-				JComboBox eventCombo = editorPanel.getCombo(EVENT);
 				Object source = e.getSource();
 				if ( source == fileCombo ) {
 					eventCombo.removeAllItems();
@@ -1227,22 +1368,47 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	public class BeaconSprite extends JComponent {
 		private boolean visited = false;
+
 		private boolean seen = false;
+
+		private boolean enemyPresent = false;
+		private String shipEventId = null;
+		private String autoBlueprintId = null;
+		private int beta = 0;
+
 		private SavedGameParser.FleetPresence fleetPresence = SavedGameParser.FleetPresence.NONE;
+		private boolean underAttack = false;
 		private BufferedImage currentImage = null;
 
 		public BeaconSprite( SavedGameParser.BeaconState beaconState ) {
 			if ( beaconState != null ) {
 				visited = beaconState.isVisited();
 				seen = beaconState.isSeen();
+				enemyPresent = beaconState.isEnemyPresent();
+				shipEventId = beaconState.getShipEventId();
+				autoBlueprintId = beaconState.getAutoBlueprintId();
+				beta = beaconState.getBeta();
 				fleetPresence = beaconState.getFleetPresence();
+				underAttack = beaconState.isUnderAttack();
 			}
 			makeSane();
 		}
 
 		public boolean isSeen() { return seen; }
+		public boolean isEnemyPresent() { return enemyPresent; }
+		public String getShipEventId() { return shipEventId; }
+		public String getAutoBlueprintId() { return autoBlueprintId; }
+		public int getBeta() { return beta; }
+		public SavedGameParser.FleetPresence getFleetPresence() { return fleetPresence; }
+		public boolean isUnderAttack() { return underAttack; }
 
 		public void setSeen( boolean b ) { seen = b; }
+		public void setEnemyPresent( boolean b ) { enemyPresent = b; }
+		public void setShipEventId( String s ) { shipEventId = s; }
+		public void setAutoBlueprintId( String s ) { autoBlueprintId = s; }
+		public void setBeta( int n ) { beta = n; }
+		public void setFleetPresence( SavedGameParser.FleetPresence fp ) { fleetPresence = fp; }
+		public void setUnderAttack( boolean b ) { underAttack = b; }
 
 		public void makeSane() {
 			if ( fleetPresence == SavedGameParser.FleetPresence.REBEL ) {

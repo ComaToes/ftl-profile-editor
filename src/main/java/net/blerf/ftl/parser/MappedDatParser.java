@@ -40,6 +40,8 @@ import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
+import net.blerf.ftl.xml.ShipEvent;
+import net.blerf.ftl.xml.ShipEvents;
 
 
 public class MappedDatParser extends Parser implements Closeable {
@@ -510,7 +512,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			ptn +=     "<ship *(?: [^>]*)?/>\\s*";
 			ptn +=     "<status *(?: [^>]*)?/>\\s*";
 			ptn +=   "</event>\\s*)";
-			ptn += "</event>";
+			ptn += "</event>"; // Wrong closing tag.
 
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
@@ -534,7 +536,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			ptn +=     "</item_modify>\\s*";
 			ptn +=     "<crewMember *(?: [^>]*)?/>\\s*";
 			ptn +=   "</event>\\s*)";
-			ptn += "</event>";
+			ptn += "</event>"; // Wrong closing tag.
 
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
@@ -570,6 +572,64 @@ public class MappedDatParser extends Parser implements Closeable {
 		Encounters evts = (Encounters)unmarshalFromSequence( Encounters.class, sb );
 
 		return evts;
+	}
+
+	public List<ShipEvent> readShipEvents(InputStream stream, String fileName) throws IOException, JAXBException {
+		log.trace("Reading ship events XML");
+
+		// Need to clean invalid XML and comments before JAXB parsing
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		StringBuilder sb = new StringBuilder();
+		String line;
+		boolean comment = false;
+		String ptn; Pattern p; Matcher m;
+
+		while( (line = in.readLine()) != null ) {
+			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
+			line = line.replaceAll("<!--.*?-->", "");
+
+			// Remove multiline comments
+			if (comment && line.contains("-->"))
+				comment = false;
+			else if (line.contains("<!--"))
+				comment = true;
+			else if (!comment)
+				sb.append(line).append("\n");
+		}
+		in.close();
+
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<shipEvents>\n");
+		sb.append("</shipEvents>\n");
+
+		// Add the xml header.
+		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+
+		if ( "events_ships.xml".equals(fileName) ) {
+			// events_ships.xml: REBEL_AUTO_HACKSHIELDS (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<deadCrew>\\s*";
+			ptn +=   "<text>[^<]*</text>\\s*";
+			ptn +=   "<autoReward *(?: [^>]*)?>[^<]*</autoReward>\\s*";
+			ptn +=   "<status *(?: [^>]*)?/>\\s*)";
+			ptn += "</destroyed>"; // Wrong closing tag.
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"\n</deadCrew>");
+				m.reset();
+			}
+		}
+
+		// Parse cleaned XML
+		ShipEvents shvts = (ShipEvents)unmarshalFromSequence( ShipEvents.class, sb.toString() );
+
+		return shvts.getShipEvents();
 	}
 
 	/**

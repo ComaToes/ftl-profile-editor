@@ -23,6 +23,8 @@ import net.blerf.ftl.xml.Encounters;
 import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.ShipEvent;
+import net.blerf.ftl.xml.ShipEvents;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
@@ -49,7 +51,8 @@ public class DataManager implements Closeable {
 	private List<Achievement> generalAchievements;
 	private Blueprints blueprints;
 	private Blueprints autoBlueprints;
-	private HashMap<String, Encounters> events;
+	private Map<String, Encounters> events;
+	private Map<String, ShipEvent> shipEvents;
 
 	private Map<String, AugBlueprint> augments;
 	private Map<String, DroneBlueprint> drones;
@@ -72,10 +75,6 @@ public class DataManager implements Closeable {
 		log.trace("DataManager initialising");
 		
 		boolean meltdown = false;
-		InputStream achStream = null;
-		InputStream blueStream = null;
-		InputStream autoBlueStream = null;
-		InputStream crewNamesStream = null;
 		ArrayList<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
@@ -84,18 +83,18 @@ public class DataManager implements Closeable {
 
 			log.info("Reading Achievements...");
 			log.debug("Reading 'data/achievements.xml'");
-			achStream = dataParser.getInputStream( "data/achievements.xml" );
+			InputStream achStream = dataParser.getInputStream( "data/achievements.xml" );
 			streams.add(achStream);
 			achievements = dataParser.readAchievements( achStream );
 
 			log.info("Reading Blueprints...");
 			log.debug("Reading 'data/blueprints.xml'");
-			blueStream = dataParser.getInputStream( "data/blueprints.xml" );
+			InputStream blueStream = dataParser.getInputStream( "data/blueprints.xml" );
 			streams.add(blueStream);
 			blueprints = dataParser.readBlueprints( blueStream );
 
 			log.debug("Reading 'data/autoBlueprints.xml'");
-			autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
+			InputStream autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
 			streams.add(autoBlueStream);
 			autoBlueprints = dataParser.readBlueprints( autoBlueStream );
 
@@ -108,9 +107,8 @@ public class DataManager implements Closeable {
 
 			events = new LinkedHashMap<String, Encounters>();
 			for ( String eventsFileName : eventsFileNames ) {
-				InputStream tmpStream = null;
 				log.debug("Reading 'data/"+ eventsFileName +"'");
-				tmpStream = dataParser.getInputStream( "data/"+ eventsFileName );
+				InputStream tmpStream = dataParser.getInputStream( "data/"+ eventsFileName );
 				streams.add(tmpStream);
 				Encounters tmpEncounters = dataParser.readEvents( tmpStream, eventsFileName );
 				events.put( eventsFileName, tmpEncounters );
@@ -118,8 +116,15 @@ public class DataManager implements Closeable {
 
 			log.info("Reading Crew Names...");
 			log.debug("Reading 'data/names.xml'");
-			crewNamesStream = dataParser.getInputStream( "data/names.xml" );
+			InputStream crewNamesStream = dataParser.getInputStream( "data/names.xml" );
+			streams.add(crewNamesStream);
 			List<CrewNameList> crewNameLists = dataParser.readCrewNames( crewNamesStream );
+
+			log.info("Reading Ship Events...");
+			log.debug("Reading 'data/events_ships.xml'");
+			InputStream shipEventsStream = dataParser.getInputStream( "data/events_ships.xml" );
+			streams.add(shipEventsStream);
+			List<ShipEvent> shipEventList = dataParser.readShipEvents( shipEventsStream, "events_ships.xml" );
 
 			log.info("Finished reading game resources.");
 
@@ -185,6 +190,10 @@ public class DataManager implements Closeable {
 					crewNamesFemale.addAll( crewNameList.getNames() );
 			}
 
+			shipEvents = new LinkedHashMap<String, ShipEvent>();
+			for ( ShipEvent shipEvent : shipEventList )
+				shipEvents.put( shipEvent.getId(), shipEvent );
+
 		} catch (JAXBException e) {
 			meltdown = true;
 			throw e;
@@ -194,8 +203,6 @@ public class DataManager implements Closeable {
 			throw e;
 
 		} finally {
-			streams.add(crewNamesStream);
-
 			for ( InputStream stream : streams ) {
 				try {if (stream != null) stream.close();}
 				catch (IOException f) {}
@@ -377,15 +384,6 @@ public class DataManager implements Closeable {
 	}
 
 	/**
-	 * Returns all Encounters objects, mapped to xml file names.
-	 *
-	 * Each can be queried for its FTLEvent or FTLEventList members.
-	 */
-	public Map<String, Encounters> getEncounters() {
-		return events;
-	}
-
-	/**
 	 * Returns an Event with a given id.
 	 * All event xml files are searched.
 	 *
@@ -413,5 +411,25 @@ public class DataManager implements Closeable {
 			if ( tmpEventList != null ) return tmpEventList;
 		}
 		return null;
+	}
+
+	/**
+	 * Returns all Encounters objects, mapped to xml file names.
+	 *
+	 * Each can be queried for its FTLEvent or FTLEventList members.
+	 */
+	public Map<String, Encounters> getEncounters() {
+		return events;
+	}
+
+	public ShipEvent getShipEventById( String id ) {
+		ShipEvent result = shipEvents.get(id);
+		if ( result == null )
+			log.error( "No ShipEvent found for id: "+ id );
+		return result;
+	}
+
+	public Map<String, ShipEvent> getShipEvents() {
+		return shipEvents;
 	}
 }
