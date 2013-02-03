@@ -159,9 +159,6 @@ public class MappedDatParser extends Parser implements Closeable {
 				// blueprints.xml: PLAYER_SHIP_ROCK_2 shipBlueprint (FTL 1.03.1)
 				line = line.replaceAll("\"img=", "\" img=");
 
-				// blueprints.xml: DEFAULT shipBlueprint (FTL 1.03.1)
-				//line = line.replaceAll("</ship>", "</shipBlueprint>");
-
 				// blueprints.xml: LASER_BURST_5 weaponBlueprint (FTL 1.01)
 				line = line.replaceAll("<tooltip>([^<]*)</desc>(-->)?", "<tooltip>$1</tooltip>");
 
