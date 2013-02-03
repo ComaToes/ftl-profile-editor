@@ -2006,12 +2006,6 @@ public class SavedGameParser extends Parser {
 			return result.toString();
 		}
 		
-		public String getBgSpriteImageInnerPath() {
-			return bgSpriteImageInnerPath;
-		}
-		public void setBgSpriteImageInnerPath( String bgSpriteImageInnerPath ) {
-			this.bgSpriteImageInnerPath = bgSpriteImageInnerPath;
-		}
 		public boolean isVisited() {
 			return visited;
 		}
@@ -2023,6 +2017,12 @@ public class SavedGameParser extends Parser {
 		}
 		public void setBgStarscapeImageInnerPath( String bgStarscapeImageInnerPath ) {
 			this.bgStarscapeImageInnerPath = bgStarscapeImageInnerPath;
+		}
+		public String getBgSpriteImageInnerPath() {
+			return bgSpriteImageInnerPath;
+		}
+		public void setBgSpriteImageInnerPath( String bgSpriteImageInnerPath ) {
+			this.bgSpriteImageInnerPath = bgSpriteImageInnerPath;
 		}
 		public int getBgSpritePosX() {
 			return bgSpritePosX;

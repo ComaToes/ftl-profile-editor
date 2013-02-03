@@ -16,6 +16,8 @@ import javax.xml.bind.JAXBException;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.AugBlueprint;
+import net.blerf.ftl.xml.BackgroundImage;
+import net.blerf.ftl.xml.BackgroundImageList;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.DroneBlueprint;
@@ -53,6 +55,7 @@ public class DataManager implements Closeable {
 	private Blueprints autoBlueprints;
 	private Map<String, Encounters> events;
 	private Map<String, ShipEvent> shipEvents;
+	private Map<String, BackgroundImageList> backgroundImageLists;
 
 	private Map<String, AugBlueprint> augments;
 	private Map<String, DroneBlueprint> drones;
@@ -126,6 +129,12 @@ public class DataManager implements Closeable {
 			streams.add(shipEventsStream);
 			List<ShipEvent> shipEventList = dataParser.readShipEvents( shipEventsStream, "events_ships.xml" );
 
+			log.info("Reading Background Image Lists...");
+			log.debug("Reading 'data/events_imageList.xml'");
+			InputStream imageListsStream = dataParser.getInputStream( "data/events_imageList.xml" );
+			streams.add(imageListsStream);
+			List<BackgroundImageList> imageLists = dataParser.readImageLists( imageListsStream );
+
 			log.info("Finished reading game resources.");
 
 			generalAchievements = new ArrayList<Achievement>();
@@ -193,6 +202,10 @@ public class DataManager implements Closeable {
 			shipEvents = new LinkedHashMap<String, ShipEvent>();
 			for ( ShipEvent shipEvent : shipEventList )
 				shipEvents.put( shipEvent.getId(), shipEvent );
+
+			backgroundImageLists = new LinkedHashMap<String, BackgroundImageList>();
+			for ( BackgroundImageList imageList : imageLists )
+				backgroundImageLists.put( imageList.getId(), imageList );
 
 		} catch (JAXBException e) {
 			meltdown = true;
@@ -431,5 +444,15 @@ public class DataManager implements Closeable {
 
 	public Map<String, ShipEvent> getShipEvents() {
 		return shipEvents;
+	}
+
+	/**
+	 * Returns all BackgroundImageList objects, mapped to ids.
+	 *
+	 * When unspecified, images are randomly chosen from the
+	 * "PLANET" and "BACKGROUND" lists for sprites and backgrounds.
+	 */
+	public Map<String, BackgroundImageList> getBackgroundImageLists() {
+		return backgroundImageLists;
 	}
 }

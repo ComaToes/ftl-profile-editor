@@ -32,6 +32,8 @@ import org.apache.logging.log4j.Logger;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Achievements;
+import net.blerf.ftl.xml.BackgroundImageList;
+import net.blerf.ftl.xml.BackgroundImageLists;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.CrewNameLists;
@@ -701,6 +703,46 @@ public class MappedDatParser extends Parser implements Closeable {
 		ShipEvents shvts = (ShipEvents)unmarshalFromSequence( ShipEvents.class, sb.toString() );
 
 		return shvts.getShipEvents();
+	}
+
+	public List<BackgroundImageList> readImageLists(InputStream stream) throws IOException, JAXBException {
+		log.trace("Reading background images XML");
+
+		// Need to clean invalid XML and comments before JAXB parsing
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		StringBuilder sb = new StringBuilder();
+		String line;
+		boolean comment = false;
+
+		while( (line = in.readLine()) != null ) {
+			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
+			line = line.replaceAll("<!--.*?-->", "");
+
+			// Remove multiline comments
+			if (comment && line.contains("-->"))
+				comment = false;
+			else if (line.contains("<!--"))
+				comment = true;
+			else if (!comment)
+				sb.append(line).append("\n");
+		}
+		in.close();
+
+		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
+			sb.replace(0, BOM_UTF8.length(), "");
+
+		// XML has multiple root nodes so need to wrap.
+		sb.insert(0, "<imageLists>\n");
+		sb.append("</imageLists>\n");
+
+		// Add the xml header.
+		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+
+		// Parse cleaned XML
+		BackgroundImageLists imgs = (BackgroundImageLists)unmarshalFromSequence( BackgroundImageLists.class, sb.toString() );
+
+		return imgs.getImageLists();
 	}
 
 	/**
