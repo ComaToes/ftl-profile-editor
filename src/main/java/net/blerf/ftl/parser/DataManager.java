@@ -91,12 +91,12 @@ public class DataManager implements Closeable {
 			log.debug("Reading 'data/blueprints.xml'");
 			InputStream blueStream = dataParser.getInputStream( "data/blueprints.xml" );
 			streams.add(blueStream);
-			blueprints = dataParser.readBlueprints( blueStream );
+			blueprints = dataParser.readBlueprints( blueStream, "blueprints.xml" );
 
 			log.debug("Reading 'data/autoBlueprints.xml'");
 			InputStream autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
 			streams.add(autoBlueStream);
-			autoBlueprints = dataParser.readBlueprints( autoBlueStream );
+			autoBlueprints = dataParser.readBlueprints( autoBlueStream, "autoBlueprints.xml" );
 
 			log.info("Reading Events...");
 			String[] eventsFileNames = new String[] { "events.xml", "newEvents.xml",

@@ -36,8 +36,6 @@ import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.CrewNameLists;
 import net.blerf.ftl.xml.Encounters;
-import net.blerf.ftl.xml.FTLEvent;
-import net.blerf.ftl.xml.FTLEventList;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.ShipEvent;
@@ -131,7 +129,7 @@ public class MappedDatParser extends Parser implements Closeable {
 		return ach.getAchievements();
 	}
 
-	public Blueprints readBlueprints(InputStream stream) throws IOException, JAXBException {
+	public Blueprints readBlueprints(InputStream stream, String fileName) throws IOException, JAXBException {
 		log.trace("Reading blueprints XML");
 
 		// Need to clean invalid XML and comments before JAXB parsing
@@ -146,18 +144,52 @@ public class MappedDatParser extends Parser implements Closeable {
 			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
 			line = line.replaceAll("<!--.*?-->", "");
 
-			// blueprints.xml
-			line = line.replaceAll("^<!-- sardonyx$", "");  // Error above one shipBlueprint.
-			line = line.replaceAll("<title>([^<]*)</[^>]*>", "<title>$1</title>");  // Error in systemBlueprint and itemBlueprint.
-			line = line.replaceAll("<tooltip>([^<]*)</[^>]*>(-->)?", "<tooltip>$1</tooltip>");  // Error in weaponBlueprint.
-			line = line.replaceAll("<speed>([^<]*)</[^>]*>", "<speed>$1</speed>");  // Error in weaponBlueprint.
-			line = line.replaceAll("\"img=", "\" img=");  // ahhhh.
-			line = line.replaceAll("</ship>", "</shipBlueprint>");  // Error in one shipBlueprint.
-			line = line.replaceAll(" img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"");  // Error in two shipBlueprints.
+			if ( "blueprints.xml".equals(fileName) ) {
+				// blueprints.xml: PLAYER_SHIP_CRYSTAL_2 shipBlueprint (FTL 1.03.1)
+				line = line.replaceAll("^<!-- sardonyx$", "");
 
-			// autoBlueprints.xml
-			line = line.replaceAll("\"max=", "\" max=");  // ahhhh
-			line = line.replaceAll("\"room=", "\" room=");  // ahhhh
+				// blueprints.xml: LONG_ELITE_MED shipBlueprint (FTL 1.03.1)
+				// blueprints.xml: LONG_ELITE_HARD shipBlueprint (FTL 1.03.1)
+				line = line.replaceAll(" img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"");
+
+				// blueprints.xml: PLAYER_SHIP_STEALTH shipBlueprint (FTL 1.03.1)
+				// blueprints.xml: PLAYER_SHIP_ROCK shipBlueprint (FTL 1.03.1)
+				// blueprints.xml: PLAYER_SHIP_ROCK_2 shipBlueprint (FTL 1.03.1)
+				line = line.replaceAll("\"img=", "\" img=");
+
+				// blueprints.xml: DEFAULT shipBlueprint (FTL 1.03.1)
+				//line = line.replaceAll("</ship>", "</shipBlueprint>");
+
+				// blueprints.xml: LASER_BURST_5 weaponBlueprint (FTL 1.01)
+				line = line.replaceAll("<tooltip>([^<]*)</desc>(-->)?", "<tooltip>$1</tooltip>");
+
+				// blueprints.xml: oxygen, teleporter, cloaking systemBlueprint (FTL 1.01)
+				// blueprints.xml: pilot, medbay, shields systemBlueprint (FTL 1.01)
+				// blueprints.xml: engines, weapons, drones systemBlueprint (FTL 1.01)
+				// blueprints.xml: sensors, doors systemBlueprint (FTL 1.01)
+				line = line.replaceAll("<title>([^<]*)</type>", "<title>$1</title>");
+
+				// blueprints.xml: fuel, drones, missiles itemBlueprint (FTL 1.01)
+				line = line.replaceAll("<title>([^<]*)</ship>", "<title>$1</title>");
+
+				// blueprints.xml: LASER_HULL_1 weaponBlueprint (FTL 1.01)
+				// blueprints.xml: LASER_HULL_2 weaponBlueprint (FTL 1.01)
+				line = line.replaceAll("<speed>([^<]*)</image>", "<speed>$1</speed>");  // Error in weaponBlueprint.
+			}
+
+			if ( "autoBlueprints.xml".equals(fileName) ) {
+				// autoBlueprints.xml: JELLY_TRUFFLE (FTL 1.03.1)
+				// autoBlueprints.xml: ROCK_SCOUT, ROCK_FIGHT, ROCK_ASSAULT, ROCK_ASSAULT_ELITE (FTL 1.03.1)
+				// autoBlueprints.xml: MANTIS_SCOUT, MANTIS_FIGHTER, MANTIS_BOMBER (FTL 1.03.1)
+				// autoBlueprints.xml: FED_SCOUT, FED_BOMBER (FTL 1.03.1)
+				// autoBlueprints.xml: CIRCLE_SCOUT, CIRCLE_BOMBER (FTL 1.03.1)
+				// autoBlueprints.xml: ZOLTAN_FIGHTER, ZOLTAN_BOMBER, ZOLTAN_PEACE (FTL 1.03.1)
+				// autoBlueprints.xml: CRYSTAL_SCOUT, CRYSTAL_BOMBER (FTL 1.03.1)
+				line = line.replaceAll("\"max=", "\" max=");
+
+				// autoBlueprints.xml: JELLY_CROISSANT (FTL 1.03.1)
+				line = line.replaceAll("\"room=", "\" room=");
+			}
 
 			// Remove multiline comments
 			if (comment && line.contains("-->"))
@@ -179,8 +211,8 @@ public class MappedDatParser extends Parser implements Closeable {
 		// Add the xml header.
 		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
-		if ( 1 == 1) {
-			// blueprints.xml: PLAYER_SHIP_HARD_2 (FTL 1.03.1)
+		if ( "blueprints.xml".equals(fileName) ) {
+			// blueprints.xml: PLAYER_SHIP_HARD_2 shipBlueprint (FTL 1.03.1)
 			ptn = "";
 			ptn += "(<shields *(?: [^>]*)?>\\s*";
 			ptn +=   "<slot *(?: [^>]*)?>\\s*";
@@ -193,6 +225,45 @@ public class MappedDatParser extends Parser implements Closeable {
 			m = p.matcher(sb);
 			if ( m.find() ) {
 				sb.replace(m.start(), m.end(), m.group(1)+"</shields>");
+				m.reset();
+			}
+
+			// blueprints.xml: SYSTEM_CASING augBlueprint (FTL 1.01)
+			ptn = "";
+			ptn += "\\s*<title>Reinforced System Casing</title>"; // Extra title.
+			ptn += "(\\s*<title>Titanium System Casing</title>)";
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			if ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1));
+				m.reset();
+			}
+		}
+
+		if ( "blueprints.xml".equals(fileName) || "autoBlueprints.xml".equals(fileName) ) {
+			// blueprints.xml: DEFAULT shipBlueprint (FTL 1.03.1)
+			// autoBlueprints.xml: AUTO_BASIC shipBlueprint (FTL 1.03.1)
+			// autoBlueprints.xml: AUTO_ASSAULT shipBlueprint (FTL 1.03.1)
+			ptn = "";
+			ptn += "(<shipBlueprint *(?: [^>]*)?>\\s*";
+			ptn +=   "<class>[^<]*</class>\\s*";
+			ptn +=   "<systemList *(?: [^>]*)?>\\s*";
+			ptn +=      "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*";
+			ptn +=   "</systemList>\\s*";
+			ptn +=   "(?:<droneList *(?: [^>]*)?>\\s*";
+			ptn +=      "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*";
+			ptn +=   "</droneList>\\s*)?";
+			ptn +=   "(?:<weaponList *(?: [^>]*)?>\\s*";
+			ptn +=      "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*";
+			ptn +=   "</weaponList>\\s*)?";
+			ptn +=   "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*)";
+			ptn += "</ship>"; // Wrong closing tag.
+
+			p = Pattern.compile(ptn);
+			m = p.matcher(sb);
+			while ( m.find() ) {
+				sb.replace(m.start(), m.end(), m.group(1)+"</shipBlueprint>");
 				m.reset();
 			}
 		}
@@ -468,7 +539,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"\n</choice>\n"+ m.group(2));
+				sb.replace(m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2));
 				m.reset();
 			}
 		}
@@ -517,7 +588,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"\n</choice>\n");
+				sb.replace(m.start(), m.end(), m.group(1)+"</choice>\n");
 				m.reset();
 			}
 		}
@@ -541,7 +612,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"\n</eventList>\n");
+				sb.replace(m.start(), m.end(), m.group(1)+"</eventList>\n");
 				m.reset();
 			}
 		}
@@ -556,14 +627,14 @@ public class MappedDatParser extends Parser implements Closeable {
 			ptn +=   "<ship *(?: [^>]*)?/>\\s*";
 			ptn +=   "<choice>\\s*";
 			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event *(?: [^>]*)?/>\\s*)";
+			ptn +=     "<event *(?: [^>]*)?/>\n)";
 			//        </choice> tag is missing.
 			ptn += "(\\s*</event>)";
 
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"\n</choice>\n"+ m.group(2));
+				sb.replace(m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2));
 				m.reset();
 			}
 		}
