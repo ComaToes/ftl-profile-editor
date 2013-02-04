@@ -27,6 +27,7 @@ import net.blerf.ftl.ui.RegexDocument;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+
 public class FieldEditorPanel extends JPanel {
 	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO };
 
@@ -192,6 +193,16 @@ public class FieldEditorPanel extends JPanel {
 		gridC.gridy++;
 	}
 
+	public void addFillRow() {
+		gridC.fill = GridBagConstraints.VERTICAL;
+		gridC.weighty = 1.0;
+		gridC.gridwidth = GridBagConstraints.REMAINDER;
+		gridC.gridx = 0;
+
+		this.add(Box.createVerticalGlue(), gridC);
+		gridC.gridy++;
+	}
+
 	public void setStringAndReminder( String valueName, String s ) {
 		JTextField valueField = stringMap.get( valueName );
 		if ( valueField != null ) valueField.setText(s);
@@ -286,8 +297,8 @@ public class FieldEditorPanel extends JPanel {
 		for (JSlider valueSlider : sliderMap.values())
 			valueSlider.setValue(0);
 
-		for (JComboBox valueSlider : comboMap.values())
-			valueSlider.removeAllItems();
+		for (JComboBox valueCombo : comboMap.values())
+			valueCombo.removeAllItems();
 
 		for (JLabel valueReminder : reminderMap.values())
 			valueReminder.setText("");
