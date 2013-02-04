@@ -1954,24 +1954,138 @@ public class SavedGameParser extends Parser {
 		private String bgStarscapeImageInnerPath = null;
 		private String bgSpriteImageInnerPath = null;
 		private int bgSpritePosX = -1, bgSpritePosY = -1;
-		private int alpha = 0;                     // Sprite rotation in degrees? (observed values: 0, 180)
+		private int alpha = 0;
 
-		private boolean seen = false;              // True if player has been within one hop of beacon.
+		private boolean seen = false;
 
 		private boolean enemyPresent = false;
-		private String shipEventId = null;         // Ship event from events_ships.xml.
-		private String autoBlueprintId = null;     // Blueprint, or BlueprintList to choose enemy ship from.
-		private int beta = 0;                      // Erratic int. (observed values: 126 to 32424)
+		private String shipEventId = null;
+		private String autoBlueprintId = null;
+		private int beta = 0;
 
-		private FleetPresence fleetPresence = FleetPresence.NONE; // Determines which fleet background sprites to use.
+		private FleetPresence fleetPresence = FleetPresence.NONE;
 
-		private boolean underAttack = false;       // True if under attack by rebels (flashing red) in final sector.
+		private boolean underAttack = false;
 
-		private boolean storePresent = false;      // True if beacon contains a store (may require beacon to have been seen first).
+		private boolean storePresent = false;
 		private StoreState store = null;
 
 		public BeaconState() {
 		}
+
+		/**
+		 * Sets whether the player has been to this beacon.
+		 *
+		 * If true, starscape and sprite paths must be set,
+		 * as well as the sprite's X, Y, and unknown alpha.
+		 *
+		 * It's likely that setting this to true prevents
+		 * randomly generated events from triggering.
+		 */
+		public void setVisited( boolean b ) { visited = b; }
+		public boolean isVisited() { return visited; }
+
+		/**
+		 * Sets a fullscreen starscape image for the background.
+		 *
+		 * By convention, this path is from the BG_* imageLists.
+		 */
+		public void setBgStarscapeImageInnerPath( String s ) {
+			bgStarscapeImageInnerPath = s;
+		}
+		public String getBgStarscapeImageInnerPath() {
+			return bgStarscapeImageInnerPath;
+		}
+
+		/**
+		 * Sets a background sprite to draw over the starscape.
+		 *
+		 * By convention, this path is from the PLANET_* imageLists.
+		 * To not display a sprite, set it to "NONE".
+		 */
+		public void setBgSpriteImageInnerPath( String s ) {
+			bgSpriteImageInnerPath = s;
+		}
+		public String getBgSpriteImageInnerPath() {
+			return bgSpriteImageInnerPath;
+		}
+
+		/**
+		 * Sets the position of the background sprite image.
+		 *
+		 * When the sprite's inner path is "NONE",
+		 * X and Y are 0.
+		 */
+		public void setBgSpritePosX( int n ) { bgSpritePosX = n; }
+		public void setBgSpritePosY( int n ) { bgSpritePosY = n; }
+
+		public int getBgSpritePosX() { return bgSpritePosX; }
+		public int getBgSpritePosY() { return bgSpritePosY; }
+
+		/**
+		 * Sets an unknown integer.
+		 *
+		 * Sprite rotation in degrees? (observed values: 0, 180)
+		 */
+		public void setAlpha( int n ) { alpha = n; }
+		public int getAlpha() { return alpha; }
+
+		/**
+		 * Sets whether the player has been within one hop of this beacon.
+		 */
+		public void setSeen( boolean b ) { seen = b; }
+		public boolean isSeen() { return seen; }
+
+		/**
+		 * Sets whether an enemy ship is waiting at this beacon.
+		 *
+		 * If true, a ShipEvent and AutoBlueprint must be set,
+		 * as well as the unknown beta.
+		 */
+		public void setEnemyPresent( boolean b ) { enemyPresent = b; }
+		public boolean isEnemyPresent() { return enemyPresent; }
+
+		/**
+		 * Sets a ShipEvent to trigger upon arrival.
+		 */
+		public void setShipEventId( String s ) { shipEventId = s; }
+		public String getShipEventId() { return shipEventId; }
+
+		/**
+		 * Sets an auto blueprint (or blueprintList) to spawn with the ShipEvent.
+		 */
+		public void setAutoBlueprintId( String s ) { autoBlueprintId = s; }
+		public String getAutoBlueprintId() { return autoBlueprintId; }
+
+		/**
+		 * Sets an unknown erratic integer.
+		 * (observed values: 126 to 32424)
+		 */
+		public void setBeta( int n ) { beta = n; }
+		public int getBeta() { return beta; }
+
+		/**
+		 * Sets fleet background sprites and possibly the beacon icon.
+		 */
+		public void setFleetPresence( FleetPresence fp ) { fleetPresence = fp; }
+		public FleetPresence getFleetPresence() { return fleetPresence; }
+
+		/**
+		 * Sets whether this beacon is under attack by rebels (flashing red).
+		 */
+		public void setUnderAttack( boolean b ) { underAttack = b; }
+		public boolean isUnderAttack() { return underAttack; }
+
+		/**
+		 * Sets whether a store is present.
+		 *
+		 * If true, a store must be set.
+		 */
+		public void setStorePresent( boolean b ) { storePresent = b; }
+		public boolean isStorePresent() { return storePresent; }
+
+		public void setStore( StoreState storeState ) { store = storeState; }
+		public StoreState getStore() { return store; }
 
 		@Override
 		public String toString() {
@@ -2005,97 +2119,6 @@ public class SavedGameParser extends Parser {
 
 			return result.toString();
 		}
-		
-		public boolean isVisited() {
-			return visited;
-		}
-		public void setVisited( boolean visited ) {
-			this.visited = visited;
-		}
-		public String getBgStarscapeImageInnerPath() {
-			return bgStarscapeImageInnerPath;
-		}
-		public void setBgStarscapeImageInnerPath( String bgStarscapeImageInnerPath ) {
-			this.bgStarscapeImageInnerPath = bgStarscapeImageInnerPath;
-		}
-		public String getBgSpriteImageInnerPath() {
-			return bgSpriteImageInnerPath;
-		}
-		public void setBgSpriteImageInnerPath( String bgSpriteImageInnerPath ) {
-			this.bgSpriteImageInnerPath = bgSpriteImageInnerPath;
-		}
-		public int getBgSpritePosX() {
-			return bgSpritePosX;
-		}
-		public void setBgSpritePosX( int bgSpritePosX ) {
-			this.bgSpritePosX = bgSpritePosX;
-		}
-		public int getBgSpritePosY() {
-			return bgSpritePosY;
-		}
-		public void setBgSpritePosY( int bgSpritePosY ) {
-			this.bgSpritePosY = bgSpritePosY;
-		}
-		public int getAlpha() {
-			return alpha;
-		}
-		public void setAlpha( int alpha ) {
-			this.alpha = alpha;
-		}
-		public boolean isSeen() {
-			return seen;
-		}
-		public void setSeen( boolean seen ) {
-			this.seen = seen;
-		}
-		public boolean isEnemyPresent() {
-			return enemyPresent;
-		}
-		public void setEnemyPresent( boolean enemyPresent ) {
-			this.enemyPresent = enemyPresent;
-		}
-		public String getShipEventId() {
-			return shipEventId;
-		}
-		public void setShipEventId( String shipEventId ) {
-			this.shipEventId = shipEventId;
-		}
-		public String getAutoBlueprintId() {
-			return autoBlueprintId;
-		}
-		public void setAutoBlueprintId( String autoBlueprintId ) {
-			this.autoBlueprintId = autoBlueprintId;
-		}
-		public int getBeta() {
-			return beta;
-		}
-		public void setBeta( int beta ) {
-			this.beta = beta;
-		}
-		public FleetPresence getFleetPresence() {
-			return fleetPresence;
-		}
-		public void setFleetPresence( FleetPresence fleetPresence ) {
-			this.fleetPresence = fleetPresence;
-		}
-		public boolean isUnderAttack() {
-			return underAttack;
-		}
-		public void setUnderAttack( boolean underAttack ) {
-			this.underAttack = underAttack;
-		}
-		public boolean isStorePresent() {
-			return storePresent;
-		}
-		public void setStorePresent( boolean storePresent ) {
-			this.storePresent = storePresent;
-		}
-		public StoreState getStore() {
-			return store;
-		}
-		public void setStore( StoreState store ) {
-			this.store = store;
-		}
 	}
 
 
@@ -2107,6 +2130,18 @@ public class SavedGameParser extends Parser {
 
 		public StoreState() {
 		}
+
+		public void setFuel( int n ) { fuel = n; }
+		public void setMissiles( int n ) { missiles = n; }
+		public void setDroneParts( int n ) { droneParts = n; }
+		public void setTopShelf( StoreShelf shelf ) { topShelf = shelf; }
+		public void setBottomShelf( StoreShelf shelf ) { bottomShelf = shelf; }
+
+		public int getFuel() { return fuel; }
+		public int getMissiles() { return missiles; }
+		public int getDroneParts() { return droneParts; }
+		public StoreShelf getTopShelf() { return topShelf; }
+		public StoreShelf getBottomShelf() { return bottomShelf; }
 
 		@Override
 		public String toString() {
@@ -2123,37 +2158,6 @@ public class SavedGameParser extends Parser {
 			result.append( bottomShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 
 			return result.toString();
-		}
-
-		public int getFuel() {
-			return fuel;
-		}
-		public void setFuel( int fuel ) {
-			this.fuel = fuel;
-		}
-		public int getMissiles() {
-			return missiles;
-		}
-		public void setMissiles( int missiles ) {
-			this.missiles = missiles;
-		}
-		public int getDroneParts() {
-			return droneParts;
-		}
-		public void setDroneParts( int droneParts ) {
-			this.droneParts = droneParts;
-		}
-		public StoreShelf getTopShelf() {
-			return topShelf;
-		}
-		public void setTopShelf( StoreShelf topShelf ) {
-			this.topShelf = topShelf;
-		}
-		public StoreShelf getBottomShelf() {
-			return bottomShelf;
-		}
-		public void setBottomShelf( StoreShelf bottomShelf ) {
-			this.bottomShelf = bottomShelf;
 		}
 	}
 
@@ -2182,6 +2186,14 @@ public class SavedGameParser extends Parser {
 		public StoreShelf() {
 		}
 
+		public void setItemType( StoreItemType type ) { itemType = type; }
+		public StoreItemType getItemType() { return itemType; }
+
+		public void addItem( StoreItem item ) {
+			items.add( item );
+		}
+		public List<StoreItem> getItems() { return items; }
+
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
@@ -2195,19 +2207,6 @@ public class SavedGameParser extends Parser {
 			}
 
 			return result.toString();
-		}
-
-		public List<StoreItem> getItems() {
-			return items;
-		}
-		public StoreItemType getItemType() {
-			return itemType;
-		}
-		public void setItemType( StoreItemType itemType ) {
-			this.itemType = itemType;
-		}
-		public void addItem( StoreItem item ) {
-			items.add( item );
 		}
 	}
 	
