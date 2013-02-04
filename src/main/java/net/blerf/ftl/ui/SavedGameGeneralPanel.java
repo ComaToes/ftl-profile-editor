@@ -60,10 +60,15 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String CARGO_FOUR = "#4";
 	private static final String[] cargoSlots = new String[] { CARGO_ONE, CARGO_TWO, CARGO_THREE, CARGO_FOUR };
 
+	private static final String FLAGSHIP = "Flagship Visible";
+	private static final String FLAGSHIP_HOP = "Flagship Hop";
+	private static final String FLAGSHIP_MOVING = "Flagship Moving";
+
 	private FTLFrame frame;
 	private FieldEditorPanel sessionPanel = null;
 	private FieldEditorPanel sectorPanel = null;
 	private FieldEditorPanel cargoPanel = null;
+	private FieldEditorPanel bossPanel = null;
 
 	public SavedGameGeneralPanel( FTLFrame frame ) {
 		this.setLayout( new GridBagLayout() );
@@ -79,6 +84,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		sessionPanel.addRow( ALPHA, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( DIFFICULTY_EASY, FieldEditorPanel.ContentType.BOOLEAN );
 		sessionPanel.addBlankRow();
+		sessionPanel.addFillRow();
 
 		sessionPanel.getInt(ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown session field. Always 0?") );
 		sessionPanel.getBoolean(DIFFICULTY_EASY).addMouseListener( new StatusbarMouseListener(frame, "Uncheck for normal difficulty.") );
@@ -96,6 +102,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.addRow( HIDDEN_SECTOR, FieldEditorPanel.ContentType.BOOLEAN );
 		sectorPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
 		sectorPanel.addBlankRow();
+		sectorPanel.addFillRow();
 
 		sectorPanel.getInt(SECTOR_LAYOUT_SEED).addMouseListener( new StatusbarMouseListener(frame, "A per-sector constant that seeds the random generation of the map, events, etc. (potentially dangerous).") );
 		sectorPanel.getInt(REBEL_FLEET_OFFSET).addMouseListener( new StatusbarMouseListener(frame, "A large negative var (-750,-250,...,-n*25, approaching 0) + fudge = the fleet circle's edge.") );
@@ -111,6 +118,32 @@ public class SavedGameGeneralPanel extends JPanel {
 			cargoPanel.addRow( cargoSlots[i], FieldEditorPanel.ContentType.COMBO );
 		}
 		cargoPanel.addBlankRow();
+		cargoPanel.addFillRow();
+
+		bossPanel = new FieldEditorPanel( true );
+		bossPanel.setBorder( BorderFactory.createTitledBorder("Boss") );
+		bossPanel.addRow( FLAGSHIP, FieldEditorPanel.ContentType.BOOLEAN );
+		bossPanel.addRow( FLAGSHIP_HOP, FieldEditorPanel.ContentType.SLIDER );
+		bossPanel.getSlider(FLAGSHIP_HOP).setMaximum( 10 );
+		bossPanel.addRow( FLAGSHIP_MOVING, FieldEditorPanel.ContentType.BOOLEAN );
+		bossPanel.addBlankRow();
+		bossPanel.addFillRow();
+
+		bossPanel.getBoolean(FLAGSHIP).addMouseListener( new StatusbarMouseListener(frame, "Toggle the rebel flagship. Causes instant loss if not in sector 8.") );
+		bossPanel.getSlider(FLAGSHIP_HOP).addMouseListener( new StatusbarMouseListener(frame, "The flagship is at it's Nth random beacon. (0-based) The sector layout seed affects where that will be. Instant loss may occur beyond 4.") );
+		bossPanel.getBoolean(FLAGSHIP_MOVING).addMouseListener( new StatusbarMouseListener(frame, "The flagship is moving from its current beacon toward the next.") );
+
+		bossPanel.getBoolean(FLAGSHIP).addActionListener(new ActionListener() {
+			public void actionPerformed( ActionEvent e ) {
+				boolean flagshipVisible = bossPanel.getBoolean(FLAGSHIP).isSelected();
+				if ( !flagshipVisible ) {
+					bossPanel.getSlider(FLAGSHIP_HOP).setValue( 0 );
+					bossPanel.getBoolean(FLAGSHIP_MOVING).setSelected( false );
+				}
+				bossPanel.getSlider(FLAGSHIP_HOP).setEnabled( flagshipVisible );
+				bossPanel.getBoolean(FLAGSHIP_MOVING).setEnabled( flagshipVisible );
+			}
+		});
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.fill = GridBagConstraints.NORTH;
@@ -127,6 +160,9 @@ public class SavedGameGeneralPanel extends JPanel {
 		thisC.gridx = 0;
 		thisC.gridy++;
 		this.add( sectorPanel, thisC );
+
+		thisC.gridx++;
+		this.add( bossPanel, thisC );
 
 		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weighty = 1.0;
@@ -189,6 +225,18 @@ public class SavedGameGeneralPanel extends JPanel {
 					}
 				}
 			}
+
+			bossPanel.setBoolAndReminder( FLAGSHIP, gameState.isRebelFlagshipVisible() );
+			bossPanel.setSliderAndReminder( FLAGSHIP_HOP, gameState.getRebelFlagshipHop() );
+			bossPanel.setBoolAndReminder( FLAGSHIP_MOVING, gameState.isRebelFlagshipMoving() );
+
+			boolean flagshipVisible = bossPanel.getBoolean(FLAGSHIP).isSelected();
+			if ( !flagshipVisible ) {
+				bossPanel.getSlider(FLAGSHIP_HOP).setValue( 0 );
+				bossPanel.getBoolean(FLAGSHIP_MOVING).setSelected( false );
+			}
+			bossPanel.getSlider(FLAGSHIP_HOP).setEnabled( flagshipVisible );
+			bossPanel.getBoolean(FLAGSHIP_MOVING).setEnabled( flagshipVisible );
 		}
 
 		this.repaint();
@@ -248,6 +296,17 @@ public class SavedGameGeneralPanel extends JPanel {
 			else if ( cargoObj instanceof DroneBlueprint ) {
 				gameState.addCargoItemId( ((DroneBlueprint)cargoObj).getId() );
 			}
+		}
+
+		boolean flagshipVisible = bossPanel.getBoolean(FLAGSHIP).isSelected();
+
+		gameState.setRebelFlagshipVisible( flagshipVisible );
+		if ( flagshipVisible ) {
+			gameState.setRebelFlagshipHop( bossPanel.getSlider(FLAGSHIP_HOP).getValue() );
+			gameState.setRebelFlagshipMoving( bossPanel.getBoolean(FLAGSHIP_MOVING).isSelected() );
+		} else {
+			gameState.setRebelFlagshipHop( 0 );
+			gameState.setRebelFlagshipMoving( false );
 		}
 	}
 }
