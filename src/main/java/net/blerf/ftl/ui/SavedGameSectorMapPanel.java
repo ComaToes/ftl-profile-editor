@@ -417,7 +417,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			beaconState.setBgSpriteImageInnerPath( null );
 			beaconState.setBgSpritePosX( -1 );
 			beaconState.setBgSpritePosY( -1 );
-			beaconState.setAlpha( 0 );
+			beaconState.setBgSpriteRotation( 0 );
 
 			beaconState.setSeen( false );
 
@@ -442,7 +442,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 					beaconState.setBgSpriteImageInnerPath( beaconSprite.getBgSpriteImageInnerPath() );
 					beaconState.setBgSpritePosX( beaconSprite.getBgSpritePosX() );
 					beaconState.setBgSpritePosY( beaconSprite.getBgSpritePosY() );
-					beaconState.setAlpha( beaconSprite.getAlpha() );
+					beaconState.setBgSpriteRotation( beaconSprite.getBgSpriteRotation() );
 				}
 
 				beaconState.setSeen( beaconSprite.isSeen() );
@@ -870,7 +870,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final String SPRITE_IMAGE = "Sprite Image";
 		final String SPRITE_X = "Sprite PosX";
 		final String SPRITE_Y = "Sprite PosY";
-		final String ALPHA = "Alpha?";
+		final String SPRITE_ROT = "Sprite Rot";
 		final String SEEN = "Seen";
 		final String ENEMY_PRESENT = "Enemy Present";
 		final String SHIP_EVENT = "Ship Event";
@@ -901,17 +901,15 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getCombo(SPRITE_IMAGE).setEnabled( false );
 		editorPanel.getCombo(SPRITE_IMAGE).addMouseListener( new StatusbarMouseListener(frame, "Background sprite, which appears in front of the starscape.") );
 		editorPanel.addRow( SPRITE_X, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SPRITE_X).setText( "0" );
 		editorPanel.getInt(SPRITE_X).setEnabled( false );
 		editorPanel.getInt(SPRITE_X).addMouseListener( new StatusbarMouseListener(frame, "Background sprite X position.") );
 		editorPanel.addRow( SPRITE_Y, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SPRITE_Y).setText( "0" );
 		editorPanel.getInt(SPRITE_Y).setEnabled( false );
 		editorPanel.getInt(SPRITE_Y).addMouseListener( new StatusbarMouseListener(frame, "Background sprite Y position.") );
-		editorPanel.addRow( ALPHA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(ALPHA).setText( "0" );
-		editorPanel.getInt(ALPHA).setEnabled( false );
-		editorPanel.getInt(ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown, sprite rotation? (Observed values: 0 and 180)") );
+		editorPanel.addRow( SPRITE_ROT, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(SPRITE_ROT).setText( "0" );
+		editorPanel.getInt(SPRITE_ROT).setEnabled( false );
+		editorPanel.getInt(SPRITE_ROT).addMouseListener( new StatusbarMouseListener(frame, "Background sprite rotation. (positive degrees clockwise)") );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( SEEN, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(SEEN).setSelected( beaconSprite.isSeen() );
@@ -958,7 +956,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			editorPanel.getCombo(SPRITE_IMAGE).setEnabled( true );
 			editorPanel.getInt(SPRITE_X).setEnabled( true );
 			editorPanel.getInt(SPRITE_Y).setEnabled( true );
-			editorPanel.getInt(ALPHA).setEnabled( true );
+			editorPanel.getInt(SPRITE_ROT).setEnabled( true );
 
 			editorPanel.getBoolean(VISITED).setSelected( true );
 
@@ -970,7 +968,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			editorPanel.getInt(SPRITE_X).setText( ""+ beaconSprite.getBgSpritePosX() );
 			editorPanel.getInt(SPRITE_Y).setText( ""+ beaconSprite.getBgSpritePosY() );
-			editorPanel.getInt(ALPHA).setText( ""+ beaconSprite.getAlpha() );
+			editorPanel.getInt(SPRITE_ROT).setText( ""+ beaconSprite.getBgSpriteRotation() );
 		}
 
 		if ( beaconSprite.isEnemyPresent() ) {
@@ -1004,7 +1002,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				String bgSpriteImageInnerPath = null;
 				int bgSpritePosX = 0;
 				int bgSpritePosY = 0;
-				int alpha = 0;
+				int bgSpriteRotation = 0;
 				boolean visited = editorPanel.getBoolean(VISITED).isSelected();
 
 				Object bgStarscapeImageInnerPathObj = editorPanel.getCombo(STARS_IMAGE).getSelectedItem();
@@ -1033,14 +1031,14 @@ public class SavedGameSectorMapPanel extends JPanel {
 				try { bgSpritePosY = Integer.parseInt(newString); }
 				catch (NumberFormatException e) {}
 
-				newString = editorPanel.getInt(ALPHA).getText();
-				try { alpha = Integer.parseInt(newString); }
+				newString = editorPanel.getInt(SPRITE_ROT).getText();
+				try { bgSpriteRotation = Integer.parseInt(newString); }
 				catch (NumberFormatException e) {}
 
 				if ( "NONE".equals(bgSpriteImageInnerPath) ) {
 					bgSpritePosX = 0;
 					bgSpritePosY = 0;
-					alpha = 0;
+					bgSpriteRotation = 0;
 				}
 
 				if ( visited && bgStarscapeImageInnerPath != null && bgSpriteImageInnerPath != null ) {
@@ -1049,14 +1047,14 @@ public class SavedGameSectorMapPanel extends JPanel {
 					beaconSprite.setBgSpriteImageInnerPath( bgSpriteImageInnerPath );
 					beaconSprite.setBgSpritePosX( bgSpritePosX );
 					beaconSprite.setBgSpritePosY( bgSpritePosY );
-					beaconSprite.setAlpha( alpha );
+					beaconSprite.setBgSpriteRotation( bgSpriteRotation );
 				} else {
 					beaconSprite.setVisited( false );
 					beaconSprite.setBgStarscapeImageInnerPath( null );
 					beaconSprite.setBgSpriteImageInnerPath( null );
 					beaconSprite.setBgSpritePosX( -1 );
 					beaconSprite.setBgSpritePosY( -1 );
-					beaconSprite.setAlpha( 0 );
+					beaconSprite.setBgSpriteRotation( 0 );
 				}
 
 				beaconSprite.setSeen( editorPanel.getBoolean(SEEN).isSelected() );
@@ -1106,7 +1104,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			private JComboBox spriteImageCombo = editorPanel.getCombo(SPRITE_IMAGE);
 			private JTextField spriteXField = editorPanel.getInt(SPRITE_X);
 			private JTextField spriteYField = editorPanel.getInt(SPRITE_Y);
-			private JTextField alphaField = editorPanel.getInt(ALPHA);
+			private JTextField spriteRotField = editorPanel.getInt(SPRITE_ROT);
 
 			private JCheckBox enemyPresentCheck = editorPanel.getBoolean(ENEMY_PRESENT);
 			private JComboBox shipEventCombo = editorPanel.getCombo(SHIP_EVENT);
@@ -1123,12 +1121,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 						spriteListCombo.setSelectedItem( "" );
 						starsImageCombo.setSelectedItem( "" );
 						spriteImageCombo.setSelectedItem( "" );
-						spriteXField.setText( "-1" );
-						spriteYField.setText( "-1" );
-						alphaField.setText( "0" );
-					} else {
-						spriteXField.setText( "0" );
-						spriteYField.setText( "0" );
+						spriteXField.setText( "" );
+						spriteYField.setText( "" );
+						spriteRotField.setText( "0" );
 					}
 
 					starsListCombo.setEnabled( visited );
@@ -1137,7 +1132,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 					spriteImageCombo.setEnabled( visited );
 					spriteXField.setEnabled( visited );
 					spriteYField.setEnabled( visited );
-					alphaField.setEnabled( visited );
+					spriteRotField.setEnabled( visited );
 				}
 				else if ( source == starsListCombo ) {
 					Object imageListObj = starsListCombo.getSelectedItem();
@@ -1230,12 +1225,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 						for ( int i=0; i < imageCombos.length; i++ ) {
 							editorPanel.getCombo(imageCombos[i]).setSelectedItem( randomImages[i] );
 							if ( imageCombos[i].equals(SPRITE_IMAGE) ) {
-								int spriteX = (int)(Math.random() * (SCREEN_WIDTH - randomImages[i].getWidth()));
-								int spriteY = (int)(Math.random() * (SCREEN_HEIGHT - randomImages[i].getHeight()));
-								int alpha = (Math.random() >= 0.5 ? 0 : 180);
-								editorPanel.getInt(SPRITE_X).setText( ""+ spriteX );
-								editorPanel.getInt(SPRITE_Y).setText( ""+ spriteY );
-								editorPanel.getInt(ALPHA).setText( ""+ alpha );
+								int bgSpritePosX = (int)(Math.random() * (SCREEN_WIDTH - randomImages[i].getWidth()));
+								int bgSpritePosY = (int)(Math.random() * (SCREEN_HEIGHT - randomImages[i].getHeight()));
+								int bgSpriteRotation = (Math.random() >= 0.5 ? 0 : 180);
+								editorPanel.getInt(SPRITE_X).setText( ""+ bgSpritePosX );
+								editorPanel.getInt(SPRITE_Y).setText( ""+ bgSpritePosY );
+								editorPanel.getInt(SPRITE_ROT).setText( ""+ bgSpriteRotation );
 							}
 						}
 					}
@@ -1334,7 +1329,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		itemLookups.put( SavedGameParser.StoreItemType.CREW, crewLookup );
 		itemLookups.put( SavedGameParser.StoreItemType.SYSTEM, systemLookup );
 
-		String title = String.format("Store @%02d", mapLayout.getBeaconId(storeSprite) );
+		String title = String.format("Store (Beacon %02d)", mapLayout.getBeaconId(storeSprite) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
@@ -1515,7 +1510,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		final Map<String, Encounters> allEncountersMap = DataManager.get().getEncounters();
 
-		String title = String.format("Quest @%02d", mapLayout.getBeaconId(questSprite) );
+		String title = String.format("Quest (Beacon %02d)", mapLayout.getBeaconId(questSprite) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( ENCOUNTERS_FILE, FieldEditorPanel.ContentType.COMBO );
@@ -1634,7 +1629,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		private String bgSpriteImageInnerPath = null;
 		private int bgSpritePosX = -1;
 		private int bgSpritePosY = -1;
-		private int alpha = 0;
+		private int bgSpriteRotation = 0;
 
 		private boolean seen = false;
 
@@ -1654,7 +1649,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				bgSpriteImageInnerPath = beaconState.getBgSpriteImageInnerPath();
 				bgSpritePosX = beaconState.getBgSpritePosX();
 				bgSpritePosY = beaconState.getBgSpritePosY();
-				alpha = beaconState.getAlpha();
+				bgSpriteRotation = beaconState.getBgSpriteRotation();
 
 				seen = beaconState.isSeen();
 
@@ -1674,7 +1669,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public String getBgSpriteImageInnerPath() { return bgSpriteImageInnerPath; }
 		public int getBgSpritePosX() { return bgSpritePosX; }
 		public int getBgSpritePosY() { return bgSpritePosY; }
-		public int getAlpha() { return alpha; }
+		public int getBgSpriteRotation() { return bgSpriteRotation; }
 		public boolean isSeen() { return seen; }
 		public boolean isEnemyPresent() { return enemyPresent; }
 		public String getShipEventId() { return shipEventId; }
@@ -1688,7 +1683,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public void setBgSpriteImageInnerPath( String s ) { bgSpriteImageInnerPath = s; }
 		public void setBgSpritePosX( int n ) { bgSpritePosX = n; }
 		public void setBgSpritePosY( int n ) { bgSpritePosY = n; }
-		public void setAlpha( int n ) { alpha = n; }
+		public void setBgSpriteRotation( int n ) { bgSpriteRotation = n; }
 		public void setSeen( boolean b ) { seen = b; }
 		public void setEnemyPresent( boolean b ) { enemyPresent = b; }
 		public void setShipEventId( String s ) { shipEventId = s; }
@@ -1706,12 +1701,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 				bgSpriteImageInnerPath = null;
 				bgSpritePosX = -1;
 				bgSpritePosY = -1;
-				alpha = 0;
+				bgSpriteRotation = 0;
 			}
 			if ( "NONE".equals(bgSpriteImageInnerPath) ) {
 				bgSpritePosX = 0;
 				bgSpritePosY = 0;
-				alpha = 0;
+				bgSpriteRotation = 0;
 			}
 
 			if ( enemyPresent && (shipEventId == null || autoBlueprintId == null) ) {

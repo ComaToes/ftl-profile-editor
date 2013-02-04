@@ -648,7 +648,7 @@ public class SavedGameParser extends Parser {
 			beacon.setBgSpriteImageInnerPath( readString(in) );
 			beacon.setBgSpritePosX( readInt(in) );
 			beacon.setBgSpritePosY( readInt(in) );
-			beacon.setAlpha( readInt(in) );
+			beacon.setBgSpriteRotation( readInt(in) );
 		}
 		
 		beacon.setSeen( readBool(in) );
@@ -695,7 +695,7 @@ public class SavedGameParser extends Parser {
 			writeString( out, beacon.getBgSpriteImageInnerPath() );
 			writeInt( out, beacon.getBgSpritePosX() );
 			writeInt( out, beacon.getBgSpritePosY() );
-			writeInt( out, beacon.getAlpha() );
+			writeInt( out, beacon.getBgSpriteRotation() );
 		}
 
 		writeBool( out, beacon.isSeen() );
@@ -1954,7 +1954,7 @@ public class SavedGameParser extends Parser {
 		private String bgStarscapeImageInnerPath = null;
 		private String bgSpriteImageInnerPath = null;
 		private int bgSpritePosX = -1, bgSpritePosY = -1;
-		private int alpha = 0;
+		private int bgSpriteRotation = 0;
 
 		private boolean seen = false;
 
@@ -1977,7 +1977,7 @@ public class SavedGameParser extends Parser {
 		 * Sets whether the player has been to this beacon.
 		 *
 		 * If true, starscape and sprite paths must be set,
-		 * as well as the sprite's X, Y, and unknown alpha.
+		 * as well as the sprite's X, Y, and rotation.
 		 *
 		 * It's likely that setting this to true prevents
 		 * randomly generated events from triggering.
@@ -2014,7 +2014,7 @@ public class SavedGameParser extends Parser {
 		 * Sets the position of the background sprite image.
 		 *
 		 * When the sprite's inner path is "NONE",
-		 * X and Y are 0.
+		 * X and Y should be 0.
 		 */
 		public void setBgSpritePosX( int n ) { bgSpritePosX = n; }
 		public void setBgSpritePosY( int n ) { bgSpritePosY = n; }
@@ -2023,12 +2023,15 @@ public class SavedGameParser extends Parser {
 		public int getBgSpritePosY() { return bgSpritePosY; }
 
 		/**
-		 * Sets an unknown integer.
+		 * Sets the rotation of the background sprite image.
 		 *
-		 * Sprite rotation in degrees? (observed values: 0, 180)
+		 * When the sprite's inner path is "NONE",
+		 * this should be 0.
+		 *
+		 * @param n positive degrees clockwise
 		 */
-		public void setAlpha( int n ) { alpha = n; }
-		public int getAlpha() { return alpha; }
+		public void setBgSpriteRotation( int n ) { bgSpriteRotation = n; }
+		public int getBgSpriteRotation() { return bgSpriteRotation; }
 
 		/**
 		 * Sets whether the player has been within one hop of this beacon.
@@ -2096,7 +2099,7 @@ public class SavedGameParser extends Parser {
 				result.append(String.format("  Bkg Starscape:       %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("  Bkg Sprite:          %s\n", bgSpriteImageInnerPath));
 				result.append(String.format("  Bkg Sprite Position: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
-				result.append(String.format("  Alpha?:              %3d\n", alpha));
+				result.append(String.format("  Bkg Sprite Rotation: %3d\n", bgSpriteRotation));
 			}
 
 			result.append(String.format("Seen:           %b\n", seen));
