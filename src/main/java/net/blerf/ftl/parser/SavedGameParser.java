@@ -95,7 +95,7 @@ public class SavedGameParser extends Parser {
 
 			gameState.setRebelFlagshipHop( readInt(in) );
 
-			gameState.setRebelFlagshipApproaching( readBool(in) );
+			gameState.setRebelFlagshipMoving( readBool(in) );
 
 			int sectorCount = readInt(in);
 			for (int i=0; i < sectorCount; i++) {
@@ -206,7 +206,7 @@ public class SavedGameParser extends Parser {
 		writeBool( out, gameState.areSectorHazardsVisible() );
 		writeBool( out, gameState.isRebelFlagshipVisible() );
 		writeInt( out, gameState.getRebelFlagshipHop() );
-		writeBool( out, gameState.isRebelFlagshipApproaching() );
+		writeBool( out, gameState.isRebelFlagshipMoving() );
 
 		writeInt( out, gameState.getSectorList().size() );
 		for (Boolean visited : gameState.getSectorList()) {
@@ -827,7 +827,7 @@ public class SavedGameParser extends Parser {
 		private boolean sectorHazardsVisible = false;
 		private boolean rebelFlagshipVisible = false;
 		private int rebelFlagshipHop = 0;
-		private boolean rebelFlagshipApproaching = false;
+		private boolean rebelFlagshipMoving = false;
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
 		private boolean sectorIsHiddenCrystalWorlds = false;
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
@@ -934,6 +934,17 @@ public class SavedGameParser extends Parser {
 		public void setSectorTreeSeed( int n ) { sectorTreeSeed = n; }
 		public int getSectorTreeSeed() { return sectorTreeSeed; }
 
+		/**
+		 * Sets the seed for randomness in the current sector.
+		 *
+		 * Reloading a saved game from the end of the previous sector,
+		 * and exiting again will yield a different seed. So sectors'
+		 * layout seeds aren't pretetermined at the start of the game.
+		 *
+		 * Changing this may affect the beacon count. The game will
+		 * generate additional beacons if it expects them (and probably
+		 * truncate the excess if there are too many).
+		 */
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
 		public int getSectorLayoutSeed() { return sectorLayoutSeed; }
 
@@ -978,21 +989,40 @@ public class SavedGameParser extends Parser {
 		public void setRebelPursuitMod( int n ) { rebelPursuitMod = n; }
 		public int getRebelPursuitMod() { return rebelPursuitMod; }
 
-		/** Toggles visibility of beacon hazards for this sector. */
+		/**
+		 * Toggles visibility of beacon hazards for this sector.
+		 */
 		public void setSectorHazardsVisible( boolean b ) { sectorHazardsVisible = b; }
 		public boolean areSectorHazardsVisible() { return sectorHazardsVisible; }
 
-		/** Toggles the flagship. Instant lose if not in sector 8. */
+		/**
+		 * Toggles the flagship.
+		 *
+		 * If true, this causes instant loss if not in sector 8.
+		 */
 		public void setRebelFlagshipVisible( boolean b ) { rebelFlagshipVisible = b; }
 		public boolean isRebelFlagshipVisible() { return rebelFlagshipVisible; }
 
-		/** Set's the flagship's next/current beacon, as an index of a fixed list? */
+		/**
+		 * Sets the flagship's current beacon.
+		 *
+		 * The flagship will be at its Nth random beacon. (0-based)
+		 * The sector layout seed affects where that will be.
+		 *
+		 * At or above the last hop (which varies), it causes instant loss.
+		 *
+		 * (observed game-ending values: 5, 7, potentially 9)
+		 *
+		 * If moving, this will be the beacon it's departing from.
+		 */
 		public void setRebelFlagshipHop( int n ) { rebelFlagshipHop = n; }
 		public int getRebelFlagshipHop() { return rebelFlagshipHop; }
 
-		/** Sets whether the flagship's approaching or circling its hop beacon. */
-		public void setRebelFlagshipApproaching( boolean b ) { rebelFlagshipApproaching = b; }
-		public boolean isRebelFlagshipApproaching() { return rebelFlagshipApproaching; }
+		/**
+		 * Sets whether the flagship's circling its beacon or moving toward the next.
+		 */
+		public void setRebelFlagshipMoving( boolean b ) { rebelFlagshipMoving = b; }
+		public boolean isRebelFlagshipMoving() { return rebelFlagshipMoving; }
 
 		/**
 		 * Adds a dot of the sector tree.
@@ -1113,7 +1143,7 @@ public class SavedGameParser extends Parser {
 			result.append( String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds) );
 			result.append( String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible) );
 			result.append( String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop) );
-			result.append( String.format("Flagship Moving:    %b\n", rebelFlagshipApproaching) );
+			result.append( String.format("Flagship Moving:    %b\n", rebelFlagshipMoving) );
 			result.append( String.format("Player BeaconId:    %5d\n", currentBeaconId) );
 
 			result.append("\nSector Tree Breadcrumbs...\n");
@@ -1970,6 +2000,14 @@ public class SavedGameParser extends Parser {
 		private boolean storePresent = false;
 		private StoreState store = null;
 
+		// Randomly generated events at unvisited beacons are not
+		// stored in the beacons themselves. They're tentatively
+		// placed on the sector map in-game, and any that would
+		// be distress, shops, etc get signs when seen (or hazard
+		// icons when the map is revealed). What and where these
+		// events are is determined by the SavedGameGameState's
+		// sector layout seed.
+
 		public BeaconState() {
 		}
 
@@ -1979,8 +2017,8 @@ public class SavedGameParser extends Parser {
 		 * If true, starscape and sprite paths must be set,
 		 * as well as the sprite's X, Y, and rotation.
 		 *
-		 * It's likely that setting this to true prevents
-		 * randomly generated events from triggering.
+		 * When true, this prevents randomly generated events
+		 * from triggering. The sector exit will still exist.
 		 */
 		public void setVisited( boolean b ) { visited = b; }
 		public boolean isVisited() { return visited; }
@@ -2075,6 +2113,10 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Sets whether this beacon is under attack by rebels (flashing red).
+		 *
+		 * If true, the next time the player jumps to a beacon, this one
+		 * will have a REBEL fleet and possibly a LONG_FLEET ShipEvent,
+		 * and will no longer be under attack.
 		 */
 		public void setUnderAttack( boolean b ) { underAttack = b; }
 		public boolean isUnderAttack() { return underAttack; }
