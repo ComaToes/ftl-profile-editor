@@ -1,3 +1,10 @@
+14
+Added cargo editing under the general tab.
+Added "In Hidden Sector" field under the general tab.
+Added map-related rebel flagship fields under the general tab.
+All beacon fields are editable.
+The unknown field in visited beacons became background sprite rotation.
+
 13
 Revised how FTL's data.dat is located: cfg contains ftlDatsPath=.../(FTL dir)/resources/.
 Added automated finding of data.dat on Linux-Steam, and possibly OSX.

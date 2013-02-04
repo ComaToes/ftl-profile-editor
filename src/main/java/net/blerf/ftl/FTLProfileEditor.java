@@ -24,7 +24,7 @@ public class FTLProfileEditor {
 
 	private static final Logger log = LogManager.getLogger(FTLProfileEditor.class);
 
-	private static final int VERSION = 13;
+	private static final int VERSION = 14;
 
 	public static void main(String[] args) {
 		log.debug( System.getProperty("os.name") +" "+ System.getProperty("os.version") +" "+ System.getProperty("os.arch") );
