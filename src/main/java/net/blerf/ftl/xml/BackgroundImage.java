@@ -49,6 +49,6 @@ public class BackgroundImage {
 
 	@Override
 	public String toString() {
-		return innerPath;
+		return String.format("%s (%dx%d)", innerPath, width, height);
 	}
 }

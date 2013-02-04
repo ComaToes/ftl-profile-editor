@@ -74,6 +74,9 @@ import org.apache.logging.log4j.Logger;
 
 
 public class SavedGameSectorMapPanel extends JPanel {
+	// Dimensions for placing beacons' background sprite images.
+	private static final int SCREEN_WIDTH = 1280;
+	private static final int SCREEN_HEIGHT = 720;
 
 	// mapHolderPanel Layers
 	private static final Integer MAP_LAYER = new Integer(10);
@@ -884,7 +887,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( VISITED, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(VISITED).setSelected( beaconSprite.isVisited() );
-		editorPanel.getBoolean(VISITED).addMouseListener( new StatusbarMouseListener(frame, "The player has been to this beacon. (All these fields need values.)") );
+		editorPanel.getBoolean(VISITED).addMouseListener( new StatusbarMouseListener(frame, "The player has been to this beacon. (All nearby fields need values.)") );
 		editorPanel.addRow( STARS_LIST, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(STARS_LIST).setEnabled( false );
 		editorPanel.getCombo(STARS_LIST).addMouseListener( new StatusbarMouseListener(frame, "An image list from which to choose a background starscape. (BG_*)") );
@@ -912,10 +915,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.addBlankRow();
 		editorPanel.addRow( SEEN, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(SEEN).setSelected( beaconSprite.isSeen() );
-		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener(frame, "The player has been within one hop, or the beacon was spoiled by other means.") );
+		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener(frame, "The player has been within one hop of this beacon.") );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( ENEMY_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(ENEMY_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "A ship is waiting at this beacon. (All these fields need values.)") );
+		editorPanel.getBoolean(ENEMY_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "A ship is waiting at this beacon. (All nearby fields need values.)") );
 		editorPanel.addRow( SHIP_EVENT, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(SHIP_EVENT).setEnabled( false );
 		editorPanel.getCombo(SHIP_EVENT).addMouseListener( new StatusbarMouseListener(frame, "A ship event to trigger and forget upon arrival (spawning a new nearby ship).") );
@@ -1034,6 +1037,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 				try { alpha = Integer.parseInt(newString); }
 				catch (NumberFormatException e) {}
 
+				if ( "NONE".equals(bgSpriteImageInnerPath) ) {
+					bgSpritePosX = 0;
+					bgSpritePosY = 0;
+					alpha = 0;
+				}
+
 				if ( visited && bgStarscapeImageInnerPath != null && bgSpriteImageInnerPath != null ) {
 					beaconSprite.setVisited( true );
 					beaconSprite.setBgStarscapeImageInnerPath( bgStarscapeImageInnerPath );
@@ -1106,6 +1115,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			public void actionPerformed(ActionEvent e) {
 				Object source = e.getSource();
+				boolean resize = false;
 				if ( source == visitedCheck ) {
 					boolean visited = visitedCheck.isSelected();
 					if ( !visited ) {
@@ -1138,16 +1148,19 @@ public class SavedGameSectorMapPanel extends JPanel {
 							starsImageCombo.addItem( img );
 						}
 					}
+					resize = true;
 				}
 				else if ( source == spriteListCombo ) {
 					Object imageListObj = spriteListCombo.getSelectedItem();
 					spriteImageCombo.removeAllItems();
 					spriteImageCombo.addItem( "" );
+					spriteImageCombo.addItem( "NONE" );
 					if ( imageListObj instanceof BackgroundImageList ) {
 						for ( BackgroundImage img : ((BackgroundImageList)imageListObj).getImages() ) {
 							spriteImageCombo.addItem( img );
 						}
 					}
+					resize = true;
 				}
 				else if ( source == enemyPresentCheck ) {
 					boolean enemyPresent = enemyPresentCheck.isSelected();
@@ -1168,6 +1181,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 						editorPanel.getString(AUTO_SHIP).setText( "" );
 					}
 				}
+				if ( resize ) {
+					editorPanel.setMaximumSize(editorPanel.getPreferredSize());
+					fitSidePanel();
+				}
 			}
 		};
 		editorPanel.getBoolean(VISITED).addActionListener( beaconListener );
@@ -1175,6 +1192,56 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getCombo(SPRITE_LIST).addActionListener( beaconListener );
 		editorPanel.getBoolean(ENEMY_PRESENT).addActionListener( beaconListener );
 		editorPanel.getCombo(SHIP_EVENT).addActionListener( beaconListener );
+
+		addSidePanelSeparator(6);
+
+		JButton visitBtn = new JButton("Visit");
+		visitBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
+		visitBtn.addMouseListener( new StatusbarMouseListener(frame, "Mark this beacon as visited, using random images.") );
+		sidePanel.add(visitBtn);
+
+		visitBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String[] listCombos = new String[] {STARS_LIST, SPRITE_LIST};
+				String[] listNames = new String[] {"BACKGROUND", "PLANET"};
+				BackgroundImageList[] defaultLists = new BackgroundImageList[listCombos.length];
+				final String[] imageCombos = new String[] {STARS_IMAGE, SPRITE_IMAGE};
+				final BackgroundImage[] randomImages = new BackgroundImage[listCombos.length];
+
+				for ( int i=0; i < listCombos.length; i++ ) {
+					defaultLists[i] = allImageListsMap.get( listNames[i] );
+					if ( defaultLists[i] == null || defaultLists[i].getImages().size() == 0 ) {
+						frame.setStatusText( "Random visit failed. The default \""+ listNames[i] +"\" image list was missing or empty." );
+						return;
+					}
+					randomImages[i] = defaultLists[i].getImages().get( (int)(Math.random()*defaultLists[i].getImages().size()) );
+				}
+
+				if ( !editorPanel.getBoolean(VISITED).isSelected() )
+					editorPanel.getBoolean(VISITED).doClick(); // setSelected() won't fire ActionEvents.
+
+				for ( int i=0; i < listCombos.length; i++ ) {
+					editorPanel.getCombo(listCombos[i]).setSelectedItem( defaultLists[i] );
+				}
+
+				// Wait for the image combos to populate.
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						for ( int i=0; i < imageCombos.length; i++ ) {
+							editorPanel.getCombo(imageCombos[i]).setSelectedItem( randomImages[i] );
+							if ( imageCombos[i].equals(SPRITE_IMAGE) ) {
+								int spriteX = (int)(Math.random() * (SCREEN_WIDTH - randomImages[i].getWidth()));
+								int spriteY = (int)(Math.random() * (SCREEN_HEIGHT - randomImages[i].getHeight()));
+								int alpha = (Math.random() >= 0.5 ? 0 : 180);
+								editorPanel.getInt(SPRITE_X).setText( ""+ spriteX );
+								editorPanel.getInt(SPRITE_Y).setText( ""+ spriteY );
+								editorPanel.getInt(ALPHA).setText( ""+ alpha );
+							}
+						}
+					}
+				});
+			}
+		});
 
 		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
 		showSidePanel();
@@ -1639,6 +1706,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 				bgSpriteImageInnerPath = null;
 				bgSpritePosX = -1;
 				bgSpritePosY = -1;
+				alpha = 0;
+			}
+			if ( "NONE".equals(bgSpriteImageInnerPath) ) {
+				bgSpritePosX = 0;
+				bgSpritePosY = 0;
 				alpha = 0;
 			}
 
