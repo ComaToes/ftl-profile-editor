@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -27,7 +28,9 @@ import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.StatusbarMouseListener;
+import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.WeaponBlueprint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,9 +53,16 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String REBEL_PURSUIT_MOD = "Rebel Pursuit Mod";
 	private static final String HAZARDS_VISIBLE = "Hazards Visible";
 
+	private static final String CARGO_ONE = "#1";
+	private static final String CARGO_TWO = "#2";
+	private static final String CARGO_THREE = "#3";
+	private static final String CARGO_FOUR = "#4";
+	private static final String[] cargoSlots = new String[] { CARGO_ONE, CARGO_TWO, CARGO_THREE, CARGO_FOUR };
+
 	private FTLFrame frame;
 	private FieldEditorPanel sessionPanel = null;
 	private FieldEditorPanel sectorPanel = null;
+	private FieldEditorPanel cargoPanel = null;
 
 	public SavedGameGeneralPanel( FTLFrame frame ) {
 		this.setLayout( new GridBagLayout() );
@@ -91,14 +101,27 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.getInt(REBEL_PURSUIT_MOD).addMouseListener( new StatusbarMouseListener(frame, "Delay/alert the fleet, changing the warning zone thickness (e.g., merc distraction = -2).") );
 		sectorPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
 
+		cargoPanel = new FieldEditorPanel( false );
+		cargoPanel.setBorder( BorderFactory.createTitledBorder("Cargo") );
+
+		for (int i=0; i < cargoSlots.length; i++) {
+			cargoPanel.addRow( cargoSlots[i], FieldEditorPanel.ContentType.COMBO );
+		}
+		cargoPanel.addBlankRow();
+
 		GridBagConstraints thisC = new GridBagConstraints();
-		thisC.fill = GridBagConstraints.NONE;
+		thisC.fill = GridBagConstraints.NORTH;
+		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weightx = 0.0;
 		thisC.weighty = 0.0;
 		thisC.gridx = 0;
 		thisC.gridy = 0;
 		this.add( sessionPanel, thisC );
 
+		thisC.gridx++;
+		this.add( cargoPanel, thisC );
+
+		thisC.gridx = 0;
 		thisC.gridy++;
 		this.add( sectorPanel, thisC );
 
@@ -114,6 +137,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
 		sessionPanel.reset();
 		sectorPanel.reset();
+		cargoPanel.reset();
 
 		if ( gameState != null ) {
 			SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
@@ -133,6 +157,34 @@ public class SavedGameGeneralPanel extends JPanel {
 			sectorPanel.setIntAndReminder( REBEL_FLEET_FUDGE, gameState.getRebelFleetFudge() );
 			sectorPanel.setIntAndReminder( REBEL_PURSUIT_MOD, gameState.getRebelPursuitMod() );
 			sectorPanel.setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
+
+			for (int i=0; i < cargoSlots.length; i++) {
+				cargoPanel.getCombo(cargoSlots[i]).addItem( "" );
+				cargoPanel.getCombo(cargoSlots[i]).addItem( "Weapons" );
+				cargoPanel.getCombo(cargoSlots[i]).addItem( "-------" );
+				for ( WeaponBlueprint weaponBlueprint : DataManager.get().getWeapons().values() ) {
+					cargoPanel.getCombo(cargoSlots[i]).addItem( weaponBlueprint );
+				}
+				cargoPanel.getCombo(cargoSlots[i]).addItem( "" );
+				cargoPanel.getCombo(cargoSlots[i]).addItem( "Drones" );
+				cargoPanel.getCombo(cargoSlots[i]).addItem( "------" );
+				for ( DroneBlueprint droneBlueprint : DataManager.get().getDrones().values() ) {
+					cargoPanel.getCombo(cargoSlots[i]).addItem( droneBlueprint );
+				}
+
+				if ( gameState.getCargoIdList().size() > i ) {
+					String cargoId = gameState.getCargoIdList().get(i);
+
+					if ( DataManager.get().getWeapons().containsKey( cargoId ) ) {
+						WeaponBlueprint weaponBlueprint = DataManager.get().getWeapon( cargoId );
+						cargoPanel.getCombo(cargoSlots[i]).setSelectedItem( weaponBlueprint );
+					}
+					else if ( DataManager.get().getDrones().containsKey( cargoId ) ) {
+						DroneBlueprint droneBlueprint = DataManager.get().getDrone( cargoId );
+						cargoPanel.getCombo(cargoSlots[i]).setSelectedItem( droneBlueprint );
+					}
+				}
+			}
 		}
 
 		this.repaint();
@@ -181,5 +233,16 @@ public class SavedGameGeneralPanel extends JPanel {
 		catch (NumberFormatException e) {}
 
 		gameState.setSectorHazardsVisible( sectorPanel.getBoolean(HAZARDS_VISIBLE).isSelected() );
+
+		gameState.getCargoIdList().clear();
+		for (int i=0; i < cargoSlots.length; i++) {
+			Object cargoObj = cargoPanel.getCombo(cargoSlots[i]).getSelectedItem();
+			if ( cargoObj instanceof WeaponBlueprint ) {
+				gameState.addCargoItemId( ((WeaponBlueprint)cargoObj).getId() );
+			}
+			else if ( cargoObj instanceof DroneBlueprint ) {
+				gameState.addCargoItemId( ((DroneBlueprint)cargoObj).getId() );
+			}
+		}
 	}
 }
