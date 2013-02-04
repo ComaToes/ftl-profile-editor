@@ -13,6 +13,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.io.IOException;
@@ -82,10 +83,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 	private static final Integer MAP_LAYER = new Integer(10);
 	private static final Integer MISC_SELECTION_LAYER = new Integer(50);
 	// mapPanel Layers
-	private static final Integer BEACON_LAYER = new Integer(10);
-	private static final Integer MISC_BOX_LAYER = new Integer(15);
-	private static final Integer SHIP_LAYER = new Integer(30);
-	private static final Integer CTRL_LAYER = new Integer(50);
+	//private static final Integer BEACON_LAYER = new Integer(10);
+	//private static final Integer MISC_BOX_LAYER = new Integer(15);
+	//private static final Integer SHIP_LAYER = new Integer(30);
+	//private static final Integer CTRL_LAYER = new Integer(50);
 	private static final Logger log = LogManager.getLogger(SavedGameSectorMapPanel.class);
 
 	private FTLFrame frame;
@@ -887,7 +888,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( VISITED, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(VISITED).setSelected( beaconSprite.isVisited() );
-		editorPanel.getBoolean(VISITED).addMouseListener( new StatusbarMouseListener(frame, "The player has been to this beacon. (All nearby fields need values.)") );
+		editorPanel.getBoolean(VISITED).addMouseListener( new StatusbarMouseListener(frame, "The player has been here. Random events won't occur. (All nearby fields need values.)") );
 		editorPanel.addRow( STARS_LIST, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(STARS_LIST).setEnabled( false );
 		editorPanel.getCombo(STARS_LIST).addMouseListener( new StatusbarMouseListener(frame, "An image list from which to choose a background starscape. (BG_*)") );
@@ -1736,6 +1737,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 			super.paintComponent(g);
 
 			Graphics2D g2d = (Graphics2D)g;
+
+			// If under attack, paint a 24x24 red (#AA2D1F) circle.
+			if ( underAttack ) {
+				g2d.setColor( new Color(170, 45, 31) );
+				int diameter = 24;
+				g2d.fill( new Ellipse2D.Double(this.getWidth()/2-diameter/2, this.getHeight()/2-diameter/2, diameter, diameter) );
+			}
 			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this);
 		}
 	}
