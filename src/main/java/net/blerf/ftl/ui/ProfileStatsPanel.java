@@ -78,7 +78,6 @@ public class ProfileStatsPanel extends JPanel {
 	}
 
 	public void setProfile( Profile p ) throws IOException {
-
 		topScoresPanel.removeAll();
 		int i = 0;
 		for ( Score s : p.getStats().getTopScores() ) {

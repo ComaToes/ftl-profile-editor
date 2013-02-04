@@ -36,6 +36,7 @@ public class GeneralAchievementsPanel extends JPanel {
 
 	private HashMap<Achievement, IconCycleButton> generalAchBoxes = new HashMap<Achievement, IconCycleButton>();
 
+
 	public GeneralAchievementsPanel( FTLFrame frame ) {
 		this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
 		this.frame = frame;
@@ -51,7 +52,6 @@ public class GeneralAchievementsPanel extends JPanel {
 	}
 
 	private JPanel createAchievementsSubPanel( String title, List<Achievement> achievements, int offset ) {
-
 		JPanel panel = new JPanel();
 		panel.setBorder( BorderFactory.createTitledBorder(title) );
 		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
@@ -75,7 +75,6 @@ public class GeneralAchievementsPanel extends JPanel {
 	}
 
 	public void setProfile( Profile p ) {
-
 		for ( Map.Entry<Achievement, IconCycleButton> entry : generalAchBoxes.entrySet() ) {
 			String achId = entry.getKey().getId();
 			IconCycleButton box = entry.getValue();
