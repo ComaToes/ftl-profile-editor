@@ -51,6 +51,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String REBEL_FLEET_OFFSET = "Rebel Fleet Offset";
 	private static final String REBEL_FLEET_FUDGE = "Rebel Fleet Fudge";
 	private static final String REBEL_PURSUIT_MOD = "Rebel Pursuit Mod";
+	private static final String HIDDEN_SECTOR = "In Hidden Sector";
 	private static final String HAZARDS_VISIBLE = "Hazards Visible";
 
 	private static final String CARGO_ONE = "#1";
@@ -92,6 +93,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.getInt(REBEL_FLEET_FUDGE).setDocument( new RegexDocument("-?[0-9]*") );
 		sectorPanel.addRow( REBEL_PURSUIT_MOD, FieldEditorPanel.ContentType.INTEGER );
 		sectorPanel.getInt(REBEL_PURSUIT_MOD).setDocument( new RegexDocument("-?[0-9]*") );
+		sectorPanel.addRow( HIDDEN_SECTOR, FieldEditorPanel.ContentType.BOOLEAN );
 		sectorPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
 		sectorPanel.addBlankRow();
 
@@ -99,6 +101,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.getInt(REBEL_FLEET_OFFSET).addMouseListener( new StatusbarMouseListener(frame, "A large negative var (-750,-250,...,-n*25, approaching 0) + fudge = the fleet circle's edge.") );
 		sectorPanel.getInt(REBEL_FLEET_FUDGE).addMouseListener( new StatusbarMouseListener(frame, "A random per-sector constant (usually around 75-310) + offset = the fleet circle's edge.") );
 		sectorPanel.getInt(REBEL_PURSUIT_MOD).addMouseListener( new StatusbarMouseListener(frame, "Delay/alert the fleet, changing the warning zone thickness (e.g., merc distraction = -2).") );
+		sectorPanel.getBoolean(HIDDEN_SECTOR).addMouseListener( new StatusbarMouseListener(frame, "Sector #?: Hidden Crystal Worlds. At the exit, you won't get to choose the next sector.") );
 		sectorPanel.getBoolean(HAZARDS_VISIBLE).addMouseListener( new StatusbarMouseListener(frame, "Show hazards on the current sector map.") );
 
 		cargoPanel = new FieldEditorPanel( false );
@@ -156,6 +159,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			sectorPanel.setIntAndReminder( REBEL_FLEET_OFFSET, gameState.getRebelFleetOffset() );
 			sectorPanel.setIntAndReminder( REBEL_FLEET_FUDGE, gameState.getRebelFleetFudge() );
 			sectorPanel.setIntAndReminder( REBEL_PURSUIT_MOD, gameState.getRebelPursuitMod() );
+			sectorPanel.setBoolAndReminder( HIDDEN_SECTOR, gameState.isSectorHiddenCrystalWorlds() );
 			sectorPanel.setBoolAndReminder( HAZARDS_VISIBLE, gameState.areSectorHazardsVisible() );
 
 			for (int i=0; i < cargoSlots.length; i++) {
@@ -232,6 +236,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		try { gameState.setRebelPursuitMod(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
+		gameState.setSectorIsHiddenCrystalWorlds( sectorPanel.getBoolean(HIDDEN_SECTOR).isSelected() );
 		gameState.setSectorHazardsVisible( sectorPanel.getBoolean(HAZARDS_VISIBLE).isSelected() );
 
 		gameState.getCargoIdList().clear();
