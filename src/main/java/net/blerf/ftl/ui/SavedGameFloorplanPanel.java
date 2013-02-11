@@ -66,6 +66,9 @@ import javax.swing.event.MouseInputAdapter;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.parser.SavedGameParser.CrewType;
+import net.blerf.ftl.parser.SavedGameParser.DroneType;
+import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.RegexDocument;
@@ -826,22 +829,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add systems.
-		ArrayList<String> systemIds = new ArrayList<String>();
-		systemIds.add( SystemBlueprint.ID_PILOT );
-		systemIds.add( SystemBlueprint.ID_DOORS );
-		systemIds.add( SystemBlueprint.ID_SENSORS );
-		systemIds.add( SystemBlueprint.ID_MEDBAY );
-		systemIds.add( SystemBlueprint.ID_OXYGEN );
-		systemIds.add( SystemBlueprint.ID_SHIELDS );
-		systemIds.add( SystemBlueprint.ID_ENGINES );
-		systemIds.add( SystemBlueprint.ID_WEAPONS );
-		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
-		systemIds.add( SystemBlueprint.ID_TELEPORTER );
-		systemIds.add( SystemBlueprint.ID_CLOAKING );
-		systemIds.add( SystemBlueprint.ID_ARTILLERY );
-
-		for ( String systemId : systemIds ) {
-			int[] roomIds = shipBlueprint.getSystemList().getRoomIdBySystemId( systemId );
+		for ( SystemType systemType : SystemType.values() ) {
+			int[] roomIds = shipBlueprint.getSystemList().getRoomIdBySystemType( systemType );
 			if ( roomIds != null ) {
 				for (int i=0; i < roomIds.length; i++) {
 					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomIds[i] );
@@ -855,7 +844,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					int systemX = roomX + tileEdge + squaresH*squareSize/2;
 					int systemY = roomY + tileEdge + squaresV*squareSize/2;
 
-					SavedGameParser.SystemState systemState = shipState.getSystem( systemId );
+					SavedGameParser.SystemState systemState = shipState.getSystem( systemType );
 					addSystemSprite( systemX, systemY, systemState );
 				}
 			}
@@ -906,7 +895,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add doors.
-		int doorLevel = shipState.getSystem(SystemBlueprint.ID_DOORS).getCapacity()-1;  // Convert to 0-based.
+		int doorLevel = shipState.getSystem(SystemType.DOORS).getCapacity()-1;  // Convert to 0-based.
 		if ( doorLevel < 0 ) doorLevel = 0;  // Door subsystem was absent, 0-Capacity.
 		for ( Map.Entry<ShipLayout.DoorCoordinate, SavedGameParser.DoorState> entry : shipState.getDoorMap().entrySet() ) {
 			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
@@ -1021,24 +1010,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Systems.
-		ArrayList<String> systemIds = new ArrayList<String>();
-		systemIds.add( SystemBlueprint.ID_PILOT );
-		systemIds.add( SystemBlueprint.ID_DOORS );
-		systemIds.add( SystemBlueprint.ID_SENSORS );
-		systemIds.add( SystemBlueprint.ID_MEDBAY );
-		systemIds.add( SystemBlueprint.ID_OXYGEN );
-		systemIds.add( SystemBlueprint.ID_SHIELDS );
-		systemIds.add( SystemBlueprint.ID_ENGINES );
-		systemIds.add( SystemBlueprint.ID_WEAPONS );
-		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
-		systemIds.add( SystemBlueprint.ID_TELEPORTER );
-		systemIds.add( SystemBlueprint.ID_CLOAKING );
-		systemIds.add( SystemBlueprint.ID_ARTILLERY );
-
-		Map<String, SavedGameParser.SystemState> systemMap = shipState.getSystemMap();
+		Map<SystemType, SavedGameParser.SystemState> systemMap = shipState.getSystemMap();
 		systemMap.clear();
 		for ( SystemSprite systemSprite : systemSprites ) {
-			SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemSprite.getSystemId() );
+			SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemSprite.getSystemType() );
 			systemState.setCapacity( systemSprite.getCapacity() );
 			systemState.setPower( systemSprite.getPower() );
 			systemState.setDamagedBars( systemSprite.getDamagedBars() );
@@ -1046,12 +1021,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 			systemState.setRepairProgress( systemSprite.getRepairProgress() );
 			systemState.setDamageProgress( systemSprite.getDamageProgress() );
 			systemState.setDeionizationTicks( systemSprite.getDeionizationTicks() );
-			systemMap.put( systemState.getSystemId(), systemState );
+			systemMap.put( systemState.getSystemType(), systemState );
 		}
 		// Add omitted systems.
-		for ( String systemId : systemIds ) {
-			if ( !systemMap.containsKey( systemId ))
-				systemMap.put( systemId, new SavedGameParser.SystemState( systemId ) );
+		for ( SystemType systemType : SystemType.values() ) {
+			if ( !systemMap.containsKey( systemType ))
+				systemMap.put( systemType, new SavedGameParser.SystemState( systemType ) );
 		}
 
 		// Breaches.
@@ -1306,7 +1281,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				Point center = squareSelector.getSquareCenter();
 				SavedGameParser.CrewState crewState = new SavedGameParser.CrewState();
-				crewState.setHealth( SavedGameParser.CrewState.getMaxHealth( crewState.getRace() ) );
+				crewState.setHealth( CrewType.getMaxHealth(crewState.getRace()) );
 				crewState.setPlayerControlled( true );
 				crewState.setRoomId( roomId );
 				crewState.setRoomSquare( squareId );
@@ -1600,7 +1575,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void addSystemSprite( int centerX, int centerY, SavedGameParser.SystemState systemState ) {
 		int w = 32, h = 32;
-		String overlayBaseName = systemState.getSystemId();  // Assuming these are interchangeable.
+
+		// Assuming these are interchangeable.
+		String overlayBaseName = systemState.getSystemType().getId();
 		BufferedImage overlayImage = getScaledImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", w, h );
 
 		SystemSprite systemSprite = new SystemSprite( overlayImage, systemState );
@@ -1997,7 +1974,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		int droneSystemCapacity = 0;
 		int a = 0, b = 0;  // a=other systems' power usage, b=this system's power and damage.
 		for ( SystemSprite otherSystemSprite : systemSprites ) {
-			if ( SystemBlueprint.ID_DRONE_CTRL.equals( otherSystemSprite.getSystemId() ) ) {
+			if ( SystemType.DRONE_CTRL.equals( otherSystemSprite.getSystemType() ) ) {
 				droneSystemCapacity = otherSystemSprite.getCapacity();
 				b += otherSystemSprite.getDamagedBars();
 				for ( DroneSprite otherDroneSprite : droneSprites ) {
@@ -2005,13 +1982,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 						b += allDronesMap.get( otherDroneSprite.getDroneId() ).getPower();
 				}
 			}
-			else if ( SystemBlueprint.ID_WEAPONS.equals( otherSystemSprite.getSystemId() ) ) {
+			else if ( SystemType.WEAPONS.equals( otherSystemSprite.getSystemType() ) ) {
 				for ( WeaponSprite otherWeaponSprite : weaponSprites ) {
 					if ( otherWeaponSprite.getWeaponId() != null && otherWeaponSprite.isArmed() )
 						a += DataManager.get().getWeapon( otherWeaponSprite.getWeaponId() ).getPower();
 				}
 			}
-			else if ( !SystemBlueprint.isSubsystem( otherSystemSprite.getSystemId() ) ) {
+			else if ( !otherSystemSprite.getSystemType().isSubsystem() ) {
 				a += otherSystemSprite.getPower();
 			}
 		}
@@ -2055,7 +2032,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
 			editorPanel.getBoolean(ARMED).setEnabled( armable );
 			editorPanel.getBoolean(PLAYER_CONTROLLED).setSelected( droneSprite.isPlayerControlled() );
-			editorPanel.getSlider(HEALTH).setMaximum( SavedGameParser.DroneState.getMaxHealth( selectedBlueprint.getType() ) );
+			editorPanel.getSlider(HEALTH).setMaximum( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
 			editorPanel.getSlider(HEALTH).setValue( droneSprite.getHealth() );
 
 			if ( armable && droneSprite.isArmed() ) {
@@ -2085,7 +2062,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						neededPower += allDronesMap.get( otherSprite.getDroneId() ).getPower();
 				}
 				for ( SystemSprite otherSprite : systemSprites ) {
-					if ( SystemBlueprint.ID_DRONE_CTRL.equals( otherSprite.getSystemId() ) ) {
+					if ( SystemType.DRONE_CTRL.equals( otherSprite.getSystemType() ) ) {
 						otherSprite.setPower( neededPower );
 						otherSprite.makeSane();
 						break;
@@ -2120,8 +2097,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 						editorPanel.getWrappedLabel(DESC).setText( ""+selectedBlueprint.getDescription() );
 						editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
-						healthSlider.setMaximum( SavedGameParser.DroneState.getMaxHealth( selectedBlueprint.getType() ) );
-						healthSlider.setValue( SavedGameParser.DroneState.getMaxHealth( selectedBlueprint.getType() ) );
+						healthSlider.setMaximum( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
+						healthSlider.setValue( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
 
 						if ( armable ) {
 							armedCheck.setEnabled( true );
@@ -2173,7 +2150,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		int weaponSystemCapacity = 0;
 		int a = 0, b = 0;  // a=other systems' power usage, b=this system's power and damage.
 		for ( SystemSprite otherSystemSprite : systemSprites ) {
-			if ( SystemBlueprint.ID_WEAPONS.equals( otherSystemSprite.getSystemId() ) ) {
+			if ( SystemType.WEAPONS.equals( otherSystemSprite.getSystemType() ) ) {
 				weaponSystemCapacity = otherSystemSprite.getCapacity();
 				b += otherSystemSprite.getDamagedBars();
 				for ( WeaponSprite otherWeaponSprite : weaponSprites ) {
@@ -2181,13 +2158,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 						b += allWeaponsMap.get( otherWeaponSprite.getWeaponId() ).getPower();
 				}
 			}
-			else if ( SystemBlueprint.ID_DRONE_CTRL.equals( otherSystemSprite.getSystemId() ) ) {
+			else if ( SystemType.DRONE_CTRL.equals( otherSystemSprite.getSystemType() ) ) {
 				for ( DroneSprite otherDroneSprite : droneSprites ) {
 					if ( otherDroneSprite.getDroneId() != null && otherDroneSprite.isArmed() )
 						a += DataManager.get().getDrone( otherDroneSprite.getDroneId() ).getPower();
 				}
 			}
-			else if ( !SystemBlueprint.isSubsystem( otherSystemSprite.getSystemId() ) ) {
+			else if ( !otherSystemSprite.getSystemType().isSubsystem() ) {
 				a += otherSystemSprite.getPower();
 			}
 		}
@@ -2254,7 +2231,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						neededPower += allWeaponsMap.get( otherSprite.getWeaponId() ).getPower();
 				}
 				for ( SystemSprite otherSprite : systemSprites ) {
-					if ( SystemBlueprint.ID_WEAPONS.equals( otherSprite.getSystemId() ) ) {
+					if ( SystemType.WEAPONS.equals( otherSprite.getSystemType() ) ) {
 						otherSprite.setPower( neededPower );
 						otherSprite.makeSane();
 						break;
@@ -2377,10 +2354,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String DAMAGE_PROGRESS = "Damage Progress";
 		final String DEIONIZATION_TICKS = "Deionization Ticks";
 
-		final SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemSprite.getSystemId() );
+		final SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemSprite.getSystemType().getId() );
 
 		int maxSystemCapacity = systemBlueprint.getMaxPower();
-		Integer maxPowerOverride = shipBlueprint.getSystemList().getSystemRoom( systemSprite.getSystemId() )[0].getMaxPower();
+		Integer maxPowerOverride = shipBlueprint.getSystemList().getSystemRoom( systemSprite.getSystemType() )[0].getMaxPower();
 		if ( maxPowerOverride != null )
 			maxSystemCapacity = maxPowerOverride.intValue();
 
@@ -2388,25 +2365,25 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for ( SystemSprite otherSystemSprite : systemSprites ) {
 			if ( otherSystemSprite == systemSprite ) continue;
 
-			if ( SystemBlueprint.ID_DRONE_CTRL.equals( otherSystemSprite.getSystemId() ) ) {
+			if ( SystemType.DRONE_CTRL.equals( otherSystemSprite.getSystemType() ) ) {
 				for ( DroneSprite otherDroneSprite : droneSprites ) {
 					if ( otherDroneSprite.getDroneId() != null && otherDroneSprite.isArmed() )
 						z += DataManager.get().getDrone( otherDroneSprite.getDroneId() ).getPower();
 				}
 			}
-			else if ( SystemBlueprint.ID_WEAPONS.equals( otherSystemSprite.getSystemId() ) ) {
+			else if ( SystemType.WEAPONS.equals( otherSystemSprite.getSystemType() ) ) {
 				for ( WeaponSprite otherWeaponSprite : weaponSprites ) {
 					if ( otherWeaponSprite.getWeaponId() != null && otherWeaponSprite.isArmed() )
 						z += DataManager.get().getWeapon( otherWeaponSprite.getWeaponId() ).getPower();
 				}
 			}
-			else if ( !SystemBlueprint.isSubsystem( otherSystemSprite.getSystemId() ) ) {
+			else if ( !otherSystemSprite.getSystemType().isSubsystem() ) {
 				z += otherSystemSprite.getPower();
 			}
 		}
 		final int otherPower = z;
 		// Subsystems ignore the reserve, and power can't be directly changed.
-		final boolean isSubsystem = SystemBlueprint.isSubsystem( systemSprite.getSystemId() );
+		final boolean isSubsystem = systemSprite.getSystemType().isSubsystem();
 
 		String title = systemBlueprint.getTitle();
 
@@ -2463,7 +2440,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			// Some non-subsystems determine their power from outside the system sprite...
 			int neededPower = 0;
-			if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
+			if ( SystemType.WEAPONS.equals( systemSprite.getSystemType() ) ) {
 				neededPower = 0;
 				for ( WeaponSprite otherSprite : weaponSprites ) {
 					if ( otherSprite.getWeaponId() != null && otherSprite.isArmed() )
@@ -2471,7 +2448,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				editorPanel.getSlider(POWER).setEnabled( false );
 			}
-			else if ( SystemBlueprint.ID_DRONE_CTRL.equals( systemSprite.getSystemId() ) ) {
+			else if ( SystemType.DRONE_CTRL.equals( systemSprite.getSystemType() ) ) {
 				neededPower = 0;
 				for ( DroneSprite otherSprite : droneSprites ) {
 					if ( otherSprite.getDroneId() != null && otherSprite.isArmed() )
@@ -2618,7 +2595,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				systemSprite.makeSane();
 
 				int neededPower = systemSprite.getPower();
-				if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
+				if ( SystemType.WEAPONS.equals( systemSprite.getSystemType() ) ) {
 					if ( systemSprite.getCapacity() == 0 ) {
 						// When capacity is 0, nullify all weapons.
 						for ( WeaponSprite weaponSprite : weaponSprites )
@@ -2635,7 +2612,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						}
 					}
 				}
-				else if ( SystemBlueprint.ID_DRONE_CTRL.equals( systemSprite.getSystemId() ) ) {
+				else if ( SystemType.DRONE_CTRL.equals( systemSprite.getSystemType() ) ) {
 					if ( systemSprite.getCapacity() == 0 ) {
 						// When capacity is 0, nullify all drones.
 						for ( DroneSprite droneSprite : droneSprites ) {
@@ -2669,17 +2646,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 			notice += "* This is a subsystem, which means reserves are ignored, ";
 			notice += "and power is always as full as possible.\n\n";
 		}
-		if ( SystemBlueprint.ID_SHIELDS.equals( systemSprite.getSystemId() ) ) {
+		if ( SystemType.SHIELDS.equals( systemSprite.getSystemType() ) ) {
 			notice += "* Partialy powered shields will steal an extra bar upon loading, ";
 			notice += "from another system if need be.\n\n";
 		}
-		if ( SystemBlueprint.ID_WEAPONS.equals( systemSprite.getSystemId() ) ) {
+		if ( SystemType.WEAPONS.equals( systemSprite.getSystemType() ) ) {
 			notice += "* Power can't be directly changed for the Weapons system. ";
 			notice += "Toggle paraphernalia separately. ";
 			notice += "If capacity/damage reduce power, ";
 			notice += "things will get disarmed.\n\n";
 		}
-		if ( SystemBlueprint.ID_DRONE_CTRL.equals( systemSprite.getSystemId() ) ) {
+		if ( SystemType.DRONE_CTRL.equals( systemSprite.getSystemType() ) ) {
 			notice += "* Power can't be directly changed for the Drone Ctrl system. ";
 			notice += "Toggle paraphernalia separately. ";
 			notice += "If capacity/damage reduce power, ";
@@ -2820,7 +2797,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		int repairInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_REPAIR;
 		int combatInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_COMBAT;
 
-		int maxHealth = SavedGameParser.CrewState.getMaxHealth( crewSprite.getRace() );
+		int maxHealth = CrewType.getMaxHealth(crewSprite.getRace());
 
 		String title = "Crew";
 
@@ -2828,15 +2805,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( NAME, FieldEditorPanel.ContentType.STRING );
 		editorPanel.getString(NAME).setText( crewSprite.getName() );
 		editorPanel.addRow( RACE, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_BATTLE );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_CRYSTAL );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_ENERGY );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_ENGI );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_GHOST );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_HUMAN );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_MANTIS );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_ROCK );
-		editorPanel.getCombo(RACE).addItem( CrewBlueprint.RACE_SLUG );
+		editorPanel.getCombo(RACE).addItem( CrewType.BATTLE.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.CRYSTAL.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.ENERGY.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.ENGI.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.GHOST.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.HUMAN.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.MANTIS.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.ROCK.getId() );
+		editorPanel.getCombo(RACE).addItem( CrewType.SLUG.getId() );
 		editorPanel.getCombo(RACE).setSelectedItem( crewSprite.getRace() );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(HEALTH).setMaximum( maxHealth );
@@ -2924,7 +2901,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				Object source = e.getSource();
 				if ( source == raceCombo ) {
-					healthSlider.setMaximum( SavedGameParser.CrewState.getMaxHealth( (String)raceCombo.getSelectedItem() ) );
+					healthSlider.setMaximum( CrewType.getMaxHealth( (String)raceCombo.getSelectedItem() ) );
 				}
 			}
 		};
@@ -3038,13 +3015,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 				DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneId );
 				String newBodyImagePath = null;
 
-				if ( droneBlueprint.getType().equals( DroneBlueprint.TYPE_BATTLE ) ) {
+				if ( DroneType.BATTLE.getId().equals(droneBlueprint.getType()) ) {
 					newBodyImagePath = "img/people/battle_sheet.png";
 					// As of 1.01, "sheet" vs "enemy_sheet" images were available.
 					// As of 1.03.1, "player" vs "enemy_red" images were also available
 					needsBody = true;
 				}
-				else if ( droneBlueprint.getType().equals( DroneBlueprint.TYPE_REPAIR ) ) {
+				else if ( DroneType.REPAIR.getId().equals(droneBlueprint.getType()) ) {
 					newBodyImagePath = "img/people/repair_sheet.png";
 					// As of 1.01, "sheet" vs "enemy_sheet" images were available.
 					// As of 1.03.1, "player" vs "enemy_red" images were also available.
@@ -3056,7 +3033,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				if ( armed && needsBody && (bodyX < 0 || bodyY < 0) ) {
 					// Search for an empty square in droneCtrl.
-					int[] droneSystemRoomId = shipBlueprint.getSystemList().getRoomIdBySystemId( SystemBlueprint.ID_DRONE_CTRL );
+					int[] droneSystemRoomId = shipBlueprint.getSystemList().getRoomIdBySystemType( SystemType.DRONE_CTRL );
 					if ( droneSystemRoomId != null ) {
 						EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( droneSystemRoomId[0] );
 						int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
@@ -3285,7 +3262,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	public class SystemSprite extends JComponent {
 		private BufferedImage overlayImage;
-		private String systemId;
+		private SystemType systemType;
 		private int capacity;
 		private int power;
 		private int damagedBars;
@@ -3297,7 +3274,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		public SystemSprite( BufferedImage overlayImage, SavedGameParser.SystemState systemState ) {
 			this.overlayImage = overlayImage;
-			this.systemId = systemState.getSystemId();
+			this.systemType = systemState.getSystemType();
 			this.capacity = systemState.getCapacity();
 			this.power = systemState.getPower();
 			this.damagedBars = systemState.getDamagedBars();
@@ -3309,7 +3286,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			makeSane();
 		}
 
-		public String getSystemId() { return systemId; }
+		public SystemType getSystemType() { return systemType; }
 
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
@@ -3591,19 +3568,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public int getImageHeight() { return crewImage.getHeight(); }
 
 		public void makeSane() {
-			if ( isEnemyBoardingDrone() && !getRace().equals("battle") )
+			if ( isEnemyBoardingDrone() && !CrewType.BATTLE.getId().equals(getRace()) )
 				setRace( "battle" );              // The game would do this when loaded.
 
 			if ( isEnemyBoardingDrone() && !getName().equals("Anti-Personnel Drone") )
 				setName("Anti-Personnel Drone");  // The game would do this when loaded.
 
-			if ( isEnemyBoardingDrone() && !getRace().equals("battle") )
-
-			if ( getRace().equals("battle") && !isEnemyBoardingDrone() )
-				setRace( CrewBlueprint.RACE_HUMAN );  // The game would do this when loaded.
+			if ( CrewType.BATTLE.getId().equals(getRace()) && !isEnemyBoardingDrone() )
+				setRace( CrewType.HUMAN.getId() );  // The game would do this when loaded.
 
 			// Cap the health at the race's max.
-			health = Math.min( health, SavedGameParser.CrewState.getMaxHealth(race) );
+			health = Math.min( health, CrewType.getMaxHealth(race) );
 
 			// Always same size: no repositioning needed to align image's center with the square's.
 			int offsetX = 0, offsetY = 0, w = 35, h = 35;
@@ -3611,18 +3586,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 			String suffix = "";
 			Tint tint = null;
 
-			if ( CrewBlueprint.RACE_BATTLE.equals( getRace() ) ) {
+			if ( CrewType.BATTLE.getId().equals(getRace()) ) {
 				suffix = "_enemy_sheet";
 				// As of 1.01, "sheet" vs "enemy_sheet" images were available.
 				// As of 1.03.1, "player" vs "enemy_red" images were also available
 
 			} else {
-				if ( CrewBlueprint.RACE_HUMAN.equals( getRace() ) ) {
+				if ( CrewType.HUMAN.getId().equals(getRace()) ) {
 					// Human females have a distinct sprite (Other races look the same either way).
 					if ( !isMale() )
 						imgRace = "female";  // Not an actual race.
 				}
-				else if ( CrewBlueprint.RACE_GHOST.equals( getRace() ) ) {
+				else if ( CrewType.GHOST.getId().equals(getRace()) ) {
 					// Ghosts look like translucent humans.
 					if ( isMale() )
 						imgRace = "human";

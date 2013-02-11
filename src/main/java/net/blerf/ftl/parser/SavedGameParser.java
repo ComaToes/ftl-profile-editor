@@ -280,23 +280,23 @@ public class SavedGameParser extends Parser {
 		}
 
 		// System info is stored in this order.
-		ArrayList<String> systemIds = new ArrayList<String>();
-		systemIds.add( SystemBlueprint.ID_SHIELDS );
-		systemIds.add( SystemBlueprint.ID_ENGINES );
-		systemIds.add( SystemBlueprint.ID_OXYGEN );
-		systemIds.add( SystemBlueprint.ID_WEAPONS );
-		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
-		systemIds.add( SystemBlueprint.ID_MEDBAY );
-		systemIds.add( SystemBlueprint.ID_PILOT );
-		systemIds.add( SystemBlueprint.ID_SENSORS );
-		systemIds.add( SystemBlueprint.ID_DOORS );
-		systemIds.add( SystemBlueprint.ID_TELEPORTER );
-		systemIds.add( SystemBlueprint.ID_CLOAKING );
-		systemIds.add( SystemBlueprint.ID_ARTILLERY );
+		ArrayList<SystemType> systemTypes = new ArrayList<SystemType>();
+		systemTypes.add( SystemType.SHIELDS );
+		systemTypes.add( SystemType.ENGINES );
+		systemTypes.add( SystemType.OXYGEN );
+		systemTypes.add( SystemType.WEAPONS );
+		systemTypes.add( SystemType.DRONE_CTRL );
+		systemTypes.add( SystemType.MEDBAY );
+		systemTypes.add( SystemType.PILOT );
+		systemTypes.add( SystemType.SENSORS );
+		systemTypes.add( SystemType.DOORS );
+		systemTypes.add( SystemType.TELEPORTER );
+		systemTypes.add( SystemType.CLOAKING );
+		systemTypes.add( SystemType.ARTILLERY );
 
 		shipState.setReservePowerCapacity( readInt(in) );
-		for (String systemId : systemIds) {
-			shipState.addSystem( readSystem(in, systemId) );
+		for ( SystemType systemType : systemTypes ) {
+			shipState.addSystem( readSystem(in, systemType) );
 		}
 
 		int roomCount = shipLayout.getRoomCount();
@@ -394,25 +394,25 @@ public class SavedGameParser extends Parser {
 		}
 
 		// System info is stored in this order.
-		ArrayList<String> systemIds = new ArrayList<String>();
-		systemIds.add( SystemBlueprint.ID_SHIELDS );
-		systemIds.add( SystemBlueprint.ID_ENGINES );
-		systemIds.add( SystemBlueprint.ID_OXYGEN );
-		systemIds.add( SystemBlueprint.ID_WEAPONS );
-		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
-		systemIds.add( SystemBlueprint.ID_MEDBAY );
-		systemIds.add( SystemBlueprint.ID_PILOT );
-		systemIds.add( SystemBlueprint.ID_SENSORS );
-		systemIds.add( SystemBlueprint.ID_DOORS );
-		systemIds.add( SystemBlueprint.ID_TELEPORTER );
-		systemIds.add( SystemBlueprint.ID_CLOAKING );
-		systemIds.add( SystemBlueprint.ID_ARTILLERY );
+		ArrayList<SystemType> systemTypes = new ArrayList<SystemType>();
+		systemTypes.add( SystemType.SHIELDS );
+		systemTypes.add( SystemType.ENGINES );
+		systemTypes.add( SystemType.OXYGEN );
+		systemTypes.add( SystemType.WEAPONS );
+		systemTypes.add( SystemType.DRONE_CTRL );
+		systemTypes.add( SystemType.MEDBAY );
+		systemTypes.add( SystemType.PILOT );
+		systemTypes.add( SystemType.SENSORS );
+		systemTypes.add( SystemType.DOORS );
+		systemTypes.add( SystemType.TELEPORTER );
+		systemTypes.add( SystemType.CLOAKING );
+		systemTypes.add( SystemType.ARTILLERY );
 
 		writeInt( out, shipState.getReservePowerCapacity() );
 
-		Map<String, SystemState> systemMap = shipState.getSystemMap();
-		for (String systemId : systemIds) {
-			SystemState systemState = systemMap.get(systemId);
+		Map<SystemType, SystemState> systemMap = shipState.getSystemMap();
+		for ( SystemType systemType : systemTypes ) {
+			SystemState systemState = systemMap.get(systemType);
 			if ( systemState != null )
 				writeSystem( out, systemState );
 			else
@@ -534,8 +534,8 @@ public class SavedGameParser extends Parser {
 		writeInt( out, crew.getSkillMasteries() );
 	}
 
-	private SystemState readSystem( InputStream in, String systemId ) throws IOException {
-		SystemState system = new SystemState( systemId );
+	private SystemState readSystem( InputStream in, SystemType systemType ) throws IOException {
+		SystemState system = new SystemState( systemType );
 		int capacity = readInt(in);
 
 		// Normally systems are 28 bytes, but if not present on the
@@ -1209,7 +1209,7 @@ public class SavedGameParser extends Parser {
 		private int hullAmt=0, fuelAmt=0, dronePartsAmt=0, missilesAmt=0, scrapAmt=0;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
 		private int reservePowerCapacity = 0;
-		private LinkedHashMap<String, SystemState> systemMap = new LinkedHashMap<String, SystemState>();
+		private LinkedHashMap<SystemType, SystemState> systemMap = new LinkedHashMap<SystemType, SystemState>();
 		private ArrayList<RoomState> roomList = new ArrayList<RoomState>();
 		private LinkedHashMap<Point, Integer> breachMap = new LinkedHashMap<Point, Integer>();
 		private LinkedHashMap<ShipLayout.DoorCoordinate, DoorState> doorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, DoorState>();
@@ -1288,13 +1288,13 @@ public class SavedGameParser extends Parser {
 		public int getReservePowerCapacity() { return reservePowerCapacity; }
 
 		public void addSystem( SystemState s ) {
-			systemMap.put( s.getSystemId(), s );
+			systemMap.put( s.getSystemType(), s );
 		}
-		public SystemState getSystem( String systemId ) {
-			return systemMap.get( systemId );
+		public SystemState getSystem( SystemType systemType ) {
+			return systemMap.get( systemType );
 		}
 
-		public LinkedHashMap<String, SystemState> getSystemMap() { return systemMap; }
+		public LinkedHashMap<SystemType, SystemState> getSystemMap() { return systemMap; }
 
 		public void addRoom( RoomState r ) {
 			roomList.add(r);
@@ -1408,7 +1408,7 @@ public class SavedGameParser extends Parser {
 			result.append("\nSystems...\n");
 			result.append(String.format("  Reserve Power Capacity: %2d\n", reservePowerCapacity));
 			first = false;
-			for (Map.Entry<String, SystemState> entry : systemMap.entrySet()) {
+			for ( Map.Entry<SystemType, SystemState> entry : systemMap.entrySet() ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(entry.getValue().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
@@ -1421,9 +1421,8 @@ public class SavedGameParser extends Parser {
 				else { result.append(",\n"); }
 				int roomId = it.nextIndex();
 
-				String systemId = blueprintSystems.getSystemIdByRoomId( roomId );
-				if (systemId == null)
-					systemId = "empty";
+				SystemType systemType = blueprintSystems.getSystemTypeByRoomId( roomId );
+				String systemId = (systemType != null) ? systemType.getId() : "empty";
 
 				result.append(String.format("RoomId: %2d (%s)\n", roomId, systemId));
 				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
@@ -1512,9 +1511,44 @@ public class SavedGameParser extends Parser {
 
 
 
+	public static enum CrewType {
+		// TODO: magic numbers.
+		BATTLE ("battle",  150),
+		CRYSTAL("crystal", 120),
+		ENERGY ("energy",   70),
+		ENGI   ("engi",    100),
+		GHOST  ("ghost",    50),
+		HUMAN  ("human",   100),
+		MANTIS ("mantis",  100),
+		ROCK   ("rock",    150),
+		SLUG   ("slug",    100);
+
+		private String id;
+		private int maxHealth;
+		private CrewType( String id, int maxHealth ) {
+			this.id = id;
+			this.maxHealth = maxHealth;
+		}
+		public String getId() { return id; }
+		public int getMaxHealth() { return maxHealth; }
+		public String toString() { return id; }
+
+		public static CrewType findById( String id ) {
+			for ( CrewType race : values() ) {
+				if ( race.getId().equals(id) ) return race;
+			}
+			return null;
+		}
+
+		public static int getMaxHealth( String id ) {
+			CrewType race = CrewType.findById( id );
+			if ( race != null ) return race.getMaxHealth();
+			throw new RuntimeException( "No max health known for crew race: "+ id );
+		}
+	}
+
 	public static class CrewState {
 		// TODO: magic numbers.
-		// Might be worth putting in the config file.
 		public static final int MASTERY_INTERVAL_PILOT = 15;
 		public static final int MASTERY_INTERVAL_ENGINE = 15;
 		public static final int MASTERY_INTERVAL_SHIELD = 55;
@@ -1522,34 +1556,11 @@ public class SavedGameParser extends Parser {
 		public static final int MASTERY_INTERVAL_REPAIR = 18;
 		public static final int MASTERY_INTERVAL_COMBAT = 8;
 
-		public static final int MAX_HEALTH_BATTLE = 150;
-		public static final int MAX_HEALTH_CRYSTAL = 120;
-		public static final int MAX_HEALTH_ENERGY = 70;
-		public static final int MAX_HEALTH_ENGI = 100;
-		public static final int MAX_HEALTH_GHOST = 50;
-		public static final int MAX_HEALTH_HUMAN = 100;
-		public static final int MAX_HEALTH_MANTIS = 100;
-		public static final int MAX_HEALTH_ROCK = 150;
-		public static final int MAX_HEALTH_SLUG = 100;
-
-		public static int getMaxHealth( String race ) {
-			if ( CrewBlueprint.RACE_BATTLE.equals( race ) ) return MAX_HEALTH_BATTLE;
-			else if ( CrewBlueprint.RACE_CRYSTAL.equals( race ) ) return MAX_HEALTH_CRYSTAL;
-			else if ( CrewBlueprint.RACE_ENERGY.equals( race ) ) return MAX_HEALTH_ENERGY;
-			else if ( CrewBlueprint.RACE_ENGI.equals( race ) ) return MAX_HEALTH_ENGI;
-			else if ( CrewBlueprint.RACE_GHOST.equals( race ) ) return MAX_HEALTH_GHOST;
-			else if ( CrewBlueprint.RACE_HUMAN.equals( race ) ) return MAX_HEALTH_HUMAN;
-			else if ( CrewBlueprint.RACE_MANTIS.equals( race ) ) return MAX_HEALTH_MANTIS;
-			else if ( CrewBlueprint.RACE_ROCK.equals( race ) ) return MAX_HEALTH_ROCK;
-			else if ( CrewBlueprint.RACE_SLUG.equals( race ) ) return MAX_HEALTH_SLUG;
-			else throw new RuntimeException( "No max health known for race: "+ race );
-		}
-
 		// Neither Crystal crews' lockdown, nor its cooldown is stored.
 		// Zoltan-produced power is not stored in SystemState.
 
 		private String name = "Frank";
-		private String race = CrewBlueprint.RACE_HUMAN;
+		private String race = CrewType.HUMAN.getId();
 		private boolean enemyBoardingDrone = false;
 		private int health=0;
 		private int blueprintRoomId;
@@ -1691,12 +1702,46 @@ public class SavedGameParser extends Parser {
 
 
 
+	public static enum SystemType {
+		// SystemType ids are tied to "img/icons/s_*_overlay.png".
+		// TODO: magic booleans.
+		PILOT     ("pilot",      true),
+		DOORS     ("doors",      true),
+		SENSORS   ("sensors",    true),
+		MEDBAY    ("medbay",     false),
+		OXYGEN    ("oxygen",     false),
+		SHIELDS   ("shields",    false),
+		ENGINES   ("engines",    false),
+		WEAPONS   ("weapons",    false),
+		DRONE_CTRL("drones",     false),
+		TELEPORTER("teleporter", false),
+		CLOAKING  ("cloaking",   false),
+		ARTILLERY ("artillery",  false);
+
+		private String id;
+		private boolean subsystem;
+		private SystemType( String id, boolean subsystem ) {
+			this.id = id;
+			this.subsystem = subsystem;
+		}
+		public String getId() { return id; }
+		public boolean isSubsystem() { return subsystem; }
+		public String toString() { return id; }
+
+		public static SystemType findById(String id) {
+			for ( SystemType s : values() ) {
+				if ( s.getId().equals(id) ) return s;
+			}
+			return null;
+		}
+	}
+
 	public static class SystemState {
 		// Above this number, FTL can't find a number image to use.
 		// A warning pic will appear in its place.
 		public static final int MAX_IONIZED_BARS = 9;  // TODO: Magic number.
 
-		private String systemId;
+		private SystemType systemType;
 		private int capacity = 0;
 		private int power = 0;
 		private int damagedBars = 0;      // Number of unusable power bars.
@@ -1723,11 +1768,12 @@ public class SavedGameParser extends Parser {
 		// set such values. Might be unspecified garbage when not actively
 		// counting. Sometimes has huge positive and negative values.
 
-		public SystemState( String systemId ) {
-			this.systemId = systemId;
+		public SystemState( SystemType systemType ) {
+			this.systemType = systemType;
 		}
 
-		public String getSystemId() { return systemId; }
+		public SystemType getSystemType() { return systemType; }
+		//public String getSystemId() { return systemId; }
 
 		public void setCapacity( int n ) { capacity = n; }
 		public void setPower( int n ) { power = n; }
@@ -1749,7 +1795,7 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
-				result.append(String.format("SystemId:           %s\n", systemId));
+				result.append(String.format("SystemId:           %s\n", systemType.getId()));
 				result.append(String.format("Power:              %d/%d\n", power, capacity));
 				result.append(String.format("Damaged Bars:       %3d\n", damagedBars));
 				result.append(String.format("Ionized Bars:       %3d\n", ionizedBars));
@@ -1757,7 +1803,7 @@ public class SavedGameParser extends Parser {
 				result.append(String.format("Damage Progress:    %3d%%\n", damageProgress));
 				result.append(String.format("Deionization Ticks: %s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ));
 			} else {
-				result.append(String.format("%s: N/A\n", systemId));
+				result.append(String.format("%s: N/A\n", systemType.getId()));
 			}
 			return result.toString();
 		}
@@ -1895,26 +1941,40 @@ public class SavedGameParser extends Parser {
 
 
 
-	public static class DroneState {
+	public static enum DroneType {
 		// TODO: magic numbers.
-		// Might be worth putting in the config file.
-		public static final int MAX_HEALTH_BATTLE = 150;
-		public static final int MAX_HEALTH_REPAIR = 25;
-		public static final int MAX_HEALTH_BOARDER = 1;
-		public static final int MAX_HEALTH_COMBAT = 1;
-		public static final int MAX_HEALTH_DEFENSE = 1;
-		public static final int MAX_HEALTH_SHIP_REPAIR = 1;
+		BATTLE     ("BATTLE",      150),
+		REPAIR     ("REPAIR",       25),
+		BOARDER    ("BOARDER",       1),
+		COMBAT     ("COMBAT",        1),
+		DEFENSE    ("DEFENSE",       1),
+		SHIP_REPAIR("SHIP_REPAIR",   1);
 
-		public static int getMaxHealth( String type ) {
-			if ( type.equals(DroneBlueprint.TYPE_BATTLE) ) return MAX_HEALTH_BATTLE;
-			else if ( type.equals(DroneBlueprint.TYPE_REPAIR) ) return MAX_HEALTH_REPAIR;
-			else if ( type.equals(DroneBlueprint.TYPE_BOARDER) ) return MAX_HEALTH_BOARDER;
-			else if ( type.equals(DroneBlueprint.TYPE_COMBAT) ) return MAX_HEALTH_COMBAT;
-			else if ( type.equals(DroneBlueprint.TYPE_DEFENSE) ) return MAX_HEALTH_DEFENSE;
-			else if ( type.equals(DroneBlueprint.TYPE_SHIP_REPAIR) ) return MAX_HEALTH_SHIP_REPAIR;
-			else throw new RuntimeException( "No max health known for drone: "+ type );
+		private String id;
+		private int maxHealth;
+		private DroneType( String id, int maxHealth ) {
+			this.id = id;
+			this.maxHealth = maxHealth;
+		}
+		public String getId() { return id; }
+		public int getMaxHealth() { return maxHealth; }
+		public String toString() { return id; }
+
+		public static DroneType findById( String id ) {
+			for ( DroneType d : values() ) {
+				if ( d.getId().equals(id) ) return d;
+			}
+			return null;
 		}
 
+		public static int getMaxHealth( String id ) {
+			DroneType d = DroneType.findById( id );
+			if ( d != null ) return d.getMaxHealth();
+			throw new RuntimeException( "No max health known for drone type: "+ id );
+		}
+	}
+
+	public static class DroneState {
 		private String droneId = null;
 		private boolean armed = false;
 		private boolean playerControlled = true;  // False when not armed.
@@ -1965,18 +2025,11 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum FleetPresence {
-		NONE {
-			public String toString() { return "None"; }
-		},
-		REBEL {
-			public String toString() { return "Rebel"; }
-		},
-		FEDERATION {
-			public String toString() { return "Federation"; }
-		},
-		BOTH {
-			public String toString() { return "Both"; }
-		}
+		NONE("None"), REBEL("Rebel"), FEDERATION("Federation"), BOTH("Both");
+
+		private String title;
+		private FleetPresence( String title ) { this.title = title; }
+		public String toString() { return title; }
 	}
 
 	public static class BeaconState {
@@ -2207,22 +2260,13 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static enum StoreItemType {
-		WEAPON {
-			public String toString() { return "Weapon"; }
-		},
-		DRONE {
-			public String toString() { return "Drone"; }
-		},
-		AUGMENT {
-			public String toString() { return "Augment"; }
-		},
-		CREW {
-			public String toString() { return "Crew"; }
-		},
-		SYSTEM {
-			public String toString() { return "System"; }
-		}
-	};
+		WEAPON("Weapon"), DRONE("Drone"), AUGMENT("Augment"),
+		CREW("Crew"), SYSTEM("System");
+
+		private String title;
+		private StoreItemType( String title ) { this.title = title; }
+		public String toString() { return title; }
+	}
 	
 	public static class StoreShelf {
 		private StoreItemType itemType = StoreItemType.WEAPON;
@@ -2363,9 +2407,8 @@ public class SavedGameParser extends Parser {
 				int roomId = entry.getKey().intValue();
 				int occupantCount = entry.getValue().intValue();
 
-				String systemId = blueprintSystems.getSystemIdByRoomId( roomId );
-				if (systemId == null)
-					systemId = "empty";
+				SystemType systemType = blueprintSystems.getSystemTypeByRoomId( roomId );
+				String systemId = (systemType != null) ? systemType.getId() : "empty";
 
 				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, systemId, occupantCount) );
 			}

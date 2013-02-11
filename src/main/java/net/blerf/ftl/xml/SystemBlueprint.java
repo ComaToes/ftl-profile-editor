@@ -8,31 +8,10 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+
 @XmlRootElement(name="systemBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SystemBlueprint {
-
-	public static final String ID_PILOT = "pilot";
-	public static final String ID_DOORS = "doors";
-	public static final String ID_SENSORS = "sensors";
-	public static final String ID_MEDBAY = "medbay";
-	public static final String ID_OXYGEN = "oxygen";
-	public static final String ID_SHIELDS = "shields";
-	public static final String ID_ENGINES = "engines";
-	public static final String ID_WEAPONS = "weapons";
-	public static final String ID_DRONE_CTRL = "drones";
-	public static final String ID_TELEPORTER = "teleporter";
-	public static final String ID_CLOAKING = "cloaking";
-	public static final String ID_ARTILLERY = "artillery";
-
-	public static boolean isSubsystem( String systemId ) {
-		if ( systemId == null ) return false;
-		if ( systemId.equals(ID_PILOT) ) return true;
-		if ( systemId.equals(ID_DOORS) ) return true;
-		if ( systemId.equals(ID_SENSORS) ) return true;
-		return false;
-	}
-
 	@XmlAttribute(name="name")
 	private String id;
 	private String type, title, desc;

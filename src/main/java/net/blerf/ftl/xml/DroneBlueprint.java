@@ -6,17 +6,10 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+
 @XmlRootElement(name="droneBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DroneBlueprint {
-	
-	public static final String TYPE_BATTLE = "BATTLE";
-	public static final String TYPE_REPAIR = "REPAIR";
-	public static final String TYPE_BOARDER = "BOARDER";
-	public static final String TYPE_COMBAT = "COMBAT";
-	public static final String TYPE_DEFENSE = "DEFENSE";
-	public static final String TYPE_SHIP_REPAIR = "SHIP_REPAIR";
-
 	@XmlAttribute(name="name")
 	private String id;
 	private String type, title;

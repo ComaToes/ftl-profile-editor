@@ -9,7 +9,8 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import net.blerf.ftl.xml.SystemBlueprint;
+import net.blerf.ftl.parser.SavedGameParser.SystemType;
+
 
 @XmlRootElement(name="shipBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -38,9 +39,9 @@ public class ShipBlueprint {
 	@XmlElement(required=false)
 	private DroneList droneList;
 
-	private Object crewCount; // TODO model
+	private Object crewCount;  // TODO: model
 	@XmlElement(required=false)
-	private Object boardingAI; // TODO model
+	private Object boardingAI;  // TODO: model
 	
 	@XmlRootElement
 	@XmlAccessorType(XmlAccessType.FIELD)
@@ -146,7 +147,7 @@ public class ShipBlueprint {
 		@XmlElement(name="teleporter")
 		private SystemRoom teleporterRoom;
 		@XmlElement(name="cloaking")
-		private SystemRoom cloakRoom; // lol :)
+		private SystemRoom cloakRoom;  // lol :)
 		@XmlElement(name="artillery",required=false)
 		private List<SystemRoom> artilleryRooms;
 		
@@ -154,9 +155,8 @@ public class ShipBlueprint {
 			SystemRoom[] rooms = new SystemRoom[] { pilotRoom, doorsRoom, sensorsRoom, medicalRoom, lifeSupportRoom, shieldRoom, 
 					engineRoom, weaponRoom, droneRoom, teleporterRoom, cloakRoom };
 			List<SystemRoom> list = new ArrayList<SystemRoom>();
-			for (SystemRoom room : rooms) {
-				if( room != null )
-					list.add(room);
+			for ( SystemRoom room : rooms ) {
+				if( room != null ) list.add(room);
 			}
 			if( artilleryRooms != null )
 				list.addAll(artilleryRooms);
@@ -239,25 +239,24 @@ public class ShipBlueprint {
 		/**
 		 * Returns SystemRooms, or null if not present.
 		 *
-		 * @param name one of SystemBlueprint's ID_* constants.
 		 * @return an array of SystemRooms, usually only containing one
 		 */
-		public SystemList.SystemRoom[] getSystemRoom( String systemId ) {
+		public SystemList.SystemRoom[] getSystemRoom( SystemType systemType ) {
 			SystemList.SystemRoom systemRoom = null;
-			if ( systemId.equals(SystemBlueprint.ID_PILOT) ) systemRoom = getPilotRoom();
-			else if ( SystemBlueprint.ID_DOORS.equals(systemId) ) systemRoom = getDoorsRoom();
-			else if ( SystemBlueprint.ID_SENSORS.equals(systemId) ) systemRoom = getSensorsRoom();
-			else if ( SystemBlueprint.ID_MEDBAY.equals(systemId) ) systemRoom = getMedicalRoom();
-			else if ( SystemBlueprint.ID_OXYGEN.equals(systemId) ) systemRoom = getLifeSupportRoom();
-			else if ( SystemBlueprint.ID_SHIELDS.equals(systemId) ) systemRoom = getShieldRoom();
-			else if ( SystemBlueprint.ID_ENGINES.equals(systemId) ) systemRoom = getEngineRoom();
-			else if ( SystemBlueprint.ID_WEAPONS.equals(systemId) ) systemRoom = getWeaponRoom();
-			else if ( SystemBlueprint.ID_DRONE_CTRL.equals(systemId) ) systemRoom = getDroneRoom();
-			else if ( SystemBlueprint.ID_TELEPORTER.equals(systemId) ) systemRoom = getTeleporterRoom();
-			else if ( SystemBlueprint.ID_CLOAKING.equals(systemId) ) systemRoom = getCloakRoom();
+			if ( SystemType.PILOT.equals(systemType) ) systemRoom = getPilotRoom();
+			else if ( SystemType.DOORS.equals(systemType) ) systemRoom = getDoorsRoom();
+			else if ( SystemType.SENSORS.equals(systemType) ) systemRoom = getSensorsRoom();
+			else if ( SystemType.MEDBAY.equals(systemType) ) systemRoom = getMedicalRoom();
+			else if ( SystemType.OXYGEN.equals(systemType) ) systemRoom = getLifeSupportRoom();
+			else if ( SystemType.SHIELDS.equals(systemType) ) systemRoom = getShieldRoom();
+			else if ( SystemType.ENGINES.equals(systemType) ) systemRoom = getEngineRoom();
+			else if ( SystemType.WEAPONS.equals(systemType) ) systemRoom = getWeaponRoom();
+			else if ( SystemType.DRONE_CTRL.equals(systemType) ) systemRoom = getDroneRoom();
+			else if ( SystemType.TELEPORTER.equals(systemType) ) systemRoom = getTeleporterRoom();
+			else if ( SystemType.CLOAKING.equals(systemType) ) systemRoom = getCloakRoom();
 			if ( systemRoom != null ) return new SystemList.SystemRoom[] { systemRoom };
 
-			if ( SystemBlueprint.ID_ARTILLERY.equals(systemId) ) {
+			if ( SystemType.ARTILLERY.equals(systemType) ) {
 				if ( getArtilleryRooms() != null && getArtilleryRooms().size() > 0 ) {
 					int n = 0;
 					SystemList.SystemRoom[] result = new SystemList.SystemRoom[getArtilleryRooms().size()];
@@ -272,31 +271,15 @@ public class ShipBlueprint {
 		}
 
 		/**
-		 * Returns the systemId in a given room, or null.
-		 *
-		 * @return one of SystemBlueprint's ID_* constants.
+		 * Returns the SystemType in a given room, or null.
 		 */
-		public String getSystemIdByRoomId( int roomId ) {
-			ArrayList<String> systemIds = new ArrayList<String>();
-			systemIds.add( SystemBlueprint.ID_SHIELDS );
-			systemIds.add( SystemBlueprint.ID_ENGINES );
-			systemIds.add( SystemBlueprint.ID_OXYGEN );
-			systemIds.add( SystemBlueprint.ID_WEAPONS );
-			systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
-			systemIds.add( SystemBlueprint.ID_MEDBAY );
-			systemIds.add( SystemBlueprint.ID_PILOT );
-			systemIds.add( SystemBlueprint.ID_SENSORS );
-			systemIds.add( SystemBlueprint.ID_DOORS );
-			systemIds.add( SystemBlueprint.ID_TELEPORTER );
-			systemIds.add( SystemBlueprint.ID_CLOAKING );
-			systemIds.add( SystemBlueprint.ID_ARTILLERY );
-
-			for (String systemId : systemIds) {
-				SystemList.SystemRoom[] systemRooms = getSystemRoom( systemId );
+		public SystemType getSystemTypeByRoomId( int roomId ) {
+			for ( SystemType systemType : SystemType.values() ) {
+				SystemList.SystemRoom[] systemRooms = getSystemRoom( systemType );
 				if ( systemRooms != null ) {
-					for (SystemList.SystemRoom systemRoom : systemRooms) {
+					for ( SystemList.SystemRoom systemRoom : systemRooms ) {
 						if ( systemRoom.getRoomId() == roomId )
-							return systemId;
+							return systemType;
 					}
 				}
 			}
@@ -306,12 +289,11 @@ public class ShipBlueprint {
 		/**
 		 * Returns roomId(s) that contain a given system, or null.
 		 *
-		 * @param name one of SystemBlueprint's ID_* constants.
 		 * @return an array of roomIds, usually only containing one
 		 */
-		public int[] getRoomIdBySystemId( String systemId ) {
+		public int[] getRoomIdBySystemType( SystemType systemType ) {
 			int[] result = null;
-			SystemList.SystemRoom[] systemRooms = getSystemRoom( systemId );
+			SystemList.SystemRoom[] systemRooms = getSystemRoom( systemType );
 			if ( systemRooms != null ) {
 				result = new int[ systemRooms.length ];
 				for (int i=0; i < systemRooms.length; i++)

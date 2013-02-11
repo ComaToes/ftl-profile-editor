@@ -49,6 +49,8 @@ import javax.swing.plaf.basic.BasicArrowButton;
 
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.parser.SavedGameParser.CrewType;
+import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.SectorMapLayout;
@@ -988,7 +990,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			editorPanel.getInt(BETA).setText( ""+ beaconSprite.getBeta() );
 		}
 
-		for ( SavedGameParser.FleetPresence fleetPresence : SavedGameParser.FleetPresence.class.getEnumConstants() ) {
+		for ( SavedGameParser.FleetPresence fleetPresence : SavedGameParser.FleetPresence.values() ) {
 			editorPanel.getCombo(FLEET).addItem( fleetPresence );
 		}
 		editorPanel.getCombo(FLEET).setSelectedItem( beaconSprite.getFleetPresence() );
@@ -1293,7 +1295,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final String[] topAvail = new String[] { TOP_AVAIL_ONE, TOP_AVAIL_TWO, TOP_AVAIL_THREE };
 		final String[] bottomSlots = new String[] { BOTTOM_ONE, BOTTOM_TWO, BOTTOM_THREE };
 		final String[] bottomAvail = new String[] { BOTTOM_AVAIL_ONE, BOTTOM_AVAIL_TWO, BOTTOM_AVAIL_THREE };
-		final SavedGameParser.StoreItemType[] itemTypes = SavedGameParser.StoreItemType.class.getEnumConstants();
+		final SavedGameParser.StoreItemType[] itemTypes = SavedGameParser.StoreItemType.values();
 
 		// Use array-loops to manage both shelves.
 		final SavedGameParser.StoreShelf[] shelves = new SavedGameParser.StoreShelf[] { storeSprite.getTopShelf(), storeSprite.getBottomShelf() };
@@ -1306,21 +1308,15 @@ public class SavedGameSectorMapPanel extends JPanel {
 		Map droneLookup = DataManager.get().getDrones();
 		Map augmentLookup = DataManager.get().getAugments();
 		Map crewLookup = new LinkedHashMap();
-		for ( Object o : new Object[] {
-			CrewBlueprint.RACE_CRYSTAL, CrewBlueprint.RACE_ENERGY,
-			CrewBlueprint.RACE_ENGI, CrewBlueprint.RACE_HUMAN,
-			CrewBlueprint.RACE_MANTIS, CrewBlueprint.RACE_ROCK,
-			CrewBlueprint.RACE_SLUG } ) {
-			crewLookup.put( o, o );
+		for ( CrewType race : new CrewType[] {
+			CrewType.CRYSTAL, CrewType.ENERGY,
+			CrewType.ENGI, CrewType.HUMAN,
+			CrewType.MANTIS, CrewType.ROCK,
+			CrewType.SLUG } ) {
+			crewLookup.put( race.getId(), race );
 		}
 		Map systemLookup = new LinkedHashMap();
-		for ( Object o : new Object[] {
-			SystemBlueprint.ID_PILOT, SystemBlueprint.ID_DOORS,
-			SystemBlueprint.ID_SENSORS, SystemBlueprint.ID_MEDBAY,
-			SystemBlueprint.ID_OXYGEN, SystemBlueprint.ID_SHIELDS,
-			SystemBlueprint.ID_ENGINES, SystemBlueprint.ID_WEAPONS,
-			SystemBlueprint.ID_DRONE_CTRL, SystemBlueprint.ID_TELEPORTER,
-			SystemBlueprint.ID_CLOAKING, SystemBlueprint.ID_ARTILLERY } ) {
+		for ( Object o : SystemType.values() ) {
 			systemLookup.put( o, o );
 		}
 		final Map<SavedGameParser.StoreItemType, Map> itemLookups = new HashMap<SavedGameParser.StoreItemType, Map>();
