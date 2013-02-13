@@ -303,4 +303,37 @@ public class FieldEditorPanel extends JPanel {
 		for (JLabel valueReminder : reminderMap.values())
 			valueReminder.setText("");
 	}
+
+	public void removeAll() {
+		labelMap.clear();
+		stringMap.clear();
+		intMap.clear();
+		boolMap.clear();
+		sliderMap.clear();
+		comboMap.clear();
+		reminderMap.clear();
+		super.removeAll();
+		gridC = new GridBagConstraints();
+
+		gridC.anchor = GridBagConstraints.WEST;
+		gridC.fill = GridBagConstraints.HORIZONTAL;
+		gridC.weightx = 0.0;
+		gridC.weighty = 0.0;
+		gridC.gridwidth = 1;
+		gridC.gridx = 0;
+		gridC.gridy = 0;
+
+		// No default width for col 0.
+		gridC.gridx = 0;
+		this.add( Box.createVerticalStrut(1), gridC );
+		gridC.gridx++;
+		this.add( valueStrut, gridC );
+		gridC.gridx++;
+		if ( remindersVisible ) {
+			this.add( reminderStrut, gridC );
+			gridC.gridy++;
+		}
+
+		gridC.insets = new Insets(2, 4, 2, 4);
+	}
 }

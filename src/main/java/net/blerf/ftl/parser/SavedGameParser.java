@@ -805,7 +805,49 @@ public class SavedGameParser extends Parser {
 
 
 
-	// Stash state classes here until they're finalized.
+	public static enum StateVar {
+		// TODO: magic strings.
+		BLUE_ALIEN     ("blue_alien",      "Blue event choices clicked. (only ones that require a race)"),
+		DEAD_CREW      ("dead_crew",       "???, plus boarding drone bodies? (see also: lost_crew)"),
+		DESTROYED_ROCK ("destroyed_rock",  "Rock ships destroyed. (including pirates)"),
+		ENV_DANGER     ("env_danger",      "Jumps into beacons with environmental dangers."),
+		FIRED_SHOT     ("fired_shot",      "Individual beams/blasts/projectiles fired. (see also: used_missile)"),
+		KILLED_CREW    ("killed_crew",     "Enemy crew killed. (and possibly beam friendly fire?)"),
+		LOST_CREW      ("lost_crew",       "Crew you've lost: killed, abandoned on nearby ships, taken by events?, but not dismissed. (see also: dead_crew)"),
+		NEBULA         ("nebula",          "Jumps into nebula beacons."),
+		OFFENSIVE_DRONE("offensive_drone", "The number of times drones capable of damaging an enemy ship powered up."),
+		REACTOR_UPGRADE("reactor_upgrade", "Reactor (power bar) upgrades beyond the ship's default levels."),
+		STORE_PURCHASE ("store_purchase",  "Non-repair crew/items purchased. (selling isn't counted)"),
+		STORE_REPAIR   ("store_repair",    "Store repair button clicks."),
+		SYSTEM_UPGRADE ("system_upgrade",  "System (and subsystem; not reactor) upgrades beyond the ship's default levels."),
+		TELEPORTED     ("teleported",      "Teleporter activations, in either direction."),
+		USED_DRONE     ("used_drone",      "The number of times drone parts were consumed."),
+		USED_MISSILE   ("used_missile",    "Missile/bomb weapon discharges. (see also: fired_shot)"),
+		WEAPON_UPGRADE ("weapon_upgrade",  "Weapons system upgrades beyond the ship's default levels. (see also: system_upgrade)");
+
+		private String id;
+		private String description;
+		private StateVar( String id, String description ) {
+			this.id = id;
+			this.description = description;
+		}
+		public String getId() { return id; }
+		public String getDescription() { return description; }
+		public String toString() { return id; }
+
+		public static StateVar findById( String id ) {
+			for ( StateVar v : values() ) {
+				if ( v.getId().equals(id) ) return v;
+			}
+			return null;
+		}
+
+		public static String getDescription( String id ) {
+			StateVar v = StateVar.findById(id);
+			if ( v != null ) return v.getDescription();
+			return id +" is an unknown var. Please report it on the forum thread.";
+		}
+	}
 
 	public static class SavedGameState {
 		private boolean difficultyEasy = false;
@@ -898,14 +940,9 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Sets a state var.
-		 * The following ids have been seen in the wild:
-		 * blue_alien, dead_crew, destroyed_rock, env_danger, fired_shot,
-		 * killed_crew, nebula, offensive_drone, reactor_upgrade,
-		 * store_purchase, store_repair, system_upgrade, teleported,
-		 * used_drone, used_missile, weapon_upgrade.
+		 * State vars are mostly used to test candidacy for achievements.
 		 *
-		 * Each is optional, and counts something.
-		 * *_upgrade counts upgrades beyond the ship's default levels.
+		 * See StateVar enums for known vars and descriptions.
 		 */
 		public void setStateVar( String stateVarId, int stateVarValue ) {
 			stateVars.put(stateVarId, new Integer(stateVarValue));
@@ -1703,7 +1740,7 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum SystemType {
-		// SystemType ids are tied to "img/icons/s_*_overlay.png".
+		// SystemType ids are tied to "img/icons/s_*_overlay.png" and store item ids.
 		// TODO: magic booleans.
 		PILOT     ("pilot",      true),
 		DOORS     ("doors",      true),
