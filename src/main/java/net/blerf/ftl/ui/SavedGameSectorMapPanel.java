@@ -1316,8 +1316,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 			crewLookup.put( race.getId(), race );
 		}
 		Map systemLookup = new LinkedHashMap();
-		for ( Object o : SystemType.values() ) {
-			systemLookup.put( o, o );
+		for ( SystemType systemType : SystemType.values() ) {
+			systemLookup.put( systemType.getId(), systemType );
 		}
 		final Map<SavedGameParser.StoreItemType, Map> itemLookups = new HashMap<SavedGameParser.StoreItemType, Map>();
 		itemLookups.put( SavedGameParser.StoreItemType.WEAPON, weaponLookup );
