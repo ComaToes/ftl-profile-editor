@@ -638,7 +638,6 @@ public class SavedGameParser extends Parser {
 	}
 
 	private BeaconState readBeacon( InputStream in ) throws IOException {
-
 		BeaconState beacon = new BeaconState();
 
 		boolean visited = readBool(in);
@@ -728,7 +727,6 @@ public class SavedGameParser extends Parser {
 	}
 	
 	private StoreShelf readStoreShelf( InputStream in ) throws IOException {
-		
 		StoreShelf shelf = new StoreShelf();
 		
 		int itemType = readInt(in);
@@ -754,7 +752,6 @@ public class SavedGameParser extends Parser {
 	}
 
 	public void writeStoreShelf( OutputStream out, StoreShelf shelf ) throws IOException {
-
 		StoreItemType itemType = shelf.getItemType();
 		if ( itemType == StoreItemType.WEAPON ) writeInt( out, 0 );
 		else if ( itemType == StoreItemType.DRONE ) writeInt( out, 1 );
@@ -777,7 +774,6 @@ public class SavedGameParser extends Parser {
 	}
 
 	public RebelFlagshipState readRebelFlagship( InputStream in ) throws IOException {
-
 		// TODO: Magic strings.
 		String[] blueprintIds = new String[] {"BOSS_1", "BOSS_2", "BOSS_3"};
 
@@ -1069,10 +1065,25 @@ public class SavedGameParser extends Parser {
 			sectorList.add( new Boolean(visited) );
 		}
 
+		/**
+		 * Toggles whether a dot on the sector tree has been visited.
+		 *
+		 * @param sector an index of the sector list (0-based)
+		 * @param visited true if visited, false otherwise
+		 */
 		public void setSectorVisited( int sector, boolean visited ) {
 			sectorList.set( sector, new Boolean(visited) );
 		}
 
+		/**
+		 * Returns a list of sector tree breadcrumbs.
+		 *
+		 * Saved games only contain a linear set of boolean flage to
+		 * track visited status. FTL reconstructs the sector tree at
+		 * runtime using the sector tree seed, and it maps these
+		 * booleans to the dots: top-to-bottom for each column,
+		 * left-to-right.
+		 */
 		public ArrayList<Boolean> getSectorList() { return sectorList; }
 
 		/**
@@ -1185,7 +1196,7 @@ public class SavedGameParser extends Parser {
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
-			for (Boolean b : sectorList) {
+			for ( Boolean b : sectorList ) {
 				if (first) { first = false; }
 				else { result.append(","); }
 				result.append( (b ? "T" : "F") );
@@ -1203,14 +1214,14 @@ public class SavedGameParser extends Parser {
 			}
 
 			result.append("\nQuests...\n");
-			for (Map.Entry<String, Integer> entry : questEventMap.entrySet()) {
+			for ( Map.Entry<String, Integer> entry : questEventMap.entrySet() ) {
 				String questEventId = entry.getKey();
 				int questBeaconId = entry.getValue().intValue();
 				result.append(String.format("QuestEventId: %s, BeaconId: %d\n", questEventId, questBeaconId));
 			}
 
 			result.append("\nNext Sector Quests...\n");
-			for (String questEventId : distantQuestEventList) {
+			for ( String questEventId : distantQuestEventList ) {
 				result.append(String.format("QuestEventId: %s\n", questEventId));
 			}
 
@@ -1224,7 +1235,7 @@ public class SavedGameParser extends Parser {
 
 			result.append("\nMystery Bytes...\n");
 			first = true;
-			for (MysteryBytes m : mysteryList) {
+			for ( MysteryBytes m : mysteryList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
@@ -2197,6 +2208,11 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Sets fleet background sprites and possibly the beacon icon.
+		 *
+		 * When FTL moves the rebel fleet over a beacon, the beacon's
+		 * fleet presence becomes REBEL, and if it was visited, a
+		 * LONG_FLEET ShipEvent is set. Otherwise, one of the FLEET_*
+		 * events will be triggered to spawn the LONG_FLEET upon arrival.
 		 */
 		public void setFleetPresence( FleetPresence fp ) { fleetPresence = fp; }
 		public FleetPresence getFleetPresence() { return fleetPresence; }

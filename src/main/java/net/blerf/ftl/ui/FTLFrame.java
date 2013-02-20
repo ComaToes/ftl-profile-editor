@@ -61,12 +61,7 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 import javax.xml.bind.JAXBException;
 
-import net.blerf.ftl.model.AchievementRecord;
-import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
-import net.blerf.ftl.model.Score;
-import net.blerf.ftl.model.Score.Difficulty;
-import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.parser.ProfileParser;
@@ -83,11 +78,10 @@ import net.blerf.ftl.ui.SavedGameSectorMapPanel;
 import net.blerf.ftl.ui.SavedGameStateVarsPanel;
 import net.blerf.ftl.ui.ShipUnlockPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
-import net.blerf.ftl.xml.Achievement;
-import net.blerf.ftl.xml.ShipBlueprint;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 
 public class FTLFrame extends JFrame {
 	
@@ -136,7 +130,6 @@ public class FTLFrame extends JFrame {
 	private int version;
 	
 	public FTLFrame( int version ) {
-		
 		this.version = version;
 		
 		// GUI setup
@@ -157,9 +150,9 @@ public class FTLFrame extends JFrame {
 					if ( Desktop.isDesktopSupported() ) {
 						try {
 							Desktop.getDesktop().browse( e.getURL().toURI() );
-							log.trace( "Link opened in external browser" );
+							log.trace( "Link opened in external browser." );
 						} catch (Exception f) {
-							log.error( "Unable to open link", f );
+							log.error( "Unable to open link.", f );
 						}
 					}
 				}
@@ -229,7 +222,7 @@ public class FTLFrame extends JFrame {
 		statusPanel.add( statusLbl );
 		contentPane.add( statusPanel, BorderLayout.SOUTH );
 
-		// Load blank profile (sets Kestrel unlock)
+		// Load blank profile (sets Kestrel unlock).
 		loadProfile( Profile.createEmptyProfile() );
 
 		// Check for updates in a seperate thread.
@@ -249,8 +242,7 @@ public class FTLFrame extends JFrame {
 	}
 
 	private void initCheckboxIcons() {
-
-		log.trace( "Initialising checkbox locked icon" );
+		log.trace( "Initialising checkbox locked icon." );
 		iconShadeImage = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = iconShadeImage.createGraphics();
 		g.setColor( new Color(0, 0, 0, 150) );
@@ -263,7 +255,7 @@ public class FTLFrame extends JFrame {
 			int y = (maxIconHeight-lock.getHeight()) / 2;
 			g.drawImage(lock, x, y, null);
 		} catch (IOException e) {
-			log.error( "Error reading lock image" , e );
+			log.error( "Error reading lock image." , e );
 		}	finally {
 			try {if (stream != null) stream.close();}
 			catch (IOException f) {}
@@ -341,7 +333,7 @@ public class FTLFrame extends JFrame {
 			return new IconCycleButton( icons );
 
 		} catch (IOException e) {
-			log.error( "Error reading cycle button image (" + baseImagePath + ")" , e );
+			log.error( "Error reading cycle button image (" + baseImagePath + ")." , e );
 
 		}	finally {
 			try {if (stream != null) stream.close();}
@@ -352,7 +344,7 @@ public class FTLFrame extends JFrame {
 
 	
 	private void setupProfileToolbar( JToolBar toolbar ) {
-		log.trace( "Initialising Profile toolbar" );
+		log.trace( "Initialising Profile toolbar." );
 
 		toolbar.setMargin( new Insets(5, 5, 5, 5) );
 		toolbar.setFloatable(false);
@@ -378,19 +370,19 @@ public class FTLFrame extends JFrame {
 		
 		fc.setMultiSelectionEnabled(false);
 		
-		// Create open button
 		JButton openButton = new JButton("Open", openIcon);
 		openButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Open profile button clicked" );
+				log.trace( "Open profile button clicked." );
+				fc.setDialogTitle( "Open Profile" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					RandomAccessFile raf = null;
 					InputStream in = null;
 					try {
 						log.trace( "File selected: " + fc.getSelectedFile().getAbsolutePath() );
 						
-						// Read whole file so we can hash it
+						// Read whole file so we can hash it.
 						raf = new RandomAccessFile( fc.getSelectedFile(), "r" );
 						byte[] data = new byte[(int)raf.length()];
 						raf.readFully(data);
@@ -407,21 +399,21 @@ public class FTLFrame extends JFrame {
 						
 						FTLFrame.this.loadProfile(p);
 						
-						// Perform mock write
+						// Perform mock write.
 						ByteArrayOutputStream out = new ByteArrayOutputStream();
 						FTLFrame.this.updateProfile(profile);
 						ftl.writeProfile(out, profile);
 						out.close();
 						
-						// Hash result
+						// Hash result.
 						byte[] outData = out.toByteArray();
 						md.reset();
 						byte[] writeHash = md.digest(outData);
 						
-						// Compare
+						// Compare.
 						for (int i = 0; i < readHash.length; i++) {
 							if ( readHash[i] != writeHash[i] ) {
-								log.error("Hash fail on mock write - Unable to assure valid parsing");
+								log.error("Hash fail on mock write - Unable to assure valid parsing.");
 								
 								String hex = "";
 								for (int j = 0; j < data.length; j++) {
@@ -445,10 +437,10 @@ public class FTLFrame extends JFrame {
 							}
 						}
 						
-						log.trace("Read completed successfully");
+						log.trace("Profile read successfully.");
 						
 					} catch( Exception f ) {
-						log.error( "Error reading profile", f );
+						log.error( "Error reading profile.", f );
 						showErrorDialog( "Error reading profile:\n" + f.getMessage() );
 					} finally {
 						try {if (raf != null) raf.close();}
@@ -457,7 +449,7 @@ public class FTLFrame extends JFrame {
 						catch (IOException g) {}
 					}
 				} else {
-					log.trace("Open dialog cancelled");
+					log.trace("Open dialog cancelled.");
 				}
 			}
 		});
@@ -468,7 +460,8 @@ public class FTLFrame extends JFrame {
 		saveButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Save profile button clicked" );
+				log.trace( "Save profile button clicked." );
+				fc.setDialogTitle( "Save Profile" );
 				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					FileOutputStream out = null;
 					try {
@@ -480,14 +473,14 @@ public class FTLFrame extends JFrame {
 						ftl.writeProfile(out, profile);
 						
 					} catch( IOException f ) {
-						log.error( "Error writing profile", f );
+						log.error( "Error writing profile.", f );
 						showErrorDialog( "Error saving profile:\n" + f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
 					}
 				} else {
-					log.trace( "Save dialog cancelled" );
+					log.trace( "Save dialog cancelled." );
 				}
 			}
 		});
@@ -499,7 +492,7 @@ public class FTLFrame extends JFrame {
 		unlockShipsButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace("Unlock all ships button clicked");
+				log.trace("Unlock all ships button clicked.");
 				shipUnlockPanel.unlockAllShips();
 			}
 		});
@@ -511,7 +504,7 @@ public class FTLFrame extends JFrame {
 		unlockShipAchsButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace("Unlock all ship achievements button clicked");
+				log.trace("Unlock all ship achievements button clicked.");
 				shipUnlockPanel.unlockAllShipAchievements();
 			}
 		});
@@ -524,7 +517,7 @@ public class FTLFrame extends JFrame {
 		extractButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace("Extract button clicked");
+				log.trace("Extract button clicked.");
 
 				JFileChooser extractChooser = new JFileChooser();
 				extractChooser.setDialogTitle("Choose a dir to extract into");
@@ -545,11 +538,11 @@ public class FTLFrame extends JFrame {
 						JOptionPane.showMessageDialog(FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE);
 						
 					} catch( IOException ex ) {
-						log.error("Error extracting dat", ex);
+						log.error("Error extracting dats.", ex);
 						showErrorDialog("Error extracting dat:\n" + ex.getMessage());
 					}
 				} else
-					log.trace("Extract dialog cancelled");
+					log.trace("Extract dialog cancelled.");
 			}
 		});
 		extractButton.addMouseListener( new StatusbarMouseListener(this, "Extract dat content to a directory.") );
@@ -566,7 +559,7 @@ public class FTLFrame extends JFrame {
 	}
 
 	private void setupSavedGameToolbar( JToolBar toolbar ) {
-		log.trace( "Initialising SavedGame toolbar" );
+		log.trace( "Initialising SavedGame toolbar." );
 
 		toolbar.setMargin( new Insets(5, 5, 5, 5) );
 		toolbar.setFloatable(false);
@@ -592,12 +585,12 @@ public class FTLFrame extends JFrame {
 		
 		fc.setMultiSelectionEnabled(false);
 
-		// Create open button
 		JButton openButton = new JButton("Open", openIcon);
 		openButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Open saved game button clicked" );
+				log.trace( "Open saved game button clicked." );
+				fc.setDialogTitle( "Open Saved Game" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 						log.trace( "File selected: " + fc.getSelectedFile().getAbsolutePath() );
@@ -606,7 +599,7 @@ public class FTLFrame extends JFrame {
 						SavedGameParser.SavedGameState gs = parser.readSavedGame( fc.getSelectedFile() );
 						loadGameState( gs );
 
-						log.trace( "Read completed successfully" );
+						log.trace( "Game state read successfully." );
 
 						if ( gameState.getMysteryList().size() > 0 ) {
 							StringBuilder musteryBuf = new StringBuilder();
@@ -621,11 +614,11 @@ public class FTLFrame extends JFrame {
 						}
 						
 					} catch( Exception f ) {
-						log.error( "Error reading saved game", f );
+						log.error( "Error reading saved game.", f );
 						showErrorDialog( "Error reading saved game:\n" + f.getMessage() );
 					}
 				} else {
-					log.trace( "Open dialog cancelled" );
+					log.trace( "Open dialog cancelled." );
 				}
 			}
 		});
@@ -636,10 +629,11 @@ public class FTLFrame extends JFrame {
 		saveButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Save game state button clicked" );
+				log.trace( "Save game state button clicked." );
 
 				if ( gameState == null ) return;
 
+				fc.setDialogTitle( "Save Game State" );
 				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					FileOutputStream out = null;
 					try {
@@ -651,14 +645,14 @@ public class FTLFrame extends JFrame {
 						parser.writeSavedGame(out, gameState);
 						
 					} catch( IOException f ) {
-						log.error( "Error writing game state", f );
+						log.error( "Error writing game state.", f );
 						showErrorDialog( "Error saving game state:\n" + f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
 					}
 				} else {
-					log.trace( "Save dialog cancelled" );
+					log.trace( "Save dialog cancelled." );
 				}
 			}
 		});
@@ -669,7 +663,7 @@ public class FTLFrame extends JFrame {
 		dumpButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace( "Dump game state button clicked" );
+				log.trace( "Dump game state button clicked." );
 
 				if ( gameState == null ) return;
 
@@ -694,17 +688,17 @@ public class FTLFrame extends JFrame {
 						out.close();
 						
 					} catch( IOException f ) {
-						log.error( "Error dumping game state", f );
+						log.error( "Error dumping game state.", f );
 						showErrorDialog( "Error dumping game state:\n"+ f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
 					}
 				} else
-					log.trace( "Dump dialog cancelled" );
+					log.trace( "Dump dialog cancelled." );
 			}
 		});
-		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump game state info to a text file.") );
+		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump unmodified game state info to a text file.") );
 		toolbar.add( dumpButton );
 
 		toolbar.add( Box.createHorizontalGlue() );
@@ -738,7 +732,7 @@ public class FTLFrame extends JFrame {
 		aboutButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				log.trace("About button clicked");
+				log.trace("About button clicked.");
 				aboutDialog.setVisible(true);
 			}
 		});
@@ -766,7 +760,7 @@ public class FTLFrame extends JFrame {
 		String line = null;
 		try {
 			
-			log.trace("Checking for latest version");
+			log.trace("Checking for latest version.");
 			
 			url = new URL(latestVersionUrl);
 			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
@@ -774,15 +768,14 @@ public class FTLFrame extends JFrame {
 			in.close();
 			
 			if ( latestVersion > version ) {
-				
-				log.trace("New version available");
+				log.trace("New version available.");
 				
 				final String historyHtml = getVersionHistoryHtml( latestVersionTemplate, version );
 
 				final Runnable newCallback = new Runnable() {
 					@Override
 					public void run() {
-						log.trace("Updates button clicked (new version)");
+						log.trace("Updates button clicked (new version).");
 						JDialog updatesDialog = createHtmlDialog( "Update Available", historyHtml );
 						updatesDialog.setVisible(true);
 					}
@@ -804,7 +797,7 @@ public class FTLFrame extends JFrame {
 				
 			} else {
 				
-				log.trace("Already up-to-date");
+				log.trace("Already up-to-date.");
 
 				final String historyHtml = getVersionHistoryHtml( releaseNotesTemplate, 0 );
 				
@@ -812,7 +805,7 @@ public class FTLFrame extends JFrame {
 				final Runnable newCallback = new Runnable() {
 					@Override
 					public void run() {
-						log.trace("Updates button clicked (release notes)");
+						log.trace("Updates button clicked (release notes).");
 						JDialog updatesDialog = createHtmlDialog( "Release Notes", historyHtml );
 						updatesDialog.setVisible(true);
 					}
@@ -836,7 +829,7 @@ public class FTLFrame extends JFrame {
 			}
 			
 		} catch (Exception e) {
-			log.error( "Error checking for latest version", e );
+			log.error( "Error checking for latest version.", e );
 			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e );
 
 		} finally {
@@ -920,9 +913,8 @@ public class FTLFrame extends JFrame {
 	}
 	
 	public void loadProfile( Profile p ) {
-
 		try {
-			log.trace("Loading profile data into UI");
+			log.trace("Loading profile data into UI.");
 
 			shipUnlockPanel.setProfile(p);
 			generalAchievementsPanel.setProfile(p);
@@ -931,7 +923,7 @@ public class FTLFrame extends JFrame {
 			profile = p;
 
 		} catch (IOException e) {
-			log.error( "Error while loading profile", e );
+			log.error( "Error while loading profile.", e );
 
 			if ( profile != null && profile != p ) {
 				log.info( "Attempting to revert GUI to the previous profile..." );
@@ -946,8 +938,7 @@ public class FTLFrame extends JFrame {
 	}
 	
 	public void updateProfile( Profile p ) {
-		
-		log.trace("Updating profile from UI selections");
+		log.trace("Updating profile from UI selections.");
 		
 		shipUnlockPanel.updateProfile(p);		
 		generalAchievementsPanel.updateProfile(p);
@@ -968,7 +959,6 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
-
 		savedGameDumpPanel.setGameState( gs );
 		savedGameGeneralPanel.setGameState( gs );
 		savedGamePlayerFloorplanPanel.setShipState( gs.getPlayerShipState() );
@@ -980,7 +970,6 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gs ) {
-
 		// savedGameDumpPanel doesn't modify anything.
 		savedGameGeneralPanel.updateGameState( gs );
 		savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );

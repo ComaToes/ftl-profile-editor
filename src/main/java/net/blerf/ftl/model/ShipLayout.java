@@ -9,8 +9,6 @@ import java.util.NoSuchElementException;
 
 
 public class ShipLayout {
-	// TODO: Some ROOM values haven't been deciphered (see: setRoom()).
-
 	public enum RoomInfo { LOCATION_X, LOCATION_Y, SQUARES_H, SQUARES_V }
 	public enum DoorInfo { ROOM_ID_A, ROOM_ID_B }
 

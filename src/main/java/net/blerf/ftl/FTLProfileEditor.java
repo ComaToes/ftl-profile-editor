@@ -26,11 +26,11 @@ public class FTLProfileEditor {
 
 	private static final int VERSION = 14;
 
-	public static void main(String[] args) {
+	public static void main( String[] args ) {
+		log.debug( "FTL Editor v"+ VERSION );
 		log.debug( System.getProperty("os.name") +" "+ System.getProperty("os.version") +" "+ System.getProperty("os.arch") );
 		log.debug( System.getProperty("java.vm.name") +", "+ System.getProperty("java.version") );
 
-		// Read config file and locate FTL install
 		File propFile = new File("ftl-editor.cfg");
 		File datsPath = null;
 
@@ -38,23 +38,24 @@ public class FTLProfileEditor {
 		Properties config = new Properties();
 		config.setProperty( "useDefaultUI", "false" );
 
+		// Read the config file.
 		InputStream in = null;
 		try {
 			if ( propFile.exists() ) {
-				log.trace( "Loading properties from config file" );
+				log.trace( "Loading properties from config file." );
 				in = new FileInputStream(propFile);
 				config.load( in );
 			} else {
 				writeConfig = true; // Create a new cfg, but only if necessary.
 			}
 		} catch (IOException e) {
-			log.error( "Error loading config", e );
+			log.error( "Error loading config.", e );
 			showErrorDialog( "Error loading config from " + propFile.getPath() );
 		} finally {
 			if ( in != null ) { try { in.close(); } catch (IOException e) {} }
 		}
 
-		// LnF
+		// Look-and-Feel.
 		String useDefaultUI = config.getProperty("useDefaultUI");
 
 		if ( useDefaultUI == null || !useDefaultUI.equals("true") ) {
@@ -62,25 +63,25 @@ public class FTLProfileEditor {
 				log.trace( "Using system Look and Feel" );
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			} catch (Exception e) {
-				log.error( "Error setting system Look and Feel", e );
+				log.error( "Error setting system Look and Feel.", e );
 				log.info( "Setting 'useDefaultUI=true' in the config file will prevent this error." );
 			}
 		} else {
-			log.debug( "Using default Look and Feel" );
+			log.debug( "Using default Look and Feel." );
 		}
 
-		// FTL Resources Path
+		// FTL Resources Path.
 		String datsPathString = config.getProperty("ftlDatsPath");
 
 		if ( datsPathString != null ) {
 			log.info( "Using FTL dats path from config: " + datsPathString );
 			datsPath = new File(datsPathString);
 			if ( isDatsPathValid(datsPath) == false ) {
-				log.error( "The config's path to FTL dats does not exist, or it lacks data.dat." );
+				log.error( "The config's ftlDatsPath does not exist, or it lacks data.dat." );
 				datsPath = null;
 			}
 		} else {
-			log.trace( "No FTL dats path available" );
+			log.trace( "No FTL dats path previously set." );
 		}
 		if ( datsPath == null ) {
 			datsPath = promptForFtlPath();
@@ -105,24 +106,22 @@ public class FTLProfileEditor {
 			}
 		}
 
-		// Parse the dats
 		try {
-
-			DataManager.init( datsPath );
-
-		} catch (Exception e) {
-			log.error( "Error parsing FTL data files", e );
-			showErrorDialog( "Error parsing FTL data files" );
+			DataManager.init( datsPath ); // Parse the dats.
+		}
+		catch (Exception e) {
+			log.error( "Error parsing FTL data files.", e );
+			showErrorDialog( "Error parsing FTL data files." );
 			System.exit(1);
 		}
 
 		try {
 			FTLFrame frame = new FTLFrame(VERSION);
 			frame.setVisible(true);
-
-		} catch (Exception e) {
-			log.error( "Exception while creating FTLFrame", e );
-			// Required to kill Swing or process will remain active
+		}
+		catch (Exception e) {
+			log.error( "Exception while creating FTLFrame.", e );
+			// Kill Swing or the process will remain active.
 			System.exit(1);
 		}
 
@@ -212,9 +211,7 @@ public class FTLProfileEditor {
 	}
 
 	private static void showErrorDialog( String message ) {
-
 		JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
-
 	}
 
 }

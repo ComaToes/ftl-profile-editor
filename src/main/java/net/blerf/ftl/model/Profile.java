@@ -10,32 +10,35 @@ public class Profile {
 	private List<AchievementRecord> achievements;
 	private boolean[] shipUnlocks;
 	private Stats stats;
-	
+
+	public void setVersion( int version ) {
+		this.version = version;
+	}
 	public int getVersion() {
 		return version;
 	}
-	public void setVersion(int version) {
-		this.version = version;
+
+	public void setAchievements( List<AchievementRecord> achievements ) {
+		this.achievements = achievements;
 	}
 	public List<AchievementRecord> getAchievements() {
 		return achievements;
 	}
-	public void setAchievements(List<AchievementRecord> achievements) {
-		this.achievements = achievements;
+
+	public void setStats( Stats stats ) {
+		this.stats = stats;
 	}
 	public Stats getStats() {
 		return stats;
 	}
-	public void setStats(Stats stats) {
-		this.stats = stats;
+
+	public void setShipUnlocks( boolean[] shipUnlocks ) {
+		this.shipUnlocks = shipUnlocks;
 	}
 	public boolean[] getShipUnlocks() {
 		return shipUnlocks;
 	}
-	public void setShipUnlocks(boolean[] shipUnlocks) {
-		this.shipUnlocks = shipUnlocks;
-	}
-	
+
 
 	public static Profile createEmptyProfile() {
 		Profile profile = new Profile();
