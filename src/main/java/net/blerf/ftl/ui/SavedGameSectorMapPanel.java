@@ -53,6 +53,7 @@ import net.blerf.ftl.parser.SavedGameParser.CrewType;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
+import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.SectorMapLayout;
 import net.blerf.ftl.ui.SectorMapLayout.SectorMapConstraints;
 import net.blerf.ftl.ui.StatusbarMouseListener;
@@ -910,9 +911,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getInt(SPRITE_Y).setEnabled( false );
 		editorPanel.getInt(SPRITE_Y).addMouseListener( new StatusbarMouseListener(frame, "Background sprite Y position.") );
 		editorPanel.addRow( SPRITE_ROT, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(SPRITE_ROT).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.getInt(SPRITE_ROT).setText( "0" );
 		editorPanel.getInt(SPRITE_ROT).setEnabled( false );
-		editorPanel.getInt(SPRITE_ROT).addMouseListener( new StatusbarMouseListener(frame, "Background sprite rotation. (positive degrees clockwise)") );
+		editorPanel.getInt(SPRITE_ROT).addMouseListener( new StatusbarMouseListener(frame, "Background sprite rotation. (degrees, positive = clockwise)") );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( SEEN, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.getBoolean(SEEN).setSelected( beaconSprite.isSeen() );
@@ -928,6 +930,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getString(AUTO_SHIP).setEnabled( false );
 		editorPanel.getString(AUTO_SHIP).addMouseListener( new StatusbarMouseListener(frame, "The blueprint (or blueprintList) of an auto ship to appear.") );
 		editorPanel.addRow( BETA, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(BETA).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.getInt(BETA).setText( "0" );
 		editorPanel.getInt(BETA).setEnabled( false );
 		editorPanel.getInt(BETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown erratic integer. (Observed values: 126 to 32424)") );
