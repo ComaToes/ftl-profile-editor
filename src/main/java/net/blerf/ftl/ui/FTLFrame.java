@@ -1004,9 +1004,9 @@ public class FTLFrame extends JFrame {
 			// Windows Vista/7
 			new File( System.getProperty("user.home") +"/Documents/My Games/FasterThanLight/"+ fileName),
 			// Linux
-			new File( xdgDataHome +"/FasterThanLight/"+ fileName)
+			new File( xdgDataHome +"/FasterThanLight/"+ fileName),
 			// OSX
-			new File( System.getProperty("user.home") +"/Library/Application Support/FasterThanLight/"+ fileName),
+			new File( System.getProperty("user.home") +"/Library/Application Support/FasterThanLight/"+ fileName)
 		};
 
 		return locations;
