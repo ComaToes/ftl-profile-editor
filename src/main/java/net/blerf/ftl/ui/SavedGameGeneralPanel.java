@@ -47,6 +47,8 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String ALPHA = "Alpha?";
 	private static final String DIFFICULTY_EASY = "Easy Difficulty";
 
+	private static final String SECTOR_TREE_SEED = "Sector Tree Seed";
+	private static final String SECTOR_NUMBER = "Sector Number";
 	private static final String SECTOR_LAYOUT_SEED = "Sector Layout Seed";
 	private static final String REBEL_FLEET_OFFSET = "Rebel Fleet Offset";
 	private static final String REBEL_FLEET_FUDGE = "Rebel Fleet Fudge";
@@ -91,6 +93,11 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		sectorPanel = new FieldEditorPanel( true );
 		sectorPanel.setBorder( BorderFactory.createTitledBorder("Sector") );
+		sectorPanel.addRow( SECTOR_TREE_SEED, FieldEditorPanel.ContentType.INTEGER );
+		sectorPanel.getInt(SECTOR_TREE_SEED).setDocument( new RegexDocument("-?[0-9]*") );
+		sectorPanel.addRow( SECTOR_NUMBER, FieldEditorPanel.ContentType.SLIDER );
+		sectorPanel.getSlider(SECTOR_NUMBER).setMaximum(0);
+		sectorPanel.addBlankRow();
 		sectorPanel.addRow( SECTOR_LAYOUT_SEED, FieldEditorPanel.ContentType.INTEGER );
 		sectorPanel.getInt(SECTOR_LAYOUT_SEED).setDocument( new RegexDocument("-?[0-9]*") );
 		sectorPanel.addRow( REBEL_FLEET_OFFSET, FieldEditorPanel.ContentType.INTEGER );
@@ -104,6 +111,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.addBlankRow();
 		sectorPanel.addFillRow();
 
+		sectorPanel.getInt(SECTOR_TREE_SEED).addMouseListener( new StatusbarMouseListener(frame, "A per-game constant that seeds the random generation of the sector tree (dangerous). Roll back to sector 1 if you change this!") );
+		sectorPanel.getSlider(SECTOR_NUMBER).addMouseListener( new StatusbarMouseListener(frame, "Roll back to a previous sector.") );
 		sectorPanel.getInt(SECTOR_LAYOUT_SEED).addMouseListener( new StatusbarMouseListener(frame, "A per-sector constant that seeds the random generation of the map, events, etc. (potentially dangerous).") );
 		sectorPanel.getInt(REBEL_FLEET_OFFSET).addMouseListener( new StatusbarMouseListener(frame, "A large negative var (-750,-250,...,-n*25, approaching 0) + fudge = the fleet circle's edge.") );
 		sectorPanel.getInt(REBEL_FLEET_FUDGE).addMouseListener( new StatusbarMouseListener(frame, "A random per-sector constant (usually around 75-310) + offset = the fleet circle's edge.") );
@@ -174,6 +183,9 @@ public class SavedGameGeneralPanel extends JPanel {
 	}
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
+		sectorPanel.getSlider(SECTOR_NUMBER).setMinimum( 0 );
+		sectorPanel.getSlider(SECTOR_NUMBER).setMaximum( 0 );
+
 		sessionPanel.reset();
 		sectorPanel.reset();
 		cargoPanel.reset();
@@ -191,6 +203,10 @@ public class SavedGameGeneralPanel extends JPanel {
 			sessionPanel.setIntAndReminder( ALPHA, gameState.getHeaderAlpha() );
 			sessionPanel.setBoolAndReminder( DIFFICULTY_EASY, gameState.isDifficultyEasy() );
 
+			sectorPanel.setIntAndReminder( SECTOR_TREE_SEED, gameState.getSectorTreeSeed() );
+			sectorPanel.getSlider(SECTOR_NUMBER).setMaximum( gameState.getSectorNumber()+1 );
+			sectorPanel.getSlider(SECTOR_NUMBER).setMinimum( 1 );
+			sectorPanel.setSliderAndReminder( SECTOR_NUMBER, gameState.getSectorNumber()+1 );
 			sectorPanel.setIntAndReminder( SECTOR_LAYOUT_SEED, gameState.getSectorLayoutSeed() );
 			sectorPanel.setIntAndReminder( REBEL_FLEET_OFFSET, gameState.getRebelFleetOffset() );
 			sectorPanel.setIntAndReminder( REBEL_FLEET_FUDGE, gameState.getRebelFleetFudge() );
@@ -267,6 +283,22 @@ public class SavedGameGeneralPanel extends JPanel {
 		catch (NumberFormatException e) {}
 
 		gameState.setDifficultyEasy( sessionPanel.getBoolean(DIFFICULTY_EASY).isSelected() );
+
+		newString = sectorPanel.getInt(SECTOR_TREE_SEED).getText();
+		try { gameState.setSectorTreeSeed(Integer.parseInt(newString)); }
+		catch (NumberFormatException e) {}
+
+		// Set the current sector, and unvisit any tree breadcrumbs beyond it.
+		int oneBasedSectorNum = sectorPanel.getSlider(SECTOR_NUMBER).getValue();
+		List<Boolean> sectorList = gameState.getSectorList();
+		gameState.setSectorNumber( oneBasedSectorNum-1 );
+		for (int i=0, n=0; i < sectorList.size(); i++) {
+			if ( sectorList.get(i).booleanValue() == true ) {
+				n++;
+				if ( n > oneBasedSectorNum )
+					gameState.setSectorVisited( i, false );
+			}
+		}
 
 		newString = sectorPanel.getInt(SECTOR_LAYOUT_SEED).getText();
 		try { gameState.setSectorLayoutSeed(Integer.parseInt(newString)); }
