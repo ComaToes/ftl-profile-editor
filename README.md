@@ -16,8 +16,8 @@ Usage
 -----
 * Exit FTL. The game must NOT be running.
 * Run the FTLProfileEditor-vXX.jar.
-* On the first run, you may be prompted to locate your FTL data file. This is called "data.dat" and is located in the "resources" directory under your FTL install. If you're running FTL on Windows using Steam or GOG, this file should be located automatically.
-* Open a profile or saved game.
+* On the first run, you may be prompted to locate your FTL data file. This is called "data.dat" in the "resources" directory under your FTL install. In most cases, this should be located automatically.
+* Open a profile (prof.sav) or saved game (continue.sav).
 * Make any desired changes.
 * Save, and close the editor.
 * Fire up FTL and try out your new ship.

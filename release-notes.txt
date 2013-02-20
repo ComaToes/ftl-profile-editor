@@ -1,3 +1,11 @@
+15
+Added sector number rollback under the General tab.
+Added "State Vars" tab.
+Added automated finding of data.dat for OSX-Steam.
+Added a prompt to override automatically found data.dat location.
+Fixed manual data.dat choosing on OSX. (Thanks to wilerson)
+Allowed negative background sprite rotation for SectorMap beacons.
+
 14
 Added cargo editing under the general tab.
 Added "In Hidden Sector" field under the general tab.
@@ -7,7 +15,7 @@ The unknown field in visited beacons became background sprite rotation.
 
 13
 Revised how FTL's data.dat is located: cfg contains ftlDatsPath=.../(FTL dir)/resources/.
-Added automated finding of data.dat on Linux-Steam, and possibly OSX.
+Added automated finding of data.dat for Linux-Steam, and possibly OSX.
 Fixed crash when writing a saved game in which a store had been visited that sector.
 Added SectorMap editing: Store, Quest, and Beacon (partial).
 
