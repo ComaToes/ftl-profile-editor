@@ -28,6 +28,7 @@ import javax.swing.SwingConstants;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.StatusbarMouseListener;
@@ -164,38 +165,24 @@ public class SavedGameHangarPanel extends JPanel {
 		int response = JOptionPane.showConfirmDialog(frame, nag, "Change Player Ship", JOptionPane.YES_NO_OPTION);
 		if ( response != JOptionPane.YES_OPTION ) return;
 
-		ArrayList<String> systemIds = new ArrayList<String>();
-		systemIds.add( SystemBlueprint.ID_SHIELDS );
-		systemIds.add( SystemBlueprint.ID_ENGINES );
-		systemIds.add( SystemBlueprint.ID_OXYGEN );
-		systemIds.add( SystemBlueprint.ID_WEAPONS );
-		systemIds.add( SystemBlueprint.ID_DRONE_CTRL );
-		systemIds.add( SystemBlueprint.ID_MEDBAY );
-		systemIds.add( SystemBlueprint.ID_PILOT );
-		systemIds.add( SystemBlueprint.ID_SENSORS );
-		systemIds.add( SystemBlueprint.ID_DOORS );
-		systemIds.add( SystemBlueprint.ID_TELEPORTER );
-		systemIds.add( SystemBlueprint.ID_CLOAKING );
-		systemIds.add( SystemBlueprint.ID_ARTILLERY );
-
 		ShipLayout shipLayout = DataManager.get().getShipLayout( shipBlueprint.getLayout() );
 
 		SavedGameParser.ShipState shipState = new SavedGameParser.ShipState( "The Nameless One", shipBlueprint, auto );
 
 		// Systems.
 		int reservePowerCapacity = 0;
-		for (String systemId : systemIds) {
-			SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemId );
+		for ( SystemType systemType : SystemType.values() ) {
+			SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemType );
 
 			// Set capacity for systems that're initially present.
-			ShipBlueprint.SystemList.SystemRoom[] systemRoom = shipBlueprint.getSystemList().getSystemRoom( systemId );
+			ShipBlueprint.SystemList.SystemRoom[] systemRoom = shipBlueprint.getSystemList().getSystemRoom( systemType );
 			if ( systemRoom != null ) {
 				Boolean start = systemRoom[0].getStart();
 				if ( start == null || start.booleanValue() == true ) {
-					SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemId );
+					SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemType.getId() );
 					systemState.setCapacity( systemBlueprint.getStartPower() );
 
-					if ( SystemBlueprint.isSubsystem( systemId ) ) {
+					if ( systemType.isSubsystem() ) {
 						systemState.setPower( systemState.getCapacity() );
 					} else {
 						reservePowerCapacity += systemState.getCapacity();
@@ -222,7 +209,7 @@ public class SavedGameHangarPanel extends JPanel {
 
 		// Doors.
 		Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet()) {
+		for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet() ) {
 			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
 
@@ -231,7 +218,7 @@ public class SavedGameHangarPanel extends JPanel {
 
 		// Augments.
 		if ( shipBlueprint.getAugments() != null ) {
-			for (ShipBlueprint.AugmentId augId : shipBlueprint.getAugments())
+			for ( ShipBlueprint.AugmentId augId : shipBlueprint.getAugments() )
 				shipState.addAugmentId( augId.name );
 		}
 
