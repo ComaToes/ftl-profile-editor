@@ -128,7 +128,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sidePanel.setLayout( new BoxLayout(sidePanel, BoxLayout.Y_AXIS) );
 		sidePanel.setBorder( BorderFactory.createEmptyBorder(4, 4, 4, 6) );
 
-		miscSelector = new SpriteSelector( new ArrayList[] {} );
+		miscSelector = new SpriteSelector();
 		miscSelector.setOpaque(false);
 		miscSelector.setSize( mapPanel.getPreferredSize() );
 		mapHolderPanel.add( miscSelector, MISC_SELECTION_LAYER );
@@ -507,7 +507,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	}
 
 	public void selectBeacon() {
-		miscSelector.setSpriteLists( new ArrayList[] {beaconSprites} );
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList(beaconSprites);
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Beacon";
@@ -534,7 +535,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	}
 
 	public void selectPlayerShip() {
-		miscSelector.setSpriteLists( new ArrayList[] {playerShipSprites} );
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList(playerShipSprites);
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Player Ship";
 
@@ -560,7 +562,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	}
 
 	public void selectStore() {
-		miscSelector.setSpriteLists( new ArrayList[] {storeSprites} );
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList(storeSprites);
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Store";
@@ -587,7 +590,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	}
 
 	public void selectQuest() {
-		miscSelector.setSpriteLists( new ArrayList[] {questSprites} );
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList(questSprites);
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Quest";
@@ -614,7 +618,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	}
 
 	private void addStore() {
-		miscSelector.setSpriteLists( new ArrayList[] {beaconSprites} );
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList(beaconSprites);
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Add: Store";
@@ -657,7 +662,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	}
 
 	private void addQuest() {
-		miscSelector.setSpriteLists( new ArrayList[] {beaconSprites} );
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList(beaconSprites);
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Add: Quest";
@@ -700,7 +706,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	}
 
 	private void movePlayerShip( final PlayerShipSprite mobileSprite ) {
-		miscSelector.setSpriteLists( new ArrayList[] {beaconSprites} );
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList(beaconSprites);
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Move: Player Ship";
@@ -1310,7 +1317,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		Map weaponLookup = DataManager.get().getWeapons();
 		Map droneLookup = DataManager.get().getDrones();
 		Map augmentLookup = DataManager.get().getAugments();
-		Map crewLookup = new LinkedHashMap();
+		Map<String, CrewType> crewLookup = new LinkedHashMap<String, CrewType>();
 		for ( CrewType race : new CrewType[] {
 			CrewType.CRYSTAL, CrewType.ENERGY,
 			CrewType.ENGI, CrewType.HUMAN,
@@ -1318,7 +1325,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			CrewType.SLUG } ) {
 			crewLookup.put( race.getId(), race );
 		}
-		Map systemLookup = new LinkedHashMap();
+		Map<String, SystemType> systemLookup = new LinkedHashMap<String, SystemType>();
 		for ( SystemType systemType : SystemType.values() ) {
 			systemLookup.put( systemType.getId(), systemType );
 		}

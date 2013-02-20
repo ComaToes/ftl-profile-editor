@@ -20,20 +20,23 @@ import javax.swing.JComponent;
 public class SpriteSelector extends JComponent {
 	private SpriteCriteria defaultCriteria = new SpriteCriteria();
 
-	private ArrayList[] spriteLists;
+	private ArrayList<ArrayList<? extends JComponent>> spriteLists = new ArrayList<ArrayList<? extends JComponent>>();;
 	private SpriteCriteria spriteCriteria = defaultCriteria;
 	private SpriteSelectionCallback callback = null;
 	private Point mousePoint = new Point( -1, -1 );
 	private JComponent currentSprite = null;
 	private boolean paintDescription = false;
 
-	public SpriteSelector( ArrayList[] spriteLists ) {
-		this.spriteLists = spriteLists;
+	public SpriteSelector() {
 	}
 
-	public void setSpriteLists( ArrayList[] spriteLists ) {
+	public void clearSpriteLists() {
 		currentSprite = null;
-		this.spriteLists = spriteLists;
+		spriteLists.clear();
+	}
+
+	public void addSpriteList( ArrayList<? extends JComponent> spriteList ) {
+		spriteLists.add( spriteList );
 	}
 
 	public void setMousePoint( int x, int y ) {
@@ -43,8 +46,8 @@ public class SpriteSelector extends JComponent {
 
 			JComponent newSprite = null;
 			if ( mousePoint.x > 0 && mousePoint.y > 0 ) {
-				for (ArrayList spriteList : spriteLists) {
-					for (JComponent sprite : (ArrayList<JComponent>)spriteList) {
+				for ( ArrayList<? extends JComponent> spriteList : spriteLists ) {
+					for ( JComponent sprite : spriteList ) {
 						if ( sprite.getBounds().contains( mousePoint ) ) {
 							newSprite = sprite;
 							break;

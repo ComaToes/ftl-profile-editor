@@ -185,7 +185,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		wallLbl.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( wallLbl, WALL_LAYER );
 
-		miscSelector = new SpriteSelector( new ArrayList[] {droneSprites, weaponSprites, doorSprites} );
+		miscSelector = new SpriteSelector();
+		miscSelector.addSpriteList(droneSprites);
+		miscSelector.addSpriteList(weaponSprites);
+		miscSelector.addSpriteList(doorSprites);
 		miscSelector.setOpaque(false);
 		miscSelector.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( miscSelector, MISC_SELECTION_LAYER );
