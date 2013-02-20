@@ -83,12 +83,31 @@ public class FTLProfileEditor {
 		} else {
 			log.trace( "No FTL dats path previously set." );
 		}
+
+		// Find/prompt for the path to set in the config.
 		if ( datsPath == null ) {
-			datsPath = promptForFtlPath();
-			if ( datsPath == null )
-				System.exit(1); // User cancelled, exit
-			config.setProperty( "ftlDatsPath", datsPath.getAbsolutePath() );
-			writeConfig = true;
+			datsPath = findFtlPath();
+			if ( datsPath != null ) {
+				int response = JOptionPane.showConfirmDialog(null, "FTL resources were found in:\n"+ datsPath.getPath() +"\nIs this correct?", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if ( response == JOptionPane.NO_OPTION ) datsPath = null;
+			}
+
+			if ( datsPath == null ) {
+				log.debug("FTL dats path was not located automatically. Prompting user for location.");
+				datsPath = promptForFtlPath();
+			}
+
+			if ( datsPath != null ) {
+				config.setProperty( "ftlDatsPath", datsPath.getAbsolutePath() );
+				writeConfig = true;
+				log.info( "FTL dats located at: " + datsPath.getAbsolutePath() );
+			}
+		}
+
+		if ( datsPath == null ) {
+			showErrorDialog( "FTL data was not found.\nFTL Profile Editor will now exit." );
+			log.debug( "No FTL dats path found, exiting." );
+			System.exit(1);
 		}
 
 		OutputStream out = null;
@@ -131,7 +150,7 @@ public class FTLProfileEditor {
 		return (path.exists() && path.isDirectory() && new File(path,"data.dat").exists());
 	}
 
-	private static File promptForFtlPath() {
+	private static File findFtlPath() {
 		String steamPath = "Steam/steamapps/common/FTL Faster Than Light/resources";
 		String gogPath = "GOG.com/Faster Than Light/resources";
 
@@ -163,49 +182,49 @@ public class FTLProfileEditor {
 			}
 		}
 
-		if ( ftlPath == null ) {
+		return ftlPath;
+	}
 
-			log.trace("FTL dats path not located automatically. Prompting user for location.");
+	private static File promptForFtlPath() {
+		File ftlPath = null;
 
-			String message = "FTL Profile Editor uses images and data from FTL,\n";
-			message += "but the install dir of FTL could not be guessed.\n\n";
-			message += "You will now be prompted to locate FTL manually.\n";
-			message += "Select '(FTL dir)/resources/data.dat'.\n";
-			message += "Or 'FTL.app', if you're on OSX.";
-			JOptionPane.showMessageDialog(null,  message, "FTL Not Found", JOptionPane.INFORMATION_MESSAGE);
+		String message = "FTL Profile Editor uses images and data from FTL,\n";
+		message += "but the path to FTL's resources could not be guessed.\n\n";
+		message += "You will now be prompted to locate FTL manually.\n";
+		message += "Select '(FTL dir)/resources/data.dat'.\n";
+		message += "Or 'FTL.app', if you're on OSX.";
+		JOptionPane.showMessageDialog(null,  message, "FTL Not Found", JOptionPane.INFORMATION_MESSAGE);
 
-			final JFileChooser fc = new JFileChooser();
-			fc.addChoosableFileFilter( new FileFilter() {
-				@Override
-				public String getDescription() {
-					return "FTL Data File - (FTL dir)/resources/data.dat";
-				}
-				@Override
-				public boolean accept(File f) {
-					return f.isDirectory() || f.getName().equals("data.dat") || f.getName().equals("FTL.app");
-				}
-			});
-			fc.setMultiSelectionEnabled(false);
-
-			if ( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
-				File f = fc.getSelectedFile();
-				if ( f.getName().equals("data.dat") )
-					ftlPath = f.getParentFile();
-				else if ( f.getName().endsWith(".app") && f.isDirectory() && new File(f,"Resources").exists() )
-					ftlPath = new File(f, "Resources");
-				log.trace( "User selected: " + ftlPath.getAbsolutePath() );
-			} else {
-				log.trace( "User cancelled FTL dats path selection" );
+		final JFileChooser fc = new JFileChooser();
+		fc.setDialogTitle( "Find data.dat or FTL.app" );
+		fc.addChoosableFileFilter( new FileFilter() {
+			@Override
+			public String getDescription() {
+				return "FTL Data File - (FTL dir)/resources/data.dat";
 			}
+			@Override
+			public boolean accept(File f) {
+				return f.isDirectory() || f.getName().equals("data.dat") || f.getName().equals("FTL.app");
+			}
+		});
+		fc.setMultiSelectionEnabled(false);
+
+		if ( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
+			File f = fc.getSelectedFile();
+			if ( f.getName().equals("data.dat") )
+				ftlPath = f.getParentFile();
+			else if ( f.getName().endsWith(".app") && f.isDirectory() ) {
+				File contentsPath = new File(f, "Contents");
+				if( contentsPath.exists() && contentsPath.isDirectory() && new File(contentsPath, "Resources").exists() )
+					ftlPath = new File(contentsPath, "Resources");
+				log.trace( "User selected: " + ftlPath.getAbsolutePath() );
+			}
+		} else {
+			log.trace( "User cancelled FTL dats path selection." );
 		}
 
 		if ( ftlPath != null && isDatsPathValid(ftlPath) ) {
-			log.info( "FTL dats located at: " + ftlPath.getAbsolutePath() );
 			return ftlPath;
-		} else {
-			log.error( "FTL dats were not found" );
-			showErrorDialog( "FTL data was not found.\nFTL Profile Editor will now exit." );
-			System.exit(1);
 		}
 
 		return null;
