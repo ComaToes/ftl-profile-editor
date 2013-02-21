@@ -3615,7 +3615,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 					suffix = "_player_yellow";
 				} else {
 					suffix = "_enemy_red";
-					// As of FTL 1.03.1, females have the "enemy_red" image (but 1.01 lacked it).
 				}
 			}
 			crewImage = getCroppedImage( "img/people/"+ imgRace + suffix +".png", offsetX, offsetY, w, h );
