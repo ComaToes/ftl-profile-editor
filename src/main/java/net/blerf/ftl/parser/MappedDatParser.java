@@ -159,20 +159,20 @@ public class MappedDatParser extends Parser implements Closeable {
 				// blueprints.xml: PLAYER_SHIP_ROCK_2 shipBlueprint (FTL 1.03.1)
 				line = line.replaceAll("\"img=", "\" img=");
 
-				// blueprints.xml: LASER_BURST_5 weaponBlueprint (FTL 1.01)
+				// blueprints.xml: LASER_BURST_5 weaponBlueprint (FTL 1.02.6)
 				line = line.replaceAll("<tooltip>([^<]*)</desc>(-->)?", "<tooltip>$1</tooltip>");
 
-				// blueprints.xml: oxygen, teleporter, cloaking systemBlueprint (FTL 1.01)
-				// blueprints.xml: pilot, medbay, shields systemBlueprint (FTL 1.01)
-				// blueprints.xml: engines, weapons, drones systemBlueprint (FTL 1.01)
-				// blueprints.xml: sensors, doors systemBlueprint (FTL 1.01)
+				// blueprints.xml: oxygen, teleporter, cloaking systemBlueprint (FTL 1.02.6)
+				// blueprints.xml: pilot, medbay, shields systemBlueprint (FTL 1.02.6)
+				// blueprints.xml: engines, weapons, drones systemBlueprint (FTL 1.02.6)
+				// blueprints.xml: sensors, doors systemBlueprint (FTL 1.02.6)
 				line = line.replaceAll("<title>([^<]*)</type>", "<title>$1</title>");
 
-				// blueprints.xml: fuel, drones, missiles itemBlueprint (FTL 1.01)
+				// blueprints.xml: fuel, drones, missiles itemBlueprint (FTL 1.02.6)
 				line = line.replaceAll("<title>([^<]*)</ship>", "<title>$1</title>");
 
-				// blueprints.xml: LASER_HULL_1 weaponBlueprint (FTL 1.01)
-				// blueprints.xml: LASER_HULL_2 weaponBlueprint (FTL 1.01)
+				// blueprints.xml: LASER_HULL_1 weaponBlueprint (FTL 1.02.6)
+				// blueprints.xml: LASER_HULL_2 weaponBlueprint (FTL 1.02.6)
 				line = line.replaceAll("<speed>([^<]*)</image>", "<speed>$1</speed>");  // Error in weaponBlueprint.
 			}
 
@@ -227,7 +227,7 @@ public class MappedDatParser extends Parser implements Closeable {
 				m.reset();
 			}
 
-			// blueprints.xml: SYSTEM_CASING augBlueprint (FTL 1.01)
+			// blueprints.xml: SYSTEM_CASING augBlueprint (FTL 1.02.6)
 			ptn = "";
 			ptn += "\\s*<title>Reinforced System Casing</title>"; // Extra title.
 			ptn += "(\\s*<title>Titanium System Casing</title>)";
