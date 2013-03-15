@@ -158,7 +158,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			@Override
 			public void mouseEntered(MouseEvent e) {
 				//miscSelector.setDescriptionVisible( true );
-				mapViewport.setStatusString( miscSelector.getCriteria().getDescription() );
+				mapViewport.setStatusString( miscSelector.getCriteria().getDescription() +"   (Right-click to cancel)" );
 			}
 			@Override
 			public void mouseExited(MouseEvent e) {

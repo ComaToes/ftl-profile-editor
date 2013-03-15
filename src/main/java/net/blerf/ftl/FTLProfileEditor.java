@@ -217,8 +217,8 @@ public class FTLProfileEditor {
 				File contentsPath = new File(f, "Contents");
 				if( contentsPath.exists() && contentsPath.isDirectory() && new File(contentsPath, "Resources").exists() )
 					ftlPath = new File(contentsPath, "Resources");
-				log.trace( "User selected: " + ftlPath.getAbsolutePath() );
 			}
+			log.trace( "User selected: " + ftlPath.getAbsolutePath() );
 		} else {
 			log.trace( "User cancelled FTL dats path selection." );
 		}
@@ -228,7 +228,6 @@ public class FTLProfileEditor {
 		}
 
 		return null;
-
 	}
 
 	private static void showErrorDialog( String message ) {

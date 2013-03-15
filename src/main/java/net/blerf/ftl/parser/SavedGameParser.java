@@ -1372,6 +1372,7 @@ public class SavedGameParser extends Parser {
 		 * @param wallX the 0-based Nth wall from the left
 		 * @param wallY the 0-based Nth wall from the top
 		 * @param vertical 1 for vertical wall coords, 0 for horizontal
+		 * @param d a DoorState
 		 * @see net.blerf.ftl.model.ShipLayout
 		 */
 		public void setDoor( int wallX, int wallY, int vertical, DoorState d ) {
@@ -1863,6 +1864,15 @@ public class SavedGameParser extends Parser {
 		private int oxygen = 100;
 		private ArrayList<SquareState> squareList = new ArrayList<SquareState>();
 
+    /**
+     * Set's the oxygen percentage in the room.
+     *
+     * At 0, the game changes the room's appearance.
+     *   Since 1.03.1, it paints red stripes on the floor.
+     *   Before that, it highlighted the walls orange.
+     *
+     * @param n 0-100
+     */
 		public void setOxygen( int n ) { oxygen = n; }
 		public int getOxygen() { return oxygen; }
 
@@ -2418,13 +2428,13 @@ public class SavedGameParser extends Parser {
 		 * only results in a fresh fight.
 		 *
 		 * Upon first engaging stage 2, the layout is migrated.
-		 * Previous roomIds are truncated to the new layout's count.
-		 * (The blueprints happen to have matching low ids.)
+		 * The occupancy list is truncated to the new layout's rooms.
+		 * (The blueprints happen to have matching low roomIds.)
 		 *
 		 *   Stage 1: 0x13=19 rooms
 		 *   Stage 2: 0x0F=15 rooms
 		 *   Stage 3: 0x0B=11 rooms
-		 *   Having 0 rooms is allowed, meaning AI took over.
+		 *   Having 0 rooms occupied is allowed, meaning AI took over.
 		 *
 		 * Stage 2 will read altered bytes on additional skirmishes.
 		 *
