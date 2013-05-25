@@ -47,6 +47,8 @@ public class ProfileStatsPanel extends JPanel {
 	private StatsSubPanel crewRecordsPanel;
 	private StatsSubPanel totalStatsPanel;
 
+	private ArrayList<TopScorePanel> topScorePanels = new ArrayList<TopScorePanel>();
+
 	public ProfileStatsPanel( FTLFrame frame ) {
 		this.frame = frame;
 
@@ -79,6 +81,7 @@ public class ProfileStatsPanel extends JPanel {
 
 	public void setProfile( Profile p ) throws IOException {
 		topScoresPanel.removeAll();
+		topScorePanels.clear();
 		int i = 0;
 		for ( Score s : p.getStats().getTopScores() ) {
 			InputStream stream = null;
@@ -86,8 +89,9 @@ public class ProfileStatsPanel extends JPanel {
 				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
 				stream = DataManager.get().getResourceInputStream("img/ship/"+ ship.getGraphicsBaseName() +"_base.png");
 				BufferedImage img = frame.getScaledImage( stream );
-				TopScorePanel tsp = new TopScorePanel( ++i, img, s.getShipName(), s.getScore(), s.getSector(), s.getDifficulty() );
+				TopScorePanel tsp = new TopScorePanel( ++i, img, s );
 				topScoresPanel.add( tsp );
+				topScorePanels.add( tsp );
 
 			}	finally {
 				try {if (stream != null) stream.close();}
@@ -129,6 +133,15 @@ public class ProfileStatsPanel extends JPanel {
 		totalStatsPanel.addFillRow();
 
 		this.repaint();
+	}
+
+	public void updateProfile( Profile p ) {
+		Stats stats = p.getStats();
+		stats.getTopScores().clear();
+		for ( TopScorePanel tsp : topScorePanels ) {
+			Score s = new Score( tsp.getShipName(), tsp.getShipType(), tsp.getScore(), tsp.getSector(), tsp.getDifficulty(), tsp.isVictory() );
+			stats.getTopScores().add(s);
+		}
 	}
 
 	/**
