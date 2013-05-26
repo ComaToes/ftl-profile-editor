@@ -83,7 +83,7 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarC.gridx = 0;
 		hangarC.gridy++;
 		final JComboBox shipCombo = new JComboBox();
-		for (ShipBlueprint blueprint : shipMap.values())
+		for ( ShipBlueprint blueprint : shipMap.values() )
 			shipCombo.addItem( blueprint );
 		hangarPanel.add( shipCombo, hangarC );
 
@@ -96,7 +96,7 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarC.gridx = 0;
 		hangarC.gridy++;
 		final JComboBox autoCombo = new JComboBox();
-		for (ShipBlueprint blueprint : autoMap.values())
+		for ( ShipBlueprint blueprint : autoMap.values() )
 			autoCombo.addItem( blueprint );
 		hangarPanel.add( autoCombo, hangarC );
 
