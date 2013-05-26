@@ -84,19 +84,9 @@ public class ProfileStatsPanel extends JPanel {
 		topScorePanels.clear();
 		int i = 0;
 		for ( Score s : p.getStats().getTopScores() ) {
-			InputStream stream = null;
-			try {
-				ShipBlueprint ship = DataManager.get().getShip( s.getShipType() );
-				stream = DataManager.get().getResourceInputStream("img/ship/"+ ship.getGraphicsBaseName() +"_base.png");
-				BufferedImage img = frame.getScaledImage( stream );
-				TopScorePanel tsp = new TopScorePanel( ++i, img, s );
-				topScoresPanel.add( tsp );
-				topScorePanels.add( tsp );
-
-			}	finally {
-				try {if (stream != null) stream.close();}
-				catch (IOException f) {}
-			}
+			TopScorePanel tsp = new TopScorePanel( ++i, s );
+			topScoresPanel.add( tsp );
+			topScorePanels.add( tsp );
 		}
 
 		Stats stats = p.getStats();

@@ -136,7 +136,7 @@ public class FTLFrame extends JFrame {
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(800, 700);
 		setLocationRelativeTo(null);
-		setTitle( "FTL Profile Editor v" + version );
+		setTitle( "FTL Profile Editor v"+ version );
 		try {
 			setIconImage( ImageIO.read( ClassLoader.getSystemResource("unlock.png") ) );
 		} catch (IOException e) {
@@ -333,7 +333,7 @@ public class FTLFrame extends JFrame {
 			return new IconCycleButton( icons );
 
 		} catch (IOException e) {
-			log.error( "Error reading cycle button image (" + baseImagePath + ")." , e );
+			log.error( "Error reading cycle button image ("+ baseImagePath +")." , e );
 
 		}	finally {
 			try {if (stream != null) stream.close();}
@@ -380,7 +380,7 @@ public class FTLFrame extends JFrame {
 					RandomAccessFile raf = null;
 					InputStream in = null;
 					try {
-						log.trace( "File selected: " + fc.getSelectedFile().getAbsolutePath() );
+						log.trace( "File selected: "+ fc.getSelectedFile().getAbsolutePath() );
 						
 						// Read whole file so we can hash it.
 						raf = new RandomAccessFile( fc.getSelectedFile(), "r" );
@@ -428,7 +428,7 @@ public class FTLFrame extends JFrame {
 										"Please copy (Ctrl-A, Ctrl-C) the following text and paste it into a new bug report <a href='"+bugReportUrl+"'>here</a> " +
 										"(GitHub signup is free) or post to the FLT forums <a href='"+forumThreadUrl+"'>here</a> (Signup also free)." +
 										"<br/>If using GitHub, set the issue title as \"Profile Parser Error\"<br/><br/>I will fix the problem and release a new version as soon as I can :)" +
-										"<br/><br/><pre>" + hex + "</pre>";
+										"<br/><br/><pre>"+ hex +"</pre>";
 								
 								JDialog failDialog = createHtmlDialog( "Profile Parser Error", errText );
 								failDialog.setVisible(true);
@@ -441,7 +441,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( Exception f ) {
 						log.error( "Error reading profile.", f );
-						showErrorDialog( "Error reading profile:\n" + f.getMessage() );
+						showErrorDialog( "Error reading profile:\n"+ f.getMessage() );
 					} finally {
 						try {if (raf != null) raf.close();}
 						catch (IOException g) {}
@@ -466,7 +466,7 @@ public class FTLFrame extends JFrame {
 					FileOutputStream out = null;
 					try {
 						File file = fc.getSelectedFile();
-						log.trace("File selected: " + file.getAbsolutePath());
+						log.trace("File selected: "+ file.getAbsolutePath());
 						ProfileParser ftl = new ProfileParser();
 						out = new FileOutputStream( file );
 						FTLFrame.this.updateProfile(profile);
@@ -474,7 +474,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( IOException f ) {
 						log.error( "Error writing profile.", f );
-						showErrorDialog( "Error saving profile:\n" + f.getMessage() );
+						showErrorDialog( "Error saving profile:\n"+ f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
@@ -528,7 +528,7 @@ public class FTLFrame extends JFrame {
 					try {
 						
 						File f = extractChooser.getSelectedFile();
-						log.trace("Dir selected: " + f.getAbsolutePath());
+						log.trace("Dir selected: "+ f.getAbsolutePath());
 
 						JOptionPane.showMessageDialog(FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE);
 
@@ -539,7 +539,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( IOException ex ) {
 						log.error("Error extracting dats.", ex);
-						showErrorDialog("Error extracting dat:\n" + ex.getMessage());
+						showErrorDialog("Error extracting dat:\n"+ ex.getMessage());
 					}
 				} else
 					log.trace("Extract dialog cancelled.");
@@ -593,7 +593,7 @@ public class FTLFrame extends JFrame {
 				fc.setDialogTitle( "Open Saved Game" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
-						log.trace( "File selected: " + fc.getSelectedFile().getAbsolutePath() );
+						log.trace( "File selected: "+ fc.getSelectedFile().getAbsolutePath() );
 
 						SavedGameParser parser = new SavedGameParser();
 						SavedGameParser.SavedGameState gs = parser.readSavedGame( fc.getSelectedFile() );
@@ -615,7 +615,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( Exception f ) {
 						log.error( "Error reading saved game.", f );
-						showErrorDialog( "Error reading saved game:\n" + f.getMessage() );
+						showErrorDialog( "Error reading saved game:\n"+ f.getMessage() );
 					}
 				} else {
 					log.trace( "Open dialog cancelled." );
@@ -638,7 +638,7 @@ public class FTLFrame extends JFrame {
 					FileOutputStream out = null;
 					try {
 						File file = fc.getSelectedFile();
-						log.trace("File selected: " + file.getAbsolutePath());
+						log.trace("File selected: "+ file.getAbsolutePath());
 						SavedGameParser parser = new SavedGameParser();
 						out = new FileOutputStream( file );
 						FTLFrame.this.updateGameState(gameState);
@@ -646,7 +646,7 @@ public class FTLFrame extends JFrame {
 						
 					} catch( IOException f ) {
 						log.error( "Error writing game state.", f );
-						showErrorDialog( "Error saving game state:\n" + f.getMessage() );
+						showErrorDialog( "Error saving game state:\n"+ f.getMessage() );
 					} finally {
 						try {if (out != null) out.close();}
 						catch (IOException g) {}
@@ -676,7 +676,7 @@ public class FTLFrame extends JFrame {
 				if ( dumpChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					BufferedWriter out = null;
 					try {
-						log.trace( "File selected: " + dumpChooser.getSelectedFile().getAbsolutePath() );
+						log.trace( "File selected: "+ dumpChooser.getSelectedFile().getAbsolutePath() );
 
 						File file = dumpChooser.getSelectedFile();
 						if ( !file.exists() && dumpChooser.getFileFilter() == txtFilter && !txtFilter.accept(file) ) {
@@ -942,7 +942,7 @@ public class FTLFrame extends JFrame {
 		
 		shipUnlockPanel.updateProfile(p);		
 		generalAchievementsPanel.updateProfile(p);
-		// profileStatsPanel doesn't modify anything.
+		statsPanel.updateProfile(p);
 
 		loadProfile(p);
 	}

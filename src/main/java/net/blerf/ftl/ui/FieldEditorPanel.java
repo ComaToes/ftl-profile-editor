@@ -237,9 +237,9 @@ public class FieldEditorPanel extends JPanel {
 	}
 
 	public void setComboAndReminder( String valueName, Object o ) {
-		setSliderAndReminder( valueName, o, o.toString() );
+		setComboAndReminder( valueName, o, o.toString() );
 	}
-	public void setSliderAndReminder( String valueName, Object o, String s ) {
+	public void setComboAndReminder( String valueName, Object o, String s ) {
 		JComboBox valueCombo = comboMap.get( valueName );
 		if ( valueCombo != null ) valueCombo.setSelectedItem(o);
 		if ( remindersVisible ) setReminder( valueName, s );
