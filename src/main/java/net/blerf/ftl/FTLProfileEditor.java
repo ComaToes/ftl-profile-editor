@@ -24,7 +24,7 @@ public class FTLProfileEditor {
 
 	private static final Logger log = LogManager.getLogger(FTLProfileEditor.class);
 
-	private static final int VERSION = 15;
+	private static final int VERSION = 16;
 
 	public static void main( String[] args ) {
 		log.debug( "FTL Editor v"+ VERSION );

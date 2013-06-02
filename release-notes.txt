@@ -1,3 +1,6 @@
+16
+Added profile score editing.
+
 15
 Added sector number rollback under the General tab.
 Added "State Vars" tab.
