@@ -219,35 +219,35 @@ public class TopScorePanel extends JPanel {
 
 		JPanel popupPanel = new JPanel(new BorderLayout());
 
-		final FieldEditorPanel editPanel = new FieldEditorPanel( true );
-		editPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
-		editPanel.addRow( SHIP_TYPE, FieldEditorPanel.ContentType.COMBO );
-		editPanel.addRow( SCORE, FieldEditorPanel.ContentType.INTEGER );
-		editPanel.addRow( SECTOR, FieldEditorPanel.ContentType.INTEGER );
-		editPanel.addRow( DIFFICULTY, FieldEditorPanel.ContentType.COMBO );
-		editPanel.addRow( VICTORY, FieldEditorPanel.ContentType.BOOLEAN );
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( true );
+		editorPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
+		editorPanel.addRow( SHIP_TYPE, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.addRow( SCORE, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.addRow( SECTOR, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.addRow( DIFFICULTY, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.addRow( VICTORY, FieldEditorPanel.ContentType.BOOLEAN );
 
-		editPanel.getCombo(SHIP_TYPE).addItem("");
+		editorPanel.getCombo(SHIP_TYPE).addItem("");
 		for ( ShipBlueprint blueprint : shipMap.values() )
-			editPanel.getCombo(SHIP_TYPE).addItem(blueprint);
-		editPanel.getCombo(SHIP_TYPE).addItem("");
+			editorPanel.getCombo(SHIP_TYPE).addItem(blueprint);
+		editorPanel.getCombo(SHIP_TYPE).addItem("");
 		for ( ShipBlueprint blueprint : autoMap.values() )
-			editPanel.getCombo(SHIP_TYPE).addItem(blueprint);
+			editorPanel.getCombo(SHIP_TYPE).addItem(blueprint);
 
 		if ( shipMap.containsKey(shipType) )
-			editPanel.setComboAndReminder( SHIP_TYPE, shipMap.get(shipType) );
+			editorPanel.setComboAndReminder( SHIP_TYPE, shipMap.get(shipType) );
 		else if ( autoMap.containsKey(shipType) )
-			editPanel.setComboAndReminder( SHIP_TYPE, autoMap.get(shipType) );
+			editorPanel.setComboAndReminder( SHIP_TYPE, autoMap.get(shipType) );
 
 		for ( Difficulty d : Difficulty.values() )
-			editPanel.getCombo(DIFFICULTY).addItem(d);
+			editorPanel.getCombo(DIFFICULTY).addItem(d);
 
-		editPanel.setStringAndReminder( SHIP_NAME, getShipName() );
-		editPanel.setIntAndReminder( SCORE, getScore() );
-		editPanel.setIntAndReminder( SECTOR, getSector() );
-		editPanel.setComboAndReminder( DIFFICULTY, getDifficulty() );
-		editPanel.setBoolAndReminder( VICTORY, isVictory() );
-		popupPanel.add(editPanel, BorderLayout.CENTER);
+		editorPanel.setStringAndReminder( SHIP_NAME, getShipName() );
+		editorPanel.setIntAndReminder( SCORE, getScore() );
+		editorPanel.setIntAndReminder( SECTOR, getSector() );
+		editorPanel.setComboAndReminder( DIFFICULTY, getDifficulty() );
+		editorPanel.setBoolAndReminder( VICTORY, isVictory() );
+		popupPanel.add(editorPanel, BorderLayout.CENTER);
 
 		JPanel ctrlPanel = new JPanel();
 		ctrlPanel.setLayout(new BoxLayout(ctrlPanel, BoxLayout.X_AXIS));
@@ -279,23 +279,23 @@ public class TopScorePanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				String newString = null;
 
-				setShipName( editPanel.getString(SHIP_NAME).getText() );
+				setShipName( editorPanel.getString(SHIP_NAME).getText() );
 
-				Object shipObj = editPanel.getCombo(SHIP_TYPE).getSelectedItem();
+				Object shipObj = editorPanel.getCombo(SHIP_TYPE).getSelectedItem();
 				if ( shipObj instanceof ShipBlueprint ) {
 					setShipType( ((ShipBlueprint)shipObj).getId() );
 				}
 
-				newString = editPanel.getInt(SCORE).getText();
+				newString = editorPanel.getInt(SCORE).getText();
 				try { setScore(Integer.parseInt(newString)); }
 				catch (NumberFormatException f) {}
 
-				newString = editPanel.getInt(SECTOR).getText();
+				newString = editorPanel.getInt(SECTOR).getText();
 				try { setSector(Integer.parseInt(newString)); }
 				catch (NumberFormatException f) {}
 
-				setDifficulty( (Difficulty)editPanel.getCombo(DIFFICULTY).getSelectedItem() );
-				setVictory( editPanel.getBoolean(VICTORY).isSelected() );
+				setDifficulty( (Difficulty)editorPanel.getCombo(DIFFICULTY).getSelectedItem() );
+				setVictory( editorPanel.getBoolean(VICTORY).isSelected() );
 
 				popup.setVisible(false);
 				popup.dispose();
