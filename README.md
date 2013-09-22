@@ -5,7 +5,7 @@ A 3rd-party tool to edit user files for [FTL](http://www.ftlgame.com/). It depen
 
 With this, you can unlock any or all ships and achievements in your user profile, or tweak most aspects of saved games: crew, systems, weapons, fires, breaches, etc.
 
-<img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot01.png" width="145px" height="auto" /> &nbsp; <img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png" width="145px" height="auto" /> &nbsp; <img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png" width="145px" height="auto" />
+<a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot01.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot01.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png" width="145px" height="auto" /></a>
 
 To download compiled binaries, [click here](https://sourceforge.net/projects/ftleditor/).
 
