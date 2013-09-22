@@ -15,7 +15,7 @@ Comments can be made in a forum thread [here](http://www.ftlgame.com/forum/viewt
 Usage
 -----
 * Exit FTL. The game must NOT be running.
-* Run the FTLProfileEditor-vXX.jar.
+* Double-click FTLProfileEditor.exe (Win) or FTLProfileEditor.command (Mac/Linux).
 * On the first run, you may be prompted to locate your FTL data file. This is called "data.dat" in the "resources" directory under your FTL install. In most cases, this should be located automatically.
 * Open a profile (prof.sav) or saved game (continue.sav).
 * Make any desired changes.
