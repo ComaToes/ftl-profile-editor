@@ -14,6 +14,7 @@ import java.util.Map;
 import javax.xml.bind.JAXBException;
 
 import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.parser.DatParser;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.BackgroundImage;
@@ -70,9 +71,9 @@ public class DataManager implements Closeable {
 	private List<CrewNameList.CrewName> crewNamesMale;
 	private List<CrewNameList.CrewName> crewNamesFemale;
 
-	private	MappedDatParser dataParser = null;
-	private	MappedDatParser resourceParser = null;
-	
+	private	DatParser dataParser = null;
+	private	DatParser resourceParser = null;
+
 	private DataManager(File datsDir) throws IOException, JAXBException {
 		
 		log.trace("DataManager initialising");
@@ -81,8 +82,8 @@ public class DataManager implements Closeable {
 		ArrayList<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
-			dataParser = new MappedDatParser( new File(datsDir, "data.dat") );
-	 		resourceParser = new MappedDatParser( new File(datsDir, "resource.dat") );
+			dataParser = new DatParser( new File(datsDir, "data.dat") );
+	 		resourceParser = new DatParser( new File(datsDir, "resource.dat") );
 
 			log.info("Reading Achievements...");
 			log.debug("Reading 'data/achievements.xml'");

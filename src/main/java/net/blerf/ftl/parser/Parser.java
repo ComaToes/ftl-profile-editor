@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import net.blerf.ftl.parser.MappedDatParser;
-
 
 public class Parser {
 
@@ -82,10 +80,7 @@ public class Parser {
 		else {
 			// Call available on streams that really end.
 			int remaining = -1;
-			if ( in instanceof MappedDatParser.ByteBufferBackedInputStream ) {
-				remaining = ((MappedDatParser.ByteBufferBackedInputStream)in).available();
-			}
-			else if ( in instanceof ByteArrayInputStream ) {
+			if ( in instanceof ByteArrayInputStream ) {
 				remaining = ((ByteArrayInputStream)in).available();
 			}
 			if ( remaining != -1 && length > remaining )

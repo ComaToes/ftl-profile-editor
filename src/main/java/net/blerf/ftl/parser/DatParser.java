@@ -3,31 +3,26 @@ package net.blerf.ftl.parser;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.io.StringReader;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import org.xml.sax.SAXParseException;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.vhati.ftldat.FTLDat;
+import net.vhati.ftldat.FTLDat.FolderPack;
+import net.vhati.ftldat.FTLDat.FTLPack;
 
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
@@ -43,74 +38,39 @@ import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.ShipEvent;
 import net.blerf.ftl.xml.ShipEvents;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class MappedDatParser extends Parser implements Closeable {
 
-	private static final Logger log = LogManager.getLogger(MappedDatParser.class);
+public class DatParser extends Parser implements Closeable {
+
+	private static final Logger log = LogManager.getLogger(DatParser.class);
 	private static final String BOM_UTF8 = "\uFEFF";
 
-	private HashMap<String,InnerFileInfo> innerFilesMap = new HashMap<String,InnerFileInfo>();
 	private File datFile = null;
-	private RandomAccessFile randomDatFile = null;
+	private FTLDat.FTLPack datP = null;
 
-	public MappedDatParser(File datFile) throws IOException {
+
+	public DatParser( File datFile ) throws IOException {
 		this.datFile = datFile;
-
-		FileInputStream in = null;
-		try {
-			in = new FileInputStream(datFile);
-			randomDatFile = new RandomAccessFile(datFile, "r");
-
-			int headerSize = readInt(in);
-
-			// Avoid allocating a rediculous array size.
-			long position = randomDatFile.getChannel().position();
-			if ( headerSize > in.getChannel().size() - position)
-				throw new RuntimeException("Expected header size ("+ headerSize +") would extend beyond the end of the stream, from current position ("+ position +")");
-
-			int[] header = new int[headerSize];
-
-			for (int i = 0; i < header.length; i++) {
-				header[i] = readInt(in);
-				if ( header[i] == 0 ) break;  // No more interesting offsets.
-			}
-			for (int i = 0; i < header.length && header[i] != 0; i++) {
-				in.getChannel().position(header[i]);
-
-				long dataSize = (long)readInt(in);
-				String innerPath = readString(in);
-				long dataOffset = in.getChannel().position();
-
-				InnerFileInfo info = new InnerFileInfo(dataOffset, dataSize);
-				innerFilesMap.put(innerPath, info);
-			}
-			in.close();
-		}
-		catch (IOException e) {
-			try {if (randomDatFile != null) randomDatFile.close();}
-			catch (IOException f) {}
-			throw e;
-		}
-		finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
-		}
+		this.datP = new FTLDat.FTLPack( datFile, false );
 	}
 
-	public List<Achievement> readAchievements(InputStream stream) throws IOException, JAXBException {
-		log.trace("Reading achievements XML");
+
+	public List<Achievement> readAchievements( InputStream stream ) throws IOException, JAXBException {
+		log.trace( "Reading achievements XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
 
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
-			line = line.replaceAll("<!--.*?-->", "");
-			line = line.replaceAll("<desc>([^<]*)</name>", "<desc>$1</desc>");
+			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
+			line = line.replaceAll( "<!--.*?-->", "" );
+			line = line.replaceAll( "<desc>([^<]*)</name>", "<desc>$1</desc>" );
 
 			// Remove multiline comments
 			if (comment && line.contains("-->"))
@@ -122,15 +82,15 @@ public class MappedDatParser extends Parser implements Closeable {
 		}
 		in.close();
 
-		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace(0, BOM_UTF8.length(), "");
+		if ( sb.substring( 0, BOM_UTF8.length() ).equals(BOM_UTF8) )
+			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
-		sb.insert(0, "<achievements>\n");
-		sb.append("</achievements>\n");
+		sb.insert( 0, "<achievements>\n" );
+		sb.append( "</achievements>\n" );
 
 		// Add the xml header.
-		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		// Parse cleaned XML
 		Achievements ach = (Achievements)unmarshalFromSequence( Achievements.class, sb );
@@ -138,49 +98,50 @@ public class MappedDatParser extends Parser implements Closeable {
 		return ach.getAchievements();
 	}
 
-	public Blueprints readBlueprints(InputStream stream, String fileName) throws IOException, JAXBException {
-		log.trace("Reading blueprints XML");
+
+	public Blueprints readBlueprints( InputStream stream, String fileName ) throws IOException, JAXBException {
+		log.trace( "Reading blueprints XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
 		String ptn; Pattern p; Matcher m;
 
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
-			line = line.replaceAll("<!--.*?-->", "");
+			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
+			line = line.replaceAll( "<!--.*?-->", "" );
 
 			if ( "blueprints.xml".equals(fileName) ) {
 				// blueprints.xml: PLAYER_SHIP_CRYSTAL_2 shipBlueprint (FTL 1.03.1)
-				line = line.replaceAll("^<!-- sardonyx$", "");
+				line = line.replaceAll( "^<!-- sardonyx$", "" );
 
 				// blueprints.xml: LONG_ELITE_MED shipBlueprint (FTL 1.03.1)
 				// blueprints.xml: LONG_ELITE_HARD shipBlueprint (FTL 1.03.1)
-				line = line.replaceAll(" img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"");
+				line = line.replaceAll( " img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"" );
 
 				// blueprints.xml: PLAYER_SHIP_STEALTH shipBlueprint (FTL 1.03.1)
 				// blueprints.xml: PLAYER_SHIP_ROCK shipBlueprint (FTL 1.03.1)
 				// blueprints.xml: PLAYER_SHIP_ROCK_2 shipBlueprint (FTL 1.03.1)
-				line = line.replaceAll("\"img=", "\" img=");
+				line = line.replaceAll( "\"img=", "\" img=" );
 
 				// blueprints.xml: LASER_BURST_5 weaponBlueprint (FTL 1.02.6)
-				line = line.replaceAll("<tooltip>([^<]*)</desc>(-->)?", "<tooltip>$1</tooltip>");
+				line = line.replaceAll( "<tooltip>([^<]*)</desc>(-->)?", "<tooltip>$1</tooltip>" );
 
 				// blueprints.xml: oxygen, teleporter, cloaking systemBlueprint (FTL 1.02.6)
 				// blueprints.xml: pilot, medbay, shields systemBlueprint (FTL 1.02.6)
 				// blueprints.xml: engines, weapons, drones systemBlueprint (FTL 1.02.6)
 				// blueprints.xml: sensors, doors systemBlueprint (FTL 1.02.6)
-				line = line.replaceAll("<title>([^<]*)</type>", "<title>$1</title>");
+				line = line.replaceAll( "<title>([^<]*)</type>", "<title>$1</title>" );
 
 				// blueprints.xml: fuel, drones, missiles itemBlueprint (FTL 1.02.6)
-				line = line.replaceAll("<title>([^<]*)</ship>", "<title>$1</title>");
+				line = line.replaceAll( "<title>([^<]*)</ship>", "<title>$1</title>" );
 
 				// blueprints.xml: LASER_HULL_1 weaponBlueprint (FTL 1.02.6)
 				// blueprints.xml: LASER_HULL_2 weaponBlueprint (FTL 1.02.6)
-				line = line.replaceAll("<speed>([^<]*)</image>", "<speed>$1</speed>");  // Error in weaponBlueprint.
+				line = line.replaceAll( "<speed>([^<]*)</image>", "<speed>$1</speed>" );  // Error in weaponBlueprint.
 			}
 
 			if ( "autoBlueprints.xml".equals(fileName) ) {
@@ -191,31 +152,31 @@ public class MappedDatParser extends Parser implements Closeable {
 				// autoBlueprints.xml: CIRCLE_SCOUT, CIRCLE_BOMBER (FTL 1.03.1)
 				// autoBlueprints.xml: ZOLTAN_FIGHTER, ZOLTAN_BOMBER, ZOLTAN_PEACE (FTL 1.03.1)
 				// autoBlueprints.xml: CRYSTAL_SCOUT, CRYSTAL_BOMBER (FTL 1.03.1)
-				line = line.replaceAll("\"max=", "\" max=");
+				line = line.replaceAll( "\"max=", "\" max=" );
 
 				// autoBlueprints.xml: JELLY_CROISSANT (FTL 1.03.1)
-				line = line.replaceAll("\"room=", "\" room=");
+				line = line.replaceAll( "\"room=", "\" room=" );
 			}
 
 			// Remove multiline comments
-			if (comment && line.contains("-->"))
+			if ( comment && line.contains( "-->" ) )
 				comment = false;
-			else if (line.contains("<!--"))
+			else if ( line.contains( "<!--" ) )
 				comment = true;
-			else if (!comment)
-				sb.append(line).append("\n");
+			else if ( !comment )
+				sb.append(line).append( "\n" );
 		}
 		in.close();
 
-		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace(0, BOM_UTF8.length(), "");
+		if ( sb.substring( 0, BOM_UTF8.length() ).equals(BOM_UTF8) )
+			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
-		sb.insert(0, "<blueprints>\n");
-		sb.append("</blueprints>\n");
+		sb.insert( 0, "<blueprints>\n" );
+		sb.append( "</blueprints>\n" );
 
 		// Add the xml header.
-		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		if ( "blueprints.xml".equals(fileName) ) {
 			// blueprints.xml: PLAYER_SHIP_HARD_2 shipBlueprint (FTL 1.03.1)
@@ -230,7 +191,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</shields>");
+				sb.replace( m.start(), m.end(), m.group(1)+"</shields>" );
 				m.reset();
 			}
 
@@ -242,7 +203,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1));
+				sb.replace( m.start(), m.end(), m.group(1) );
 				m.reset();
 			}
 		}
@@ -269,7 +230,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			while ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</shipBlueprint>");
+				sb.replace( m.start(), m.end(), m.group(1)+"</shipBlueprint>" );
 				m.reset();
 			}
 		}
@@ -280,8 +241,9 @@ public class MappedDatParser extends Parser implements Closeable {
 		return bps;
 	}
 
+
 	public ShipLayout readLayout( InputStream stream ) throws IOException {
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		ShipLayout shipLayout = new ShipLayout();
 
 		String line = null;
@@ -290,32 +252,32 @@ public class MappedDatParser extends Parser implements Closeable {
 
 		while ( (line = in.readLine()) != null ) {
 			if ( firstLine ) {
-				if ( line.startsWith(BOM_UTF8) )
+				if ( line.startsWith( BOM_UTF8 ) )
 					line = line.substring( BOM_UTF8.length() );
 				firstLine = false;
 			}
 			if ( line.length() == 0 ) continue;
 
-			if ( line.equals("X_OFFSET") ) {
+			if ( line.equals( "X_OFFSET" ) ) {
 				shipLayout.setOffsetX( Integer.parseInt( in.readLine() ) );
 			}
-			else if ( line.equals("Y_OFFSET") ) {
+			else if ( line.equals( "Y_OFFSET" ) ) {
 				shipLayout.setOffsetY( Integer.parseInt( in.readLine() ) );
 			}
-			else if ( line.equals("HORIZONTAL") ) {
+			else if ( line.equals( "HORIZONTAL" ) ) {
 				shipLayout.setHorizontal( Integer.parseInt( in.readLine() ) );
 			}
-			else if ( line.equals("VERTICAL") ) {
+			else if ( line.equals( "VERTICAL" ) ) {
 				shipLayout.setVertical( Integer.parseInt( in.readLine() ) );
 			}
-			else if ( line.equals("ELLIPSE") ) {
+			else if ( line.equals( "ELLIPSE" ) ) {
 				int w = Integer.parseInt( in.readLine() );
 				int h = Integer.parseInt( in.readLine() );
 				int x = Integer.parseInt( in.readLine() );
 				int y = Integer.parseInt( in.readLine() );
 				shipLayout.setShieldEllipse( w, h, x, y );
 			}
-			else if ( line.equals("ROOM") ) {
+			else if ( line.equals( "ROOM" ) ) {
 				int roomId = Integer.parseInt( in.readLine() );
 				int alpha = Integer.parseInt( in.readLine() );
 				int beta = Integer.parseInt( in.readLine() );
@@ -323,7 +285,7 @@ public class MappedDatParser extends Parser implements Closeable {
 				int vSquares = Integer.parseInt( in.readLine() );
 				shipLayout.setRoom( roomId, alpha, beta, hSquares, vSquares );
 			}
-			else if ( line.equals("DOOR") ) {
+			else if ( line.equals( "DOOR" ) ) {
 				int wallX = Integer.parseInt( in.readLine() );
 				int wallY = Integer.parseInt( in.readLine() );
 				int roomIdA = Integer.parseInt( in.readLine() );
@@ -335,40 +297,41 @@ public class MappedDatParser extends Parser implements Closeable {
 		return shipLayout;
 	}
 
-	public ShipChassis readChassis(InputStream stream) throws IOException, JAXBException {
-		log.trace("Reading ship chassis XML");
+
+	public ShipChassis readChassis( InputStream stream ) throws IOException, JAXBException {
+		log.trace( "Reading ship chassis XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		StringBuilder sb = new StringBuilder();
 		String line;
 
 		boolean comment = false;
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
-			line = line.replaceAll("<!--.*?-->", "");
-			line = line.replaceAll("<(/?)gib[0-9]*>", "<$1gib>");
+			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
+			line = line.replaceAll( "<!--.*?-->", "" );
+			line = line.replaceAll( "<(/?)gib[0-9]*>", "<$1gib>" );
 
 			// Remove multiline comments
-			if (comment && line.contains("-->"))
+			if ( comment && line.contains( "-->" ) )
 				comment = false;
-			else if (line.contains("<!--"))
+			else if ( line.contains( "<!--" ) )
 				comment = true;
-			else if (!comment)
-				sb.append(line).append("\n");
+			else if ( !comment )
+				sb.append(line).append( "\n" );
 		}
 		in.close();
 
-		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace(0, BOM_UTF8.length(), "");
+		if ( sb.substring( 0, BOM_UTF8.length() ).equals(BOM_UTF8) )
+			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
-		sb.insert(0, "<shipChassis>\n");
-		sb.append("</shipChassis>\n");
+		sb.insert( 0, "<shipChassis>\n" );
+		sb.append( "</shipChassis>\n" );
 
 		// Add the xml header.
-		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		// Parse cleaned XML
 		ShipChassis sch = (ShipChassis)unmarshalFromSequence( ShipChassis.class, sb.toString() );
@@ -376,39 +339,39 @@ public class MappedDatParser extends Parser implements Closeable {
 		return sch;
 	}
 
-	public List<CrewNameList> readCrewNames(InputStream stream) throws IOException, JAXBException {
-		log.trace("Reading crew name list XML");
+	public List<CrewNameList> readCrewNames( InputStream stream ) throws IOException, JAXBException {
+		log.trace( "Reading crew name list XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
 
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
-			line = line.replaceAll("<!--.*?-->", "");
+			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
+			line = line.replaceAll( "<!--.*?-->", "" );
 
 			// Remove multiline comments
-			if (comment && line.contains("-->"))
+			if ( comment && line.contains( "-->" ) )
 				comment = false;
-			else if (line.contains("<!--"))
+			else if ( line.contains("<!--") )
 				comment = true;
-			else if (!comment)
-				sb.append(line).append("\n");
+			else if ( !comment )
+				sb.append(line).append( "\n" );
 		}
 		in.close();
 
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace(0, BOM_UTF8.length(), "");
+			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
-		sb.insert(0, "<nameLists>\n");
-		sb.append("</nameLists>\n");
+		sb.insert( 0, "<nameLists>\n" );
+		sb.append( "</nameLists>\n" );
 
 		// Add the xml header.
-		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		// Parse cleaned XML
 		CrewNameLists cnl = (CrewNameLists)unmarshalFromSequence( CrewNameLists.class, sb.toString() );
@@ -416,53 +379,54 @@ public class MappedDatParser extends Parser implements Closeable {
 		return cnl.getCrewNameLists();
 	}
 
-	public Encounters readEvents(InputStream stream, String fileName) throws IOException, JAXBException {
-		log.trace("Reading events XML");
+
+	public Encounters readEvents( InputStream stream, String fileName ) throws IOException, JAXBException {
+		log.trace( "Reading events XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
 		String ptn; Pattern p; Matcher m;
 
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
-			line = line.replaceAll("<!--.*?-->", "");
+			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
+			line = line.replaceAll( "<!--.*?-->", "" );
 
 			if ( "events.xml".equals(fileName) || "events_nebula.xml".equals(fileName) ) {
 				// events.xml: PIRATE_CIVILIAN_BEACON (FTL 1.03.1)
 				// events_nebula.xml: NEBULA_REBEL_UNDETECTED (FTL 1.03.1)
-				line = line.replaceAll(" hidden=\"true\" hidden=\"true\"", " hidden=\"true\"");
+				line = line.replaceAll( " hidden=\"true\" hidden=\"true\"", " hidden=\"true\"" );
 			}
 
 			if ( "events_engi.xml".equals(fileName) || "events_mantis.xml".equals(fileName) || "events_crystal.xml".equals(fileName) ) {
 				// events_engi.xml: DISTRESS_ENGI_REACTOR_LIST1 (FTL 1.03.1)
 				// events_mantis.xml: MANTIS_NAMED_THIEF_DEFEAT (FTL 1.03.1)
 				// events_crystal.xml: CRYSTAL_CACHE_BREAK (FTL 1.01)
-				line = line.replaceAll("(.*<text *( [^\\/>]*)?>[^<]*)</event>.*", "$1</text>");
+				line = line.replaceAll( "(.*<text *( [^\\/>]*)?>[^<]*)</event>.*", "$1</text>" );
 			}
 
 			// Remove multiline comments
-			if (comment && line.contains("-->"))
+			if ( comment && line.contains( "-->" ) )
 				comment = false;
-			else if (line.contains("<!--"))
+			else if ( line.contains( "<!--" ) )
 				comment = true;
-			else if (!comment)
-				sb.append(line).append("\n");
+			else if ( !comment )
+				sb.append(line).append( "\n" );
 		}
 		in.close();
 
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace(0, BOM_UTF8.length(), "");
+			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
-		sb.insert(0, "<events>\n");
-		sb.append("</events>\n");
+		sb.insert( 0, "<events>\n" );
+		sb.append( "</events>\n" );
 
 		// Add the xml header.
-		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		if ( "events.xml".equals(fileName) ) {
 			// events.xml: STORE_TEXT (FTL 1.03.1)
@@ -474,7 +438,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</textList>");
+				sb.replace( m.start(), m.end(), m.group(1)+"</textList>" );
 				m.reset();
 			}
 		}
@@ -490,7 +454,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			while ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</textList>");
+				sb.replace( m.start(), m.end(), m.group(1)+"</textList>" );
 				m.reset();
 			}
 		}
@@ -524,7 +488,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</event>");
+				sb.replace( m.start(), m.end(), m.group(1)+"</event>" );
 				m.reset();
 			}
 
@@ -545,7 +509,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2));
+				sb.replace( m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2) );
 				m.reset();
 			}
 		}
@@ -574,7 +538,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</event>");
+				sb.replace( m.start(), m.end(), m.group(1)+"</event>" );
 				m.reset();
 			}
 		}
@@ -594,7 +558,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</choice>\n");
+				sb.replace( m.start(), m.end(), m.group(1)+"</choice>\n" );
 				m.reset();
 			}
 		}
@@ -618,7 +582,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</eventList>\n");
+				sb.replace( m.start(), m.end(), m.group(1)+"</eventList>\n" );
 				m.reset();
 			}
 		}
@@ -640,7 +604,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2));
+				sb.replace( m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2) );
 				m.reset();
 			}
 		}
@@ -651,40 +615,41 @@ public class MappedDatParser extends Parser implements Closeable {
 		return evts;
 	}
 
-	public List<ShipEvent> readShipEvents(InputStream stream, String fileName) throws IOException, JAXBException {
-		log.trace("Reading ship events XML");
+
+	public List<ShipEvent> readShipEvents( InputStream stream, String fileName ) throws IOException, JAXBException {
+		log.trace( "Reading ship events XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
 		String ptn; Pattern p; Matcher m;
 
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
-			line = line.replaceAll("<!--.*?-->", "");
+			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
+			line = line.replaceAll( "<!--.*?-->", "" );
 
 			// Remove multiline comments
-			if (comment && line.contains("-->"))
+			if ( comment && line.contains( "-->" ) )
 				comment = false;
-			else if (line.contains("<!--"))
+			else if ( line.contains( "<!--" ) )
 				comment = true;
-			else if (!comment)
-				sb.append(line).append("\n");
+			else if ( !comment )
+				sb.append(line).append( "\n" );
 		}
 		in.close();
 
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace(0, BOM_UTF8.length(), "");
+			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
-		sb.insert(0, "<shipEvents>\n");
-		sb.append("</shipEvents>\n");
+		sb.insert( 0, "<shipEvents>\n" );
+		sb.append( "</shipEvents>\n" );
 
 		// Add the xml header.
-		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		if ( "events_ships.xml".equals(fileName) ) {
 			// events_ships.xml: REBEL_AUTO_HACKSHIELDS (FTL 1.03.1)
@@ -698,7 +663,7 @@ public class MappedDatParser extends Parser implements Closeable {
 			p = Pattern.compile(ptn);
 			m = p.matcher(sb);
 			if ( m.find() ) {
-				sb.replace(m.start(), m.end(), m.group(1)+"\n</deadCrew>");
+				sb.replace( m.start(), m.end(), m.group(1)+"\n</deadCrew>" );
 				m.reset();
 			}
 		}
@@ -709,45 +674,47 @@ public class MappedDatParser extends Parser implements Closeable {
 		return shvts.getShipEvents();
 	}
 
-	public List<BackgroundImageList> readImageLists(InputStream stream) throws IOException, JAXBException {
-		log.trace("Reading background images XML");
+
+	public List<BackgroundImageList> readImageLists( InputStream stream ) throws IOException, JAXBException {
+		log.trace( "Reading background images XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader(new InputStreamReader(stream, "UTF8"));
+		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
 
 		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll("<[?]xml [^>]*[?]>", "");
-			line = line.replaceAll("<!--.*?-->", "");
+			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
+			line = line.replaceAll( "<!--.*?-->", "" );
 
 			// Remove multiline comments
-			if (comment && line.contains("-->"))
+			if ( comment && line.contains( "-->" ) )
 				comment = false;
-			else if (line.contains("<!--"))
+			else if ( line.contains( "<!--" ) )
 				comment = true;
-			else if (!comment)
-				sb.append(line).append("\n");
+			else if ( !comment )
+				sb.append(line).append( "\n" );
 		}
 		in.close();
 
 		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace(0, BOM_UTF8.length(), "");
+			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
-		sb.insert(0, "<imageLists>\n");
-		sb.append("</imageLists>\n");
+		sb.insert( 0, "<imageLists>\n" );
+		sb.append( "</imageLists>\n" );
 
 		// Add the xml header.
-		sb.insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		// Parse cleaned XML
 		BackgroundImageLists imgs = (BackgroundImageLists)unmarshalFromSequence( BackgroundImageLists.class, sb.toString() );
 
 		return imgs.getImageLists();
 	}
+
 
 	/**
 	 * Parse XML from a CharSequence into an arbitrary class.
@@ -760,9 +727,9 @@ public class MappedDatParser extends Parser implements Closeable {
 			JAXBContext jc = JAXBContext.newInstance(c);
 			Unmarshaller u = jc.createUnmarshaller();
 			result = u.unmarshal( new StreamSource(new StringReader(seq.toString())) );
-
-		} catch (JAXBException e) {
-			log.debug("Error during xml parsing. Dumping document for review...");
+		}
+		catch ( JAXBException e ) {
+			log.debug( "Error during xml parsing. Dumping document for review..." );
 			log.debug(seq); // Dump all the xml to the log.
 
 			Throwable linkedException = e.getLinkedException();
@@ -814,91 +781,43 @@ public class MappedDatParser extends Parser implements Closeable {
 		return seq.subSequence( prevBreak+1, c ).toString();
 	}
 
-	public InputStream getInputStream(String innerPath) throws FileNotFoundException, IOException {
-		InnerFileInfo info = innerFilesMap.get(innerPath);
-		if (info == null) throw new FileNotFoundException("The path ("+ innerPath +") was not found in "+ datFile.getName());
 
-		MappedByteBuffer buf = randomDatFile.getChannel().map(FileChannel.MapMode.READ_ONLY, info.dataOffset, info.dataSize);
-		buf.load();
-		InputStream stream = new ByteBufferBackedInputStream(buf);
-		return stream;
+	public InputStream getInputStream(String innerPath) throws FileNotFoundException, IOException {
+		return datP.getInputStream( innerPath );
 	}
 
-	public void unpackDat(File outFolder) throws IOException {
-		log.trace("Unpacking dat file " + datFile.getPath() + " into " + outFolder.getPath());
 
-		byte[] buffer = new byte[4096];
-		int bytesRead;
+	public void unpackDat( File extractDir ) throws IOException {
+		log.trace( "Unpacking dat file " + datFile.getPath() + " into " + extractDir.getPath() );
 
-		outFolder.mkdirs();
-		for (Map.Entry<String, InnerFileInfo> entry : innerFilesMap.entrySet()) {
-			String innerPath = entry.getKey();
-			InnerFileInfo info = entry.getValue();
 
-			log.trace("Unpacking: " + innerPath + " ("+ info.dataSize +"b)");
+		FTLDat.FolderPack dstP = null;
+		InputStream is = null;
+		try {
+			if ( !extractDir.exists() ) extractDir.mkdirs();
 
-			File outFile = new File(outFolder, innerPath);
-			outFile.getParentFile().mkdirs();
-			InputStream in = null;
-			FileOutputStream out = null;
-			try {
-				in = getInputStream(innerPath);
-				out = new FileOutputStream(outFile);
+			dstP = new FTLDat.FolderPack( extractDir );
 
-				while ((bytesRead = in.read(buffer)) != -1) {
-					out.write(buffer, 0, bytesRead);
+			List<String> innerPaths = datP.list();
+			for ( String innerPath : innerPaths ) {
+				if ( dstP.contains( innerPath ) ) {
+					log.info( "While extracting resources, this file was overwritten: "+ innerPath );
+					dstP.remove( innerPath );
 				}
-
-			} finally {
-				try {if (in != null) in.close();}
-				catch (IOException e) {}
-
-				try {if (out != null) out.close();}
-				catch (IOException e) {}
+				is = datP.getInputStream( innerPath );
+				dstP.add( innerPath, is );
 			}
+		}
+		finally {
+			try {if ( is != null ) is.close();}
+			catch ( IOException ex ) {}
+
+			try {if ( dstP != null ) dstP.close();}
+			catch ( IOException ex ) {}
 		}
 	}
 
 	public void close() throws IOException {
-		if (randomDatFile != null) randomDatFile.close();
-	}
-
-
-
-	private class InnerFileInfo {
-		public long dataOffset = 0;
-		public long dataSize = 0;
-
-		public InnerFileInfo(long dataOffset, long dataSize) {
-			this.dataOffset = dataOffset;
-			this.dataSize = dataSize;
-		}
-	}
-
-
-
-	public class ByteBufferBackedInputStream extends InputStream {
-		ByteBuffer buf;
-		public ByteBufferBackedInputStream(ByteBuffer buf) {
-			this.buf = buf;
-		}
-		@Override
-		public synchronized int available() throws IOException {
-			if (!buf.hasRemaining()) return 0;
-			return buf.remaining();
-		}
-		@Override
-		public synchronized int read() throws IOException {
-			if (!buf.hasRemaining()) return -1;
-			return buf.get() & 0xFF;
-		}
-		@Override
-		public synchronized int read(byte[] bytes, int off, int len) throws IOException {
-			if (!buf.hasRemaining()) return -1;
-			len = Math.min(len, buf.remaining());
-			buf.get(bytes, off, len);
-			return len;
-		}
+		if ( datP != null ) datP.close();
 	}
 }
-
