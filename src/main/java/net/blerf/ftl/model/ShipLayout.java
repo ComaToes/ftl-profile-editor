@@ -24,7 +24,7 @@ public class ShipLayout {
 
 	public void setOffsetX( int n ) { offsetX = n; }
 	public void setOffsetY( int n ) { offsetY = n; }
-	public void setHorizontal( int n ) { vertical = n; }
+	public void setHorizontal( int n ) { horizontal = n; }
 	public void setVertical( int n ) { vertical = n; }
 
 	public void setShieldEllipse( int w, int h, int x, int y ) {
