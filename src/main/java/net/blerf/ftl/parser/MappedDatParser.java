@@ -59,11 +59,20 @@ public class MappedDatParser extends Parser implements Closeable {
 		FileInputStream in = null;
 		try {
 			in = new FileInputStream(datFile);
+			randomDatFile = new RandomAccessFile(datFile, "r");
 
 			int headerSize = readInt(in);
+
+			// Avoid allocating a rediculous array size.
+			long position = randomDatFile.getChannel().position();
+			if ( headerSize > in.getChannel().size() - position)
+				throw new RuntimeException("Expected header size ("+ headerSize +") would extend beyond the end of the stream, from current position ("+ position +")");
+
 			int[] header = new int[headerSize];
+
 			for (int i = 0; i < header.length; i++) {
 				header[i] = readInt(in);
+				if ( header[i] == 0 ) break;  // No more interesting offsets.
 			}
 			for (int i = 0; i < header.length && header[i] != 0; i++) {
 				in.getChannel().position(header[i]);
@@ -76,8 +85,6 @@ public class MappedDatParser extends Parser implements Closeable {
 				innerFilesMap.put(innerPath, info);
 			}
 			in.close();
-
-			randomDatFile = new RandomAccessFile(datFile, "r");
 		}
 		catch (IOException e) {
 			try {if (randomDatFile != null) randomDatFile.close();}
