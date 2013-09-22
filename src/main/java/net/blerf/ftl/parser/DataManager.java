@@ -41,14 +41,16 @@ public class DataManager implements Closeable {
 	private static final Logger log = LogManager.getLogger(DataManager.class);
 
 	private static DataManager instance;
-	
+
+
 	public static DataManager get() {
 		return instance;
 	}
-	
-	public static void init(File datsDir) throws IOException, JAXBException {
-		instance = new DataManager(datsDir);
+
+	public static void init( File datsDir ) throws IOException, JAXBException {
+		instance = new DataManager( datsDir );
 	}
+
 
 	private List<Achievement> achievements;
 	private List<Achievement> generalAchievements;
@@ -74,35 +76,36 @@ public class DataManager implements Closeable {
 	private	DatParser dataParser = null;
 	private	DatParser resourceParser = null;
 
-	private DataManager(File datsDir) throws IOException, JAXBException {
+
+	private DataManager( File datsDir ) throws IOException, JAXBException {
 		
-		log.trace("DataManager initialising");
+		log.trace( "DataManager initialising" );
 		
 		boolean meltdown = false;
 		ArrayList<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
-			dataParser = new DatParser( new File(datsDir, "data.dat") );
-	 		resourceParser = new DatParser( new File(datsDir, "resource.dat") );
+			dataParser = new DatParser( new File( datsDir, "data.dat" ) );
+	 		resourceParser = new DatParser( new File( datsDir, "resource.dat" ) );
 
-			log.info("Reading Achievements...");
-			log.debug("Reading 'data/achievements.xml'");
+			log.info( "Reading Achievements..." );
+			log.debug( "Reading 'data/achievements.xml'" );
 			InputStream achStream = dataParser.getInputStream( "data/achievements.xml" );
 			streams.add(achStream);
 			achievements = dataParser.readAchievements( achStream );
 
-			log.info("Reading Blueprints...");
-			log.debug("Reading 'data/blueprints.xml'");
+			log.info( "Reading Blueprints..." );
+			log.debug( "Reading 'data/blueprints.xml'" );
 			InputStream blueStream = dataParser.getInputStream( "data/blueprints.xml" );
 			streams.add(blueStream);
 			blueprints = dataParser.readBlueprints( blueStream, "blueprints.xml" );
 
-			log.debug("Reading 'data/autoBlueprints.xml'");
+			log.debug( "Reading 'data/autoBlueprints.xml'" );
 			InputStream autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
 			streams.add(autoBlueStream);
 			autoBlueprints = dataParser.readBlueprints( autoBlueStream, "autoBlueprints.xml" );
 
-			log.info("Reading Events...");
+			log.info( "Reading Events..." );
 			String[] eventsFileNames = new String[] { "events.xml", "newEvents.xml",
 				"events_crystal.xml", "events_engi.xml", "events_mantis.xml",
 				"events_rock.xml", "events_slug.xml", "events_zoltan.xml",
@@ -118,25 +121,25 @@ public class DataManager implements Closeable {
 				events.put( eventsFileName, tmpEncounters );
 			}
 
-			log.info("Reading Crew Names...");
-			log.debug("Reading 'data/names.xml'");
+			log.info( "Reading Crew Names..." );
+			log.debug( "Reading 'data/names.xml'" );
 			InputStream crewNamesStream = dataParser.getInputStream( "data/names.xml" );
 			streams.add(crewNamesStream);
 			List<CrewNameList> crewNameLists = dataParser.readCrewNames( crewNamesStream );
 
-			log.info("Reading Ship Events...");
-			log.debug("Reading 'data/events_ships.xml'");
+			log.info( "Reading Ship Events..." );
+			log.debug( "Reading 'data/events_ships.xml'" );
 			InputStream shipEventsStream = dataParser.getInputStream( "data/events_ships.xml" );
 			streams.add(shipEventsStream);
 			List<ShipEvent> shipEventList = dataParser.readShipEvents( shipEventsStream, "events_ships.xml" );
 
-			log.info("Reading Background Image Lists...");
-			log.debug("Reading 'data/events_imageList.xml'");
+			log.info( "Reading Background Image Lists..." );
+			log.debug( "Reading 'data/events_imageList.xml'" );
 			InputStream imageListsStream = dataParser.getInputStream( "data/events_imageList.xml" );
 			streams.add(imageListsStream);
 			List<BackgroundImageList> imageLists = dataParser.readImageLists( imageListsStream );
 
-			log.info("Finished reading game resources.");
+			log.info( "Finished reading game resources." );
 
 			generalAchievements = new ArrayList<Achievement>();
 			for( Achievement ach : achievements )
@@ -207,19 +210,19 @@ public class DataManager implements Closeable {
 			backgroundImageLists = new LinkedHashMap<String, BackgroundImageList>();
 			for ( BackgroundImageList imageList : imageLists )
 				backgroundImageLists.put( imageList.getId(), imageList );
-
-		} catch (JAXBException e) {
+		}
+		catch ( JAXBException e ) {
 			meltdown = true;
 			throw e;
-
-		} catch (IOException e) {
+		}
+		catch ( IOException e ) {
 			meltdown = true;
 			throw e;
-
-		} finally {
+		}
+		finally {
 			for ( InputStream stream : streams ) {
-				try {if (stream != null) stream.close();}
-				catch (IOException f) {}
+				try {if ( stream != null ) stream.close();}
+				catch ( IOException f ) {}
 			}
 
 			if ( meltdown ) this.close();
@@ -228,10 +231,10 @@ public class DataManager implements Closeable {
 
 	public void close() {
 		try {if (dataParser != null) dataParser.close();}
-		catch (IOException e) {}
+		catch ( IOException e ) {}
 
 		try {if (resourceParser != null) resourceParser.close();}
-		catch (IOException e) {}
+		catch ( IOException e ) {}
 	}
 	
 	public InputStream getDataInputStream( String innerPath ) throws IOException {
@@ -242,12 +245,12 @@ public class DataManager implements Closeable {
 		return resourceParser.getInputStream( innerPath );
 	}
 	
-	public void unpackData( File outFolder ) throws IOException {
-		dataParser.unpackDat( outFolder );
+	public void unpackData( File extractDir ) throws IOException {
+		dataParser.unpackDat( extractDir );
 	}
 
-	public void unpackResources( File outFolder ) throws IOException {
-		resourceParser.unpackDat( outFolder );
+	public void unpackResources( File extractDir ) throws IOException {
+		resourceParser.unpackDat( extractDir );
 	}
 	
 	public List<Achievement> getAchievements() {
@@ -315,7 +318,7 @@ public class DataManager implements Closeable {
 		return playerShips;
 	}
 	
-	public List<Achievement> getShipAchievements(ShipBlueprint ship) {
+	public List<Achievement> getShipAchievements( ShipBlueprint ship ) {
 		return shipAchievements.get(ship);
 	}
 	
@@ -323,7 +326,7 @@ public class DataManager implements Closeable {
 		return generalAchievements;
 	}
 
-	public ShipLayout getShipLayout(String id) {
+	public ShipLayout getShipLayout( String id ) {
 		ShipLayout result = shipLayouts.get(id);
 
 		if ( result == null ) {  // Wasn't cached; try parsing it.
@@ -332,44 +335,44 @@ public class DataManager implements Closeable {
 				in = getDataInputStream("data/"+ id +".txt");
 				result = dataParser.readLayout(in);
 				shipLayouts.put( id, result );
-
-			} catch (FileNotFoundException e) {
+			}
+			catch ( FileNotFoundException e ) {
 				log.error( "No ShipLayout found for id: "+ id );
-
-			} catch (IOException e) {
+			}
+			catch ( IOException e ) {
 				log.error( "An error occurred while parsing ShipLayout: "+ id, e );
-
-			} finally {
-				try {if (in != null) in.close();}
-				catch (IOException f) {}
+			}
+			finally {
+				try {if ( in != null ) in.close();}
+				catch ( IOException f ) {}
 			}
 		}
 
 		return result;
 	}
 
-	public ShipChassis getShipChassis(String id) {
+	public ShipChassis getShipChassis( String id ) {
 		ShipChassis result = shipChassisMap.get(id);
 
 		if ( result == null ) {  // Wasn't cached; try parsing it.
 			InputStream in = null;
 			try {
-				in = getDataInputStream("data/"+ id +".xml");
+				in = getDataInputStream( "data/"+ id +".xml" );
 				result = dataParser.readChassis(in);
 				shipChassisMap.put( id, result );
-
-			} catch (JAXBException e) {
+			}
+			catch ( JAXBException e ) {
 				log.error( "Parsing XML failed for ShipChassis id: "+ id );
-
-			} catch (FileNotFoundException e) {
+			}
+			catch ( FileNotFoundException e ) {
 				log.error( "No ShipChassis found for id: "+ id );
-
-			} catch (IOException e) {
+			}
+			catch ( IOException e ) {
 				log.error( "An error occurred while parsing ShipChassis: "+ id, e );
-
-			} finally {
-				try {if (in != null) in.close();}
-				catch (IOException f) {}
+			}
+			finally {
+				try {if ( in != null ) in.close();}
+				catch ( IOException f ) {}
 			}
 		}
 

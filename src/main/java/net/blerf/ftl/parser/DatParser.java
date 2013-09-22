@@ -42,7 +42,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-public class DatParser extends Parser implements Closeable {
+public class DatParser implements Closeable {
 
 	private static final Logger log = LogManager.getLogger(DatParser.class);
 	private static final String BOM_UTF8 = "\uFEFF";
