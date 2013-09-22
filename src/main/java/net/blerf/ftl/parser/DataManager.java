@@ -92,7 +92,7 @@ public class DataManager implements Closeable {
 			log.debug( "Reading 'data/achievements.xml'" );
 			InputStream achStream = dataParser.getInputStream( "data/achievements.xml" );
 			streams.add(achStream);
-			achievements = dataParser.readAchievements( achStream );
+			achievements = dataParser.readAchievements( achStream, "achievements.xml" );
 
 			log.info( "Reading Blueprints..." );
 			log.debug( "Reading 'data/blueprints.xml'" );
@@ -125,7 +125,7 @@ public class DataManager implements Closeable {
 			log.debug( "Reading 'data/names.xml'" );
 			InputStream crewNamesStream = dataParser.getInputStream( "data/names.xml" );
 			streams.add(crewNamesStream);
-			List<CrewNameList> crewNameLists = dataParser.readCrewNames( crewNamesStream );
+			List<CrewNameList> crewNameLists = dataParser.readCrewNames( crewNamesStream, "names.xml" );
 
 			log.info( "Reading Ship Events..." );
 			log.debug( "Reading 'data/events_ships.xml'" );
@@ -137,7 +137,7 @@ public class DataManager implements Closeable {
 			log.debug( "Reading 'data/events_imageList.xml'" );
 			InputStream imageListsStream = dataParser.getInputStream( "data/events_imageList.xml" );
 			streams.add(imageListsStream);
-			List<BackgroundImageList> imageLists = dataParser.readImageLists( imageListsStream );
+			List<BackgroundImageList> imageLists = dataParser.readImageLists( imageListsStream, "events_imageList.xml" );
 
 			log.info( "Finished reading game resources." );
 
@@ -333,7 +333,7 @@ public class DataManager implements Closeable {
 			InputStream in = null;
 			try {
 				in = getDataInputStream("data/"+ id +".txt");
-				result = dataParser.readLayout(in);
+				result = dataParser.readLayout(in, id +".txt");
 				shipLayouts.put( id, result );
 			}
 			catch ( FileNotFoundException e ) {
@@ -358,7 +358,7 @@ public class DataManager implements Closeable {
 			InputStream in = null;
 			try {
 				in = getDataInputStream( "data/"+ id +".xml" );
-				result = dataParser.readChassis(in);
+				result = dataParser.readChassis(in, id +".xml");
 				shipChassisMap.put( id, result );
 			}
 			catch ( JAXBException e ) {

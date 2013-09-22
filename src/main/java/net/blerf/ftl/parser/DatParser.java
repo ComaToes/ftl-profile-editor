@@ -25,6 +25,7 @@ import net.vhati.ftldat.FTLDat.FolderPack;
 import net.vhati.ftldat.FTLDat.FTLPack;
 
 import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.parser.TextUtilities;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Achievements;
 import net.blerf.ftl.xml.BackgroundImageList;
@@ -45,7 +46,6 @@ import org.apache.logging.log4j.Logger;
 public class DatParser implements Closeable {
 
 	private static final Logger log = LogManager.getLogger(DatParser.class);
-	private static final String BOM_UTF8 = "\uFEFF";
 
 	private File datFile = null;
 	private FTLDat.FTLPack datP = null;
@@ -57,12 +57,13 @@ public class DatParser implements Closeable {
 	}
 
 
-	public List<Achievement> readAchievements( InputStream stream ) throws IOException, JAXBException {
+	public List<Achievement> readAchievements( InputStream stream, String fileName ) throws IOException, JAXBException {
 		log.trace( "Reading achievements XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
@@ -81,9 +82,6 @@ public class DatParser implements Closeable {
 				sb.append(line).append("\n");
 		}
 		in.close();
-
-		if ( sb.substring( 0, BOM_UTF8.length() ).equals(BOM_UTF8) )
-			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert( 0, "<achievements>\n" );
@@ -104,7 +102,8 @@ public class DatParser implements Closeable {
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
@@ -167,9 +166,6 @@ public class DatParser implements Closeable {
 				sb.append(line).append( "\n" );
 		}
 		in.close();
-
-		if ( sb.substring( 0, BOM_UTF8.length() ).equals(BOM_UTF8) )
-			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert( 0, "<blueprints>\n" );
@@ -242,8 +238,11 @@ public class DatParser implements Closeable {
 	}
 
 
-	public ShipLayout readLayout( InputStream stream ) throws IOException {
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+	public ShipLayout readLayout( InputStream stream, String fileName ) throws IOException {
+
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
+
 		ShipLayout shipLayout = new ShipLayout();
 
 		String line = null;
@@ -251,11 +250,6 @@ public class DatParser implements Closeable {
 		boolean comment = false;
 
 		while ( (line = in.readLine()) != null ) {
-			if ( firstLine ) {
-				if ( line.startsWith( BOM_UTF8 ) )
-					line = line.substring( BOM_UTF8.length() );
-				firstLine = false;
-			}
 			if ( line.length() == 0 ) continue;
 
 			if ( line.equals( "X_OFFSET" ) ) {
@@ -298,12 +292,13 @@ public class DatParser implements Closeable {
 	}
 
 
-	public ShipChassis readChassis( InputStream stream ) throws IOException, JAXBException {
+	public ShipChassis readChassis( InputStream stream, String fileName ) throws IOException, JAXBException {
 		log.trace( "Reading ship chassis XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
 		StringBuilder sb = new StringBuilder();
 		String line;
 
@@ -323,9 +318,6 @@ public class DatParser implements Closeable {
 		}
 		in.close();
 
-		if ( sb.substring( 0, BOM_UTF8.length() ).equals(BOM_UTF8) )
-			sb.replace( 0, BOM_UTF8.length(), "" );
-
 		// XML has multiple root nodes so need to wrap.
 		sb.insert( 0, "<shipChassis>\n" );
 		sb.append( "</shipChassis>\n" );
@@ -339,12 +331,13 @@ public class DatParser implements Closeable {
 		return sch;
 	}
 
-	public List<CrewNameList> readCrewNames( InputStream stream ) throws IOException, JAXBException {
+	public List<CrewNameList> readCrewNames( InputStream stream, String fileName ) throws IOException, JAXBException {
 		log.trace( "Reading crew name list XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
@@ -362,9 +355,6 @@ public class DatParser implements Closeable {
 				sb.append(line).append( "\n" );
 		}
 		in.close();
-
-		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert( 0, "<nameLists>\n" );
@@ -385,7 +375,8 @@ public class DatParser implements Closeable {
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
@@ -417,9 +408,6 @@ public class DatParser implements Closeable {
 				sb.append(line).append( "\n" );
 		}
 		in.close();
-
-		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert( 0, "<events>\n" );
@@ -621,7 +609,8 @@ public class DatParser implements Closeable {
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
@@ -640,9 +629,6 @@ public class DatParser implements Closeable {
 				sb.append(line).append( "\n" );
 		}
 		in.close();
-
-		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert( 0, "<shipEvents>\n" );
@@ -675,12 +661,13 @@ public class DatParser implements Closeable {
 	}
 
 
-	public List<BackgroundImageList> readImageLists( InputStream stream ) throws IOException, JAXBException {
+	public List<BackgroundImageList> readImageLists( InputStream stream, String fileName ) throws IOException, JAXBException {
 		log.trace( "Reading background images XML" );
 
 		// Need to clean invalid XML and comments before JAXB parsing
 
-		BufferedReader in = new BufferedReader( new InputStreamReader(stream, "UTF8") );
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		BufferedReader in = new BufferedReader( new StringReader(streamText) );
 		StringBuilder sb = new StringBuilder();
 		String line;
 		boolean comment = false;
@@ -698,9 +685,6 @@ public class DatParser implements Closeable {
 				sb.append(line).append( "\n" );
 		}
 		in.close();
-
-		if ( sb.substring(0, BOM_UTF8.length()).equals(BOM_UTF8) )
-			sb.replace( 0, BOM_UTF8.length(), "" );
 
 		// XML has multiple root nodes so need to wrap.
 		sb.insert( 0, "<imageLists>\n" );
