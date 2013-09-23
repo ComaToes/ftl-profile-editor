@@ -21,6 +21,10 @@ Requirements
   FTL (1.01-1.03.3, Windows/OSX/Linux, Steam/GOG/Standalone).
     http://www.ftlgame.com/
 
+  * WinXP SP1 can't run Java 1.7.
+    (1.7 was built with VisualStudio 2010, causing a DecodePointer error.)
+    To get 1.6, you may have to google "jdk-6u45-windows-i586.exe".
+
 
 Setup
 
@@ -52,7 +56,7 @@ Troubleshooting
 * Error reading profile. [...] Initial int not expected value: 2...
     You likely tried to open a saved game while in the "Profile" tab.
 
-* Error reading saved game. [...] Not a bool: 39...
+* Error reading saved game. [...] Unexpected first byte...
     You likely tried to open a profile while in the "Saved Game" tab.
 
 * If Slipstream hangs on startup: nothing in the prompt and no log...
