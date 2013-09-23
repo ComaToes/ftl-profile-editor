@@ -19,6 +19,7 @@ import javax.swing.filechooser.FileFilter;
 import net.vhati.modmanager.core.FTLUtilities;
 
 import net.blerf.ftl.parser.DataManager;
+import net.blerf.ftl.parser.DefaultDataManager;
 import net.blerf.ftl.ui.FTLFrame;
 
 import org.apache.logging.log4j.LogManager;
@@ -156,12 +157,14 @@ public class FTLProfileEditor {
 			}
 		}
 
+		// Parse the dats.
 		try {
-			DataManager.init( datsDir ); // Parse the dats.
+			DefaultDataManager dataManager = new DefaultDataManager( datsDir );
+			DataManager.setInstance( dataManager );
 		}
 		catch ( Exception e ) {
-			log.error( "Error parsing FTL data files.", e );
-			showErrorDialog( "Error parsing FTL data files." );
+			log.error( "Error parsing FTL resources.", e );
+			showErrorDialog( "Error parsing FTL resources." );
 			System.exit(1);
 		}
 
