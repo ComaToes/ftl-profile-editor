@@ -643,6 +643,9 @@ public class FTLFrame extends JFrame {
 
 				if ( gameState == null ) return;
 
+				if ( gameState.getMysteryList().size() > 0 )
+					log.warn( "The original saved game file contained mystery bytes, which will be omitted in the new file." );
+
 				fc.setDialogTitle( "Save Game State" );
 				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					FileOutputStream out = null;

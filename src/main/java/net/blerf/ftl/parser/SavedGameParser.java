@@ -25,13 +25,8 @@ import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class SavedGameParser extends Parser {
-
-	private static final Logger log = LogManager.getLogger(SavedGameParser.class);
 
 
 	public SavedGameState readSavedGame( File datFile ) throws IOException {
@@ -39,12 +34,12 @@ public class SavedGameParser extends Parser {
 		InputStream layoutStream = null;
 		try {
 			SavedGameState gameState = new SavedGameState();
-			in = new FileInputStream(datFile);
+			in = new FileInputStream( datFile );
 
 			// This should always be 2.
 			int headerAlpha = readInt(in);
 			if ( headerAlpha != 2 )
-				log.warn( "Unexpected first byte ("+ headerAlpha +"): it's either a bad file, or possibly too new for this tool" );
+				throw new IOException( "Unexpected first byte ("+ headerAlpha +")." );
 
 			gameState.setDifficultyEasy( readBool(in) );
 			gameState.setTotalShipsDefeated( readInt(in) );
@@ -163,10 +158,12 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
+	/**
+	 * Writes a gameState to a stream.
+	 *
+	 * Any MysteryBytes will be omitted.
+	 */
 	public void writeSavedGame( OutputStream out, SavedGameState gameState ) throws IOException {
-
-		if ( gameState.getMysteryList().size() > 0 )
-			log.warn( "The original saved game file contained mystery bytes, which will be omitted in the new file" );
 
 		// This should always be 2.
 		writeInt( out, 2 );
@@ -906,6 +903,9 @@ public class SavedGameParser extends Parser {
 			cargoIdList.add( cargoItemId );
 		}
 
+		public void setCargoList( ArrayList<String> cargoIdList ) {
+			this.cargoIdList = cargoIdList;
+		}
 		public ArrayList<String> getCargoIdList() { return cargoIdList; }
 
 		/**
@@ -1864,15 +1864,15 @@ public class SavedGameParser extends Parser {
 		private int oxygen = 100;
 		private ArrayList<SquareState> squareList = new ArrayList<SquareState>();
 
-    /**
-     * Set's the oxygen percentage in the room.
-     *
-     * At 0, the game changes the room's appearance.
-     *   Since 1.03.1, it paints red stripes on the floor.
-     *   Before that, it highlighted the walls orange.
-     *
-     * @param n 0-100
-     */
+		/**
+		 * Set's the oxygen percentage in the room.
+		 *
+		 * At 0, the game changes the room's appearance.
+		 *   Since 1.03.1, it paints red stripes on the floor.
+		 *   Before that, it highlighted the walls orange.
+		 *
+		 * @param n 0-100
+		 */
 		public void setOxygen( int n ) { oxygen = n; }
 		public int getOxygen() { return oxygen; }
 
