@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -780,7 +781,7 @@ public class FTLFrame extends JFrame {
 			log.trace( "Checking for latest version." );
 
 			url = new URL( latestVersionUrl );
-			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
+			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent(), Charset.forName("UTF-8").newDecoder() ) );
 			int latestVersion = Integer.parseInt( in.readLine() );
 			in.close();
 
@@ -876,7 +877,7 @@ public class FTLFrame extends JFrame {
 
 			// Fetch the changelog, templating each revision.
 			url = new URL( versionHistoryUrl );
-			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
+			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent(), Charset.forName("UTF-8").newDecoder() ) );
 
 			int releaseVersion = 0;
 			StringBuilder releaseBuf = new StringBuilder();
