@@ -165,71 +165,8 @@ public class SavedGameHangarPanel extends JPanel {
 		int response = JOptionPane.showConfirmDialog(frame, nag, "Change Player Ship", JOptionPane.YES_NO_OPTION);
 		if ( response != JOptionPane.YES_OPTION ) return;
 
-		ShipLayout shipLayout = DataManager.get().getShipLayout( shipBlueprint.getLayout() );
-
 		SavedGameParser.ShipState shipState = new SavedGameParser.ShipState( "The Nameless One", shipBlueprint, auto );
-
-		// Systems.
-		int reservePowerCapacity = 0;
-		for ( SystemType systemType : SystemType.values() ) {
-			SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemType );
-
-			// Set capacity for systems that're initially present.
-			ShipBlueprint.SystemList.SystemRoom[] systemRoom = shipBlueprint.getSystemList().getSystemRoom( systemType );
-			if ( systemRoom != null ) {
-				Boolean start = systemRoom[0].getStart();
-				if ( start == null || start.booleanValue() == true ) {
-					SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemType.getId() );
-					systemState.setCapacity( systemBlueprint.getStartPower() );
-
-					if ( systemType.isSubsystem() ) {
-						systemState.setPower( systemState.getCapacity() );
-					} else {
-						reservePowerCapacity += systemState.getCapacity();
-					}
-				}
-			}
-			shipState.addSystem( systemState );
-		}
-		reservePowerCapacity = Math.max( reservePowerCapacity, shipBlueprint.getMaxPower().amount );
-		shipState.setReservePowerCapacity( reservePowerCapacity );
-
-		// Rooms.
-		for (int r=0; r < shipLayout.getRoomCount(); r++) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(r);
-			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-
-			SavedGameParser.RoomState roomState = new SavedGameParser.RoomState();
-			for (int s=0; s < squaresH*squaresV; s++) {
-				roomState.addSquare( 0, 0, -1);
-			}
-			shipState.addRoom( roomState );
-		}
-
-		// Doors.
-		Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet() ) {
-			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
-			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
-
-			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, new SavedGameParser.DoorState() );
-		}
-
-		// Augments.
-		if ( shipBlueprint.getAugments() != null ) {
-			for ( ShipBlueprint.AugmentId augId : shipBlueprint.getAugments() )
-				shipState.addAugmentId( augId.name );
-		}
-
-		// Supplies.
-		shipState.setHullAmt( shipBlueprint.getHealth().amount );
-		shipState.setFuelAmt( 20 );
-		if ( shipBlueprint.getDroneList() != null )
-			shipState.setDronePartsAmt( shipBlueprint.getDroneList().drones );
-		if ( shipBlueprint.getWeaponList() != null )
-			shipState.setMissilesAmt( shipBlueprint.getWeaponList().missiles );
-
+		shipState.refit();
 		gameState.setPlayerShipState( shipState );
 
 		// Sync session's redundant ship info with player ship.

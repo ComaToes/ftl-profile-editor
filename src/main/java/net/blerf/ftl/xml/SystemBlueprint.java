@@ -15,7 +15,9 @@ public class SystemBlueprint {
 	@XmlAttribute(name="name")
 	private String id;
 	private String type, title, desc;
-	private int startPower, maxPower, rarity;
+	private int startPower;  // Initial system capacity.
+	private int maxPower;    // Highest possible capacity attainable by upgrading.
+	private int rarity;
 	private UpgradeCost upgradeCost;
 	private int cost;
 	@XmlElement(required=false)

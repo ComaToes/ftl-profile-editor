@@ -1265,14 +1265,21 @@ public class SavedGameParser extends Parser {
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
 
+
+		/**
+		 * Constructs an incomplete ShipState.
+		 *
+		 * It will need systems, reserve power, rooms, doors, and supplies.
+		 */
 		public ShipState( String shipName, ShipBlueprint shipBlueprint, boolean auto ) {
-			this.shipName = shipName;
-			this.shipBlueprintId = shipBlueprint.getId();
-			this.shipLayoutId = shipBlueprint.getLayout();
-			this.shipGfxBaseName = shipBlueprint.getGraphicsBaseName();
-			this.auto = auto;
+			this( shipName, shipBlueprint.getId(), shipBlueprint.getLayout(), shipBlueprint.getGraphicsBaseName(), auto );
 		}
 
+		/**
+		 * Constructs an incomplete ShipState.
+		 *
+		 * It will need systems, reserve power, rooms, doors, and supplies.
+		 */
 		public ShipState( String shipName, String shipBlueprintId, String shipLayoutId, String shipGfxBaseName, boolean auto ) {
 			this.shipName = shipName;
 			this.shipBlueprintId = shipBlueprintId;
@@ -1280,6 +1287,98 @@ public class SavedGameParser extends Parser {
 			this.shipGfxBaseName = shipGfxBaseName;
 			this.auto = auto;
 		}
+
+		/**
+		 * Assigns the missing defaults of an incomplete ship.
+		 *
+		 * Based on its ShipBlueprint, the following will be set:
+		 *   Systems, reserve power, rooms, doors, augments, and supplies.
+		 *
+		 * Reserve power will be the total of all system rooms' initial 'power'
+		 * (aka minimum random capacity), capped by the shipBlueprint's
+		 * maxPower.
+		 */
+		public void refit() {
+			ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintId );
+			ShipLayout shipLayout = DataManager.get().getShipLayout( shipBlueprint.getLayout() );
+
+			// Systems.
+			getSystemMap().clear();
+			int powerRequired = 0;
+			for ( SystemType systemType : SystemType.values() ) {
+				SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemType );
+
+				// Set capacity for systems that're initially present.
+				ShipBlueprint.SystemList.SystemRoom[] systemRoom = shipBlueprint.getSystemList().getSystemRoom( systemType );
+				if ( systemRoom != null ) {
+					Boolean start = systemRoom[0].getStart();
+					if ( start == null || start.booleanValue() == true ) {
+						SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemType.getId() );
+						systemState.setCapacity( systemBlueprint.getStartPower() );
+
+						// The optional room max attribute caps randomly generated ships' system capacity.
+						if ( systemRoom[0].getMaxPower() != null ) {
+							systemState.setCapacity( systemRoom[0].getMaxPower().intValue() );
+						}
+
+						if ( systemType.isSubsystem() ) {
+							// Give subsystems all the power they want.
+							systemState.setPower( systemState.getCapacity() );
+						} else {
+							// The room power attribute is for initial system power usage (or minimum if for randomly generated ships).
+							powerRequired += systemRoom[0].getPower();
+						}
+					}
+				}
+				addSystem( systemState );
+			}
+			if ( powerRequired > shipBlueprint.getMaxPower().amount ) {
+				powerRequired = shipBlueprint.getMaxPower().amount;
+			}
+			setReservePowerCapacity( powerRequired );
+
+			// Rooms.
+			getRoomList().clear();
+			for (int r=0; r < shipLayout.getRoomCount(); r++) {
+				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(r);
+				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+
+				SavedGameParser.RoomState roomState = new SavedGameParser.RoomState();
+				for (int s=0; s < squaresH*squaresV; s++) {
+					roomState.addSquare( 0, 0, -1);
+				}
+				addRoom( roomState );
+			}
+
+			// Doors.
+			getDoorMap().clear();
+			Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
+			for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet() ) {
+				ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+				EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+
+				setDoor( doorCoord.x, doorCoord.y, doorCoord.v, new SavedGameParser.DoorState() );
+			}
+
+			// Augments.
+			getAugmentIdList().clear();
+			if ( shipBlueprint.getAugments() != null ) {
+				for ( ShipBlueprint.AugmentId augId : shipBlueprint.getAugments() )
+					addAugmentId( augId.name );
+			}
+
+			// Supplies.
+			setHullAmt( shipBlueprint.getHealth().amount );
+			setFuelAmt( 20 );
+			setDronePartsAmt( 0 );
+			setMissilesAmt( 0 );
+			if ( shipBlueprint.getDroneList() != null )
+				setDronePartsAmt( shipBlueprint.getDroneList().drones );
+			if ( shipBlueprint.getWeaponList() != null )
+				setMissilesAmt( shipBlueprint.getWeaponList().missiles );
+		}
+
 
 		public void setShipName( String s ) { shipName = s; }
 

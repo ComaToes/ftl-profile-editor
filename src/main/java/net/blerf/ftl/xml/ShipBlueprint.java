@@ -29,17 +29,22 @@ public class ShipBlueprint {
 	
 	private SystemList systemList;
 	private Health health;
-	private MaxPower maxPower;
+	private MaxPower maxPower;   // Initial reserve power capacity.
+
 	@XmlElement(required=false)  // Not present in autoBlueprints.xml.
 	private Integer weaponSlots, droneSlots;
+
 	@XmlElement(required=false)
 	private WeaponList weaponList;
+
 	@XmlElement(name="aug",required=false)
 	private List<AugmentId> augmentIds;
+
 	@XmlElement(required=false)
 	private DroneList droneList;
 
 	private Object crewCount;  // TODO: model
+
 	@XmlElement(required=false)
 	private Object boardingAI;  // TODO: model
 	
@@ -75,13 +80,22 @@ public class ShipBlueprint {
 		public static class SystemRoom {
 			
 			@XmlAttribute
-			private int power;
+			private int power;         // Minimum random system capacity.
+			                           // Systems will try to be fully powered
+			                           // unless the ship's reserve is
+			                           // insufficient.
 			@XmlAttribute(name="max",required=false)
-			private Integer maxPower;  // Overrides SystemBlueprint's maxPower.
+			private Integer maxPower;  // Maximum random system capacity.
+			                           // Not capped by SystemBlueprint's maxPower.
+
 			@XmlAttribute(name="room")
 			private int roomId;
 			@XmlAttribute(required=false)
-			private Boolean start;  // Treat null omissions as as true.
+			private Boolean start;     // Whether this system it pre-installed.
+			                           // Treat null omissions as as true.
+			                           // On randomly generated ships, false
+			                           // means it's sometimes present.
+
 			@XmlAttribute(required=false)
 			private String img;
 			@XmlElement(required=false)
