@@ -1,3 +1,11 @@
+17
+Added platform-specific launchers to double-click instead of the jar.
+Added readmes.
+Cleaned up some dodgy code when initially prompting for FTL's location.
+Incorporated code from Slipstream Mod Manager.
+Revised the initial stats of ships spawned by the "Change Ship" tab.
+Allowed DataManager subclasses to be set as the global instance.
+
 16
 Added profile score editing.
 
