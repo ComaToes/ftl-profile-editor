@@ -1,3 +1,6 @@
+// Copied from Slipstream Mod Manager 1.4.
+// (Excerpts from ModUtilities)
+
 package net.blerf.ftl.parser;
 
 import java.util.Arrays;
@@ -5,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -13,6 +17,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.jdom2.Document;
+import org.jdom2.JDOMException;
+import org.jdom2.input.JDOMParseException;
+import org.jdom2.input.SAXBuilder;
+
+import net.vhati.modmanager.core.EmptyAwareSAXHandlerFactory;
+import net.vhati.modmanager.core.SloppyXMLParser;
 
 
 public class TextUtilities {
@@ -99,6 +111,40 @@ public class TextUtilities {
 
 		result = result.replaceAll( "\r(?!\n)|\r\n", "\n" );
 		return new DecodeResult( result, encoding, eol, bom );
+	}
+
+
+	/**
+	 * Returns an XML Document, parsed strictly if possible, or sloppily.
+	 * Exceptions during strict parsing will be ignored.
+	 *
+	 * This method does NOT strip the XML declaration and add a wrapper
+	 * tag with namespaces. That must be done beforehand.
+	 *
+	 * @see net.vhati.modmanager.core.EmptyAwareSAXHandlerFactory
+	 * @see net.vhati.modmanager.core.SloppyXMLParser
+	 */
+	public static Document parseStrictOrSloppyXML( CharSequence srcSeq, String srcDescription ) throws IOException, JDOMException {
+		Document doc = null;
+
+		try {
+			SAXBuilder strictParser = new SAXBuilder();
+			strictParser.setSAXHandlerFactory( new EmptyAwareSAXHandlerFactory() );
+			doc = strictParser.build( new StringReader( srcSeq.toString() ) );
+		}
+		catch ( JDOMParseException e ) {
+			// Ignore the error, and do a sloppy parse instead.
+
+			try {
+				SloppyXMLParser sloppyParser = new SloppyXMLParser();
+				doc = sloppyParser.build( srcSeq );
+			}
+			catch ( JDOMParseException f ) {
+				throw new JDOMException( String.format( "While processing \"%s\", strict parsing failed, then sloppy parsing failed: %s", srcDescription, f.getMessage() ), f );
+			}
+		}
+
+		return doc;
 	}
 
 

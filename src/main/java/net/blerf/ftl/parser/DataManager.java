@@ -10,8 +10,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.xml.bind.JAXBException;
+
+import org.jdom2.JDOMException;
 
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DatParser;
@@ -47,7 +48,7 @@ public class DataManager implements Closeable {
 		return instance;
 	}
 
-	public static void init( File datsDir ) throws IOException, JAXBException {
+	public static void init( File datsDir ) throws IOException, JAXBException, JDOMException {
 		instance = new DataManager( datsDir );
 	}
 
@@ -77,7 +78,7 @@ public class DataManager implements Closeable {
 	private	DatParser resourceParser = null;
 
 
-	private DataManager( File datsDir ) throws IOException, JAXBException {
+	private DataManager( File datsDir ) throws IOException, JAXBException, JDOMException {
 		
 		log.trace( "DataManager initialising" );
 		
@@ -210,6 +211,10 @@ public class DataManager implements Closeable {
 			backgroundImageLists = new LinkedHashMap<String, BackgroundImageList>();
 			for ( BackgroundImageList imageList : imageLists )
 				backgroundImageLists.put( imageList.getId(), imageList );
+		}
+		catch ( JDOMException e ) {
+			meltdown = true;
+			throw e;
 		}
 		catch ( JAXBException e ) {
 			meltdown = true;
@@ -361,8 +366,11 @@ public class DataManager implements Closeable {
 				result = dataParser.readChassis(in, id +".xml");
 				shipChassisMap.put( id, result );
 			}
+			catch ( JDOMException e ) {
+				log.error( "Parsing XML failed for ShipChassis id: "+ id, e );
+			}
 			catch ( JAXBException e ) {
-				log.error( "Parsing XML failed for ShipChassis id: "+ id );
+				log.error( "Parsing XML failed for ShipChassis id: "+ id, e );
 			}
 			catch ( FileNotFoundException e ) {
 				log.error( "No ShipChassis found for id: "+ id );

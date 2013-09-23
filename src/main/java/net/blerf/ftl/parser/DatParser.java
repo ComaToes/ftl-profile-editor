@@ -20,6 +20,10 @@ import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import org.xml.sax.SAXParseException;
 
+import org.jdom2.Document;
+import org.jdom2.JDOMException;
+import org.jdom2.output.DOMOutputter;
+
 import net.vhati.ftldat.FTLDat;
 import net.vhati.ftldat.FTLDat.FolderPack;
 import net.vhati.ftldat.FTLDat.FTLPack;
@@ -47,6 +51,8 @@ public class DatParser implements Closeable {
 
 	private static final Logger log = LogManager.getLogger(DatParser.class);
 
+	private Pattern xmlDeclPtn = Pattern.compile( "<[?]xml [^>]*?[?]>\n*" );
+
 	private File datFile = null;
 	private FTLDat.FTLPack datP = null;
 
@@ -57,140 +63,39 @@ public class DatParser implements Closeable {
 	}
 
 
-	public List<Achievement> readAchievements( InputStream stream, String fileName ) throws IOException, JAXBException {
+	public List<Achievement> readAchievements( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 		log.trace( "Reading achievements XML" );
 
-		// Need to clean invalid XML and comments before JAXB parsing
-
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
-		StringBuilder sb = new StringBuilder();
-		String line;
-		boolean comment = false;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<achievements>"+ streamText +"</achievements>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
 
-		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
-			line = line.replaceAll( "<!--.*?-->", "" );
-			line = line.replaceAll( "<desc>([^<]*)</name>", "<desc>$1</desc>" );
-
-			// Remove multiline comments
-			if (comment && line.contains("-->"))
-				comment = false;
-			else if (line.contains("<!--"))
-				comment = true;
-			else if (!comment)
-				sb.append(line).append("\n");
-		}
-		in.close();
-
-		// XML has multiple root nodes so need to wrap.
-		sb.insert( 0, "<achievements>\n" );
-		sb.append( "</achievements>\n" );
-
-		// Add the xml header.
-		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-
-		// Parse cleaned XML
-		Achievements ach = (Achievements)unmarshalFromSequence( Achievements.class, sb );
+		JAXBContext jc = JAXBContext.newInstance( Achievements.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		Achievements ach = (Achievements)u.unmarshal( domOutputter.output( doc ) );
 
 		return ach.getAchievements();
 	}
 
 
-	public Blueprints readBlueprints( InputStream stream, String fileName ) throws IOException, JAXBException {
+	public Blueprints readBlueprints( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 		log.trace( "Reading blueprints XML" );
 
-		// Need to clean invalid XML and comments before JAXB parsing
-
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
-		StringBuilder sb = new StringBuilder();
-		String line;
-		boolean comment = false;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<blueprints>"+ streamText +"</blueprints>";
+		StringBuilder sb = new StringBuilder( streamText );
 		String ptn; Pattern p; Matcher m;
 
-		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
-			line = line.replaceAll( "<!--.*?-->", "" );
-
-			if ( "blueprints.xml".equals(fileName) ) {
-				// blueprints.xml: PLAYER_SHIP_CRYSTAL_2 shipBlueprint (FTL 1.03.1)
-				line = line.replaceAll( "^<!-- sardonyx$", "" );
-
-				// blueprints.xml: LONG_ELITE_MED shipBlueprint (FTL 1.03.1)
-				// blueprints.xml: LONG_ELITE_HARD shipBlueprint (FTL 1.03.1)
-				line = line.replaceAll( " img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"" );
-
-				// blueprints.xml: PLAYER_SHIP_STEALTH shipBlueprint (FTL 1.03.1)
-				// blueprints.xml: PLAYER_SHIP_ROCK shipBlueprint (FTL 1.03.1)
-				// blueprints.xml: PLAYER_SHIP_ROCK_2 shipBlueprint (FTL 1.03.1)
-				line = line.replaceAll( "\"img=", "\" img=" );
-
-				// blueprints.xml: LASER_BURST_5 weaponBlueprint (FTL 1.02.6)
-				line = line.replaceAll( "<tooltip>([^<]*)</desc>(-->)?", "<tooltip>$1</tooltip>" );
-
-				// blueprints.xml: oxygen, teleporter, cloaking systemBlueprint (FTL 1.02.6)
-				// blueprints.xml: pilot, medbay, shields systemBlueprint (FTL 1.02.6)
-				// blueprints.xml: engines, weapons, drones systemBlueprint (FTL 1.02.6)
-				// blueprints.xml: sensors, doors systemBlueprint (FTL 1.02.6)
-				line = line.replaceAll( "<title>([^<]*)</type>", "<title>$1</title>" );
-
-				// blueprints.xml: fuel, drones, missiles itemBlueprint (FTL 1.02.6)
-				line = line.replaceAll( "<title>([^<]*)</ship>", "<title>$1</title>" );
-
-				// blueprints.xml: LASER_HULL_1 weaponBlueprint (FTL 1.02.6)
-				// blueprints.xml: LASER_HULL_2 weaponBlueprint (FTL 1.02.6)
-				line = line.replaceAll( "<speed>([^<]*)</image>", "<speed>$1</speed>" );  // Error in weaponBlueprint.
-			}
-
-			if ( "autoBlueprints.xml".equals(fileName) ) {
-				// autoBlueprints.xml: JELLY_TRUFFLE (FTL 1.03.1)
-				// autoBlueprints.xml: ROCK_SCOUT, ROCK_FIGHT, ROCK_ASSAULT, ROCK_ASSAULT_ELITE (FTL 1.03.1)
-				// autoBlueprints.xml: MANTIS_SCOUT, MANTIS_FIGHTER, MANTIS_BOMBER (FTL 1.03.1)
-				// autoBlueprints.xml: FED_SCOUT, FED_BOMBER (FTL 1.03.1)
-				// autoBlueprints.xml: CIRCLE_SCOUT, CIRCLE_BOMBER (FTL 1.03.1)
-				// autoBlueprints.xml: ZOLTAN_FIGHTER, ZOLTAN_BOMBER, ZOLTAN_PEACE (FTL 1.03.1)
-				// autoBlueprints.xml: CRYSTAL_SCOUT, CRYSTAL_BOMBER (FTL 1.03.1)
-				line = line.replaceAll( "\"max=", "\" max=" );
-
-				// autoBlueprints.xml: JELLY_CROISSANT (FTL 1.03.1)
-				line = line.replaceAll( "\"room=", "\" room=" );
-			}
-
-			// Remove multiline comments
-			if ( comment && line.contains( "-->" ) )
-				comment = false;
-			else if ( line.contains( "<!--" ) )
-				comment = true;
-			else if ( !comment )
-				sb.append(line).append( "\n" );
+		if ( "blueprints.xml".equals(fileName) ) {
+			// blueprints.xml: LONG_ELITE_MED shipBlueprint (FTL 1.03.1)
+			// blueprints.xml: LONG_ELITE_HARD shipBlueprint (FTL 1.03.1)
+			streamText = streamText.replaceAll( " img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"" );
 		}
-		in.close();
-
-		// XML has multiple root nodes so need to wrap.
-		sb.insert( 0, "<blueprints>\n" );
-		sb.append( "</blueprints>\n" );
-
-		// Add the xml header.
-		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
 
 		if ( "blueprints.xml".equals(fileName) ) {
-			// blueprints.xml: PLAYER_SHIP_HARD_2 shipBlueprint (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<shields *(?: [^>]*)?>\\s*";
-			ptn +=   "<slot *(?: [^>]*)?>\\s*";
-			ptn +=     "(?:<direction>[^<]*</direction>\\s*)?";
-			ptn +=     "(?:<number>[^<]*</number>\\s*)?";
-			ptn +=   "</slot>\\s*)";
-			ptn += "</slot>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</shields>" );
-				m.reset();
-			}
-
 			// blueprints.xml: SYSTEM_CASING augBlueprint (FTL 1.02.6)
 			ptn = "";
 			ptn += "\\s*<title>Reinforced System Casing</title>"; // Extra title.
@@ -204,35 +109,12 @@ public class DatParser implements Closeable {
 			}
 		}
 
-		if ( "blueprints.xml".equals(fileName) || "autoBlueprints.xml".equals(fileName) ) {
-			// blueprints.xml: DEFAULT shipBlueprint (FTL 1.03.1)
-			// autoBlueprints.xml: AUTO_BASIC shipBlueprint (FTL 1.03.1)
-			// autoBlueprints.xml: AUTO_ASSAULT shipBlueprint (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<shipBlueprint *(?: [^>]*)?>\\s*";
-			ptn +=   "<class>[^<]*</class>\\s*";
-			ptn +=   "<systemList *(?: [^>]*)?>\\s*";
-			ptn +=      "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*";
-			ptn +=   "</systemList>\\s*";
-			ptn +=   "(?:<droneList *(?: [^>]*)?>\\s*";
-			ptn +=      "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*";
-			ptn +=   "</droneList>\\s*)?";
-			ptn +=   "(?:<weaponList *(?: [^>]*)?>\\s*";
-			ptn +=      "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*";
-			ptn +=   "</weaponList>\\s*)?";
-			ptn +=   "(?:<[a-zA-Z]+ *(?: [^>]*)?/>\\s*)*)";
-			ptn += "</ship>"; // Wrong closing tag.
+		Document doc = TextUtilities.parseStrictOrSloppyXML( sb.toString(), fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
 
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			while ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</shipBlueprint>" );
-				m.reset();
-			}
-		}
-
-		// Parse cleaned XML
-		Blueprints bps = (Blueprints)unmarshalFromSequence( Blueprints.class, sb.toString() );
+		JAXBContext jc = JAXBContext.newInstance( Blueprints.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		Blueprints bps = (Blueprints)u.unmarshal( domOutputter.output( doc ) );
 
 		return bps;
 	}
@@ -292,409 +174,85 @@ public class DatParser implements Closeable {
 	}
 
 
-	public ShipChassis readChassis( InputStream stream, String fileName ) throws IOException, JAXBException {
+	public ShipChassis readChassis( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 		log.trace( "Reading ship chassis XML" );
 
-		// Need to clean invalid XML and comments before JAXB parsing
-
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
-		StringBuilder sb = new StringBuilder();
-		String line;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<shipChassis>"+ streamText +"</shipChassis>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
 
-		boolean comment = false;
-		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
-			line = line.replaceAll( "<!--.*?-->", "" );
-			line = line.replaceAll( "<(/?)gib[0-9]*>", "<$1gib>" );
-
-			// Remove multiline comments
-			if ( comment && line.contains( "-->" ) )
-				comment = false;
-			else if ( line.contains( "<!--" ) )
-				comment = true;
-			else if ( !comment )
-				sb.append(line).append( "\n" );
-		}
-		in.close();
-
-		// XML has multiple root nodes so need to wrap.
-		sb.insert( 0, "<shipChassis>\n" );
-		sb.append( "</shipChassis>\n" );
-
-		// Add the xml header.
-		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-
-		// Parse cleaned XML
-		ShipChassis sch = (ShipChassis)unmarshalFromSequence( ShipChassis.class, sb.toString() );
+		JAXBContext jc = JAXBContext.newInstance( ShipChassis.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		ShipChassis sch = (ShipChassis)u.unmarshal( domOutputter.output( doc ) );
 
 		return sch;
 	}
 
-	public List<CrewNameList> readCrewNames( InputStream stream, String fileName ) throws IOException, JAXBException {
+	public List<CrewNameList> readCrewNames( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 		log.trace( "Reading crew name list XML" );
 
-		// Need to clean invalid XML and comments before JAXB parsing
-
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
-		StringBuilder sb = new StringBuilder();
-		String line;
-		boolean comment = false;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<nameLists>"+ streamText  +"</nameLists>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
 
-		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
-			line = line.replaceAll( "<!--.*?-->", "" );
-
-			// Remove multiline comments
-			if ( comment && line.contains( "-->" ) )
-				comment = false;
-			else if ( line.contains("<!--") )
-				comment = true;
-			else if ( !comment )
-				sb.append(line).append( "\n" );
-		}
-		in.close();
-
-		// XML has multiple root nodes so need to wrap.
-		sb.insert( 0, "<nameLists>\n" );
-		sb.append( "</nameLists>\n" );
-
-		// Add the xml header.
-		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-
-		// Parse cleaned XML
-		CrewNameLists cnl = (CrewNameLists)unmarshalFromSequence( CrewNameLists.class, sb.toString() );
+		JAXBContext jc = JAXBContext.newInstance( CrewNameLists.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		CrewNameLists cnl = (CrewNameLists)u.unmarshal( domOutputter.output( doc ) );
 
 		return cnl.getCrewNameLists();
 	}
 
 
-	public Encounters readEvents( InputStream stream, String fileName ) throws IOException, JAXBException {
+	public Encounters readEvents( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 		log.trace( "Reading events XML" );
 
-		// Need to clean invalid XML and comments before JAXB parsing
-
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
-		StringBuilder sb = new StringBuilder();
-		String line;
-		boolean comment = false;
-		String ptn; Pattern p; Matcher m;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<events>"+ streamText  +"</events>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
 
-		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
-			line = line.replaceAll( "<!--.*?-->", "" );
-
-			if ( "events.xml".equals(fileName) || "events_nebula.xml".equals(fileName) ) {
-				// events.xml: PIRATE_CIVILIAN_BEACON (FTL 1.03.1)
-				// events_nebula.xml: NEBULA_REBEL_UNDETECTED (FTL 1.03.1)
-				line = line.replaceAll( " hidden=\"true\" hidden=\"true\"", " hidden=\"true\"" );
-			}
-
-			if ( "events_engi.xml".equals(fileName) || "events_mantis.xml".equals(fileName) || "events_crystal.xml".equals(fileName) ) {
-				// events_engi.xml: DISTRESS_ENGI_REACTOR_LIST1 (FTL 1.03.1)
-				// events_mantis.xml: MANTIS_NAMED_THIEF_DEFEAT (FTL 1.03.1)
-				// events_crystal.xml: CRYSTAL_CACHE_BREAK (FTL 1.01)
-				line = line.replaceAll( "(.*<text *( [^\\/>]*)?>[^<]*)</event>.*", "$1</text>" );
-			}
-
-			// Remove multiline comments
-			if ( comment && line.contains( "-->" ) )
-				comment = false;
-			else if ( line.contains( "<!--" ) )
-				comment = true;
-			else if ( !comment )
-				sb.append(line).append( "\n" );
-		}
-		in.close();
-
-		// XML has multiple root nodes so need to wrap.
-		sb.insert( 0, "<events>\n" );
-		sb.append( "</events>\n" );
-
-		// Add the xml header.
-		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-
-		if ( "events.xml".equals(fileName) ) {
-			// events.xml: STORE_TEXT (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<textList *(?: [^>]*)?>\\s*";
-			ptn += "(?:<text *(?: [^>]*)?>[^<]*</text>\\s*)*)";
-			ptn += "</text>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</textList>" );
-				m.reset();
-			}
-		}
-
-		if ( "events_fuel.xml".equals(fileName) ) {
-			// events_fuel.xml: FUEL_ON_MANTIS_ATTACK (FTL 1.03.1)
-			// events_fuel.xml: FUEL_ON_REBEL_ATTACK (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<textList *(?: [^>]*)?>\\s*";
-			ptn += "(?:<text *(?: [^>]*)?>[^<]*</text>\\s*)*)";
-			ptn += "</event>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			while ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</textList>" );
-				m.reset();
-			}
-		}
-
-		if ( "events_engi.xml".equals(fileName) ) {
-			// events_engi.xml: DISTRESS_ENGI_REACTOR (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<event *(?: [^>]*)?>\\s*";
-			ptn +=   "<text>[^<]*</text>\\s*";
-			ptn +=   "<distressBeacon *(?: [^>]*)?/>\\s*";
-			ptn +=   "<choice *(?: [^>]*)?>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event *(?: [^>]*)?/>\\s*";
-			ptn +=   "</choice>\\s*";
-			ptn +=   "<choice *(?: [^>]*)?>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event>\\s*";
-			ptn +=       "<text>[^<]*</text>\\s*";
-			ptn +=     "</event>\\s*";
-			ptn +=   "</choice>\\s*";
-			ptn +=   "<choice *(?: [^>]*)?>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event *(?: [^>]*)?/>\\s*";
-			ptn +=   "</choice>\\s*";
-			ptn +=   "<choice *(?: [^>]*)?>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event *(?: [^>]*)?/>\\s*";
-			ptn +=   "</choice>\\s*)";
-			ptn += "</choice>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</event>" );
-				m.reset();
-			}
-
-			// events_engi: ENGI_UNLOCK_2REAL_SURRENDER (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<event>\\s*";
-			ptn +=   "<text>[^<]*</text>\\s*";
-			ptn +=   "<quest *(?: [^>]*)?/>\\s*";
-			ptn +=   "<choice>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event>\\s*";
-			ptn +=       "<text>[^<]*</text>\\s*";
-			ptn +=       "<ship *(?: [^>]*)?/>\\s*";
-			ptn +=     "</event>\n)";
-			//        </choice> tag is missing.
-			ptn += "(\\s*</event>)";
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2) );
-				m.reset();
-			}
-		}
-
-		if ( "events_mantis.xml".equals(fileName) ) {
-			// events_mantis.xml: MANTIS_NAMED_THIEF (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<event *(?: [^>]*)?>\\s*";
-			ptn +=   "<ship *(?: [^>]*)?/>\\s*";
-			ptn +=   "<text>[^<]*</text>\\s*";
-			ptn +=   "<choice *(?: [^>]*)?>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event>\\s*";
-			ptn +=       "<text>[^<]*</text>\\s*";
-			ptn +=       "<ship *(?: [^>]*)?/>\\s*";
-			ptn +=     "</event>\\s*";
-			ptn +=   "</choice>\\s*";
-			ptn +=   "<choice *(?: [^>]*)?>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event>\\s*";
-			ptn +=       "<ship *(?: [^>]*)?/>\\s*";
-			ptn +=     "</event>\\s*";
-			ptn +=   "</choice>\\s*)";
-			ptn += "</text>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</event>" );
-				m.reset();
-			}
-		}
-
-		if ( "events_slug.xml".equals(fileName) ) {
-			// events_slug.xml: NEBULA_SLUG_CHOOSE_DEATH (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<choice *(?: [^>]*)?>\\s*";
-			ptn +=   "<text>[^<]*</text>\\s*";
-			ptn +=   "<event>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<ship *(?: [^>]*)?/>\\s*";
-			ptn +=     "<status *(?: [^>]*)?/>\\s*";
-			ptn +=   "</event>\\s*)";
-			ptn += "</event>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</choice>\n" );
-				m.reset();
-			}
-		}
-
-		if ( "events_zoltan.xml".equals(fileName) ) {
-			// events_zoltan.xml: ZOLTAN_LIFERAFT_HIRE (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<eventList *(?: [^>]*)?>\\s*";
-			ptn +=   "<event>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=   "</event>\\s*";
-			ptn +=   "<event>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<item_modify>\\s*";
-			ptn +=       "<item *(?: [^>]*)?/>\\s*";
-			ptn +=     "</item_modify>\\s*";
-			ptn +=     "<crewMember *(?: [^>]*)?/>\\s*";
-			ptn +=   "</event>\\s*)";
-			ptn += "</event>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</eventList>\n" );
-				m.reset();
-			}
-		}
-
-		if ( "events_pirate.xml".equals(fileName) ) {
-			// events_pirate.xml: PIRATE_ASTEROID (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<event *(?: [^>]*)?>\\s*";
-			ptn +=   "<img *(?: [^>]*)?/>\\s*";
-			ptn +=   "<environment *(?: [^>]*)?/>\\s*";
-			ptn +=   "<text>[^<]*</text>\\s*";
-			ptn +=   "<ship *(?: [^>]*)?/>\\s*";
-			ptn +=   "<choice>\\s*";
-			ptn +=     "<text>[^<]*</text>\\s*";
-			ptn +=     "<event *(?: [^>]*)?/>\n)";
-			//        </choice> tag is missing.
-			ptn += "(\\s*</event>)";
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"</choice>\n"+ m.group(2) );
-				m.reset();
-			}
-		}
-
-		// Parse cleaned XML
-		Encounters evts = (Encounters)unmarshalFromSequence( Encounters.class, sb );
+		JAXBContext jc = JAXBContext.newInstance( Encounters.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		Encounters evts = (Encounters)u.unmarshal( domOutputter.output( doc ) );
 
 		return evts;
 	}
 
 
-	public List<ShipEvent> readShipEvents( InputStream stream, String fileName ) throws IOException, JAXBException {
+	public List<ShipEvent> readShipEvents( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 		log.trace( "Reading ship events XML" );
 
-		// Need to clean invalid XML and comments before JAXB parsing
-
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
-		StringBuilder sb = new StringBuilder();
-		String line;
-		boolean comment = false;
-		String ptn; Pattern p; Matcher m;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<shipEvents>"+ streamText  +"</shipEvents>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
 
-		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
-			line = line.replaceAll( "<!--.*?-->", "" );
-
-			// Remove multiline comments
-			if ( comment && line.contains( "-->" ) )
-				comment = false;
-			else if ( line.contains( "<!--" ) )
-				comment = true;
-			else if ( !comment )
-				sb.append(line).append( "\n" );
-		}
-		in.close();
-
-		// XML has multiple root nodes so need to wrap.
-		sb.insert( 0, "<shipEvents>\n" );
-		sb.append( "</shipEvents>\n" );
-
-		// Add the xml header.
-		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-
-		if ( "events_ships.xml".equals(fileName) ) {
-			// events_ships.xml: REBEL_AUTO_HACKSHIELDS (FTL 1.03.1)
-			ptn = "";
-			ptn += "(<deadCrew>\\s*";
-			ptn +=   "<text>[^<]*</text>\\s*";
-			ptn +=   "<autoReward *(?: [^>]*)?>[^<]*</autoReward>\\s*";
-			ptn +=   "<status *(?: [^>]*)?/>\\s*)";
-			ptn += "</destroyed>"; // Wrong closing tag.
-
-			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1)+"\n</deadCrew>" );
-				m.reset();
-			}
-		}
-
-		// Parse cleaned XML
-		ShipEvents shvts = (ShipEvents)unmarshalFromSequence( ShipEvents.class, sb.toString() );
+		JAXBContext jc = JAXBContext.newInstance( ShipEvents.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		ShipEvents shvts = (ShipEvents)u.unmarshal( domOutputter.output( doc ) );
 
 		return shvts.getShipEvents();
 	}
 
 
-	public List<BackgroundImageList> readImageLists( InputStream stream, String fileName ) throws IOException, JAXBException {
+	public List<BackgroundImageList> readImageLists( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 		log.trace( "Reading background images XML" );
 
-		// Need to clean invalid XML and comments before JAXB parsing
-
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
-		StringBuilder sb = new StringBuilder();
-		String line;
-		boolean comment = false;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<imageLists>"+ streamText  +"</imageLists>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
 
-		while( (line = in.readLine()) != null ) {
-			line = line.replaceAll( "<[?]xml [^>]*[?]>", "" );
-			line = line.replaceAll( "<!--.*?-->", "" );
-
-			// Remove multiline comments
-			if ( comment && line.contains( "-->" ) )
-				comment = false;
-			else if ( line.contains( "<!--" ) )
-				comment = true;
-			else if ( !comment )
-				sb.append(line).append( "\n" );
-		}
-		in.close();
-
-		// XML has multiple root nodes so need to wrap.
-		sb.insert( 0, "<imageLists>\n" );
-		sb.append( "</imageLists>\n" );
-
-		// Add the xml header.
-		sb.insert( 0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" );
-
-		// Parse cleaned XML
-		BackgroundImageLists imgs = (BackgroundImageLists)unmarshalFromSequence( BackgroundImageLists.class, sb.toString() );
+		JAXBContext jc = JAXBContext.newInstance( BackgroundImageLists.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		BackgroundImageLists imgs = (BackgroundImageLists)u.unmarshal( domOutputter.output( doc ) );
 
 		return imgs.getImageLists();
 	}
