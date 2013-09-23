@@ -84,33 +84,33 @@ import org.apache.logging.log4j.Logger;
 
 
 public class FTLFrame extends JFrame {
-	
+
 	private static final Logger log = LogManager.getLogger(FTLFrame.class);
 
 	private Profile profile;
 	SavedGameParser.SavedGameState gameState = null;
-	
+
 	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource("open.gif") );
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource("save.gif") );
 	private ImageIcon unlockIcon = new ImageIcon( ClassLoader.getSystemResource("unlock.png") );
 	private ImageIcon aboutIcon = new ImageIcon( ClassLoader.getSystemResource("about.gif") );
 	private ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource("update.gif") );
 	private ImageIcon releaseNotesIcon = new ImageIcon( ClassLoader.getSystemResource("release-notes.png") );
-	
+
 	private URL aboutPage = ClassLoader.getSystemResource("about.html");
 	private URL latestVersionTemplate = ClassLoader.getSystemResource("update.html");
 	private URL releaseNotesTemplate = ClassLoader.getSystemResource("release-notes.html");
-	
+
 	private String latestVersionUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/latest-version.txt";
 	private String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959";
-	
+
 	// For checkbox icons
 	private static final int maxIconWidth = 64;
 	private static final int maxIconHeight = 64;
 	private BufferedImage iconShadeImage;
-	
+
 	private ArrayList<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
 
@@ -127,13 +127,14 @@ public class FTLFrame extends JFrame {
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 
-	private String appName;	
+	private String appName;
 	private int appVersion;
-	
+
+
 	public FTLFrame( String appName, int appVersion ) {
 		this.appName = appName;
 		this.appVersion = appVersion;
-		
+
 		// GUI setup
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(800, 700);
@@ -146,7 +147,7 @@ public class FTLFrame extends JFrame {
 		catch ( IOException e ) {
 			log.error( "Error reading \"unlock.png\".", e );
 		}
-		
+
 		linkListener = new HyperlinkListener() {
 			@Override
 			public void hyperlinkUpdate( HyperlinkEvent e ) {
@@ -164,12 +165,12 @@ public class FTLFrame extends JFrame {
 				}
 			}
 		};
-		
+
 		initCheckboxIcons();
-		
+
 		JPanel contentPane = new JPanel( new BorderLayout() );
 		setContentPane(contentPane);
-		
+
 		JTabbedPane tasksPane = new JTabbedPane();
 		contentPane.add( tasksPane, BorderLayout.CENTER );
 
@@ -179,7 +180,7 @@ public class FTLFrame extends JFrame {
 		JToolBar profileToolbar = new JToolBar();
 		setupProfileToolbar(profileToolbar);
 		profilePane.add(profileToolbar, BorderLayout.NORTH);
-		
+
 		JTabbedPane profileTabsPane = new JTabbedPane();
 		profilePane.add( profileTabsPane, BorderLayout.CENTER );
 
@@ -191,7 +192,7 @@ public class FTLFrame extends JFrame {
 		profileTabsPane.add( "General Achievements" , new JScrollPane( generalAchievementsPanel ) );
 		profileTabsPane.add( "Stats" , new JScrollPane( statsPanel ) );
 
-		
+
 		JPanel savedGamePane = new JPanel( new BorderLayout() );
 		tasksPane.add( "Saved Game", savedGamePane );
 
@@ -242,7 +243,7 @@ public class FTLFrame extends JFrame {
 		t.setDaemon(true);
 		t.start();
 	}
-	
+
 	private void showErrorDialog( String message ) {
 		JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
 	}
@@ -270,15 +271,15 @@ public class FTLFrame extends JFrame {
 		}
 		g.dispose();
 	}
-	
+
 	public BufferedImage getScaledImage( InputStream in ) throws IOException {
 		BufferedImage origImage = ImageIO.read( in );
 		int width = origImage.getWidth();
 		int height = origImage.getHeight();
-		
+
 		if ( width <= maxIconWidth && height < maxIconHeight )
 			return origImage;
-		
+
 		if ( width > height ) {
 			height /= width / maxIconWidth;
 			width = maxIconWidth;
@@ -294,7 +295,7 @@ public class FTLFrame extends JFrame {
 
 		return scaledImage;
 	}
-	
+
 	public IconCycleButton createCycleButton( String baseImagePath, boolean cycleDifficulty ) {
 		InputStream stream = null;
 		try {
@@ -350,7 +351,7 @@ public class FTLFrame extends JFrame {
 		return null;
 	}
 
-	
+
 	private void setupProfileToolbar( JToolBar toolbar ) {
 		log.trace( "Initialising Profile toolbar." );
 
@@ -368,16 +369,16 @@ public class FTLFrame extends JFrame {
 				return f.isDirectory() || f.getName().equalsIgnoreCase("prof.sav");
 			}
 		});
-		
-		for ( File file : getPossibleUserDataLocations("prof.sav") ) {
-			if ( file.exists() ) {
-				fc.setSelectedFile( file );
-				break;
-			}
+
+		File candidateProfileFile = new File( FTLUtilities.getUserDataDir(), "prof.sav" );
+		if ( candidateProfileFile.exists() ) {
+			fc.setSelectedFile( file );
+		} else {
+			fc.setCurrentDirectory( FTLUtilities.getUserDataDir() );
 		}
-		
+
 		fc.setMultiSelectionEnabled(false);
-		
+
 		JButton openButton = new JButton("Open", openIcon);
 		openButton.addActionListener( new ActionListener() {
 			@Override
@@ -389,47 +390,47 @@ public class FTLFrame extends JFrame {
 					InputStream in = null;
 					try {
 						log.trace( "File selected: "+ fc.getSelectedFile().getAbsolutePath() );
-						
+
 						// Read whole file so we can hash it.
 						raf = new RandomAccessFile( fc.getSelectedFile(), "r" );
 						byte[] data = new byte[(int)raf.length()];
 						raf.readFully(data);
 						raf.close();
-						
+
 						MessageDigest md = MessageDigest.getInstance("MD5");
 						byte[] readHash = md.digest(data);
-						
+
 						in = new ByteArrayInputStream(data);
 						// Parse file data
 						ProfileParser ftl = new ProfileParser();
 						Profile p = ftl.readProfile(in);
 						in.close();
-						
+
 						FTLFrame.this.loadProfile(p);
-						
+
 						// Perform mock write.
 						ByteArrayOutputStream out = new ByteArrayOutputStream();
 						FTLFrame.this.updateProfile(profile);
 						ftl.writeProfile(out, profile);
 						out.close();
-						
+
 						// Hash result.
 						byte[] outData = out.toByteArray();
 						md.reset();
 						byte[] writeHash = md.digest(outData);
-						
+
 						// Compare.
 						for (int i = 0; i < readHash.length; i++) {
 							if ( readHash[i] != writeHash[i] ) {
 								log.error("Hash fail on mock write - Unable to assure valid parsing.");
-								
+
 								String hex = "";
 								for (int j = 0; j < data.length; j++) {
 									hex += String.format("%02x", data[j]);
 									if ( (j+1) % 32 == 0 )
 										hex +="\n";
 								}
-								
+
 								String errText = "<b>FTL Profile Editor has detected that it cannot interpret your profile correctly.<br/>" +
 										"Using this app may result in loss of stats/achievements.</b>" +
 										"<br/><br/>" +
@@ -437,15 +438,15 @@ public class FTLFrame extends JFrame {
 										"(GitHub signup is free) or post to the FLT forums <a href='"+forumThreadUrl+"'>here</a> (Signup also free)." +
 										"<br/>If using GitHub, set the issue title as \"Profile Parser Error\"<br/><br/>I will fix the problem and release a new version as soon as I can :)" +
 										"<br/><br/><pre>"+ hex +"</pre>";
-								
+
 								JDialog failDialog = createHtmlDialog( "Profile Parser Error", errText );
 								failDialog.setVisible(true);
 
 								break;
 							}
 						}
-						
-						log.trace("Profile read successfully.");
+
+						log.trace( "Profile read successfully." );
 					}
 					catch( Exception f ) {
 						log.error( "Error reading profile.", f );
@@ -458,13 +459,13 @@ public class FTLFrame extends JFrame {
 						catch ( IOException g ) {}
 					}
 				} else {
-					log.trace("Open dialog cancelled.");
+					log.trace( "Open dialog cancelled." );
 				}
 			}
 		});
 		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing profile.") );
 		toolbar.add( openButton );
-		
+
 		JButton saveButton = new JButton("Save", saveIcon);
 		saveButton.addActionListener( new ActionListener() {
 			@Override
@@ -496,7 +497,7 @@ public class FTLFrame extends JFrame {
 		});
 		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current profile.") );
 		toolbar.add( saveButton );
-		
+
 
 		JButton unlockShipsButton = new JButton("Unlock All Ships", unlockIcon);
 		unlockShipsButton.addActionListener( new ActionListener() {
@@ -509,7 +510,7 @@ public class FTLFrame extends JFrame {
 		unlockShipsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ships.") );
 		toolbar.add( unlockShipsButton );
 
-		
+
 		JButton unlockShipAchsButton = new JButton("Unlock All Ship Achievements", unlockIcon);
 		unlockShipAchsButton.addActionListener( new ActionListener() {
 			@Override
@@ -520,7 +521,7 @@ public class FTLFrame extends JFrame {
 		});
 		unlockShipAchsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements.") );
 		toolbar.add( unlockShipAchsButton );
-		
+
 		toolbar.add( Box.createHorizontalGlue() );
 
 		JButton extractButton = new JButton("Extract Dats", saveIcon);
@@ -536,7 +537,6 @@ public class FTLFrame extends JFrame {
 
 				if ( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
-						
 						File extractDir = extractChooser.getSelectedFile();
 						log.trace("Dir selected: "+ extractDir.getAbsolutePath());
 
@@ -585,14 +585,14 @@ public class FTLFrame extends JFrame {
 				return f.isDirectory() || f.getName().equalsIgnoreCase("continue.sav");
 			}
 		});
-		
-		for ( File file : getPossibleUserDataLocations("continue.sav") ) {
-			if ( file.exists() ) {
-				fc.setSelectedFile( file );
-				break;
-			}
+
+		File candidateSaveFile = new File( FTLUtilities.getUserDataDir(), "continue.sav" );
+		if ( candidateSaveFile.exists() ) {
+			fc.setSelectedFile( candidateSaveFile );
+		} else {
+			fc.setCurrentDirectory( FTLUtilities.getUserDataDir() );
 		}
-		
+
 		fc.setMultiSelectionEnabled(false);
 
 		JButton openButton = new JButton("Open", openIcon);
@@ -733,7 +733,7 @@ public class FTLFrame extends JFrame {
 		aboutDialog.setContentPane(aboutPanel);
 		aboutDialog.setSize(300, 250);
 		aboutDialog.setLocationRelativeTo( this );
-				
+
 		try {
 			JEditorPane editor = new JEditorPane( aboutPage );
 			editor.setEditable(false);
@@ -769,7 +769,7 @@ public class FTLFrame extends JFrame {
 		updatesButton.addMouseListener( new StatusbarMouseListener(this, "Update this tool or review past changes.") );
 		return updatesButton;
 	}
-	
+
 	private void checkForUpdate() {
 		URL url = null;
 		BufferedReader in = null;
@@ -784,7 +784,7 @@ public class FTLFrame extends JFrame {
 
 			if ( latestVersion > appVersion ) {
 				log.trace( "New version available." );
-				
+
 				final String historyHtml = getVersionHistoryHtml( latestVersionTemplate, appVersion );
 
 				final Runnable newCallback = new Runnable() {
@@ -809,13 +809,13 @@ public class FTLFrame extends JFrame {
 					}
 				};
 				SwingUtilities.invokeLater(r);
-				
+
 			} else {
-				
-				log.trace("Already up-to-date.");
+
+				log.trace( "Already up-to-date." );
 
 				final String historyHtml = getVersionHistoryHtml( releaseNotesTemplate, 0 );
-				
+
 				// Replacement behavior for the updates button.
 				final Runnable newCallback = new Runnable() {
 					@Override
@@ -852,7 +852,7 @@ public class FTLFrame extends JFrame {
 			catch ( IOException e ) {}
 		}
 	}
-	
+
 	private String getVersionHistoryHtml( URL templateUrl, int sinceVersion ) throws IOException {
 
 		// Buffer for presentation-ready html.
@@ -916,19 +916,19 @@ public class FTLFrame extends JFrame {
 		dlg.setContentPane(panel);
 		dlg.setSize(600, 400);
 		dlg.setLocationRelativeTo( this );
-		
+
 		JEditorPane editor = new JEditorPane("text/html", content);
 		editor.setEditable(false);
 		editor.setCaretPosition(0);
 		editor.addHyperlinkListener(linkListener);
 		panel.add( new JScrollPane(editor) );
-		
+
 		return dlg;
 	}
-	
+
 	public void loadProfile( Profile p ) {
 		try {
-			log.trace("Loading profile data into UI.");
+			log.trace( "Loading profile data into UI." );
 
 			shipUnlockPanel.setProfile(p);
 			generalAchievementsPanel.setProfile(p);
@@ -950,11 +950,11 @@ public class FTLFrame extends JFrame {
 
 		this.repaint();
 	}
-	
+
 	public void updateProfile( Profile p ) {
-		log.trace("Updating profile from UI selections.");
-		
-		shipUnlockPanel.updateProfile(p);		
+		log.trace( "Updating profile from UI selections." );
+
+		shipUnlockPanel.updateProfile(p);
 		generalAchievementsPanel.updateProfile(p);
 		statsPanel.updateProfile(p);
 
@@ -1003,26 +1003,5 @@ public class FTLFrame extends JFrame {
 			statusLbl.setText(text);
 		else
 			statusLbl.setText(" ");
-	}
-
-	public File[] getPossibleUserDataLocations( String fileName ) {
-		if ( fileName == null ) fileName = "";
-
-		String xdgDataHome = System.getenv("XDG_DATA_HOME");
-		if (xdgDataHome == null)
-			xdgDataHome = System.getProperty("user.home") +"/.local/share";
-
-		File[] locations = new File[] {
-			// Windows XP
-			new File( System.getProperty("user.home") +"/My Documents/My Games/FasterThanLight/"+ fileName),
-			// Windows Vista/7
-			new File( System.getProperty("user.home") +"/Documents/My Games/FasterThanLight/"+ fileName),
-			// Linux
-			new File( xdgDataHome +"/FasterThanLight/"+ fileName),
-			// OSX
-			new File( System.getProperty("user.home") +"/Library/Application Support/FasterThanLight/"+ fileName)
-		};
-
-		return locations;
 	}
 }

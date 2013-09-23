@@ -1,4 +1,5 @@
-// Copied from Slipstream Mod Manager 1.4.
+// Copied from a snapshot of Slipstream Mod Manager after 1.4.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/b980f4cdf64667799c013b8fd9025bcb0d389717/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
 
 package net.vhati.modmanager.core;
 
@@ -174,6 +175,39 @@ public class FTLUtilities {
 			pb.directory( exeFile.getParentFile() );
 			result = pb.start();
 		}
+		return result;
+	}
+
+
+	/**
+	 * Returns the directory for user profiles and saved games, or null.
+	 */
+	public static File findUserDataDir() {
+
+		String xdgDataHome = System.getenv("XDG_DATA_HOME");
+		if ( xdgDataHome == null )
+			xdgDataHome = System.getProperty("user.home") +"/.local/share";
+
+		File[] candidates = new File[] {
+			// Windows XP
+			new File( System.getProperty("user.home") +"/My Documents/My Games/FasterThanLight" ),
+			// Windows Vista/7
+			new File( System.getProperty("user.home") +"/Documents/My Games/FasterThanLight" ),
+			// Linux
+			new File( xdgDataHome +"/FasterThanLight" ),
+			// OSX
+			new File( System.getProperty("user.home") +"/Library/Application Support/FasterThanLight" )
+		};
+
+		File result = null;
+
+		for ( File candidate : candidates ) {
+			if ( candidate.isDirectory() && candidate.exists() ) {
+				result = candidate;
+				break;
+			}
+		}
+
 		return result;
 	}
 }
