@@ -1,0 +1,60 @@
+FTL Profile/SavedGame Editor
+https://github.com/Vhati/ftl-profile-editor
+
+
+About
+
+  Also known as the "ComaToes Profile/SavedGame Editor", this is a
+  3rd-party tool to edit user files. It depends on resources from the game
+  directory, but the game itself will not be modified.
+
+  With this, you can unlock any or all ships and achievements in your user
+  profile, or tweak most aspects of saved games: crew, systems, weapons,
+  fires, breaches, etc.
+
+
+Requirements
+
+  Java (1.6 or higher).
+    http://www.java.com/en/download/
+
+  FTL (1.01-1.03.3, Windows/OSX/Linux, Steam/GOG/Standalone).
+    http://www.ftlgame.com/
+
+
+Setup
+
+  Extract the files from this archive anywhere.
+
+  On the first run, you may be prompted to locate your
+  FTL resources. Specifically "data.dat" in the "resources\"
+  directory under your FTL install.
+
+  In most cases, this should be located automatically.
+
+
+Usage
+
+  Exit FTL. The game must NOT be running.
+  Double-click FTLProfileEditor.exe.
+  Switch to the appropriate tab: "Profile" or "Saved Game".
+  Open a profile (prof.sav) or saved game (continue.sav).
+  Make any desired changes.
+  Save, and close the editor.
+  Fire up FTL and try out your new ship.
+
+
+Troubleshooting
+
+* If you get "java.lang.UnsupportedClassVersionError" on startup...
+    You need a newer version of Java.
+
+* Error reading profile. [...] Initial int not expected value: 2...
+    You likely tried to open a saved game while in the "Profile" tab.
+
+* Error reading saved game. [...] Not a bool: 39...
+    You likely tried to open a profile while in the "Saved Game" tab.
+
+* If Slipstream hangs on startup: nothing in the prompt and no log...
+    If running "java -version" says 1.7.0_25...
+      That version of Java was glitched. Switch to 1.6 or 1.7.0_40+.
