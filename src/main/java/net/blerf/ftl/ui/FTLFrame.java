@@ -61,6 +61,8 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 import javax.xml.bind.JAXBException;
 
+import net.vhati.modmanager.core.FTLUtilities;
+
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
@@ -370,11 +372,11 @@ public class FTLFrame extends JFrame {
 			}
 		});
 
-		File candidateProfileFile = new File( FTLUtilities.getUserDataDir(), "prof.sav" );
+		File candidateProfileFile = new File( FTLUtilities.findUserDataDir(), "prof.sav" );
 		if ( candidateProfileFile.exists() ) {
-			fc.setSelectedFile( file );
+			fc.setSelectedFile( candidateProfileFile );
 		} else {
-			fc.setCurrentDirectory( FTLUtilities.getUserDataDir() );
+			fc.setCurrentDirectory( FTLUtilities.findUserDataDir() );
 		}
 
 		fc.setMultiSelectionEnabled(false);
@@ -586,11 +588,11 @@ public class FTLFrame extends JFrame {
 			}
 		});
 
-		File candidateSaveFile = new File( FTLUtilities.getUserDataDir(), "continue.sav" );
+		File candidateSaveFile = new File( FTLUtilities.findUserDataDir(), "continue.sav" );
 		if ( candidateSaveFile.exists() ) {
 			fc.setSelectedFile( candidateSaveFile );
 		} else {
-			fc.setCurrentDirectory( FTLUtilities.getUserDataDir() );
+			fc.setCurrentDirectory( FTLUtilities.findUserDataDir() );
 		}
 
 		fc.setMultiSelectionEnabled(false);
