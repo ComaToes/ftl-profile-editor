@@ -126,32 +126,38 @@ public class FTLFrame extends JFrame {
 	private SavedGameStateVarsPanel savedGameStateVarsPanel;
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
+
+	private String appName;	
+	private int appVersion;
 	
-	private int version;
-	
-	public FTLFrame( int version ) {
-		this.version = version;
+	public FTLFrame( String appName, int appVersion ) {
+		this.appName = appName;
+		this.appVersion = appVersion;
 		
 		// GUI setup
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setSize(800, 700);
 		setLocationRelativeTo(null);
-		setTitle( "FTL Profile Editor v"+ version );
+		setTitle( String.format( "%s v%d", appName, appVersion ) );
+
 		try {
 			setIconImage( ImageIO.read( ClassLoader.getSystemResource("unlock.png") ) );
-		} catch (IOException e) {
-			e.printStackTrace();
+		}
+		catch ( IOException e ) {
+			log.error( "Error reading \"unlock.png\".", e );
 		}
 		
 		linkListener = new HyperlinkListener() {
-			public void hyperlinkUpdate(HyperlinkEvent e) {
+			@Override
+			public void hyperlinkUpdate( HyperlinkEvent e ) {
 				if ( e.getEventType() == HyperlinkEvent.EventType.ACTIVATED ) {
 					log.trace( "Dialog link clicked: "+ e.getURL() );
 					if ( Desktop.isDesktopSupported() ) {
 						try {
 							Desktop.getDesktop().browse( e.getURL().toURI() );
 							log.trace( "Link opened in external browser." );
-						} catch (Exception f) {
+						}
+						catch ( Exception f ) {
 							log.error( "Unable to open link.", f );
 						}
 					}
@@ -227,7 +233,7 @@ public class FTLFrame extends JFrame {
 
 		// Check for updates in a seperate thread.
 		setStatusText( "Checking for updates..." );
-		Thread t = new Thread("CheckVersion") {
+		Thread t = new Thread( "CheckVersion" ) {
 			@Override
 			public void run() {
 				checkForUpdate();
@@ -254,11 +260,13 @@ public class FTLFrame extends JFrame {
 			int x = (maxIconWidth-lock.getWidth()) / 2;
 			int y = (maxIconHeight-lock.getHeight()) / 2;
 			g.drawImage(lock, x, y, null);
-		} catch (IOException e) {
+		}
+		catch ( IOException e ) {
 			log.error( "Error reading lock image." , e );
-		}	finally {
-			try {if (stream != null) stream.close();}
-			catch (IOException f) {}
+		}
+		finally {
+			try {if ( stream != null ) stream.close();}
+			catch ( IOException f ) {}
 		}
 		g.dispose();
 	}
@@ -331,13 +339,13 @@ public class FTLFrame extends JFrame {
 			}
 
 			return new IconCycleButton( icons );
-
-		} catch (IOException e) {
+		}
+		catch ( IOException e ) {
 			log.error( "Error reading cycle button image ("+ baseImagePath +")." , e );
-
-		}	finally {
-			try {if (stream != null) stream.close();}
-			catch (IOException f) {}
+		}
+		finally {
+			try {if ( stream != null ) stream.close();}
+			catch ( IOException f ) {}
 		}
 		return null;
 	}
@@ -438,15 +446,16 @@ public class FTLFrame extends JFrame {
 						}
 						
 						log.trace("Profile read successfully.");
-						
-					} catch( Exception f ) {
+					}
+					catch( Exception f ) {
 						log.error( "Error reading profile.", f );
 						showErrorDialog( "Error reading profile:\n"+ f.getMessage() );
-					} finally {
-						try {if (raf != null) raf.close();}
-						catch (IOException g) {}
-						try {if (in != null) in.close();}
-						catch (IOException g) {}
+					}
+					finally {
+						try {if ( raf != null ) raf.close();}
+						catch ( IOException g ) {}
+						try {if ( in != null ) in.close();}
+						catch ( IOException g ) {}
 					}
 				} else {
 					log.trace("Open dialog cancelled.");
@@ -471,13 +480,14 @@ public class FTLFrame extends JFrame {
 						out = new FileOutputStream( file );
 						FTLFrame.this.updateProfile(profile);
 						ftl.writeProfile(out, profile);
-						
-					} catch( IOException f ) {
+					}
+					catch( IOException f ) {
 						log.error( "Error writing profile.", f );
 						showErrorDialog( "Error saving profile:\n"+ f.getMessage() );
-					} finally {
-						try {if (out != null) out.close();}
-						catch (IOException g) {}
+					}
+					finally {
+						try {if ( out != null ) out.close();}
+						catch ( IOException g ) {}
 					}
 				} else {
 					log.trace( "Save dialog cancelled." );
@@ -536,13 +546,13 @@ public class FTLFrame extends JFrame {
 						DataManager.get().unpackResources(f);
 
 						JOptionPane.showMessageDialog(FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE);
-						
-					} catch( IOException ex ) {
-						log.error("Error extracting dats.", ex);
-						showErrorDialog("Error extracting dat:\n"+ ex.getMessage());
+					}
+					catch( IOException ex ) {
+						log.error( "Error extracting dats.", ex );
+						showErrorDialog( "Error extracting dat:\n"+ ex.getMessage() );
 					}
 				} else
-					log.trace("Extract dialog cancelled.");
+					log.trace( "Extract dialog cancelled." );
 			}
 		});
 		extractButton.addMouseListener( new StatusbarMouseListener(this, "Extract dat content to a directory.") );
@@ -612,8 +622,8 @@ public class FTLFrame extends JFrame {
 							}
 							log.warn( musteryBuf.toString() );
 						}
-						
-					} catch( Exception f ) {
+					}
+					catch( Exception f ) {
 						log.error( "Error reading saved game.", f );
 						showErrorDialog( "Error reading saved game:\n"+ f.getMessage() );
 					}
@@ -643,13 +653,14 @@ public class FTLFrame extends JFrame {
 						out = new FileOutputStream( file );
 						FTLFrame.this.updateGameState(gameState);
 						parser.writeSavedGame(out, gameState);
-						
-					} catch( IOException f ) {
+					}
+					catch( IOException f ) {
 						log.error( "Error writing game state.", f );
 						showErrorDialog( "Error saving game state:\n"+ f.getMessage() );
-					} finally {
-						try {if (out != null) out.close();}
-						catch (IOException g) {}
+					}
+					finally {
+						try {if ( out != null ) out.close();}
+						catch ( IOException g ) {}
 					}
 				} else {
 					log.trace( "Save dialog cancelled." );
@@ -686,13 +697,14 @@ public class FTLFrame extends JFrame {
 						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( file ) ) );
 						out.write(gameState.toString());
 						out.close();
-						
-					} catch( IOException f ) {
+					}
+					catch( IOException f ) {
 						log.error( "Error dumping game state.", f );
 						showErrorDialog( "Error dumping game state:\n"+ f.getMessage() );
-					} finally {
-						try {if (out != null) out.close();}
-						catch (IOException g) {}
+					}
+					finally {
+						try {if ( out != null ) out.close();}
+						catch ( IOException g ) {}
 					}
 				} else
 					log.trace( "Dump dialog cancelled." );
@@ -724,7 +736,8 @@ public class FTLFrame extends JFrame {
 			editor.setEditable(false);
 			editor.addHyperlinkListener(linkListener);
 			aboutPanel.add(editor);
-		} catch (IOException e) {
+		}
+		catch ( IOException e ) {
 			log.error(e);
 		}
 
@@ -759,25 +772,24 @@ public class FTLFrame extends JFrame {
 		BufferedReader in = null;
 		String line = null;
 		try {
-			
-			log.trace("Checking for latest version.");
-			
-			url = new URL(latestVersionUrl);
+			log.trace( "Checking for latest version." );
+
+			url = new URL( latestVersionUrl );
 			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
 			int latestVersion = Integer.parseInt( in.readLine() );
 			in.close();
-			
-			if ( latestVersion > version ) {
-				log.trace("New version available.");
+
+			if ( latestVersion > appVersion ) {
+				log.trace( "New version available." );
 				
-				final String historyHtml = getVersionHistoryHtml( latestVersionTemplate, version );
+				final String historyHtml = getVersionHistoryHtml( latestVersionTemplate, appVersion );
 
 				final Runnable newCallback = new Runnable() {
 					@Override
 					public void run() {
-						log.trace("Updates button clicked (new version).");
+						log.trace( "Updates button clicked (new version)." );
 						JDialog updatesDialog = createHtmlDialog( "Update Available", historyHtml );
-						updatesDialog.setVisible(true);
+						updatesDialog.setVisible( true );
 					}
 				};
 				// Make changes from the GUI thread.
@@ -827,19 +839,18 @@ public class FTLFrame extends JFrame {
 				};
 				SwingUtilities.invokeLater(r);
 			}
-			
-		} catch (Exception e) {
+		}
+		catch ( Exception e ) {
 			log.error( "Error checking for latest version.", e );
 			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e );
-
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException e) {}
 		}
-		
+		finally {
+			try {if ( in != null ) in.close();}
+			catch ( IOException e ) {}
+		}
 	}
 	
-	private String getVersionHistoryHtml(URL templateUrl, int sinceVersion) throws IOException {
+	private String getVersionHistoryHtml( URL templateUrl, int sinceVersion ) throws IOException {
 
 		// Buffer for presentation-ready html.
 		StringBuilder historyBuf = new StringBuilder();
@@ -859,7 +870,7 @@ public class FTLFrame extends JFrame {
 			String historyTemplate = templateBuf.toString();
 
 			// Fetch the changelog, templating each revision.
-			url = new URL(versionHistoryUrl);
+			url = new URL( versionHistoryUrl );
 			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
 
 			int releaseVersion = 0;
@@ -887,14 +898,14 @@ public class FTLFrame extends JFrame {
 			in.close();
 
 		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException e) {}
+			try {if ( in != null ) in.close();}
+			catch ( IOException e ) {}
 		}
 
 		return historyBuf.toString();
 	}
 
-	private JDialog createHtmlDialog(String title, String content) {
+	private JDialog createHtmlDialog( String title, String content ) {
 
 		final JDialog dlg = new JDialog(this, title, true);
 		JPanel panel = new JPanel();
@@ -921,8 +932,8 @@ public class FTLFrame extends JFrame {
 			statsPanel.setProfile(p);
 
 			profile = p;
-
-		} catch (IOException e) {
+		}
+		catch ( IOException e ) {
 			log.error( "Error while loading profile.", e );
 
 			if ( profile != null && profile != p ) {

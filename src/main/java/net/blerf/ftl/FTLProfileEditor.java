@@ -16,6 +16,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
+import net.vhati.modmanager.core.FTLUtilities;
+
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FTLFrame;
 
@@ -27,7 +29,8 @@ public class FTLProfileEditor {
 
 	private static final Logger log = LogManager.getLogger(FTLProfileEditor.class);
 
-	private static final int VERSION = 16;
+	public static final String APP_NAME = "FTL Profile Editor";
+	private static final int APP_VERSION = 16;
 
 
 	public static void main( String[] args ) {
@@ -46,9 +49,9 @@ public class FTLProfileEditor {
 		// Don't use the hard drive to buffer streams during ImageIO.read().
 		ImageIO.setUseCache(false);  // Small images don't need extra buffering.
 
-		log.debug( "FTL Editor v"+ VERSION );
-		log.debug( System.getProperty("os.name") +" "+ System.getProperty("os.version") +" "+ System.getProperty("os.arch") );
-		log.debug( System.getProperty("java.vm.name") +", "+ System.getProperty("java.version") );
+		log.debug( String.format( "%s v%s", APP_NAME, APP_VERSION ) );
+		log.debug( String.format( "%s %s", System.getProperty("os.name"), System.getProperty("os.version") ) );
+		log.debug( String.format( "%s, %s, %s", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.arch") ) );
 
 		File configFile = new File( "ftl-editor.cfg" );
 		File datsDir = null;
@@ -63,7 +66,7 @@ public class FTLProfileEditor {
 			if ( configFile.exists() ) {
 				log.trace( "Loading properties from config file." );
 				in = new FileInputStream( configFile );
-				config.load( in );
+				config.load( new InputStreamReader( in, "UTF-8" ) );
 			} else {
 				writeConfig = true; // Create a new cfg, but only if necessary.
 			}
@@ -99,7 +102,7 @@ public class FTLProfileEditor {
 		if ( datsPath != null && datsPath.length() > 0 ) {
 			log.info( "Using FTL dats path from config: "+ datsPath );
 			datsDir = new File( datsPath );
-			if ( isDatsDirValid( datsDir ) == false ) {
+			if ( FTLUtilities.isDatsDirValid( datsDir ) == false ) {
 				log.error( "The config's ftlDatsPath does not exist, or it lacks data.dat." );
 				datsDir = null;
 			}
@@ -109,15 +112,15 @@ public class FTLProfileEditor {
 
 		// Find/prompt for the path to set in the config.
 		if ( datsDir == null ) {
-			datsDir = findDatsDir();
+			datsDir = FTLUtilities.findDatsDir();
 			if ( datsDir != null ) {
-				int response = JOptionPane.showConfirmDialog(null, "FTL resources were found in:\n"+ datsDir.getPath() +"\nIs this correct?", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				int response = JOptionPane.showConfirmDialog( null, "FTL resources were found in:\n"+ datsDir.getPath() +"\nIs this correct?", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE );
 				if ( response == JOptionPane.NO_OPTION ) datsDir = null;
 			}
 
 			if ( datsDir == null ) {
 				log.debug( "FTL dats path was not located automatically. Prompting user for location." );
-				datsDir = promptForDatsDir();
+				datsDir = FTLUtilities.promptForDatsDir( null );
 			}
 
 			if ( datsDir != null ) {
@@ -138,7 +141,10 @@ public class FTLProfileEditor {
 			try {
 				out = new FileOutputStream( configFile );
 				String configComments = "FTL Profile Editor - Config File";
-				config.store( new OutputStreamWriter( out, "UTF-8" ), configComments );
+
+				OutputStreamWriter writer = new OutputStreamWriter( out, "UTF-8" );
+				config.store( writer, configComments );
+				writer.flush();
 			}
 			catch ( IOException e ) {
 				log.error( "Error saving config to "+ configFile.getPath(), e );
@@ -160,7 +166,7 @@ public class FTLProfileEditor {
 		}
 
 		try {
-			FTLFrame frame = new FTLFrame( VERSION );
+			FTLFrame frame = new FTLFrame( APP_NAME, APP_VERSION );
 			frame.setVisible(true);
 		}
 		catch ( Exception e ) {
@@ -170,90 +176,6 @@ public class FTLProfileEditor {
 
 	}
 
-	private static boolean isDatsDirValid( File d ) {
-		if ( !d.exists() || !d.isDirectory() ) return false;
-		if ( !new File(d, "data.dat").exists() ) return false;
-		if ( !new File(d, "resource.dat").exists() ) return false;
-		return true;
-	}
-
-	private static File findDatsDir() {
-		String steamPath = "Steam/steamapps/common/FTL Faster Than Light/resources";
-		String gogPath = "GOG.com/Faster Than Light/resources";
-
-		String xdgDataHome = System.getenv("XDG_DATA_HOME");
-		if (xdgDataHome == null)
-			xdgDataHome = System.getProperty("user.home") +"/.local/share";
-
-		File[] candidates = new File[] {
-			// Windows - Steam
-			new File( new File(""+System.getenv("ProgramFiles(x86)")), steamPath ),
-			new File( new File(""+System.getenv("ProgramFiles")), steamPath ),
-			// Windows - GOG
-			new File( new File(""+System.getenv("ProgramFiles(x86)")), gogPath ),
-			new File( new File(""+System.getenv("ProgramFiles")), gogPath ),
-			// Linux - Steam
-			new File( xdgDataHome +"/Steam/SteamApps/common/FTL Faster Than Light/data/resources" ),
-			// OSX - Steam
-			new File( System.getProperty("user.home") +"/Library/Application Support/Steam/SteamApps/common/FTL Faster Than Light/FTL.app/Contents/Resources" ),
-			// OSX
-			new File( "/Applications/FTL.app/Contents/Resources" )
-		};
-
-		File ftlDir = null;
-
-		for ( File candidate : candidates ) {
-			if ( isDatsDirValid( candidate ) ) {
-				ftlDir = candidate;
-				break;
-			}
-		}
-
-		return ftlDir;
-	}
-
-	private static File promptForDatsDir() {
-		File result = null;
-
-		String message = "FTL Profile Editor uses images and data from FTL,\n";
-		message += "but the path to FTL's resources could not be guessed.\n\n";
-		message += "You will now be prompted to locate FTL manually.\n";
-		message += "Select '(FTL dir)/resources/data.dat'.\n";
-		message += "Or 'FTL.app', if you're on OSX.";
-		JOptionPane.showMessageDialog(null,  message, "FTL Not Found", JOptionPane.INFORMATION_MESSAGE);
-
-		final JFileChooser fc = new JFileChooser();
-		fc.setDialogTitle( "Find data.dat or FTL.app" );
-		fc.addChoosableFileFilter( new FileFilter() {
-			@Override
-			public String getDescription() {
-				return "FTL Data File - (FTL dir)/resources/data.dat";
-			}
-			@Override
-			public boolean accept(File f) {
-				return f.isDirectory() || f.getName().equals("data.dat") || f.getName().equals("FTL.app");
-			}
-		});
-		fc.setMultiSelectionEnabled(false);
-
-		if ( fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION ) {
-			File f = fc.getSelectedFile();
-			if ( f.getName().equals("data.dat") ) {
-				result = f.getParentFile();
-			}
-			else if ( f.getName().endsWith(".app") && f.isDirectory() ) {
-				File contentsPath = new File(f, "Contents");
-				if( contentsPath.exists() && contentsPath.isDirectory() && new File(contentsPath, "Resources").exists() )
-					result = new File(contentsPath, "Resources");
-			}
-		}
-
-		if ( result != null && isDatsDirValid( result ) ) {
-			return result;
-		}
-
-		return null;
-	}
 
 	private static void showErrorDialog( String message ) {
 		JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
