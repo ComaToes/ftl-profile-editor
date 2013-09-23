@@ -381,7 +381,7 @@ public class FTLFrame extends JFrame {
 		JButton openButton = new JButton("Open", openIcon);
 		openButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Open profile button clicked." );
 				fc.setDialogTitle( "Open Profile" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
@@ -468,7 +468,7 @@ public class FTLFrame extends JFrame {
 		JButton saveButton = new JButton("Save", saveIcon);
 		saveButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Save profile button clicked." );
 				fc.setDialogTitle( "Save Profile" );
 				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
@@ -501,7 +501,7 @@ public class FTLFrame extends JFrame {
 		JButton unlockShipsButton = new JButton("Unlock All Ships", unlockIcon);
 		unlockShipsButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace("Unlock all ships button clicked.");
 				shipUnlockPanel.unlockAllShips();
 			}
@@ -513,7 +513,7 @@ public class FTLFrame extends JFrame {
 		JButton unlockShipAchsButton = new JButton("Unlock All Ship Achievements", unlockIcon);
 		unlockShipAchsButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace("Unlock all ship achievements button clicked.");
 				shipUnlockPanel.unlockAllShipAchievements();
 			}
@@ -526,7 +526,7 @@ public class FTLFrame extends JFrame {
 		JButton extractButton = new JButton("Extract Dats", saveIcon);
 		extractButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace("Extract button clicked.");
 
 				JFileChooser extractChooser = new JFileChooser();
@@ -537,13 +537,13 @@ public class FTLFrame extends JFrame {
 				if ( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 						
-						File f = extractChooser.getSelectedFile();
-						log.trace("Dir selected: "+ f.getAbsolutePath());
+						File extractDir = extractChooser.getSelectedFile();
+						log.trace("Dir selected: "+ extractDir.getAbsolutePath());
 
 						JOptionPane.showMessageDialog(FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE);
 
-						DataManager.get().unpackData(f);
-						DataManager.get().unpackResources(f);
+						DataManager.get().extractDataDat( extractDir );
+						DataManager.get().extractResourceDat( extractDir );
 
 						JOptionPane.showMessageDialog(FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE);
 					}
@@ -598,7 +598,7 @@ public class FTLFrame extends JFrame {
 		JButton openButton = new JButton("Open", openIcon);
 		openButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Open saved game button clicked." );
 				fc.setDialogTitle( "Open Saved Game" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
@@ -638,7 +638,7 @@ public class FTLFrame extends JFrame {
 		JButton saveButton = new JButton("Save", saveIcon);
 		saveButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Save game state button clicked." );
 
 				if ( gameState == null ) return;
@@ -676,7 +676,7 @@ public class FTLFrame extends JFrame {
 		JButton dumpButton = new JButton("Dump", saveIcon);
 		dumpButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Dump game state button clicked." );
 
 				if ( gameState == null ) return;
@@ -747,7 +747,7 @@ public class FTLFrame extends JFrame {
 		JButton aboutButton = new JButton("About", aboutIcon);
 		aboutButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				log.trace("About button clicked.");
 				aboutDialog.setVisible(true);
 			}
@@ -761,7 +761,7 @@ public class FTLFrame extends JFrame {
 		updatesButton.setEnabled(false);
 		updatesButton.addActionListener( new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				if ( updatesCallback != null )
 					updatesCallback.run();
 			}

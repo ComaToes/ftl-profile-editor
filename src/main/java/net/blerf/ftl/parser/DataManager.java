@@ -56,11 +56,11 @@ public abstract class DataManager implements Closeable {
 		throw new UnsupportedOperationException();
 	}
 
-	public void unpackData( File extractDir ) throws IOException {
+	public void extractDataDat( File extractDir ) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 
-	public void unpackResources( File extractDir ) throws IOException {
+	public void extractResourceDat( File extractDir ) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 

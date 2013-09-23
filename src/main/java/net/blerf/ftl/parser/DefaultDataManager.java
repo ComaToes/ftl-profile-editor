@@ -14,6 +14,10 @@ import javax.xml.bind.JAXBException;
 
 import org.jdom2.JDOMException;
 
+import net.vhati.ftldat.FTLDat;
+import net.vhati.ftldat.FTLDat.FolderPack;
+import net.vhati.ftldat.FTLDat.FTLPack;
+
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DatParser;
 import net.blerf.ftl.xml.Achievement;
@@ -61,8 +65,12 @@ public class DefaultDataManager extends DataManager {
 	private List<CrewNameList.CrewName> crewNamesMale;
 	private List<CrewNameList.CrewName> crewNamesFemale;
 
-	private	DatParser dataParser = null;
-	private	DatParser resourceParser = null;
+	private File dataDatFile = null;
+	private File resDatFile = null;
+	private FTLDat.FTLPack dataP = null;
+	private FTLDat.FTLPack resP = null;
+
+	private	DatParser datParser = null;
 
 
 	public DefaultDataManager( File datsDir ) throws IOException, JAXBException, JDOMException {
@@ -73,25 +81,30 @@ public class DefaultDataManager extends DataManager {
 		ArrayList<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
-			dataParser = new DatParser( new File( datsDir, "data.dat" ) );
-	 		resourceParser = new DatParser( new File( datsDir, "resource.dat" ) );
+			dataDatFile = new File( datsDir, "data.dat" );
+			resDatFile = new File( datsDir, "resource.dat" );
+
+			dataP = new FTLDat.FTLPack( dataDatFile, false );
+			resP = new FTLDat.FTLPack( resDatFile, false );
+
+			datParser = new DatParser();
 
 			log.info( "Reading Achievements..." );
-			log.debug( "Reading 'data/achievements.xml'" );
-			InputStream achStream = dataParser.getInputStream( "data/achievements.xml" );
+			log.debug( "Reading \"data/achievements.xml\"..." );
+			InputStream achStream = getDataInputStream( "data/achievements.xml" );
 			streams.add(achStream);
-			achievements = dataParser.readAchievements( achStream, "achievements.xml" );
+			achievements = datParser.readAchievements( achStream, "achievements.xml" );
 
 			log.info( "Reading Blueprints..." );
-			log.debug( "Reading 'data/blueprints.xml'" );
-			InputStream blueStream = dataParser.getInputStream( "data/blueprints.xml" );
+			log.debug( "Reading \"data/blueprints.xml\"..." );
+			InputStream blueStream = getDataInputStream( "data/blueprints.xml" );
 			streams.add(blueStream);
-			blueprints = dataParser.readBlueprints( blueStream, "blueprints.xml" );
+			blueprints = datParser.readBlueprints( blueStream, "blueprints.xml" );
 
-			log.debug( "Reading 'data/autoBlueprints.xml'" );
-			InputStream autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
+			log.debug( "Reading \"data/autoBlueprints.xml\"..." );
+			InputStream autoBlueStream = getDataInputStream( "data/autoBlueprints.xml" );
 			streams.add(autoBlueStream);
-			autoBlueprints = dataParser.readBlueprints( autoBlueStream, "autoBlueprints.xml" );
+			autoBlueprints = datParser.readBlueprints( autoBlueStream, "autoBlueprints.xml" );
 
 			log.info( "Reading Events..." );
 			String[] eventsFileNames = new String[] { "events.xml", "newEvents.xml",
@@ -102,32 +115,32 @@ public class DefaultDataManager extends DataManager {
 
 			events = new LinkedHashMap<String, Encounters>();
 			for ( String eventsFileName : eventsFileNames ) {
-				log.debug("Reading 'data/"+ eventsFileName +"'");
-				InputStream tmpStream = dataParser.getInputStream( "data/"+ eventsFileName );
+				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
+				InputStream tmpStream = getDataInputStream( "data/"+ eventsFileName );
 				streams.add(tmpStream);
-				Encounters tmpEncounters = dataParser.readEvents( tmpStream, eventsFileName );
+				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName );
 				events.put( eventsFileName, tmpEncounters );
 			}
 
 			log.info( "Reading Crew Names..." );
-			log.debug( "Reading 'data/names.xml'" );
-			InputStream crewNamesStream = dataParser.getInputStream( "data/names.xml" );
+			log.debug( "Reading \"data/names.xml\"..." );
+			InputStream crewNamesStream = getDataInputStream( "data/names.xml" );
 			streams.add(crewNamesStream);
-			List<CrewNameList> crewNameLists = dataParser.readCrewNames( crewNamesStream, "names.xml" );
+			List<CrewNameList> crewNameLists = datParser.readCrewNames( crewNamesStream, "names.xml" );
 
 			log.info( "Reading Ship Events..." );
-			log.debug( "Reading 'data/events_ships.xml'" );
-			InputStream shipEventsStream = dataParser.getInputStream( "data/events_ships.xml" );
+			log.debug( "Reading \"data/events_ships.xml\"..." );
+			InputStream shipEventsStream = getDataInputStream( "data/events_ships.xml" );
 			streams.add(shipEventsStream);
-			List<ShipEvent> shipEventList = dataParser.readShipEvents( shipEventsStream, "events_ships.xml" );
+			List<ShipEvent> shipEventList = datParser.readShipEvents( shipEventsStream, "events_ships.xml" );
 
 			log.info( "Reading Background Image Lists..." );
-			log.debug( "Reading 'data/events_imageList.xml'" );
-			InputStream imageListsStream = dataParser.getInputStream( "data/events_imageList.xml" );
+			log.debug( "Reading \"data/events_imageList.xml\"..." );
+			InputStream imageListsStream = getDataInputStream( "data/events_imageList.xml" );
 			streams.add(imageListsStream);
-			List<BackgroundImageList> imageLists = dataParser.readImageLists( imageListsStream, "events_imageList.xml" );
+			List<BackgroundImageList> imageLists = datParser.readImageLists( imageListsStream, "events_imageList.xml" );
 
-			log.info( "Finished reading game resources." );
+			log.info( "Finished reading FTL resources." );
 
 			generalAchievements = new ArrayList<Achievement>();
 			for( Achievement ach : achievements )
@@ -223,31 +236,60 @@ public class DefaultDataManager extends DataManager {
 
 	@Override
 	public void close() {
-		try {if (dataParser != null) dataParser.close();}
+		try {if (dataP != null) dataP.close();}
 		catch ( IOException e ) {}
 
-		try {if (resourceParser != null) resourceParser.close();}
+		try {if (resP != null) resP.close();}
 		catch ( IOException e ) {}
 	}
 
 	@Override	
 	public InputStream getDataInputStream( String innerPath ) throws IOException {
-		return dataParser.getInputStream( innerPath );
+		return dataP.getInputStream( innerPath );
 	}
 
 	@Override
 	public InputStream getResourceInputStream( String innerPath ) throws IOException {
-		return resourceParser.getInputStream( innerPath );
+		return resP.getInputStream( innerPath );
 	}
 
 	@Override
-	public void unpackData( File extractDir ) throws IOException {
-		dataParser.unpackDat( extractDir );
+	public void extractDataDat( File extractDir ) throws IOException {
+		extractDat( dataP, extractDir );
 	}
 
 	@Override
-	public void unpackResources( File extractDir ) throws IOException {
-		resourceParser.unpackDat( extractDir );
+	public void extractResourceDat( File extractDir ) throws IOException {
+		extractDat( resP, extractDir );
+	}
+
+	private void extractDat( FTLDat.FTLPack srcP, File extractDir ) throws IOException {
+		log.info( String.format( "Extracting resources \"%s\" into \"%s\".", srcP.getName(), extractDir.getPath() ) );
+
+		FTLDat.FolderPack dstP = null;
+		InputStream is = null;
+		try {
+			if ( !extractDir.exists() ) extractDir.mkdirs();
+
+			dstP = new FTLDat.FolderPack( extractDir );
+
+			List<String> innerPaths = srcP.list();
+			for ( String innerPath : innerPaths ) {
+				if ( dstP.contains( innerPath ) ) {
+					log.info( "While extracting resources, this file was overwritten: "+ innerPath );
+					dstP.remove( innerPath );
+				}
+				is = srcP.getInputStream( innerPath );
+				dstP.add( innerPath, is );
+			}
+		}
+		finally {
+			try {if ( is != null ) is.close();}
+			catch ( IOException ex ) {}
+
+			try {if ( dstP != null ) dstP.close();}
+			catch ( IOException ex ) {}
+		}
 	}
 
 	@Override
@@ -345,7 +387,7 @@ public class DefaultDataManager extends DataManager {
 			InputStream in = null;
 			try {
 				in = getDataInputStream("data/"+ id +".txt");
-				result = dataParser.readLayout(in, id +".txt");
+				result = datParser.readLayout(in, id +".txt");
 				shipLayouts.put( id, result );
 			}
 			catch ( FileNotFoundException e ) {
@@ -370,8 +412,9 @@ public class DefaultDataManager extends DataManager {
 		if ( result == null ) {  // Wasn't cached; try parsing it.
 			InputStream in = null;
 			try {
+				log.debug( String.format( "Reading ship chassis (data/%s.xml)...", id ) );
 				in = getDataInputStream( "data/"+ id +".xml" );
-				result = dataParser.readChassis(in, id +".xml");
+				result = datParser.readChassis(in, id +".xml");
 				shipChassisMap.put( id, result );
 			}
 			catch ( JDOMException e ) {

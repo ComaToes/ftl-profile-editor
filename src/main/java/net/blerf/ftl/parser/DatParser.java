@@ -1,7 +1,6 @@
 package net.blerf.ftl.parser;
 
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -24,10 +23,6 @@ import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.output.DOMOutputter;
 
-import net.vhati.ftldat.FTLDat;
-import net.vhati.ftldat.FTLDat.FolderPack;
-import net.vhati.ftldat.FTLDat.FTLPack;
-
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.TextUtilities;
 import net.blerf.ftl.xml.Achievement;
@@ -43,28 +38,17 @@ import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.ShipEvent;
 import net.blerf.ftl.xml.ShipEvents;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-
-public class DatParser implements Closeable {
-
-	private static final Logger log = LogManager.getLogger(DatParser.class);
+public class DatParser {
 
 	private Pattern xmlDeclPtn = Pattern.compile( "<[?]xml [^>]*?[?]>\n*" );
 
-	private File datFile = null;
-	private FTLDat.FTLPack datP = null;
 
-
-	public DatParser( File datFile ) throws IOException {
-		this.datFile = datFile;
-		this.datP = new FTLDat.FTLPack( datFile, false );
+	public DatParser() {
 	}
 
 
 	public List<Achievement> readAchievements( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
-		log.trace( "Reading achievements XML" );
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
 		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
@@ -81,7 +65,6 @@ public class DatParser implements Closeable {
 
 
 	public Blueprints readBlueprints( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
-		log.trace( "Reading blueprints XML" );
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
 		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
@@ -175,7 +158,6 @@ public class DatParser implements Closeable {
 
 
 	public ShipChassis readChassis( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
-		log.trace( "Reading ship chassis XML" );
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
 		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
@@ -191,7 +173,6 @@ public class DatParser implements Closeable {
 	}
 
 	public List<CrewNameList> readCrewNames( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
-		log.trace( "Reading crew name list XML" );
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
 		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
@@ -208,7 +189,6 @@ public class DatParser implements Closeable {
 
 
 	public Encounters readEvents( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
-		log.trace( "Reading events XML" );
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
 		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
@@ -225,7 +205,6 @@ public class DatParser implements Closeable {
 
 
 	public List<ShipEvent> readShipEvents( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
-		log.trace( "Reading ship events XML" );
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
 		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
@@ -242,7 +221,6 @@ public class DatParser implements Closeable {
 
 
 	public List<BackgroundImageList> readImageLists( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
-		log.trace( "Reading background images XML" );
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
 		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
@@ -255,45 +233,5 @@ public class DatParser implements Closeable {
 		BackgroundImageLists imgs = (BackgroundImageLists)u.unmarshal( domOutputter.output( doc ) );
 
 		return imgs.getImageLists();
-	}
-
-
-	public InputStream getInputStream(String innerPath) throws FileNotFoundException, IOException {
-		return datP.getInputStream( innerPath );
-	}
-
-
-	public void unpackDat( File extractDir ) throws IOException {
-		log.trace( "Unpacking dat file " + datFile.getPath() + " into " + extractDir.getPath() );
-
-
-		FTLDat.FolderPack dstP = null;
-		InputStream is = null;
-		try {
-			if ( !extractDir.exists() ) extractDir.mkdirs();
-
-			dstP = new FTLDat.FolderPack( extractDir );
-
-			List<String> innerPaths = datP.list();
-			for ( String innerPath : innerPaths ) {
-				if ( dstP.contains( innerPath ) ) {
-					log.info( "While extracting resources, this file was overwritten: "+ innerPath );
-					dstP.remove( innerPath );
-				}
-				is = datP.getInputStream( innerPath );
-				dstP.add( innerPath, is );
-			}
-		}
-		finally {
-			try {if ( is != null ) is.close();}
-			catch ( IOException ex ) {}
-
-			try {if ( dstP != null ) dstP.close();}
-			catch ( IOException ex ) {}
-		}
-	}
-
-	public void close() throws IOException {
-		if ( datP != null ) datP.close();
 	}
 }
