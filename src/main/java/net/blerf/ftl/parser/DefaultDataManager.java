@@ -84,8 +84,8 @@ public class DefaultDataManager extends DataManager {
 			dataDatFile = new File( datsDir, "data.dat" );
 			resDatFile = new File( datsDir, "resource.dat" );
 
-			dataP = new FTLDat.FTLPack( dataDatFile, false );
-			resP = new FTLDat.FTLPack( resDatFile, false );
+			dataP = new FTLDat.FTLPack( dataDatFile, "r" );
+			resP = new FTLDat.FTLPack( resDatFile, "r" );
 
 			datParser = new DatParser();
 

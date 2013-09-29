@@ -1,4 +1,5 @@
-// Copied from Slipstream Mod Manager 1.4.
+// Copied from a snapshot of Slipstream Mod Manager after 1.4.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/b94440e0a0e0f295a181706129dddd745cb0d85c/src/main/java/net/vhati/ftldat/FTLDat.java
 
 package net.vhati.ftldat;
 
@@ -315,9 +316,11 @@ public class FTLDat {
 	public static class FolderPack extends AbstractPack {
 		private File rootDir;
 
+
 		public FolderPack( File rootDir ) {
 			this.rootDir = rootDir;
 		}
+
 
 		@Override
 		public String getName() {
@@ -449,20 +452,56 @@ public class FTLDat {
 		private Map<String,Integer> pathToIndexMap = null;
 		private ByteBuffer byteBuffer = null;
 
-		public FTLPack( File datFile, boolean create ) throws IOException {
-			this( datFile, create, 2048 );
+
+		/**
+		 * Opens or creates a dat in various modes.
+		 * When creating, the initial index size will be 2048.
+		 *
+		 * @see FTLPack(File datFile, String mode, int indexSize)
+		 */
+		public FTLPack( File datFile, String mode ) throws IOException {
+			this( datFile, mode, 2048 );
 		}
 
-		public FTLPack( File datFile, boolean create, int indexSize ) throws IOException {
-			this.datFile = datFile;
-			raf = new RandomAccessFile( datFile, "rw" );
+		/**
+		 * Opens or creates a dat in various modes.
+		 *
+		 * The mode must be one of the following:
+		 *   r  - opens an existing dat, read-only.
+		 *   r+ - opens an existing dat, read/write.
+		 *   w+ - creates a new empty dat, read/write.
+		 *
+		 * @param datFile a file to open/create
+		 * @param mode see above
+		 * @param indexSize size of the initial index if creating
+		 */
+		public FTLPack( File datFile, String mode, int indexSize ) throws IOException {
+			if ( mode.equals( "r" ) ) {
+				if ( !datFile.exists() )
+					throw new FileNotFoundException( String.format( "The datFile was not found: %s", datFile.getPath() ) );
 
-			if ( create ) {
-				createIndex( indexSize );
-			} else {
+				this.datFile = datFile;
+				raf = new RandomAccessFile( datFile, "r" );
 				readIndex();
 			}
+			else if ( mode.equals( "r+" ) ) {
+				if ( !datFile.exists() )
+					throw new FileNotFoundException( String.format( "The datFile was not found: %s", datFile.getPath() ) );
+
+				this.datFile = datFile;
+				raf = new RandomAccessFile( datFile, "rw" );
+				readIndex();
+			}
+			else if ( mode.equals( "w+" ) ) {
+				this.datFile = datFile;
+				raf = new RandomAccessFile( datFile, "rw" );
+				createIndex( indexSize );
+			}
+			else {
+				throw new IllegalArgumentException( String.format( "FTLPack constructor's mode arg was not 'r', 'r+', or 'w+' (%s).", mode ) );
+			}
 		}
+
 
 		/**
 		 * Reads a little-endian unsigned int.
