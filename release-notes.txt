@@ -1,3 +1,7 @@
+18
+Fixed bug that required 'running as admin' on Windows.
+Fixed bug that prevented saving a ship's "Reserve Power Capacity".
+
 17
 Added platform-specific launchers to double-click instead of the jar.
 Added readmes.
