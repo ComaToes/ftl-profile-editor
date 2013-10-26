@@ -953,6 +953,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
 
+		shipState.setReservePowerCapacity( shipReservePowerCapacity );
+
 		// General.
 		shipState.setShipName( shipName );
 		shipState.setHullAmt( shipHull );
