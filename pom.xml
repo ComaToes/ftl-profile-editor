@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.blerf.ftl</groupId>
 	<artifactId>ftl-profile-editor</artifactId>
-	<version>18</version>
+	<version>19</version>
 	<name>FTL Profile Editor</name>
 
 	<properties>
@@ -20,12 +20,12 @@
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.0-beta8</version>
+			<version>2.0-beta9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>2.0-beta8</version>
+			<version>2.0-beta9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jdom</groupId>
