@@ -1,23 +1,38 @@
 package net.blerf.ftl.model;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import net.blerf.ftl.model.ShipAvailability;
 import net.blerf.ftl.model.Stats.StatType;
 
 
 public class Profile {
 
-	private int version;
+	private int unknownHeaderAlpha;
 	private List<AchievementRecord> achievements;
-	private boolean[] shipUnlocks;
+	private Map<String, ShipAvailability> shipUnlockMap;
 	private Stats stats;
 
-	public void setVersion( int version ) {
-		this.version = version;
+	private int unknownBeta = 0;
+
+
+	public Profile() {
 	}
-	public int getVersion() {
-		return version;
+
+	/**
+	 * Sets the magic number indicating file format, apparently.
+	 *
+	 * 4 = Saved Game, FTL 1.01-1.03.3
+	 * 9 = Saved Game, FTL 1.5.4+
+	 */
+	public void setHeaderAlpha( int n ) {
+		this.unknownHeaderAlpha = n;
+	}
+	public int getHeaderAlpha() {
+		return unknownHeaderAlpha;
 	}
 
 	public void setAchievements( List<AchievementRecord> achievements ) {
@@ -34,20 +49,25 @@ public class Profile {
 		return stats;
 	}
 
-	public void setShipUnlocks( boolean[] shipUnlocks ) {
-		this.shipUnlocks = shipUnlocks;
+	public void setShipUnlockMap( Map<String, ShipAvailability> shipUnlockMap ) {
+		this.shipUnlockMap = shipUnlockMap;
 	}
-	public boolean[] getShipUnlocks() {
-		return shipUnlocks;
+	public Map<String, ShipAvailability> getShipUnlockMap() {
+		return shipUnlockMap;
+	}
+
+	public void setUnknownBeta( int n ) {
+		unknownBeta = n;
+	}
+	public int getUnknownBeta() {
+		return unknownBeta;
 	}
 
 
 	public static Profile createEmptyProfile() {
 		Profile profile = new Profile();
-		profile.setVersion(4);
-		boolean[] emptyUnlocks = new boolean[12];  // TODO: magic number.
-		emptyUnlocks[0] = true;  // Kestrel starts unlocked.
-		profile.setShipUnlocks( emptyUnlocks );
+		profile.setHeaderAlpha( 4 );
+		profile.setShipUnlockMap( new LinkedHashMap<String, ShipAvailability>() );
 		profile.setAchievements( new ArrayList<AchievementRecord>() );
 
 		Stats stats = new Stats();
@@ -71,5 +91,77 @@ public class Profile {
 		profile.setStats( stats );
 
 		return profile;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
+		boolean first = true;
+
+		StatType[] intStatTypes = {StatType.MOST_SHIPS_DEFEATED, StatType.MOST_BEACONS_EXPLORED,
+		                           StatType.MOST_SCRAP_COLLECTED, StatType.MOST_CREW_HIRED,
+		                           StatType.TOTAL_SHIPS_DEFEATED, StatType.TOTAL_BEACONS_EXPLORED,
+		                           StatType.TOTAL_SCRAP_COLLECTED, StatType.TOTAL_CREW_HIRED,
+                               StatType.TOTAL_GAMES_PLAYED, StatType.TOTAL_VICTORIES};
+		StatType[] crewStatTypes = {StatType.MOST_REPAIRS, StatType.MOST_COMBAT_KILLS,
+		                            StatType.MOST_PILOTED_EVASIONS, StatType.MOST_JUMPS_SURVIVED,
+		                            StatType.MOST_SKILL_MASTERIES};
+
+		result.append(String.format("File Format:            %4d\n", unknownHeaderAlpha));
+		result.append(String.format("Beta?:                  %4d\n", unknownBeta));
+
+		result.append("\nShip Unlocks...\n");
+		first = true;
+		for( ShipAvailability shipAvail : shipUnlockMap.values() ) {
+			if (first) { first = false; }
+			else { result.append(",\n"); }
+			result.append( shipAvail.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+		}
+
+		result.append("\nStats...\n");
+		for ( StatType type : intStatTypes ) {
+			result.append(String.format("%-25s %5d\n", type.toString(), stats.getIntRecord( type )));
+		}
+
+		result.append("\nCrew Records...\n");
+		first = true;
+		for ( StatType type : crewStatTypes ) {
+			if (first) { first = false; }
+			else { result.append(",\n"); }
+
+			CrewRecord rec = stats.getCrewRecord( type );
+			result.append(String.format("%s\n", type.toString()));
+			if ( rec != null ) {
+				result.append( rec.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			} else {
+				result.append("N/A\n");
+			}
+		}
+
+		result.append("\nTop Scores...\n");
+		first = true;
+		for( Score score : stats.getTopScores() ) {
+			if (first) { first = false; }
+			else { result.append(",\n"); }
+			result.append( score.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+		}
+
+		result.append("\nShip Best...\n");
+		first = true;
+		for( Score score : stats.getShipBest() ) {
+			if (first) { first = false; }
+			else { result.append(",\n"); }
+			result.append( score.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+		}
+
+		result.append("\nAchievements...\n");
+		first = true;
+		for( AchievementRecord rec : achievements ) {
+			if (first) { first = false; }
+			else { result.append(",\n"); }
+			result.append( rec.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+		}
+
+		return result.toString();
 	}
 }

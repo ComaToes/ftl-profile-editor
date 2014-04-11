@@ -44,8 +44,12 @@ public class Stats {
 	private List<Score> topScores;
 	private List<Score> shipBest;
 
-	private EnumMap<StatType,CrewRecord> crewMap = new EnumMap<StatType,CrewRecord>(StatType.class);
-	private EnumMap<StatType,Integer> intMap = new EnumMap<StatType,Integer>(StatType.class);
+	private EnumMap<StatType,CrewRecord> crewMap = new EnumMap<StatType,CrewRecord>( StatType.class );
+	private EnumMap<StatType,Integer> intMap = new EnumMap<StatType,Integer>( StatType.class );
+
+
+	public Stats() {
+	}
 
 	public void setTopScores( List<Score> topScores ) { this.topScores = topScores; }
 	public void setShipBest( List<Score> shipBest ) { this.shipBest = shipBest; }
@@ -54,21 +58,21 @@ public class Stats {
 	public List<Score> getShipBest() { return shipBest; }
 
 	public void setCrewRecord( StatType type, CrewRecord r ) {
-		crewMap.put(type, r);
+		crewMap.put( type, r );
 	}
 	public CrewRecord getCrewRecord( StatType  type ) {
 		if ( !crewMap.containsKey(type) )
 			log.error( "No crew record found for type: "+ type );
-		return crewMap.get(type);
+		return crewMap.get( type );
 	}
 
 	public void setIntRecord( StatType type, int n ) {
-		intMap.put(type, new Integer(n));
+		intMap.put( type, new Integer(n) );
 	}
 	public int getIntRecord( StatType type ) {
 		if ( !intMap.containsKey(type) )
 			log.error( "No int record found for type: "+ type );
-		return intMap.get(type).intValue();
+		return intMap.get( type ).intValue();
 	}
 
 	public void setMostShipsDefeated( int n ) { setIntRecord(StatType.MOST_SHIPS_DEFEATED, n); }

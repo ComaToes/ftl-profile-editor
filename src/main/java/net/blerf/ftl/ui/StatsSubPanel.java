@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.RasterFormatException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -165,9 +166,24 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 
 		ImageIcon result = null;
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		String innerPath = null;
+
+		String[] candidatePaths = new String[2];
+		candidatePaths[0] = "img/people/"+ imgRace +"_player_yellow.png";  // FTL 1.01-1.03.3
+		candidatePaths[1] = "img/people/"+ imgRace +"_base.png";  // FTL 1.5.4
+		for ( String candidatePath : candidatePaths ) {
+			if ( DataManager.get().hasResourceInputStream( candidatePath ) ) {
+				innerPath = candidatePath;
+			}
+		}
+		if ( innerPath == null ) {
+			log.error( "Failed to find an image file for crew race: "+ imgRace );
+			return null;
+		}
+
 		InputStream in = null;
 		try {
-			in = DataManager.get().getResourceInputStream("img/people/"+ imgRace +"_player_yellow.png");
+			in = DataManager.get().getResourceInputStream( innerPath );
 			BufferedImage bigImage = ImageIO.read( in );
 			BufferedImage croppedImage = bigImage.getSubimage(offsetX, offsetY, w, h);
 
@@ -186,19 +202,19 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 					}
 				}
 			}
-			log.trace("Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ imgRace);
+			log.trace( "Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ imgRace );
 			if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
 				croppedImage = croppedImage.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
 			}
 			result = new ImageIcon(croppedImage);
-
-		} catch (RasterFormatException e) {
-			log.error( "Failed to load and crop crew icon ("+ imgRace +")", e );
-
-		} catch (IOException e) {
-			log.error( "Failed to load and crop crew icon ("+ imgRace +")", e );
-
-		} finally {
+		}
+		catch ( RasterFormatException e ) {
+			log.error( String.format("Failed to load and crop crew icon (%s).", imgRace), e );
+		}
+		catch ( IOException e ) {
+			log.error( String.format("Failed to load and crop crew icon (%s).", imgRace), e );
+		}
+		finally {
 			try {if (in != null) in.close();}
 			catch (IOException f) {}
     }

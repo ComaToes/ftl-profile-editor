@@ -25,7 +25,7 @@ if [ ! \( -t 0 -o -S /dev/stdin \) ]; then
 
   if command -v x-terminal-emulator >/dev/null; then
     # Linux.
-    x-terminal-emulator -e "$0";
+    x-terminal-emulator -e "cd \"${maindir}\";\"./${me}\"";
 
   elif command -v osascript >/dev/null; then
     # OSX.
@@ -44,9 +44,9 @@ EOF
 fi
 
 # Finally, the payload.
-cd "${maindir}"
+cd "${maindir}";
 # - - -
-java -jar FTLProfileEditor.jar
+java -jar FTLProfileEditor.jar;
 # - - -
 
 if [ "${ingui}" = "1" ]; then

@@ -8,11 +8,15 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+
 @XmlRootElement(name="shipChassis")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ShipChassis {
 	@XmlElement(name="img")
 	private ChassisImageBounds imageBounds;
+
+	private Offsets offsets;  // FTL 1.5.4 introduced floor/cloak offsets.
+
 	@XmlElement(name="weaponMounts")
 	private WeaponMountList weaponMountList;
 
@@ -23,7 +27,24 @@ public class ShipChassis {
 	}
 
 	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class Offsets {
+
+		@XmlElement(name="floor")
+		public Offset floorOffset;
+
+		@XmlElement(name="cloak")
+		public Offset cloakOffset;
+
+		@XmlAccessorType(XmlAccessType.FIELD)
+		public static class Offset {
+			@XmlAttribute
+			public int x, y;
+		}
+	}
+
+	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class WeaponMountList {
+
 		@XmlElement(name="mount")
 		public List<WeaponMount> mount;
 
@@ -65,6 +86,14 @@ public class ShipChassis {
 
 	public ChassisImageBounds getImageBounds() {
 		return imageBounds;
+	}
+
+	public void setOffsets( Offsets offsets ) {
+		this.offsets = offsets;
+	}
+
+	public Offsets getOffsets() {
+		return offsets;
 	}
 
 	public void setWeaponMountList( WeaponMountList weaponMountList ) {

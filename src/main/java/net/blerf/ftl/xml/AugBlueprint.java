@@ -6,6 +6,7 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+
 @XmlRootElement(name="augBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AugBlueprint {

@@ -161,6 +161,7 @@ public class FTLProfileEditor {
 		try {
 			DefaultDataManager dataManager = new DefaultDataManager( datsDir );
 			DataManager.setInstance( dataManager );
+			dataManager.setDLCEnabledByDefault( true );
 		}
 		catch ( Exception e ) {
 			log.error( "Error parsing FTL resources.", e );

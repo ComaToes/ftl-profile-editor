@@ -41,6 +41,7 @@ import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -69,11 +70,11 @@ import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.parser.ProfileParser;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.ui.DumpPanel;
 import net.blerf.ftl.ui.ExtensionFileFilter;
 import net.blerf.ftl.ui.GeneralAchievementsPanel;
 import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.ProfileStatsPanel;
-import net.blerf.ftl.ui.SavedGameDumpPanel;
 import net.blerf.ftl.ui.SavedGameFloorplanPanel;
 import net.blerf.ftl.ui.SavedGameGeneralPanel;
 import net.blerf.ftl.ui.SavedGameHangarPanel;
@@ -109,18 +110,24 @@ public class FTLFrame extends JFrame {
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959";
 
-	// For checkbox icons
+	// For cycle boxes.
 	private static final int maxIconWidth = 64;
 	private static final int maxIconHeight = 64;
-	private BufferedImage iconShadeImage;
+	private BufferedImage iconShadeImage = null;
+	private Icon dummyIcon = null;
 
 	private ArrayList<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
 
+	private JTabbedPane profileTabsPane;
 	private ShipUnlockPanel shipUnlockPanel;
 	private GeneralAchievementsPanel generalAchievementsPanel;
 	private ProfileStatsPanel statsPanel;
-	private SavedGameDumpPanel savedGameDumpPanel;
+	private DumpPanel profileDumpPanel;
+
+	private JButton gameStateSaveBtn;
+	private JTabbedPane savedGameTabsPane;
+	private DumpPanel savedGameDumpPanel;
 	private SavedGameGeneralPanel savedGameGeneralPanel;
 	private SavedGameFloorplanPanel savedGamePlayerFloorplanPanel;
 	private SavedGameFloorplanPanel savedGameNearbyFloorplanPanel;
@@ -156,6 +163,7 @@ public class FTLFrame extends JFrame {
 			public void hyperlinkUpdate( HyperlinkEvent e ) {
 				if ( e.getEventType() == HyperlinkEvent.EventType.ACTIVATED ) {
 					log.trace( "Dialog link clicked: "+ e.getURL() );
+
 					if ( Desktop.isDesktopSupported() ) {
 						try {
 							Desktop.getDesktop().browse( e.getURL().toURI() );
@@ -184,16 +192,18 @@ public class FTLFrame extends JFrame {
 		setupProfileToolbar(profileToolbar);
 		profilePane.add(profileToolbar, BorderLayout.NORTH);
 
-		JTabbedPane profileTabsPane = new JTabbedPane();
+		profileTabsPane = new JTabbedPane();
 		profilePane.add( profileTabsPane, BorderLayout.CENTER );
 
 		shipUnlockPanel = new ShipUnlockPanel(this);
 		generalAchievementsPanel = new GeneralAchievementsPanel(this);
 		statsPanel = new ProfileStatsPanel(this);
+		profileDumpPanel = new DumpPanel();
 
-		profileTabsPane.add( "Ship Unlocks & Achievements" , new JScrollPane( shipUnlockPanel ) );
-		profileTabsPane.add( "General Achievements" , new JScrollPane( generalAchievementsPanel ) );
-		profileTabsPane.add( "Stats" , new JScrollPane( statsPanel ) );
+		profileTabsPane.add( "Ship Unlocks & Achievements", new JScrollPane( shipUnlockPanel ) );
+		profileTabsPane.add( "General Achievements", new JScrollPane( generalAchievementsPanel ) );
+		profileTabsPane.add( "Stats", new JScrollPane( statsPanel ) );
+		profileTabsPane.add( "Dump", profileDumpPanel );
 
 
 		JPanel savedGamePane = new JPanel( new BorderLayout() );
@@ -203,10 +213,10 @@ public class FTLFrame extends JFrame {
 		setupSavedGameToolbar(savedGameToolbar);
 		savedGamePane.add(savedGameToolbar, BorderLayout.NORTH);
 
-		JTabbedPane savedGameTabsPane = new JTabbedPane();
+		savedGameTabsPane = new JTabbedPane();
 		savedGamePane.add( savedGameTabsPane, BorderLayout.CENTER );
 
-		savedGameDumpPanel = new SavedGameDumpPanel(this);
+		savedGameDumpPanel = new DumpPanel();
 		savedGameGeneralPanel = new SavedGameGeneralPanel(this);
 		savedGamePlayerFloorplanPanel = new SavedGameFloorplanPanel(this);
 		savedGameNearbyFloorplanPanel = new SavedGameFloorplanPanel(this);
@@ -214,7 +224,7 @@ public class FTLFrame extends JFrame {
 		savedGameSectorMapPanel = new SavedGameSectorMapPanel(this);
 		savedGameStateVarsPanel = new SavedGameStateVarsPanel(this);
 
-		savedGameTabsPane.add( "Dump", savedGameDumpPanel);
+		savedGameTabsPane.add( "Dump", savedGameDumpPanel );
 		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
 		savedGameTabsPane.add( "Player Ship", savedGamePlayerFloorplanPanel );
 		savedGameTabsPane.add( "Nearby Ship", savedGameNearbyFloorplanPanel );
@@ -225,7 +235,7 @@ public class FTLFrame extends JFrame {
 		JPanel statusPanel = new JPanel();
 		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
 		statusPanel.setBorder( BorderFactory.createLoweredBevelBorder() );
-		statusLbl = new JLabel(" ");
+		statusLbl = new JLabel( " " );
 		//statusLbl.setFont( statusLbl.getFont().deriveFont(Font.PLAIN) );
 		statusLbl.setBorder( BorderFactory.createEmptyBorder(2, 4, 2, 4) );
 		statusLbl.setAlignmentX( Component.LEFT_ALIGNMENT );
@@ -234,6 +244,8 @@ public class FTLFrame extends JFrame {
 
 		// Load blank profile (sets Kestrel unlock).
 		loadProfile( Profile.createEmptyProfile() );
+
+		loadGameState( null );
 
 		// Check for updates in a seperate thread.
 		setStatusText( "Checking for updates..." );
@@ -252,14 +264,15 @@ public class FTLFrame extends JFrame {
 	}
 
 	private void initCheckboxIcons() {
-		log.trace( "Initialising checkbox locked icon." );
+		log.trace( "Initialising standard cycle box stuff." );
+
 		iconShadeImage = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = iconShadeImage.createGraphics();
 		g.setColor( new Color(0, 0, 0, 150) );
 		g.fillRect(0, 0, maxIconWidth, maxIconHeight);
 		InputStream stream = null;
 		try {
-			stream = DataManager.get().getResourceInputStream("img/customizeUI/box_lock_on.png");
+			stream = DataManager.get().getResourceInputStream( "img/customizeUI/box_lock_on.png" );
 			BufferedImage lock = ImageIO.read( stream );
 			int x = (maxIconWidth-lock.getWidth()) / 2;
 			int y = (maxIconHeight-lock.getHeight()) / 2;
@@ -273,6 +286,17 @@ public class FTLFrame extends JFrame {
 			catch ( IOException f ) {}
 		}
 		g.dispose();
+
+		dummyIcon = new Icon() {
+			@Override
+			public int getIconHeight() { return maxIconHeight; }
+
+			@Override
+			public int getIconWidth() { return maxIconWidth; }
+
+			@Override
+			public void paintIcon( Component c, Graphics g, int x, int y ) {}
+		};
 	}
 
 	public BufferedImage getScaledImage( InputStream in ) throws IOException {
@@ -299,11 +323,30 @@ public class FTLFrame extends JFrame {
 		return scaledImage;
 	}
 
+	/**
+	 * Constructs a blank two-state button that ignores clicks.
+	 */
+	public IconCycleButton createDummyCycleButton() {
+		IconCycleButton result = new IconCycleButton( new Icon[] {dummyIcon, dummyIcon} );
+		result.setBorder( BorderFactory.createCompoundBorder( result.getBorder(), BorderFactory.createEtchedBorder() ) );
+		result.setEnabled( false );
+		return result;
+	}
+
+	/**
+	 * Constructs a multi-state button.
+	 *
+	 * The button can either toggle between locked and unlocked,
+	 * or cycle through locked/easy/normal/hard.
+	 *
+	 * @param baseImagePath
+	 * @param cycleDifficulty
+	 */
 	public IconCycleButton createCycleButton( String baseImagePath, boolean cycleDifficulty ) {
 		InputStream stream = null;
 		try {
-			stream = DataManager.get().getResourceInputStream(baseImagePath);
-			BufferedImage origImage = getScaledImage(stream);
+			stream = DataManager.get().getResourceInputStream( baseImagePath );
+			BufferedImage origImage = getScaledImage( stream );
 			int centeringOffsetX = (maxIconWidth-origImage.getWidth())/2;
 			int centeringOffsetY = (maxIconHeight-origImage.getHeight())/2;
 
@@ -315,7 +358,7 @@ public class FTLFrame extends JFrame {
 
 			String[] labels = null;
 			if ( cycleDifficulty == true )
-				labels = new String[] { "EASY", "NORMAL" };  // Locked / Easy / Normal.
+				labels = new String[] { "EASY", "NORMAL", "HARD" };  // Locked / Easy / Normal / Hard.
 			else
 				labels = new String[] { null };              // Locked / Unlocked.
 
@@ -345,7 +388,7 @@ public class FTLFrame extends JFrame {
 			return new IconCycleButton( icons );
 		}
 		catch ( IOException e ) {
-			log.error( "Error reading cycle button image ("+ baseImagePath +")." , e );
+			log.error( "Error reading cycle button image ("+ baseImagePath +").", e );
 		}
 		finally {
 			try {if ( stream != null ) stream.close();}
@@ -362,31 +405,40 @@ public class FTLFrame extends JFrame {
 		toolbar.setFloatable(false);
 
 		final JFileChooser fc = new JFileChooser();
+		fc.setFileHidingEnabled( false );
 		fc.addChoosableFileFilter( new FileFilter() {
 			@Override
 			public String getDescription() {
-				return "FTL Profile (prof.sav)";
+				return "FTL Profile (ae_prof.sav; prof.sav)";
 			}
 			@Override
 			public boolean accept(File f) {
-				return f.isDirectory() || f.getName().equalsIgnoreCase("prof.sav");
+				if ( f.isDirectory() ) return true;
+				if ( f.getName().equalsIgnoreCase("ae_prof.sav") ) return true;
+				if ( f.getName().equalsIgnoreCase("prof.sav") ) return true;
+				return false;
 			}
 		});
 
-		File candidateProfileFile = new File( FTLUtilities.findUserDataDir(), "prof.sav" );
-		if ( candidateProfileFile.exists() ) {
-			fc.setSelectedFile( candidateProfileFile );
+		File candidateAEProfileFile = new File( FTLUtilities.findUserDataDir(), "ae_prof.sav" );
+		File candidateClassicProfileFile = new File( FTLUtilities.findUserDataDir(), "prof.sav" );
+		if ( candidateAEProfileFile.exists() ) {
+			fc.setSelectedFile( candidateAEProfileFile );
+		}
+		else if ( candidateClassicProfileFile.exists() ) {
+			fc.setSelectedFile( candidateClassicProfileFile );
 		} else {
 			fc.setCurrentDirectory( FTLUtilities.findUserDataDir() );
 		}
 
 		fc.setMultiSelectionEnabled(false);
 
-		JButton openButton = new JButton("Open", openIcon);
-		openButton.addActionListener( new ActionListener() {
+		JButton profileOpenBtn = new JButton( "Open", openIcon );
+		profileOpenBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Open profile button clicked." );
+
 				fc.setDialogTitle( "Open Profile" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					RandomAccessFile raf = null;
@@ -425,24 +477,25 @@ public class FTLFrame extends JFrame {
 						// Compare.
 						for (int i = 0; i < readHash.length; i++) {
 							if ( readHash[i] != writeHash[i] ) {
-								log.error("Hash fail on mock write - Unable to assure valid parsing.");
+								log.error( "Hash fail on mock write - Unable to assure valid parsing." );
 
 								String hex = "";
 								for (int j = 0; j < data.length; j++) {
-									hex += String.format("%02x", data[j]);
+									hex += String.format( "%02x", data[j] );
 									if ( (j+1) % 32 == 0 )
 										hex +="\n";
 								}
 
-								String errText = "<b>FTL Profile Editor has detected that it cannot interpret your profile correctly.<br/>" +
-										"Using this app may result in loss of stats/achievements.</b>" +
-										"<br/><br/>" +
-										"Please copy (Ctrl-A, Ctrl-C) the following text and paste it into a new bug report <a href='"+bugReportUrl+"'>here</a> " +
-										"(GitHub signup is free) or post to the FLT forums <a href='"+forumThreadUrl+"'>here</a> (Signup also free)." +
-										"<br/>If using GitHub, set the issue title as \"Profile Parser Error\"<br/><br/>I will fix the problem and release a new version as soon as I can :)" +
-										"<br/><br/><pre>"+ hex +"</pre>";
+								StringBuilder errBuf = new StringBuilder();
+								errBuf.append( "<b>FTL Profile Editor has detected that it cannot interpret your profile correctly.<br/>" );
+								errBuf.append( "Using this app may result in loss of stats/achievements.</b>" );
+								errBuf.append( "<br/><br/>" );
+								errBuf.append( "Please copy (Ctrl-A, Ctrl-C) the following text and paste it into a new bug report <a href='"+ bugReportUrl +"'>here</a> " );
+								errBuf.append( "(GitHub signup is free) or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free)." );
+								errBuf.append( "<br/>If using GitHub, set the issue title as \"Profile Parser Error\"<br/><br/>I will fix the problem and release a new version as soon as I can." );
+								errBuf.append( "<br/><br/><pre>"+ hex +"</pre>" );
 
-								JDialog failDialog = createHtmlDialog( "Profile Parser Error", errText );
+								JDialog failDialog = createHtmlDialog( "Profile Parser Error", errBuf.toString() );
 								failDialog.setVisible(true);
 
 								break;
@@ -466,24 +519,25 @@ public class FTLFrame extends JFrame {
 				}
 			}
 		});
-		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing profile.") );
-		toolbar.add( openButton );
+		profileOpenBtn.addMouseListener( new StatusbarMouseListener(this, "Open an existing profile.") );
+		toolbar.add( profileOpenBtn );
 
-		JButton saveButton = new JButton("Save", saveIcon);
-		saveButton.addActionListener( new ActionListener() {
+		JButton profileSaveBtn = new JButton( "Save", saveIcon );
+		profileSaveBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Save profile button clicked." );
+
 				fc.setDialogTitle( "Save Profile" );
 				if ( fc.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					FileOutputStream out = null;
 					try {
 						File file = fc.getSelectedFile();
-						log.trace("File selected: "+ file.getAbsolutePath());
+						log.trace( "File selected: "+ file.getAbsolutePath() );
 						ProfileParser ftl = new ProfileParser();
 						out = new FileOutputStream( file );
-						FTLFrame.this.updateProfile(profile);
-						ftl.writeProfile(out, profile);
+						FTLFrame.this.updateProfile( profile );
+						ftl.writeProfile( out, profile );
 					}
 					catch( IOException f ) {
 						log.error( "Error writing profile.", f );
@@ -498,50 +552,96 @@ public class FTLFrame extends JFrame {
 				}
 			}
 		});
-		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current profile.") );
-		toolbar.add( saveButton );
+		profileSaveBtn.addMouseListener( new StatusbarMouseListener(this, "Save the current profile.") );
+		toolbar.add( profileSaveBtn );
 
-
-		JButton unlockShipsButton = new JButton("Unlock All Ships", unlockIcon);
-		unlockShipsButton.addActionListener( new ActionListener() {
+		JButton profileDumpBtn = new JButton( "Dump", saveIcon );
+		profileDumpBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				log.trace("Unlock all ships button clicked.");
-				shipUnlockPanel.unlockAllShips();
+				log.trace( "Dump profile button clicked." );
+
+				if ( profile == null ) return;
+
+				JFileChooser dumpChooser = new JFileChooser();
+				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
+				dumpChooser.setFileHidingEnabled( false );
+
+				ExtensionFileFilter txtFilter = new ExtensionFileFilter( "Text Files (*.txt)", new String[] {".txt"} );
+				dumpChooser.addChoosableFileFilter( txtFilter );
+
+				if ( dumpChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					BufferedWriter out = null;
+					try {
+						log.trace( "File selected: "+ dumpChooser.getSelectedFile().getAbsolutePath() );
+
+						File file = dumpChooser.getSelectedFile();
+						if ( !file.exists() && dumpChooser.getFileFilter() == txtFilter && !txtFilter.accept(file) ) {
+							file = new File( file.getAbsolutePath() + txtFilter.getPrimarySuffix() );
+						}
+
+						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( file ) ) );
+						out.write( profile.toString() );
+						out.close();
+					}
+					catch( IOException f ) {
+						log.error( "Error dumping profile.", f );
+						showErrorDialog( "Error dumping profile:\n"+ f.getMessage() );
+					}
+					finally {
+						try {if ( out != null ) out.close();}
+						catch ( IOException g ) {}
+					}
+				} else
+					log.trace( "Dump dialog cancelled." );
 			}
 		});
-		unlockShipsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ships.") );
-		toolbar.add( unlockShipsButton );
-
-
-		JButton unlockShipAchsButton = new JButton("Unlock All Ship Achievements", unlockIcon);
-		unlockShipAchsButton.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-				log.trace("Unlock all ship achievements button clicked.");
-				shipUnlockPanel.unlockAllShipAchievements();
-			}
-		});
-		unlockShipAchsButton.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements.") );
-		toolbar.add( unlockShipAchsButton );
+		profileDumpBtn.addMouseListener( new StatusbarMouseListener(this, "Dump unmodified profile info to a text file.") );
+		toolbar.add( profileDumpBtn );
 
 		toolbar.add( Box.createHorizontalGlue() );
 
-		JButton extractButton = new JButton("Extract Dats", saveIcon);
-		extractButton.addActionListener( new ActionListener() {
+		JButton profileUnlockShipsBtn = new JButton( "Unlock All Ships", unlockIcon );
+		profileUnlockShipsBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				log.trace("Extract button clicked.");
+				log.trace( "Unlock all ships button clicked." );
+				shipUnlockPanel.unlockAllShips();
+			}
+		});
+		profileUnlockShipsBtn.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ships (except Type-B).") );
+		toolbar.add( profileUnlockShipsBtn );
+
+
+		JButton profileUnlockShipAchsBtn = new JButton( "Unlock All Ship Achievements", unlockIcon );
+		profileUnlockShipAchsBtn.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
+				log.trace( "Unlock all ship achievements button clicked." );
+				shipUnlockPanel.unlockAllShipAchievements();
+			}
+		});
+		profileUnlockShipAchsBtn.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements (and Type-B ships).") );
+		toolbar.add( profileUnlockShipAchsBtn );
+
+		toolbar.add( Box.createHorizontalGlue() );
+
+		JButton profileExtractBtn = new JButton( "Extract Dats", saveIcon );
+		profileExtractBtn.addActionListener( new ActionListener() {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
+				log.trace( "Extract button clicked." );
 
 				JFileChooser extractChooser = new JFileChooser();
-				extractChooser.setDialogTitle("Choose a dir to extract into");
+				extractChooser.setDialogTitle( "Choose a dir to extract into" );
+				extractChooser.setFileHidingEnabled( false );
 				extractChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				extractChooser.setMultiSelectionEnabled(false);
 
 				if ( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 						File extractDir = extractChooser.getSelectedFile();
-						log.trace("Dir selected: "+ extractDir.getAbsolutePath());
+						log.trace( "Dir selected: "+ extractDir.getAbsolutePath() );
 
 						JOptionPane.showMessageDialog(FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE);
 
@@ -558,17 +658,17 @@ public class FTLFrame extends JFrame {
 					log.trace( "Extract dialog cancelled." );
 			}
 		});
-		extractButton.addMouseListener( new StatusbarMouseListener(this, "Extract dat content to a directory.") );
-		toolbar.add( extractButton );
+		profileExtractBtn.addMouseListener( new StatusbarMouseListener(this, "Extract dat content to a directory.") );
+		toolbar.add( profileExtractBtn );
 
 		toolbar.add( Box.createHorizontalGlue() );
 
-		JButton aboutButton = createAboutButton();
-		toolbar.add( aboutButton );
+		JButton profileAboutBtn = createAboutButton();
+		toolbar.add( profileAboutBtn );
 
-		JButton updatesButton = createUpdatesButton();
-		updatesButtonList.add( updatesButton );
-		toolbar.add( updatesButton );
+		JButton profileUpdatesBtn = createUpdatesButton();
+		updatesButtonList.add( profileUpdatesBtn );
+		toolbar.add( profileUpdatesBtn );
 	}
 
 	private void setupSavedGameToolbar( JToolBar toolbar ) {
@@ -578,6 +678,7 @@ public class FTLFrame extends JFrame {
 		toolbar.setFloatable(false);
 
 		final JFileChooser fc = new JFileChooser();
+		fc.setFileHidingEnabled( false );
 		fc.addChoosableFileFilter( new FileFilter() {
 			@Override
 			public String getDescription() {
@@ -598,8 +699,8 @@ public class FTLFrame extends JFrame {
 
 		fc.setMultiSelectionEnabled(false);
 
-		JButton openButton = new JButton("Open", openIcon);
-		openButton.addActionListener( new ActionListener() {
+		JButton gameStateOpenBtn = new JButton( "Open", openIcon );
+		gameStateOpenBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Open saved game button clicked." );
@@ -616,12 +717,12 @@ public class FTLFrame extends JFrame {
 
 						if ( gameState.getMysteryList().size() > 0 ) {
 							StringBuilder musteryBuf = new StringBuilder();
-							musteryBuf.append("This saved game file contains mystery bytes the developers hadn't anticipated!\n");
+							musteryBuf.append( "This saved game file contains mystery bytes the developers hadn't anticipated!\n" );
 							boolean first = true;
 							for (MysteryBytes m : gameState.getMysteryList()) {
 								if (first) { first = false; }
-								else { musteryBuf.append(",\n"); }
-								musteryBuf.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+								else { musteryBuf.append( ",\n" ); }
+								musteryBuf.append(m.toString().replaceAll( "(^|\n)(.+)", "$1  $2") );
 							}
 							log.warn( musteryBuf.toString() );
 						}
@@ -635,11 +736,11 @@ public class FTLFrame extends JFrame {
 				}
 			}
 		});
-		openButton.addMouseListener( new StatusbarMouseListener(this, "Open an existing saved game.") );
-		toolbar.add( openButton );
+		gameStateOpenBtn.addMouseListener( new StatusbarMouseListener(this, "Open an existing saved game.") );
+		toolbar.add( gameStateOpenBtn );
 
-		JButton saveButton = new JButton("Save", saveIcon);
-		saveButton.addActionListener( new ActionListener() {
+		gameStateSaveBtn = new JButton( "Save", saveIcon );
+		gameStateSaveBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Save game state button clicked." );
@@ -654,7 +755,7 @@ public class FTLFrame extends JFrame {
 					FileOutputStream out = null;
 					try {
 						File file = fc.getSelectedFile();
-						log.trace("File selected: "+ file.getAbsolutePath());
+						log.trace( "File selected: "+ file.getAbsolutePath() );
 						SavedGameParser parser = new SavedGameParser();
 						out = new FileOutputStream( file );
 						FTLFrame.this.updateGameState(gameState);
@@ -673,11 +774,11 @@ public class FTLFrame extends JFrame {
 				}
 			}
 		});
-		saveButton.addMouseListener( new StatusbarMouseListener(this, "Save the current game state.") );
-		toolbar.add( saveButton );
+		gameStateSaveBtn.addMouseListener( new StatusbarMouseListener(this, "Save the current game state.") );
+		toolbar.add( gameStateSaveBtn );
 
-		JButton dumpButton = new JButton("Dump", saveIcon);
-		dumpButton.addActionListener( new ActionListener() {
+		JButton gameStateDumpBtn = new JButton( "Dump", saveIcon );
+		gameStateDumpBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Dump game state button clicked." );
@@ -686,8 +787,9 @@ public class FTLFrame extends JFrame {
 
 				JFileChooser dumpChooser = new JFileChooser();
 				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
+				dumpChooser.setFileHidingEnabled( false );
 
-				ExtensionFileFilter txtFilter = new ExtensionFileFilter("Text Files (*.txt)", new String[] {".txt"});
+				ExtensionFileFilter txtFilter = new ExtensionFileFilter( "Text Files (*.txt)", new String[] {".txt"} );
 				dumpChooser.addChoosableFileFilter( txtFilter );
 
 				if ( dumpChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
@@ -701,7 +803,7 @@ public class FTLFrame extends JFrame {
 						}
 
 						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( file ) ) );
-						out.write(gameState.toString());
+						out.write( gameState.toString() );
 						out.close();
 					}
 					catch( IOException f ) {
@@ -716,21 +818,21 @@ public class FTLFrame extends JFrame {
 					log.trace( "Dump dialog cancelled." );
 			}
 		});
-		dumpButton.addMouseListener( new StatusbarMouseListener(this, "Dump unmodified game state info to a text file.") );
-		toolbar.add( dumpButton );
+		gameStateDumpBtn.addMouseListener( new StatusbarMouseListener(this, "Dump unmodified game state info to a text file.") );
+		toolbar.add( gameStateDumpBtn );
 
 		toolbar.add( Box.createHorizontalGlue() );
 
-		JButton aboutButton = createAboutButton();
-		toolbar.add( aboutButton );
+		JButton gameStateAboutBtn = createAboutButton();
+		toolbar.add( gameStateAboutBtn );
 
-		JButton updatesButton = createUpdatesButton();
-		updatesButtonList.add( updatesButton );
-		toolbar.add( updatesButton );
+		JButton gameStateUpdatesBtn = createUpdatesButton();
+		updatesButtonList.add( gameStateUpdatesBtn );
+		toolbar.add( gameStateUpdatesBtn );
 	}
 
 	public JButton createAboutButton() {
-		final JDialog aboutDialog = new JDialog(this,"About",true);
+		final JDialog aboutDialog = new JDialog( this, "About", true);
 		JPanel aboutPanel = new JPanel();
 		aboutPanel.setLayout( new BoxLayout(aboutPanel, BoxLayout.Y_AXIS) );
 		aboutDialog.setContentPane(aboutPanel);
@@ -747,12 +849,12 @@ public class FTLFrame extends JFrame {
 			log.error(e);
 		}
 
-		JButton aboutButton = new JButton("About", aboutIcon);
+		JButton aboutButton = new JButton( "About", aboutIcon );
 		aboutButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				log.trace("About button clicked.");
-				aboutDialog.setVisible(true);
+				log.trace( "About button clicked." );
+				aboutDialog.setVisible( true );
 			}
 		});
 		aboutButton.addMouseListener( new StatusbarMouseListener(this, "View information about this tool and links for information/bug reports") );
@@ -760,7 +862,7 @@ public class FTLFrame extends JFrame {
 	}
 
 	public JButton createUpdatesButton() {
-		JButton updatesButton = new JButton("Updates");
+		JButton updatesButton = new JButton( "Updates" );
 		updatesButton.setEnabled(false);
 		updatesButton.addActionListener( new ActionListener() {
 			@Override
@@ -823,9 +925,9 @@ public class FTLFrame extends JFrame {
 				final Runnable newCallback = new Runnable() {
 					@Override
 					public void run() {
-						log.trace("Updates button clicked (release notes).");
+						log.trace( "Updates button clicked (release notes)." );
 						JDialog updatesDialog = createHtmlDialog( "Release Notes", historyHtml );
-						updatesDialog.setVisible(true);
+						updatesDialog.setVisible( true );
 					}
 				};
 				// Make changes from the GUI thread.
@@ -833,12 +935,12 @@ public class FTLFrame extends JFrame {
 					@Override
 					public void run() {
 						updatesCallback = newCallback;
-						Color defaultColor = UIManager.getColor("Button.background");
+						Color defaultColor = UIManager.getColor( "Button.background" );
 						for ( JButton updatesButton : updatesButtonList ) {
 							if ( defaultColor != null )
-								updatesButton.setBackground(defaultColor);
-							updatesButton.setIcon(releaseNotesIcon);
-							updatesButton.setEnabled(true);
+								updatesButton.setBackground( defaultColor );
+							updatesButton.setIcon( releaseNotesIcon );
+							updatesButton.setEnabled( true );
 						}
 						setStatusText( "No new updates." );
 					}
@@ -870,7 +972,7 @@ public class FTLFrame extends JFrame {
 			url = templateUrl;
 			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
 			while ( (line = in.readLine()) != null ) {
-				templateBuf.append(line).append("\n");
+				templateBuf.append(line).append( "\n" );
 			}
 			in.close();
 			String historyTemplate = templateBuf.toString();
@@ -920,7 +1022,7 @@ public class FTLFrame extends JFrame {
 		dlg.setSize(600, 400);
 		dlg.setLocationRelativeTo( this );
 
-		JEditorPane editor = new JEditorPane("text/html", content);
+		JEditorPane editor = new JEditorPane( "text/html", content );
 		editor.setEditable(false);
 		editor.setCaretPosition(0);
 		editor.addHyperlinkListener(linkListener);
@@ -936,6 +1038,7 @@ public class FTLFrame extends JFrame {
 			shipUnlockPanel.setProfile(p);
 			generalAchievementsPanel.setProfile(p);
 			statsPanel.setProfile(p);
+			profileDumpPanel.setText( (p != null ? p.toString() : "") );
 
 			profile = p;
 		}
@@ -944,10 +1047,10 @@ public class FTLFrame extends JFrame {
 
 			if ( profile != null && profile != p ) {
 				log.info( "Attempting to revert GUI to the previous profile..." );
-				showErrorDialog("Error loading profile.\nAttempting to return to the previous profile...");
-				loadProfile(profile);
+				showErrorDialog( "Error loading profile.\nAttempting to return to the previous profile..." );
+				loadProfile( profile );
 			} else {
-				showErrorDialog("Error loading profile.\nThis has left the GUI in an ambiguous state.\nSaving is not recommended until another profile has successfully loaded.");
+				showErrorDialog( "Error loading profile.\nThis has left the GUI in an ambiguous state.\nSaving is not recommended until another profile has successfully loaded." );
 			}
 		}
 
@@ -960,6 +1063,7 @@ public class FTLFrame extends JFrame {
 		shipUnlockPanel.updateProfile(p);
 		generalAchievementsPanel.updateProfile(p);
 		statsPanel.updateProfile(p);
+		// profileDumpPanel doesn't modify anything.
 
 		loadProfile(p);
 	}
@@ -976,12 +1080,38 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
-		savedGameDumpPanel.setGameState( gs );
-		savedGameGeneralPanel.setGameState( gs );
-		savedGamePlayerFloorplanPanel.setShipState( gs.getPlayerShipState() );
-		savedGameNearbyFloorplanPanel.setShipState( gs.getNearbyShipState() );
-		savedGameSectorMapPanel.setGameState( gs );
-		savedGameStateVarsPanel.setGameState( gs );
+		savedGameDumpPanel.setText( (gs != null ? gs.toString() : "") );
+
+		if ( gs != null && gs.getHeaderAlpha() == 2 ) {
+			savedGameGeneralPanel.setGameState( gs );
+			savedGamePlayerFloorplanPanel.setShipState( gs.getPlayerShipState() );
+			savedGameNearbyFloorplanPanel.setShipState( gs.getNearbyShipState() );
+			savedGameSectorMapPanel.setGameState( gs );
+			savedGameStateVarsPanel.setGameState( gs );
+
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "General" ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Player Ship" ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Nearby Ship" ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Change Ship" ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Sector Map" ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), true );
+			gameStateSaveBtn.setEnabled( true );
+		}
+		else {
+			savedGameGeneralPanel.setGameState( null );
+			savedGamePlayerFloorplanPanel.setShipState( null );
+			savedGameNearbyFloorplanPanel.setShipState( null );
+			savedGameSectorMapPanel.setGameState( null );
+			savedGameStateVarsPanel.setGameState( null );
+
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "General" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Player Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Nearby Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Change Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Sector Map" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), false );
+			gameStateSaveBtn.setEnabled( false );
+		}
 
 		gameState = gs;
 	}
@@ -1003,8 +1133,8 @@ public class FTLFrame extends JFrame {
 
 	public void setStatusText( String text ) {
 		if (text.length() > 0)
-			statusLbl.setText(text);
+			statusLbl.setText( text );
 		else
-			statusLbl.setText(" ");
+			statusLbl.setText( " " );
 	}
 }

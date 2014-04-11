@@ -20,6 +20,9 @@ public class Encounters {
 	@XmlElement(name="eventList",required=false)
 	private List<FTLEventList> eventLists;
 
+	@XmlElement(name="ship")
+	private List<ShipEvent> shipEvents;
+
 	public void setEvents( List<FTLEvent> events ) {
 		this.events = events;
 	}
@@ -36,6 +39,14 @@ public class Encounters {
 		return eventLists;
 	}
 
+	public void setShipEvents( List<ShipEvent> shipEvents ) {
+		this.shipEvents = shipEvents;
+	}
+
+	public List<ShipEvent> getShipEvents() {
+		return shipEvents;
+	}
+
 	/**
 	 * Returns an Event with a given id.
 	 *
@@ -45,11 +56,12 @@ public class Encounters {
 	public FTLEvent getEventById( String id ) {
 		if ( id == null || events == null ) return null;
 
+		FTLEvent result = null;
 		for ( FTLEvent tmpEvent : events ) {
-			if ( id.equals(tmpEvent.getId()) ) return tmpEvent;
+			if ( id.equals(tmpEvent.getId()) ) result = tmpEvent;
 		}
 
-		return null;
+		return result;
 	}
 
 	/**
@@ -61,10 +73,28 @@ public class Encounters {
 	public FTLEventList getEventListById( String id ) {
 		if ( id == null || eventLists == null ) return null;
 
+		FTLEventList result = null;
 		for ( FTLEventList tmpEventList : eventLists ) {
-			if ( id.equals(tmpEventList.getId()) ) return tmpEventList;
+			if ( id.equals(tmpEventList.getId()) ) result = tmpEventList;
 		}
 
-		return null;
+		return result;
+	}
+
+	/**
+	 * Returns a ShipEvent with a given id.
+	 *
+	 * Events and EventLists share a namespace,
+	 * so an id could belong to either.
+	 */
+	public ShipEvent getShipEventById( String id ) {
+		if ( id == null || shipEvents == null ) return null;
+
+		ShipEvent result = null;
+		for ( ShipEvent tmpEvent : shipEvents ) {
+			if ( id.equals(tmpEvent.getId()) ) result = tmpEvent;
+		}
+
+		return result;
 	}
 }

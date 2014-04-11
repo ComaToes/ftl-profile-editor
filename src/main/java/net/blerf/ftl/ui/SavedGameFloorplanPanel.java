@@ -144,6 +144,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private HashMap<String, HashMap<Rectangle, BufferedImage>> cachedImages = new HashMap<String, HashMap<Rectangle, BufferedImage>>();
 	private HashMap<BufferedImage, HashMap<Tint, BufferedImage>> cachedTintedImages = new HashMap<BufferedImage, HashMap<Tint, BufferedImage>>();
+	private HashMap<String, BufferedImage> cachedPlayerBodyImages = new HashMap<String, BufferedImage>();
+	private HashMap<String, BufferedImage> cachedEnemyBodyImages = new HashMap<String, BufferedImage>();
 
 	private JLayeredPane shipPanel = null;
 	private StatusViewport shipViewport = null;
@@ -683,6 +685,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			// Load the interior image.
 			floorLbl.setIcon(null);
+			floorLbl.setBounds( 0, 0, 50, 50 );
 			try {
 				in = DataManager.get().getResourceInputStream("img/ship/"+ shipGfxBaseName +"_floor.png");
 				BufferedImage floorImage = ImageIO.read( in );
@@ -690,15 +693,22 @@ public class SavedGameFloorplanPanel extends JPanel {
 				floorLbl.setIcon( new ImageIcon(floorImage) );
 				floorLbl.setSize( new Dimension(floorImage.getWidth(), floorImage.getHeight()) );
 
-			} catch (FileNotFoundException e) {
+				if ( shipChassis.getOffsets() != null ) {
+					ShipChassis.Offsets.Offset floorOffset = shipChassis.getOffsets().floorOffset;
+					if ( floorOffset != null ) {
+						floorLbl.setLocation( floorOffset.x, floorOffset.y );
+					}
+				}
+			}
+			catch ( FileNotFoundException e ) {
 				log.warn( "No ship floor image for ("+ shipGfxBaseName +")" );
-
-			} catch (IOException e) {
+			}
+			catch ( IOException e ) {
 				log.error( "Failed to load ship floor image ("+ shipGfxBaseName +")", e );
-
-			} finally {
+			}
+			finally {
 				try {if (in != null) in.close();}
-				catch (IOException f) {}
+				catch ( IOException e ) {}
 	    }
 
 			for ( JComponent roomDecor : roomDecorations )
@@ -848,6 +858,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					int systemY = roomY + tileEdge + squaresV*squareSize/2;
 
 					SavedGameParser.SystemState systemState = shipState.getSystem( systemType );
+					if ( systemState == null ) break;  // TODO: Support systems that aren't on the shipState.
 					addSystemSprite( systemX, systemY, systemState );
 				}
 			}
@@ -1414,11 +1425,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 			BufferedImage bigImage = ImageIO.read(in);
 			result = bigImage.getSubimage(x, y, w, h);
 
-		} catch (RasterFormatException e) {
+		}
+		catch ( RasterFormatException e ) {
 			log.error( "Failed to load and crop image: "+ innerPath, e );
-		} catch (IOException e) {
+		}
+		catch ( FileNotFoundException e ) {
+			log.error( String.format("Failed to load and crop image (\"%s\"). Its innerPath was not found.", innerPath) );
+		}
+		catch ( IOException e ) {
 			log.error( "Failed to load and crop image: "+ innerPath, e );
-		} finally {
+		}
+		finally {
 			try {if (in != null) in.close();}
 			catch (IOException f) {}
 		}
@@ -1524,6 +1541,93 @@ public class SavedGameFloorplanPanel extends JPanel {
 			cachedTintedImages.put( srcImage, cacheMap );
 		}
 		cacheMap.put( tint, result );
+
+		return result;
+	}
+
+	private BufferedImage getBodyImage( String imgRace, boolean playerControlled ) {
+		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		String suffix = "";
+		String innerPath;
+		BufferedImage result = null;
+
+		if ( playerControlled ) {
+			result = cachedPlayerBodyImages.get( imgRace );
+		} else {
+			result = cachedEnemyBodyImages.get( imgRace );
+		}
+		if ( result != null ) return result;
+
+		// As of 1.01, drone images were "X_sheet" and "X_enemy_sheet".
+		// As of 1.01, crew images were "X_player_[green|yellow]" and "X_enemy_red".
+		// As of 1.03.1, drone images could also be "X_player[no color]" vs "X_enemy_red".
+		// As of 1.5.4, crew images were "X_base" overlaid on a tinted "X_color".
+		// As of 1.5.4, drone images were "X_base" with no color possibility.
+
+		if ( CrewType.BATTLE.getId().equals(imgRace) ) {
+			suffix = "_sheet";
+
+			// All "battle" bodies on a ship are foreign, and unselectable in-game.
+			// Hence, no color?
+		}
+		else if ( DroneType.REPAIR.getId().equals(imgRace) ) {
+			suffix = "_sheet";
+
+			// All "repair" bodies on a ship are local, and unselectable in-game.
+			// Hence, no color?
+		}
+		else {
+			if ( playerControlled ) {
+				suffix = "_player_yellow";
+			} else {
+				suffix = "_enemy_red";
+			}
+		}
+
+		innerPath = "img/people/"+ imgRace + suffix +".png";
+		if ( DataManager.get().hasResourceInputStream( innerPath ) ) {
+			// FTL 1.01-1.03.3
+			result = getCroppedImage( innerPath, offsetX, offsetY, w, h );
+		}
+		else {
+			// FTL 1.5.4+
+			BufferedImage colorImage = null;
+			BufferedImage baseImage = null;
+
+			String colorPath = "img/people/"+ imgRace +"_color.png";
+			if ( DataManager.get().hasResourceInputStream( colorPath ) ) {
+				colorImage = getCroppedImage( colorPath, offsetX, offsetY, w, h );
+				float[] yellow = new float[] { 0.957f, 0.859f, 0.184f, 1f };
+				float[] red = new float[] { 1.0f, 0.286f, 0.145f, 1f };
+				Tint colorTint = new Tint( (playerControlled ? yellow: red), new float[] { 0, 0, 0, 0 } );
+				colorImage = getTintedImage( colorImage, colorTint );
+			}
+
+			String basePath = "img/people/"+ imgRace +"_base.png";
+			if ( DataManager.get().hasResourceInputStream( basePath ) ) {
+				baseImage = getCroppedImage( basePath, offsetX, offsetY, w, h );
+			}
+
+			if ( colorImage != null && baseImage != null ) {
+				result = gc.createCompatibleImage(w, h, Transparency.TRANSLUCENT);
+				Graphics2D g2d = result.createGraphics();
+				g2d.drawImage(colorImage, 0, 0, null);
+				g2d.drawImage(baseImage, 0, 0, null);
+				g2d.dispose();
+			}
+			else if ( baseImage != null ) {
+				// No colorImage to tint and outline the sprite, probably a drone.
+				result = baseImage;
+			}
+		}
+
+		if ( result != null ) {
+			if ( playerControlled ) {
+				cachedPlayerBodyImages.put( imgRace, result );
+			} else {
+				cachedEnemyBodyImages.put( imgRace, result );
+			}
+		}
 
 		return result;
 	}
@@ -3014,22 +3118,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		public void makeSane() {
 			BufferedImage newBodyImage = null;
+			String imgRace = null;
 			boolean needsBody = false;
 
 			if ( droneId != null ) {
 				DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneId );
-				String newBodyImagePath = null;
 
 				if ( DroneType.BATTLE.getId().equals(droneBlueprint.getType()) ) {
-					newBodyImagePath = "img/people/battle_sheet.png";
-					// As of 1.01, "sheet" vs "enemy_sheet" images were available.
-					// As of 1.03.1, "player" vs "enemy_red" images were also available
+					imgRace = "battle";
 					needsBody = true;
 				}
 				else if ( DroneType.REPAIR.getId().equals(droneBlueprint.getType()) ) {
-					newBodyImagePath = "img/people/repair_sheet.png";
-					// As of 1.01, "sheet" vs "enemy_sheet" images were available.
-					// As of 1.03.1, "player" vs "enemy_red" images were also available.
+					imgRace = "repair";
 					needsBody = true;
 				}
 				else {
@@ -3076,8 +3176,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 					bodyX = -1; bodyY = -1;
 				}
 
-				if ( newBodyImagePath != null )
-					newBodyImage = getCroppedImage( newBodyImagePath, 0, 0, 35,35 );
+				if ( needsBody && imgRace != null ) {
+					newBodyImage = getBodyImage( imgRace, isPlayerControlled() );
+				}
 			}
 
 			if ( newBodyImage != bodyImage ) {
@@ -3595,8 +3696,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				suffix = "_enemy_sheet";
 				// As of 1.01, "sheet" vs "enemy_sheet" images were available.
 				// As of 1.03.1, "player" vs "enemy_red" images were also available
-
-			} else {
+			}
+			else {
 				if ( CrewType.HUMAN.getId().equals(getRace()) ) {
 					// Human females have a distinct sprite (Other races look the same either way).
 					if ( !isMale() )
@@ -3619,7 +3720,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					suffix = "_enemy_red";
 				}
 			}
-			crewImage = getCroppedImage( "img/people/"+ imgRace + suffix +".png", offsetX, offsetY, w, h );
+			crewImage = getBodyImage( imgRace, isPlayerControlled() );
 			if ( tint != null )
 				crewImage = getTintedImage( crewImage, tint );
 		}

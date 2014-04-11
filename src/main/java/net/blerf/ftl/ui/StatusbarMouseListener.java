@@ -11,6 +11,7 @@ public class StatusbarMouseListener extends MouseAdapter {
 	private FTLFrame frame = null;
 	private String text = null;
 
+
 	public StatusbarMouseListener( FTLFrame frame, String text ) {
 		this.frame = frame;
 		this.text = text;

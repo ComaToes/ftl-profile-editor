@@ -9,11 +9,13 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlValue;
 
+
 @XmlRootElement(name="nameList")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CrewNameList {
 	@XmlAttribute
-	private String race, sex;  // race is ignored.
+	private String race, sex;  // FTL ignores race.
+
 	@XmlElement(name="name")
 	private List<CrewName> names;
 

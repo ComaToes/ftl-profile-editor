@@ -36,12 +36,22 @@ public class SavedGameParser extends Parser {
 			SavedGameState gameState = new SavedGameState();
 			in = new FileInputStream( datFile );
 
-			// This should always be 2.
 			int headerAlpha = readInt(in);
-			if ( headerAlpha != 2 )
+			if ( headerAlpha == 2 ) {
+				// FTL 1.03.3 and earlier.
+				gameState.setHeaderAlpha( headerAlpha );
+				gameState.setDLCEnabled( false );  // Not present before FTL 1.5.4.
+			}
+			else if ( headerAlpha == 7 ) {
+				// FTL 1.5.4+.
+				gameState.setHeaderAlpha( headerAlpha );
+				gameState.setDLCEnabled( readBool(in) );
+			}
+			else {
 				throw new IOException( "Unexpected first byte ("+ headerAlpha +")." );
+			}
 
-			gameState.setDifficultyEasy( readBool(in) );
+			gameState.setDifficulty( readInt(in) );
 			gameState.setTotalShipsDefeated( readInt(in) );
 			gameState.setTotalBeaconsExplored( readInt(in) );
 			gameState.setTotalScrapCollected( readInt(in) );
@@ -56,7 +66,7 @@ public class SavedGameParser extends Parser {
 			int oneBasedSectorNumber = readInt(in);  // Redundant.
 
 			// Always 0?
-			gameState.setHeaderAlpha( readInt(in) );
+			gameState.setUnknownBeta( readInt(in) );
 
 			int stateVarCount = readInt(in);
 			for (int i=0; i < stateVarCount; i++) {
@@ -65,7 +75,7 @@ public class SavedGameParser extends Parser {
 				gameState.setStateVar(stateVarId, stateVarValue);
 			}
 
-			ShipState playerShipState = readShip( in, true );
+			ShipState playerShipState = readShip( in, false, headerAlpha, gameState.isDLCEnabled() );
 			gameState.setPlayerShipState( playerShipState );
 
 			// Nearby ships have no cargo, so this isn't in readShip().
@@ -75,14 +85,24 @@ public class SavedGameParser extends Parser {
 			}
 
 			gameState.setSectorTreeSeed( readInt(in) );
-			
+
 			gameState.setSectorLayoutSeed( readInt(in) );
-			
+
 			gameState.setRebelFleetOffset( readInt(in) );
-			
+
 			gameState.setRebelFleetFudge( readInt(in) );
 
 			gameState.setRebelPursuitMod( readInt(in) );
+
+			if ( headerAlpha == 7 ) {
+				gameState.setCurrentBeaconId( readInt(in) );
+
+				gameState.setUnknownGamma( readInt(in) );
+				gameState.setUnknownDelta( readInt(in) );
+				gameState.setUnknownEpsilon( readInt(in) );
+				gameState.setUnknownZeta( readInt(in) );
+				gameState.setUnknownEta( readInt(in) );
+			}
 
 			gameState.setSectorHazardsVisible( readBool(in) );
 
@@ -113,7 +133,7 @@ public class SavedGameParser extends Parser {
 			
 			int beaconCount = readInt(in);
 			for (int i=0; i < beaconCount; i++) {
-				gameState.addBeacon( readBeacon(in) );
+				gameState.addBeacon( readBeacon(in, headerAlpha) );
 			}
 
 			int questEventCount = readInt(in);
@@ -129,16 +149,40 @@ public class SavedGameParser extends Parser {
 				gameState.addDistantQuestEvent( distantQuestEventId );
 			}
 
-			gameState.setCurrentBeaconId( readInt(in) );
+			if ( headerAlpha == 2 ) {
+				gameState.setCurrentBeaconId( readInt(in) );
 
-			boolean shipNearby = readBool(in);
-			if ( shipNearby ) {
-				ShipState nearbyShipState = readShip( in, false );
-				gameState.setNearbyShipState(nearbyShipState);
+				boolean shipNearby = readBool(in);
+				if ( shipNearby ) {
+					ShipState nearbyShipState = readShip( in, true, headerAlpha, gameState.isDLCEnabled() );
+					gameState.setNearbyShipState(nearbyShipState);
+				}
+
+				RebelFlagshipState flagshipState = readRebelFlagship(in);
+				gameState.setRebelFlagshipState( flagshipState );
 			}
+			else {
+				// TODO: Figure out how FTL 1.5.4 stores the nearby/flagship info.
 
-			RebelFlagshipState flagshipState = readRebelFlagship(in);
-			gameState.setRebelFlagshipState( flagshipState );
+				// Current beaconId was set earlier.
+
+				gameState.setUnknownTheta( readInt(in) );
+
+				EncounterState encounter = readEncounter(in);
+				gameState.setEncounter( encounter );
+
+				boolean shipNearby = readBool(in);
+				if ( shipNearby ) {
+					gameState.addMysteryBytes( new MysteryBytes(in, 4*1) );
+
+					ShipState nearbyShipState = readShip( in, true, headerAlpha, gameState.isDLCEnabled() );
+					gameState.setNearbyShipState(nearbyShipState);
+				}
+
+				gameState.setRebelFlagshipState( new RebelFlagshipState(new String[] {"BOSS_1", "BOSS_2", "BOSS_3"}) );
+
+				//System.err.println( in.getChannel().position() );
+			}
 
 			// The stream should end here.
 
@@ -168,7 +212,7 @@ public class SavedGameParser extends Parser {
 		// This should always be 2.
 		writeInt( out, 2 );
 
-		writeBool( out, gameState.isDifficultyEasy() );
+		writeInt( out, gameState.getDifficulty() );
 		writeInt( out, gameState.getTotalShipsDefeated() );
 		writeInt( out, gameState.getTotalBeaconsExplored() );
 		writeInt( out, gameState.getTotalScrapCollected() );
@@ -241,7 +285,7 @@ public class SavedGameParser extends Parser {
 
 	}
 
-	private ShipState readShip( InputStream in, boolean auto ) throws IOException {
+	private ShipState readShip( InputStream in, boolean auto, int headerAlpha, boolean dlcEnabled ) throws IOException {
 
 		String shipBlueprintId = readString(in);  // blueprints.xml / autoBlueprints.xml.
 		String shipName = readString(in);
@@ -265,6 +309,13 @@ public class SavedGameParser extends Parser {
 			shipState.addStartingCrewMember( readStartingCrewMember(in) );
 		}
 
+		if ( headerAlpha == 7 ) {
+			shipState.setUnknownAlpha( readInt(in) );
+			shipState.setUnknownBeta( readInt(in) );
+			shipState.setUnknownGamma( readInt(in) );
+			shipState.setUnknownDelta( readInt(in) );
+		}
+
 		shipState.setHullAmt( readInt(in) );
 		shipState.setFuelAmt( readInt(in) );
 		shipState.setDronePartsAmt( readInt(in) );
@@ -273,7 +324,7 @@ public class SavedGameParser extends Parser {
 
 		int crewCount = readInt(in);
 		for (int i=0; i < crewCount; i++) {
-			shipState.addCrewMember( readCrewMember(in) );
+			shipState.addCrewMember( readCrewMember(in, headerAlpha) );
 		}
 
 		// System info is stored in this order.
@@ -290,10 +341,35 @@ public class SavedGameParser extends Parser {
 		systemTypes.add( SystemType.TELEPORTER );
 		systemTypes.add( SystemType.CLOAKING );
 		systemTypes.add( SystemType.ARTILLERY );
+		if ( headerAlpha == 7 ) {
+			systemTypes.add( SystemType.ALPHA );  // Epsilon was 0, maybe it was this system's capacity?
+			systemTypes.add( SystemType.CLONEBAY );
+			systemTypes.add( SystemType.GAMMA );
+			systemTypes.add( SystemType.HACKING );
+		}
 
 		shipState.setReservePowerCapacity( readInt(in) );
 		for ( SystemType systemType : systemTypes ) {
-			shipState.addSystem( readSystem(in, systemType) );
+			shipState.addSystem( readSystem(in, systemType, headerAlpha ) );
+		}
+
+		if ( headerAlpha == 7 ) {
+			//shipState.setUnknownEpsilon( readInt(in) );  // TODO: Currently trying out this 0 as an extra system's capacity.
+			//shipState.setUnknownZeta( readInt(in) );
+			//shipState.setUnknownEta( readInt(in) );
+			//shipState.setUnknownTheta( readInt(in) );
+			shipState.setUnknownIota( readInt(in) );
+			shipState.setUnknownKappa( readInt(in) );
+			shipState.setUnknownLambda( readInt(in) );
+			shipState.setUnknownMu( readInt(in) );
+			shipState.setUnknownNu( readInt(in) );
+			shipState.setUnknownXi( readInt(in) );
+			shipState.setUnknownOmicron( readInt(in) );
+			shipState.setUnknownPi( readInt(in) );
+			shipState.setUnknownRho( readInt(in) );
+			shipState.setUnknownSigma( readInt(in) );
+			shipState.setUnknownTau( readInt(in) );
+			shipState.setUnknownUpsilon( readInt(in) );
 		}
 
 		int roomCount = shipLayout.getRoomCount();
@@ -303,7 +379,7 @@ public class SavedGameParser extends Parser {
 			int squaresV = roomInfo.get(ShipLayout.RoomInfo.SQUARES_V).intValue();
 
 			// Room states are stored in roomId order.
-			shipState.addRoom( readRoom(in, squaresH, squaresV) );
+			shipState.addRoom( readRoom(in, squaresH, squaresV, headerAlpha) );
 		}
 
 		int breachCount = readInt(in);
@@ -326,21 +402,30 @@ public class SavedGameParser extends Parser {
 				vacuumDoorMap.put( doorCoord, doorInfo );
 				continue;
 			}
-			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in) );
+			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in, headerAlpha) );
 		}
 		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet()) {
 			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
 
-			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in) );
+			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor(in, headerAlpha) );
+		}
+
+		if ( headerAlpha == 7 ) {
+			shipState.setUnknownPhi( readInt(in) );
 		}
 
 		int weaponCount = readInt(in);
 		for (int i=0; i < weaponCount; i++) {
-			String weaponId = readString(in);
-			boolean weaponArmed = readBool(in);
-			int weaponCooldownTicks = readInt(in);
-			shipState.addWeapon( new WeaponState(weaponId, weaponArmed, weaponCooldownTicks) );
+			WeaponState weapon = new WeaponState();
+			weapon.setWeaponId( readString(in) );
+			weapon.setArmed( readBool(in) );
+
+			if ( headerAlpha == 2 ) {  // No longer used as of FTL 1.5.4.
+				weapon.setCooldownTicks( readInt(in) );
+			}
+
+			shipState.addWeapon( weapon );
 		}
 
 		int droneCount = readInt(in);
@@ -481,7 +566,7 @@ public class SavedGameParser extends Parser {
 		writeString( out, startingCrew.getName() );
 	}
 
-	private CrewState readCrewMember( InputStream in ) throws IOException {
+	private CrewState readCrewMember( InputStream in, int headerAlpha ) throws IOException {
 		CrewState crew = new CrewState();
 		crew.setName( readString(in) );
 		crew.setRace( readString(in) );
@@ -492,6 +577,23 @@ public class SavedGameParser extends Parser {
 		crew.setRoomId( readInt(in) );
 		crew.setRoomSquare( readInt(in) );
 		crew.setPlayerControlled( readBool(in) );
+
+		if ( headerAlpha == 7 ) {
+			crew.setUnknownAlpha( readInt(in) );
+			crew.setUnknownBeta( readInt(in) );
+
+			int tintCount = readInt(in);
+			List<Integer> spriteTintIndeces = new ArrayList<Integer>();
+			for (int i=0; i < tintCount; i++) {
+				spriteTintIndeces.add( new Integer(readInt(in)) );
+			}
+			crew.setSpriteTintIndeces( spriteTintIndeces );
+
+			crew.setUnknownDelta( readInt(in) );
+			crew.setSavedRoomSquare( readInt(in) );
+			crew.setSavedRoomId( readInt(in) );
+		}
+
 		crew.setPilotSkill( readInt(in) );
 		crew.setEngineSkill( readInt(in) );
 		crew.setShieldSkill( readInt(in) );
@@ -504,6 +606,25 @@ public class SavedGameParser extends Parser {
 		crew.setPilotedEvasions( readInt(in) );
 		crew.setJumpsSurvived( readInt(in) );
 		crew.setSkillMasteries( readInt(in) );
+
+		if ( headerAlpha == 7 ) {
+			crew.setUnknownEta( readInt(in) );
+			crew.setUnknownTheta( readInt(in) );
+			crew.setUnknownIota( readInt(in) );
+			crew.setUnknownKappa( readInt(in) );
+			crew.setUnknownLambda( readInt(in) );
+			crew.setUnknownMu( readInt(in) );
+			crew.setUnknownNu( readInt(in) );
+			crew.setUnknownXi( readInt(in) );
+			crew.setUnknownOmicron( readInt(in) );
+			crew.setUnknownPi( readInt(in) );
+			crew.setUnknownRho( readInt(in) );
+			crew.setUnknownSigma( readInt(in) );
+			crew.setUnknownTau( readInt(in) );
+			crew.setUnknownUpsilon( readInt(in) );
+			crew.setUnknownPhi( readInt(in) );
+		}
+
 		return crew;
 	}
 
@@ -531,7 +652,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, crew.getSkillMasteries() );
 	}
 
-	private SystemState readSystem( InputStream in, SystemType systemType ) throws IOException {
+	private SystemState readSystem( InputStream in, SystemType systemType, int headerAlpha ) throws IOException {
 		SystemState system = new SystemState( systemType );
 		int capacity = readInt(in);
 
@@ -552,6 +673,21 @@ public class SavedGameParser extends Parser {
 
 			system.setRepairProgress( readInt(in) );
 			system.setDamageProgress( readInt(in) );
+
+			if ( headerAlpha == 7 ) {
+				system.setUnknownAlpha( readInt(in) );    // 0000 0000
+				system.setUnknownBeta( readInt(in) );     // 0000 0000
+				system.setUnknownGamma( readInt(in) );    // 0000 0000
+				system.setUnknownDelta( readInt(in) );    // E803 0000 (1000)
+				system.setUnknownEpsilon( readInt(in) );  // 0000 0000
+				system.setUnknownZeta( readInt(in) );     // 0100 0000
+
+				if ( systemType == SystemType.HACKING ) {
+					system.setUnknownEta( readInt(in) );    // 0000 0000
+					system.setUnknownTheta( readInt(in) );  // E02E 0000 (12000)
+					system.setUnknownIota( readInt(in) );   // 18FC FFFF (-1000)
+				}
+			}
 		}
 		return system;
 	}
@@ -573,7 +709,7 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
-	private RoomState readRoom( InputStream in, int squaresH, int squaresV ) throws IOException {
+	private RoomState readRoom( InputStream in, int squaresH, int squaresV, int headerAlpha ) throws IOException {
 		RoomState room = new RoomState();
 		room.setOxygen( readInt(in) );
 
@@ -584,6 +720,15 @@ public class SavedGameParser extends Parser {
 				// It is not related to hull breaches.
 				room.addSquare( readInt(in), readInt(in), readInt(in) );
 			}
+		}
+
+		if ( headerAlpha == 7 ) {
+			room.setStationSquare( readInt(in) );
+
+			int stationDirection = readInt(in);
+			if ( stationDirection < 0 || stationDirection > 4 )
+				throw new IOException( "Invalid room station direction: "+ stationDirection );
+			room.setStationDirection( stationDirection );
 		}
 
 		return room;
@@ -599,10 +744,23 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
-	private DoorState readDoor( InputStream in ) throws IOException {
-		boolean open = readBool(in);
-		boolean walkingThrough = readBool(in);
-		DoorState door = new DoorState( open, walkingThrough );
+	private DoorState readDoor( InputStream in, int headerAlpha ) throws IOException {
+		DoorState door = new DoorState();
+
+		if ( headerAlpha == 7 ) {
+			door.setUnknownAlpha( readInt(in) );
+			door.setUnknownBeta( readInt(in) );
+			door.setUnknownGamma( readInt(in) );
+		}
+
+		door.setOpen( readBool(in) );
+		door.setWalkingThrough( readBool(in) );
+
+		if ( headerAlpha == 7 ) {
+			door.setUnknownDelta( readInt(in) );
+			door.setUnknownEpsilon( readInt(in) );
+		}
+
 		return door;
 	}
 
@@ -634,7 +792,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, drone.getHealth() );
 	}
 
-	private BeaconState readBeacon( InputStream in ) throws IOException {
+	private BeaconState readBeacon( InputStream in, int headerAlpha ) throws IOException {
 		BeaconState beacon = new BeaconState();
 
 		boolean visited = readBool(in);
@@ -672,8 +830,15 @@ public class SavedGameParser extends Parser {
 		beacon.setStorePresent(storePresent);
 		if ( storePresent ) {
 			StoreState store = new StoreState();
-			store.setTopShelf( readStoreShelf(in) );
-			store.setBottomShelf( readStoreShelf(in) );
+
+			int shelfCount = 2;          // FTL 1.01-1.03.3 only had two shelves.
+			if ( headerAlpha == 7 ) {
+				shelfCount = readInt(in);
+			}
+			for (int i=0; i < shelfCount; i++) {
+				store.addShelf( readStoreShelf(in) );
+			}
+
 			store.setFuel( readInt(in) );
 			store.setMissiles( readInt(in) );
 			store.setDroneParts( readInt(in) );
@@ -725,7 +890,7 @@ public class SavedGameParser extends Parser {
 	
 	private StoreShelf readStoreShelf( InputStream in ) throws IOException {
 		StoreShelf shelf = new StoreShelf();
-		
+
 		int itemType = readInt(in);
 		switch ( itemType ) {
 			case 0: shelf.setItemType( StoreItemType.WEAPON ); break;
@@ -735,7 +900,7 @@ public class SavedGameParser extends Parser {
 			case 4: shelf.setItemType( StoreItemType.SYSTEM ); break;
 			default: throw new RuntimeException( "Unknown store item type: " + itemType );
 		}
-		
+
 		for (int i = 0; i < 3; i++) {
 			int available = readInt(in); // -1=no item, 0=bought already, 1=buyable
 			if ( available < 0 )
@@ -743,9 +908,8 @@ public class SavedGameParser extends Parser {
 			String itemId = readString(in);
 			shelf.addItem( new StoreItem( (available > 0), itemId) );
 		}
-		
+
 		return shelf;
-		
 	}
 
 	public void writeStoreShelf( OutputStream out, StoreShelf shelf ) throws IOException {
@@ -768,6 +932,29 @@ public class SavedGameParser extends Parser {
 			writeInt( out, available );
 			if ( available >= 0 ) writeString( out, itemId );
 		}
+	}
+
+	public EncounterState readEncounter( InputStream in ) throws IOException {
+		EncounterState encounter = new EncounterState();
+
+		encounter.setUnknownAlpha( readInt(in) );
+		encounter.setUnknownBeta( readString(in) );
+		encounter.setUnknownGamma( readString(in) );
+		encounter.setUnknownDelta( readString(in) );
+		encounter.setUnknownEpsilon( readString(in) );
+		encounter.setUnknownZeta( readString(in) );
+		encounter.setUnknownEta( readInt(in) );
+		encounter.setText( readString(in) );
+		encounter.setUnknownIota( readInt(in) );
+
+		int kappaCount = readInt(in);
+		ArrayList<Integer> kappaList = new ArrayList<Integer>();
+		for (int i=0; i < kappaCount; i++) {
+			kappaList.add( new Integer(readInt(in)) );
+		}
+		encounter.setUnknownKappa( kappaList );
+
+		return encounter;
 	}
 
 	public RebelFlagshipState readRebelFlagship( InputStream in ) throws IOException {
@@ -799,12 +986,13 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum StateVar {
-		// TODO: magic strings.
+		// TODO: Magic strings.
 		BLUE_ALIEN     ("blue_alien",      "Blue event choices clicked. (only ones that require a race)"),
 		DEAD_CREW      ("dead_crew",       "???, plus boarding drone bodies? (see also: lost_crew)"),
 		DESTROYED_ROCK ("destroyed_rock",  "Rock ships destroyed. (including pirates)"),
 		ENV_DANGER     ("env_danger",      "Jumps into beacons with environmental dangers."),
 		FIRED_SHOT     ("fired_shot",      "Individual beams/blasts/projectiles fired. (see also: used_missile)"),
+		HIGH_O2        ("higho2",          "Times oxygen exceeded 20%, incremented when jumping from a beacon or saving."),
 		KILLED_CREW    ("killed_crew",     "Enemy crew killed. (and possibly beam friendly fire?)"),
 		LOST_CREW      ("lost_crew",       "Crew you've lost: killed, abandoned on nearby ships, taken by events?, but not dismissed. (see also: dead_crew)"),
 		NEBULA         ("nebula",          "Jumps into nebula beacons."),
@@ -843,7 +1031,9 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static class SavedGameState {
-		private boolean difficultyEasy = false;
+		private int unknownHeaderAlpha = 0;   // Magic number indicating file format.
+		private boolean dlcEnabled = false;
+		private int difficulty = 0;
 		private int totalShipsDefeated = 0;
 		private int totalBeaconsExplored = 0;
 		private int totalScrapCollected = 0;
@@ -868,20 +1058,40 @@ public class SavedGameParser extends Parser {
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
+		private EncounterState encounter = null;
 		private ShipState nearbyShipState = null;
 		private int currentBeaconId = 0;
 		private RebelFlagshipState rebelFlagshipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
 
-		private int unknownHeaderAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+		private int unknownEpsilon = 0;
+		private int unknownZeta = 0;
+		private int unknownEta = 0;
 
-		public void setDifficultyEasy( boolean b ) { difficultyEasy = b; }
+		private int unknownTheta = 0;
+
+
+		public SavedGameState() {
+		}
+
+		/**
+		 * Sets the difficulty.
+		 *
+		 * 0 = Easy
+		 * 1 = Normal
+		 * 2 = Hard   (FTL 1.5.4+)
+		 */
+		public void setDifficulty( int n ) { difficulty = n; }
+		public int getDifficulty() { return difficulty; }
+
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
 		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
 		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
 		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
 
-		public boolean isDifficultyEasy() { return difficultyEasy; }
 		public int getTotalShipsDefeated() { return totalShipsDefeated; }
 		public int getTotalBeaconsExplored() { return totalBeaconsExplored; }
 		public int getTotalScrapCollected() { return totalScrapCollected; }
@@ -931,8 +1141,26 @@ public class SavedGameParser extends Parser {
 		public void setSectorNumber( int n ) { sectorNumber = n; }
 		public int getSectorNumber() { return sectorNumber; }
 
+		/**
+		 * Sets the magic number indicating file format, apparently.
+		 *
+		 * 2 = Saved Game, FTL 1.01-1.03.3
+		 * 7 = Saved Game, FTL 1.5.4+
+		 */
 		public void setHeaderAlpha( int n ) { unknownHeaderAlpha = n; }
 		public int getHeaderAlpha() { return unknownHeaderAlpha; }
+
+		/**
+		 * Toggles FTL:AE content.
+		 *
+		 * This content was introduced in FTL 1.5.4.
+		 *
+		 * Note Bad things may happen if you change the value
+		 * from true to false, if this saved game depends on
+		 * AE resources.
+		 */
+		public void setDLCEnabled( boolean b ) { dlcEnabled = b; }
+		public boolean isDLCEnabled() { return dlcEnabled; }
 
 		/**
 		 * Sets a state var.
@@ -1135,6 +1363,18 @@ public class SavedGameParser extends Parser {
 		public void setCurrentBeaconId( int n ) { currentBeaconId = n; }
 		public int getCurrentBeaconId() { return currentBeaconId; }
 
+		/**
+		 * Sets the currently active encounter.
+		 *
+		 * The encounter will trigger upon loading.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setEncounter( EncounterState encounter ) {
+			this.encounter = encounter;
+		}
+		public EncounterState getEncounter() { return encounter; }
+
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
 		}
@@ -1147,6 +1387,24 @@ public class SavedGameParser extends Parser {
 			return rebelFlagshipState;
 		}
 
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public int getUnknownBeta() { return unknownBeta; }
+
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public void setUnknownZeta( int n ) { unknownZeta = n; }
+		public void setUnknownEta( int n ) { unknownEta = n; }
+
+		public int getUnknownGamma() { return unknownGamma; }
+		public int getUnknownDelta() { return unknownDelta; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+		public int getUnknownZeta() { return unknownZeta; }
+		public int getUnknownEta() { return unknownEta; }
+
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public int getUnknownTheta() { return unknownTheta; }
+
 		public void addMysteryBytes( MysteryBytes m ) {
 			mysteryList.add(m);
 		}
@@ -1156,12 +1414,21 @@ public class SavedGameParser extends Parser {
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
+
+			String difficultyString = null;
+			if ( difficulty == 0 ) { difficultyString = "Easy"; }
+			else if ( difficulty == 1 ) { difficultyString = "Normal"; }
+			else if ( difficulty == 2 ) { difficultyString = "Hard"; }
+			else { difficultyString = String.format("%4d (???)", difficulty); }
+
 			boolean first = true;
+			result.append(String.format("File Format:            %4d\n", unknownHeaderAlpha));
+			result.append(String.format("AE Content:             %b\n", (dlcEnabled ? "Enabled" : "Disabled") ));
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
-			result.append(String.format("Difficulty:             %s\n", (difficultyEasy ? "Easy" : "Normal") ));
+			result.append(String.format("Difficulty:             %s\n", difficultyString ));
 			result.append(String.format("Sector:                 %4d (%d)\n", sectorNumber, sectorNumber+1));
-			result.append(String.format("Unknown?:               %4d\n", unknownHeaderAlpha));
+			result.append(String.format("Beta?:                  %4d (Always 0?)\n", unknownBeta));
 			result.append(String.format("Total Ships Defeated:   %4d\n", totalShipsDefeated));
 			result.append(String.format("Total Beacons Explored: %4d\n", totalBeaconsExplored));
 			result.append(String.format("Total Scrap Collected:  %4d\n", totalScrapCollected));
@@ -1182,17 +1449,22 @@ public class SavedGameParser extends Parser {
 			}
 
 			result.append("\nSector Data...\n");
-			result.append( String.format("Sector Tree Seed:   %5d\n", sectorTreeSeed) );
-			result.append( String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed) );
-			result.append( String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset) );
-			result.append( String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge) );
-			result.append( String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod) );
-			result.append( String.format("Sector Hazards Map: %b\n", sectorHazardsVisible) );
-			result.append( String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds) );
-			result.append( String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible) );
-			result.append( String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop) );
-			result.append( String.format("Flagship Moving:    %b\n", rebelFlagshipMoving) );
-			result.append( String.format("Player BeaconId:    %5d\n", currentBeaconId) );
+			result.append(String.format("Sector Tree Seed:   %5d\n", sectorTreeSeed));
+			result.append(String.format("Sector Layout Seed: %5d\n", sectorLayoutSeed));
+			result.append(String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset));
+			result.append(String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge));
+			result.append(String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod));
+			result.append(String.format("Sector Hazards Map: %b\n", sectorHazardsVisible));
+			result.append(String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds));
+			result.append(String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible));
+			result.append(String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop));
+			result.append(String.format("Flagship Moving:    %b\n", rebelFlagshipMoving));
+			result.append(String.format("Player BeaconId:    %5d\n", currentBeaconId));
+			result.append(String.format("Gamma?:             %5d\n", unknownGamma));
+			result.append(String.format("Delta?:             %5d\n", unknownDelta));
+			result.append(String.format("Epsilon?:           %5d\n", unknownEpsilon));
+			result.append(String.format("Zeta?:              %5d\n", unknownZeta));
+			result.append(String.format("Eta?:               %5d\n", unknownEta));
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
@@ -1209,7 +1481,7 @@ public class SavedGameParser extends Parser {
 			for( BeaconState beacon : beaconList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
-				result.append( String.format("BeaconId: %2d\n", beaconId++) );
+				result.append(String.format("BeaconId: %2d\n", beaconId++));
 				result.append( beacon.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 			}
 
@@ -1224,6 +1496,13 @@ public class SavedGameParser extends Parser {
 			for ( String questEventId : distantQuestEventList ) {
 				result.append(String.format("QuestEventId: %s\n", questEventId));
 			}
+
+			result.append("\n");
+			result.append(String.format("Theta?:             %5d\n", unknownTheta));
+
+			result.append("\nCurrent Encounter...\n");
+			if ( encounter != null )
+				result.append(encounter.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nNearby Ship...\n");
 			if ( nearbyShipState != null )
@@ -1265,6 +1544,29 @@ public class SavedGameParser extends Parser {
 		private ArrayList<DroneState> droneList = new ArrayList<DroneState>();
 		private ArrayList<String> augmentIdList = new ArrayList<String>();
 
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+
+		private int unknownEpsilon = 0;
+		private int unknownZeta = 0;
+		private int unknownEta = 0;
+		private int unknownTheta = 0;
+		private int unknownIota = 0;
+		private int unknownKappa = 0;
+		private int unknownLambda = 0;
+		private int unknownMu = 0;  // Shield charge ticks (0-2000) waiting to add a bubble?
+		private int unknownNu = 0;
+		private int unknownXi = 0;
+		private int unknownOmicron = 0;
+		private int unknownPi = 0;
+		private int unknownRho = 0;
+		private int unknownSigma = 0;
+		private int unknownTau = 0;
+		private int unknownUpsilon = 0;
+
+		private int unknownPhi = 0;
 
 		/**
 		 * Constructs an incomplete ShipState.
@@ -1422,6 +1724,53 @@ public class SavedGameParser extends Parser {
 		public int getMissilesAmt() { return missilesAmt; }
 		public int getScrapAmt() { return scrapAmt; }
 
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+		public int getUnknownDelta() { return unknownDelta; }
+
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public void setUnknownZeta( int n ) { unknownZeta = n; }
+		public void setUnknownEta( int n ) { unknownEta = n; }
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public void setUnknownIota( int n ) { unknownIota = n; }
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
+		public void setUnknownLambda( int n ) { unknownLambda = n; }
+		public void setUnknownMu( int n ) { unknownMu = n; }
+		public void setUnknownNu( int n ) { unknownNu = n; }
+		public void setUnknownXi( int n ) { unknownXi = n; }
+		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
+		public void setUnknownPi( int n ) { unknownPi = n; }
+		public void setUnknownRho( int n ) { unknownRho = n; }
+		public void setUnknownSigma( int n ) { unknownSigma = n; }
+		public void setUnknownTau( int n ) { unknownTau = n; }
+		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
+
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+		public int getUnknownZeta() { return unknownZeta; }
+		public int getUnknownEta() { return unknownEta; }
+		public int getUnknownTheta() { return unknownTheta; }
+		public int getUnknownIota() { return unknownIota; }
+		public int getUnknownKappa() { return unknownKappa; }
+		public int getUnknownLambda() { return unknownLambda; }
+		public int getUnknownMu() { return unknownMu; }
+		public int getUnknownNu() { return unknownNu; }
+		public int getUnknownXi() { return unknownXi; }
+		public int getUnknownOmicron() { return unknownOmicron; }
+		public int getUnknownPi() { return unknownPi; }
+		public int getUnknownRho() { return unknownRho; }
+		public int getUnknownSigma() { return unknownSigma; }
+		public int getUnknownTau() { return unknownTau; }
+		public int getUnknownUpsilon() { return unknownUpsilon; }
+
+		public void setUnknownPhi( int n ) { unknownPhi = n; }
+		public int getUnknownPhi() { return unknownPhi; }
+
 		public void addCrewMember( CrewState c ) {
 			crewList.add(c);
 		}
@@ -1531,6 +1880,10 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Gfx BaseName: %s\n", shipGfxBaseName));
 
 			result.append("\nSupplies...\n");
+			result.append(String.format("Alpha?:      %3d\n", unknownAlpha));
+			result.append(String.format("Beta?:       %3d\n", unknownBeta));
+			result.append(String.format("Gamma?:      %3d\n", unknownGamma));
+			result.append(String.format("Delta?:      %3d\n", unknownDelta));
 			result.append(String.format("Hull:        %3d\n", hullAmt));
 			result.append(String.format("Fuel:        %3d\n", fuelAmt));
 			result.append(String.format("Drone Parts: %3d\n", dronePartsAmt));
@@ -1625,7 +1978,26 @@ public class SavedGameParser extends Parser {
 			for (String augmentId : augmentIdList) {
 				result.append(String.format("AugmentId: %s\n", augmentId));
 			}
-			
+
+			result.append("\nOther Unknowns...\n");
+			result.append(String.format("Epsilon?:          %3d\n", unknownEpsilon));
+			result.append(String.format("Zeta?:             %3d\n", unknownZeta));
+			result.append(String.format("Eta?:              %3d\n", unknownEta));
+			result.append(String.format("Theta?:            %3d\n", unknownTheta));
+			result.append(String.format("Iota?:             %3d\n", unknownIota));
+			result.append(String.format("Kappa?:            %3d\n", unknownKappa));
+			result.append(String.format("Lambda?:           %3d\n", unknownLambda));
+			result.append(String.format("Mu?:               %3d\n", unknownMu));
+			result.append(String.format("Nu?:               %3d\n", unknownNu));
+			result.append(String.format("Xi?:               %3d\n", unknownXi));
+			result.append(String.format("Omicron?:          %3d\n", unknownOmicron));
+			result.append(String.format("Pi?:               %3d\n", unknownPi));
+			result.append(String.format("Rho?:              %3d\n", unknownRho));
+			result.append(String.format("Sigma?:            %3d\n", unknownSigma));
+			result.append(String.format("Tau?:              %3d\n", unknownTau));
+			result.append(String.format("Upsilon?:          %3d\n", unknownUpsilon));
+			result.append(String.format("Phi?:              %3d\n", unknownPhi));
+
 			return result.toString();
 		}
 	}
@@ -1635,7 +2007,7 @@ public class SavedGameParser extends Parser {
 	public static class StartingCrewState {
 		private String name, race;
 
-		public StartingCrewState(String name, String race) {
+		public StartingCrewState( String name, String race ) {
 			this.name = name;
 			this.race = race;
 		}
@@ -1660,16 +2032,17 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum CrewType {
-		// TODO: magic numbers.
-		BATTLE ("battle",  150),
-		CRYSTAL("crystal", 120),
-		ENERGY ("energy",   70),
-		ENGI   ("engi",    100),
-		GHOST  ("ghost",    50),
-		HUMAN  ("human",   100),
-		MANTIS ("mantis",  100),
-		ROCK   ("rock",    150),
-		SLUG   ("slug",    100);
+		// TODO: Magic numbers.
+		BATTLE ("battle",    150),
+		CRYSTAL("crystal",   120),
+		ENERGY ("energy",     70),
+		ENGI   ("engi",      100),
+		GHOST  ("ghost",      50),
+		HUMAN  ("human",     100),
+		LANIUS ("anaerobic", 100),
+		MANTIS ("mantis",    100),
+		ROCK   ("rock",      150),
+		SLUG   ("slug",      100);
 
 		private String id;
 		private int maxHealth;
@@ -1696,7 +2069,7 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static class CrewState {
-		// TODO: magic numbers.
+		// TODO: Magic numbers.
 		public static final int MASTERY_INTERVAL_PILOT = 15;
 		public static final int MASTERY_INTERVAL_ENGINE = 15;
 		public static final int MASTERY_INTERVAL_SHIELD = 55;
@@ -1710,16 +2083,39 @@ public class SavedGameParser extends Parser {
 		private String name = "Frank";
 		private String race = CrewType.HUMAN.getId();
 		private boolean enemyBoardingDrone = false;
-		private int health=0;
+		private int health = 0;
 		private int blueprintRoomId;
 		private int roomSquare;  // 0-based, L-to-R wrapped row.
-		private boolean playerControlled=false;
+		private boolean playerControlled = false;
+		private int savedRoomId = 0;
+		private int savedRoomSquare = 0;
 		private int pilotSkill=0, engineSkill=0, shieldSkill=0;
 		private int weaponSkill=0, repairSkill=0, combatSkill=0;
 		private int repairs=0, combatKills=0, pilotedEvasions=0;
 		private int jumpsSurvived=0, skillMasteries=0;
-		private int spriteX, spriteY;
+		private int spriteX=0, spriteY=0;
+		private List<Integer> spriteTintIndeces = new ArrayList<Integer>();
 		private boolean male=true;
+
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownDelta = 0;
+
+		private int unknownEta = 0;
+		private int unknownTheta = 0;
+		private int unknownIota = 0;
+		private int unknownKappa = 0;
+		private int unknownLambda = 0;
+		private int unknownMu = 0;
+		private int unknownNu = 0;
+		private int unknownXi = 0;
+		private int unknownOmicron = 0;
+		private int unknownPi = 0;
+		private int unknownRho = 0;
+		private int unknownSigma = 0;
+		private int unknownTau = 0;
+		private int unknownUpsilon = 0;
+		private int unknownPhi = 0;
 
 		public CrewState() {
 		}
@@ -1730,6 +2126,27 @@ public class SavedGameParser extends Parser {
 		public void setRoomId( int n ) {blueprintRoomId = n; }
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
+
+		public String getName() { return name; }
+		public String getRace() { return race; }
+		public int getHealth() { return health; }
+		public int getRoomId() { return blueprintRoomId; }
+		public int getRoomSquare() { return roomSquare; }
+		public boolean isPlayerControlled() { return playerControlled; }
+
+		/**
+		 * Sets a saved position to return to.
+		 *
+		 * roomId and roomSquare need to be specified together.
+		 *
+		 * The "return crew to saved positions" feature was
+		 * introduced in FTL 1.5.4.
+		 */
+		public void setSavedRoomId( int n ) { savedRoomId = n; }
+		public int getSavedRoomId() { return savedRoomId; }
+		public void setSavedRoomSquare( int n ) { savedRoomSquare = n; }
+		public int getSavedRoomSquare() { return savedRoomSquare; }
+
 		public void setPilotSkill( int n ) {pilotSkill = n; }
 		public void setEngineSkill( int n ) {engineSkill = n; }
 		public void setShieldSkill( int n ) {shieldSkill = n; }
@@ -1742,12 +2159,6 @@ public class SavedGameParser extends Parser {
 		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
 		public void setSkillMasteries( int n ) { skillMasteries = n; }
 
-		public String getName() { return name; }
-		public String getRace() { return race; }
-		public int getHealth() { return health; }
-		public int getRoomId() { return blueprintRoomId; }
-		public int getRoomSquare() { return roomSquare; }
-		public boolean isPlayerControlled() { return playerControlled; }
 		public int getPilotSkill() { return pilotSkill; }
 		public int getEngineSkill() { return engineSkill; }
 		public int getShieldSkill() { return shieldSkill; }
@@ -1759,6 +2170,46 @@ public class SavedGameParser extends Parser {
 		public int getPilotedEvasions() { return pilotedEvasions; }
 		public int getJumpsSurvived() { return jumpsSurvived; }
 		public int getSkillMasteries() { return skillMasteries; }
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownDelta() { return unknownDelta; }
+
+		public void setUnknownEta( int n ) { unknownEta = n; }
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public void setUnknownIota( int n ) { unknownIota = n; }
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
+		public void setUnknownLambda( int n ) { unknownLambda = n; }
+		public void setUnknownMu( int n ) { unknownMu = n; }
+		public void setUnknownNu( int n ) { unknownNu = n; }
+		public void setUnknownXi( int n ) { unknownXi = n; }
+		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
+		public void setUnknownPi( int n ) { unknownPi = n; }
+		public void setUnknownRho( int n ) { unknownRho = n; }
+		public void setUnknownSigma( int n ) { unknownSigma = n; }
+		public void setUnknownTau( int n ) { unknownTau = n; }
+		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
+		public void setUnknownPhi( int n ) { unknownPhi = n; }
+
+		public int getUnknownEta() { return unknownEta; }
+		public int getUnknownTheta() { return unknownTheta; }
+		public int getUnknownIota() { return unknownIota; }
+		public int getUnknownKappa() { return unknownKappa; }
+		public int getUnknownLambda() { return unknownLambda; }
+		public int getUnknownMu() { return unknownMu; }
+		public int getUnknownNu() { return unknownNu; }
+		public int getUnknownXi() { return unknownXi; }
+		public int getUnknownOmicron() { return unknownOmicron; }
+		public int getUnknownPi() { return unknownPi; }
+		public int getUnknownRho() { return unknownRho; }
+		public int getUnknownSigma() { return unknownSigma; }
+		public int getUnknownTau() { return unknownTau; }
+		public int getUnknownUpsilon() { return unknownUpsilon; }
+		public int getUnknownPhi() { return unknownPhi; }
 
 		/**
 		 * Sets the position of the crew's image.
@@ -1777,6 +2228,23 @@ public class SavedGameParser extends Parser {
 		public int getSpriteX() { return spriteX; }
 		public int getSpriteY() { return spriteY; }
 
+		/**
+		 * Sets a list of tints to apply to the sprite.
+		 *
+		 * The tints themselves are defined in
+		 * blueprints.xml:crewBlueprint/colorList
+		 *
+		 * The first Integer in the list corresponds to the first 'layer' tag
+		 * in the xml, and the Integer's value is the nth 'color' tag to use.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setSpriteTintIndeces( List<Integer> indeces ) {
+			spriteTintIndeces = indeces;
+		}
+		public List<Integer> getSpriteTintIndeces() {
+			return spriteTintIndeces;
+		}
 
 		/**
 		 * Toggles sex.
@@ -1824,15 +2292,51 @@ public class SavedGameParser extends Parser {
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
+			boolean first = true;
+
+			CrewBlueprint crewBlueprint = DataManager.get().getCrew( race );
+
+			List<CrewBlueprint.SpriteTintLayer> tintLayerList = null;
+			if ( crewBlueprint != null ) {
+				tintLayerList = crewBlueprint.getSpriteTintLayerList();
+			}
+
 			result.append(String.format("Name:              %s\n", name));
 			result.append(String.format("Race:              %s\n", race));
 			result.append(String.format("Enemy Drone:       %b\n", enemyBoardingDrone));
 			result.append(String.format("Sex:               %s\n", (male ? "Male" : "Female") ));
 			result.append(String.format("Health:            %3d\n", health));
+			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
-			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
+			result.append(String.format("Alpha?:            %3d\n", unknownAlpha));
+			result.append(String.format("Beta?:             %3d\n", unknownBeta));
+
+			result.append("\nSprite Tints...\n");
+			for (int i=0; i < spriteTintIndeces.size(); i++) {
+				Integer colorIndex = spriteTintIndeces.get(i);
+
+				String colorHint = null;
+				if ( tintLayerList != null && i < tintLayerList.size() ) {
+					CrewBlueprint.SpriteTintLayer tintLayer = tintLayerList.get( i );
+					if ( tintLayer.tintList != null && colorIndex < tintLayer.tintList.size() && colorIndex >= 0 ) {
+						CrewBlueprint.SpriteTintLayer.SpriteTintColor tintColor = tintLayer.tintList.get( colorIndex );
+						colorHint = String.format("r=%3d,g=%3d,b=%3d,a=%.1f", tintColor.r, tintColor.g, tintColor.b, tintColor.a);
+					} else {
+						colorHint = "Color not in blueprint's layer.";
+					}
+				} else {
+					colorHint = "Layer not in blueprint's colorList.";
+				}
+
+				result.append(String.format("  Layer %2d: Color: %3d (%s)\n", i, colorIndex, colorHint));
+			}
+			result.append("\n");
+
+			result.append(String.format("Delta?:            %3d\n", unknownDelta));
+			result.append(String.format("Saved RoomId:      %3d\n", savedRoomId));
+			result.append(String.format("Saved Room Square: %3d\n", savedRoomSquare));
 			result.append(String.format("Pilot Skill:       %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
 			result.append(String.format("Engine Skill:      %3d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
 			result.append(String.format("Shield Skill:      %3d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
@@ -1844,6 +2348,21 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Piloted Evasions:  %3d\n", pilotedEvasions));
 			result.append(String.format("Jumps Survived:    %3d\n", jumpsSurvived));
 			result.append(String.format("Skill Masteries:   %3d\n", skillMasteries));
+			result.append(String.format("Eta?:              %3d\n", unknownEta));
+			result.append(String.format("Theta?:            %3d\n", unknownTheta));
+			result.append(String.format("Iota?:             %3d\n", unknownIota));
+			result.append(String.format("Kappa?:            %3d\n", unknownKappa));
+			result.append(String.format("Lambda?:           %3d\n", unknownLambda));
+			result.append(String.format("Mu?:               %3d\n", unknownMu));
+			result.append(String.format("Nu?:               %3d\n", unknownNu));
+			result.append(String.format("Xi?:               %3d\n", unknownXi));
+			result.append(String.format("Omicron?:          %3d\n", unknownOmicron));
+			result.append(String.format("Pi?:               %3d\n", unknownPi));
+			result.append(String.format("Rho?:              %3d\n", unknownRho));
+			result.append(String.format("Sigma?:            %3d\n", unknownSigma));
+			result.append(String.format("Tau?:              %3d\n", unknownTau));
+			result.append(String.format("Upsilon?:          %3d\n", unknownUpsilon));
+			result.append(String.format("Phi?:              %3d\n", unknownPhi));
 			return result.toString();
 		}
 	}
@@ -1852,7 +2371,7 @@ public class SavedGameParser extends Parser {
 
 	public static enum SystemType {
 		// SystemType ids are tied to "img/icons/s_*_overlay.png" and store item ids.
-		// TODO: magic booleans.
+		// TODO: Magic booleans.
 		PILOT     ("pilot",      true),
 		DOORS     ("doors",      true),
 		SENSORS   ("sensors",    true),
@@ -1864,7 +2383,12 @@ public class SavedGameParser extends Parser {
 		DRONE_CTRL("drones",     false),
 		TELEPORTER("teleporter", false),
 		CLOAKING  ("cloaking",   false),
-		ARTILLERY ("artillery",  false);
+		ARTILLERY ("artillery",  false),
+		ALPHA     ("alpha",      false),
+		CLONEBAY  ("clonebay",   false),
+		GAMMA     ("gamma",      false),
+		HACKING   ("hacking",    false);
+		// Greeks are one of: battery, mind.
 
 		private String id;
 		private boolean subsystem;
@@ -1898,23 +2422,19 @@ public class SavedGameParser extends Parser {
 		private int damageProgress = 0;   // Turns bar red.
 		private int deionizationTicks = Integer.MIN_VALUE;  // Millisecond counter.
 
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+		private int unknownEpsilon = 0;
+		private int unknownZeta = 0;
+
+		private int unknownEta = 0;
+		private int unknownTheta = 0;
+		private int unknownIota = 0;
+
 		// ionizedBars may briefly be -1 initially when a system
 		// disables itself. Then ionizedBars will be set to capacity+1.
-
-		// deionizationTicks is reset upon loading.
-		// The game's interface responds as it increments, including
-		// resetting after intervals. If not needed, it may be 0, or
-		// more often, MIN_INT (signed 32bit \x0000_0080) of the
-		// compiler that built FTL. This parser will translate that
-		// to Java's equivalent minimum during reading, and back during
-		// writing.
-		//   Deionization of each bar counts to 5000.
-		//
-		// TODO:
-		// Nearly every system has been observed with non-zero values,
-		// but aside from Teleporter/Cloaking, normal use doesn't reliably
-		// set such values. Might be unspecified garbage when not actively
-		// counting. Sometimes has huge positive and negative values.
 
 		public SystemState( SystemType systemType ) {
 			this.systemType = systemType;
@@ -1929,7 +2449,6 @@ public class SavedGameParser extends Parser {
 		public void setIonizedBars( int n ) { ionizedBars = n; }
 		public void setRepairProgress( int n ) { repairProgress = n; }
 		public void setDamageProgress( int n ) { damageProgress = n; }
-		public void setDeionizationTicks( int n ) { deionizationTicks = n; }
 
 		public int getCapacity() { return capacity; }
 		public int getPower() { return power; }
@@ -1937,7 +2456,42 @@ public class SavedGameParser extends Parser {
 		public int getIonizedBars() { return ionizedBars; }
 		public int getRepairProgress() { return repairProgress; }
 		public int getDamageProgress() { return damageProgress; }
+
+		/**
+		 * Sets elapsed time while waiting to remove each ionized power bar.
+		 *
+		 * deionizationTicks is reset upon loading.
+		 *
+		 * The game's interface responds as it increments, including
+		 * resetting after intervals. If not needed, it may be 0, or
+		 * more often, MIN_INT (signed 32bit \x0000_0080) of the
+		 * compiler that built FTL. This parser will translate that
+		 * to Java's equivalent minimum during reading, and back during
+		 * writing.
+		 *
+		 * Deionization of each bar counts to 5000.
+		 *
+		 * TODO:
+		 * Nearly every system has been observed with non-zero values,
+		 * but aside from Teleporter/Cloaking, normal use doesn't reliably
+		 * set such values. Might be unspecified garbage when not actively
+		 * counting. Sometimes has huge positive and negative values.
+		 *
+		 * Since FTL 1.5.4, this is no longer saved.
+		 */
+		public void setDeionizationTicks( int n ) { deionizationTicks = n; }
 		public int getDeionizationTicks() { return deionizationTicks; }
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public void setUnknownZeta( int n ) { unknownZeta = n; }
+
+		public void setUnknownEta( int n ) { unknownEta = n; }
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public void setUnknownIota( int n ) { unknownIota = n; }
 
 		@Override
 		public String toString() {
@@ -1950,6 +2504,15 @@ public class SavedGameParser extends Parser {
 				result.append(String.format("Repair Progress:    %3d%%\n", repairProgress));
 				result.append(String.format("Damage Progress:    %3d%%\n", damageProgress));
 				result.append(String.format("Deionization Ticks: %s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ));
+				result.append(String.format("Alpha?:             %3d\n", unknownAlpha));
+				result.append(String.format("Beta?:              %3d\n", unknownBeta));
+				result.append(String.format("Gamma?:             %3d\n", unknownGamma));
+				result.append(String.format("Delta?:             %3d\n", unknownDelta));
+				result.append(String.format("Epsilon?:           %3d\n", unknownEpsilon));
+				result.append(String.format("Zeta?:              %3d\n", unknownZeta));
+				result.append(String.format("Eta?:               %3d (Hacking only)\n", unknownEta));
+				result.append(String.format("Theta?:             %3d (Hacking only)\n", unknownTheta));
+				result.append(String.format("Iota?:              %3d (Hacking only)\n", unknownIota));
 			} else {
 				result.append(String.format("%s: N/A\n", systemType.getId()));
 			}
@@ -1963,6 +2526,9 @@ public class SavedGameParser extends Parser {
 		private int oxygen = 100;
 		private ArrayList<SquareState> squareList = new ArrayList<SquareState>();
 
+		private int stationSquare = -1;
+		private int stationDirection = 4;
+
 		/**
 		 * Set's the oxygen percentage in the room.
 		 *
@@ -1974,6 +2540,28 @@ public class SavedGameParser extends Parser {
 		 */
 		public void setOxygen( int n ) { oxygen = n; }
 		public int getOxygen() { return oxygen; }
+
+		/**
+		 * Sets a room square for a station, to man a system.
+		 *
+		 * The station's direction must be set as well.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 * @param n the room square index, or -1 for none
+		 */
+		public void setStationSquare( int n ) { stationSquare = n; }
+		public int getStationSquare() { return stationSquare; }
+
+		/**
+		 * Sets which edge of a room square a station should be placed at.
+		 *
+		 * The station's room square must be set as well.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 * @param n 0=D,1=R,2=U,3=L,4=None
+		 */
+		public void setStationDirection( int n ) { stationDirection = n; }
+		public int getStationDirection() { return stationDirection; }
 
 		/**
 		 * Adds a floor square to the room.
@@ -1999,7 +2587,19 @@ public class SavedGameParser extends Parser {
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
+
+			String dirString;
+			switch ( stationDirection ) {
+				case( 0 ): dirString = "Down"; break;
+				case( 1 ): dirString = "Right"; break;
+				case( 2 ): dirString = "Up"; break;
+				case( 3 ): dirString = "Left"; break;
+				case( 4 ): dirString = "N/A"; break;
+				default: dirString = "???"; break;
+			}
+
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
+			result.append(String.format("Station Square: %2d, Station Direction: %d (%s)\n", stationSquare, stationDirection, dirString));
 			for (SquareState square : squareList) {
 				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%%, Gamma?: %2d\n", square.fireHealth, square.ignitionProgress, square.gamma));
 			}
@@ -2027,6 +2627,12 @@ public class SavedGameParser extends Parser {
 		private boolean open = false;
 		private boolean walkingThrough = false;
 
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+		private int unknownEpsilon = 0;
+
 		public DoorState() {
 		}
 
@@ -2041,10 +2647,26 @@ public class SavedGameParser extends Parser {
 		public boolean isOpen() { return open; }
 		public boolean isWalkingThrough() { return walkingThrough; }
 
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+		public int getUnknownDelta() { return unknownDelta; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append(String.format("Open: %b, Walking Through: %b\n", open, walkingThrough));
+			result.append(String.format("Alpha?:            %3d\n", unknownAlpha));
+			result.append(String.format("Beta?:             %3d\n", unknownBeta));
+			result.append(String.format("Gamma?:            %3d\n", unknownGamma));
+			result.append(String.format("Epsilon?:          %3d\n", unknownEpsilon));
 			return result.toString();
 		}
 	}
@@ -2099,7 +2721,7 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum DroneType {
-		// TODO: magic numbers.
+		// TODO: Magic numbers.
 		BATTLE     ("BATTLE",      150),
 		REPAIR     ("REPAIR",       25),
 		BOARDER    ("BOARDER",       1),
@@ -2171,10 +2793,10 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("DroneId:           %s\n", droneId));
 			result.append(String.format("Armed:             %b\n", armed));
 			result.append(String.format("Health:            %3d\n", health));
+			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
 			result.append(String.format("RoomId:            %3d\n", blueprintRoomId));
 			result.append(String.format("Room Square:       %3d\n", roomSquare));
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
-			result.append(String.format("Sprite Position:   %3d,%3d\n", spriteX, spriteY));
 			return result.toString();
 		}
 	}
@@ -2385,37 +3007,48 @@ public class SavedGameParser extends Parser {
 
 	public static class StoreState {
 		private int fuel = 0, missiles = 0, droneParts = 0;
-		private StoreShelf topShelf = new StoreShelf();
-		private StoreShelf bottomShelf = new StoreShelf();
+		private List<StoreShelf> shelfList = new ArrayList<StoreShelf>(3);
 
+		// TODO: Remove all references to setTopShelf()/setBottomShelf().
+
+		/**
+		 * Constructs an incomplete StoreState.
+		 *
+		 * It will need two StoreShelf objects for FTL 1.01-1.03.3.
+		 */
 		public StoreState() {
 		}
 
 		public void setFuel( int n ) { fuel = n; }
 		public void setMissiles( int n ) { missiles = n; }
 		public void setDroneParts( int n ) { droneParts = n; }
-		public void setTopShelf( StoreShelf shelf ) { topShelf = shelf; }
-		public void setBottomShelf( StoreShelf shelf ) { bottomShelf = shelf; }
 
 		public int getFuel() { return fuel; }
 		public int getMissiles() { return missiles; }
 		public int getDroneParts() { return droneParts; }
-		public StoreShelf getTopShelf() { return topShelf; }
-		public StoreShelf getBottomShelf() { return bottomShelf; }
+
+		public void setShelfList( List<StoreShelf> shelfList ) { this.shelfList = shelfList; }
+		public List<StoreShelf> getShelfList() { return shelfList; }
+
+		public void addShelf( StoreShelf shelf ) { shelfList.add( shelf ); }
+		public void setTopShelf( StoreShelf shelf ) { shelfList.set( 0, shelf ); }
+		public void setBottomShelf( StoreShelf shelf ) { shelfList.set( 1, shelf ); }
+
+		public StoreShelf getTopShelf() { return shelfList.get( 0 ); }
+		public StoreShelf getBottomShelf() { return shelfList.get( 1 ); }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format("Fuel:        %2d\n", fuel) );
-			result.append( String.format("Missiles:    %2d\n", missiles) );
-			result.append( String.format("Drone Parts: %2d\n", droneParts) );
+			result.append(String.format("Fuel:        %2d\n", fuel));
+			result.append(String.format("Missiles:    %2d\n", missiles));
+			result.append(String.format("Drone Parts: %2d\n", droneParts));
 
-			result.append( "\nTop Shelf...\n" );
-			result.append( topShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
-
-			result.append( "\nBottom Shelf...\n" );
-			result.append( bottomShelf.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			for ( int i=0; i < shelfList.size(); i++ ) {
+				result.append(String.format("\nShelf %d...\n", i));
+				result.append( shelfList.get(i).toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			}
 
 			return result.toString();
 		}
@@ -2429,12 +3062,24 @@ public class SavedGameParser extends Parser {
 		private StoreItemType( String title ) { this.title = title; }
 		public String toString() { return title; }
 	}
-	
+
 	public static class StoreShelf {
 		private StoreItemType itemType = StoreItemType.WEAPON;
 		private List<StoreItem> items = new ArrayList<StoreItem>(3);
 
 		public StoreShelf() {
+		}
+
+		/**
+		 * Copy constructor.
+		 *
+		 * Each StoreItem will be copy-constructed as well.
+		 */
+		public StoreShelf( StoreShelf srcShelf ) {
+			setItemType( srcShelf.getItemType() );
+			for ( StoreItem tmpItem : srcShelf.getItems() ) {
+				addItem( new StoreItem( tmpItem ) );
+			}
 		}
 
 		public void setItemType( StoreItemType type ) { itemType = type; }
@@ -2450,7 +3095,7 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
 
-			result.append( String.format("Item Type: %s\n", itemType) );
+			result.append(String.format("Item Type: %s\n", itemType));
 			for (StoreItem item : items) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
@@ -2460,7 +3105,7 @@ public class SavedGameParser extends Parser {
 			return result.toString();
 		}
 	}
-	
+
 	public static class StoreItem {
 		private boolean available;
 		private String itemId;
@@ -2468,6 +3113,13 @@ public class SavedGameParser extends Parser {
 		public StoreItem( boolean available, String itemId ) {
 			this.available = available;
 			this.itemId = itemId;
+		}
+
+		/**
+		 * Copy constructor.
+		 */
+		public StoreItem( StoreItem srcItem ) {
+			this( srcItem.isAvailable(), srcItem.getItemId() );
 		}
 
 		public boolean isAvailable() {
@@ -2481,6 +3133,85 @@ public class SavedGameParser extends Parser {
 		@Override
 		public String toString() {
 			return String.format("%s (%s)\n", itemId, (available ? "Available" : "Sold Out"));
+		}
+	}
+
+
+
+	public static class EncounterState {
+		private String text = "";
+
+		private int unknownAlpha = 0;
+		private String unknownBeta = "";
+		private String unknownGamma = "";
+		private String unknownDelta = "";
+		private String unknownEpsilon = "";
+		private String unknownZeta = "";
+		private int unknownEta = 0;
+
+		private int unknownTheta = 0;
+		private int unknownIota = 0;
+		private ArrayList<Integer> unknownKappa = new ArrayList<Integer>();
+
+		public EncounterState() {
+		}
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( String s ) { unknownBeta = s; }
+		public void setUnknownGamma( String s ) { unknownGamma = s; }
+		public void setUnknownDelta( String s ) { unknownDelta = s; }
+		public void setUnknownEpsilon( String s ) { unknownEpsilon = s; }
+		public void setUnknownZeta( String s ) { unknownZeta = s; }
+		public void setUnknownEta( int n ) { unknownEta = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public String getUnknownBeta() { return unknownBeta; }
+		public String getUnknownGamma() { return unknownGamma; }
+		public String getUnknownDelta() { return unknownDelta; }
+		public String getUnknownEpsilon() { return unknownEpsilon; }
+		public String getUnknownZeta() { return unknownZeta; }
+		public int getUnknownEta() { return unknownEta; }
+
+		public void setText( String s ) { text = s; }
+		public String getText() { return text; }
+
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public void setUnknownIota( int n ) { unknownIota = n; }
+		public void setUnknownKappa( ArrayList<Integer> kappaList ) { unknownKappa = kappaList; }
+
+		public int getUnknownTheta() { return unknownTheta; }
+		public int getUnknownIota() { return unknownIota; }
+		public ArrayList<Integer> getUnknownKappa() { return unknownKappa; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+			boolean first = true;
+			result.append(String.format("Alpha?:      %3d\n", unknownAlpha));
+			result.append(String.format("Beta?:       %s\n", unknownBeta));
+			result.append(String.format("Gamma?:      %s\n", unknownGamma));
+			result.append(String.format("Delta?:      %s\n", unknownDelta));
+			result.append(String.format("Epsilon?:    %s\n", unknownEpsilon));
+			result.append(String.format("Zeta?:       %s\n", unknownZeta));
+			result.append(String.format("Eta?:        %3d\n", unknownEta));
+
+			result.append("\nText...\n");
+			result.append(String.format("%s\n", text));
+			result.append("\n");
+
+			result.append(String.format("Theta?:      %3d\n", unknownTheta));
+			result.append(String.format("Iota?:       %3d\n", unknownIota));
+
+			result.append("\nKappa?...\n");
+			first = true;
+			for ( Integer kInt : unknownKappa ) {
+				if ( first ) { first = false; }
+				else { result.append(","); }
+				result.append(kInt);
+			}
+			result.append("\n");
+
+			return result.toString();
 		}
 	}
 
@@ -2562,9 +3293,9 @@ public class SavedGameParser extends Parser {
 
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format("Pending Ship Type: %s\n", shipBlueprintIds[pendingStage-1] ) );
+			result.append(String.format("Pending Ship Type: %s\n", shipBlueprintIds[pendingStage-1]));
 
-			result.append( "\nOccupancy of Last Seen Type...\n" );
+			result.append("\nOccupancy of Last Seen Type...\n");
 			for (Map.Entry<Integer, Integer> entry : occupancyMap.entrySet()) {
 				int roomId = entry.getKey().intValue();
 				int occupantCount = entry.getValue().intValue();
@@ -2572,7 +3303,7 @@ public class SavedGameParser extends Parser {
 				SystemType systemType = blueprintSystems.getSystemTypeByRoomId( roomId );
 				String systemId = (systemType != null) ? systemType.getId() : "empty";
 
-				result.append( String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, systemId, occupantCount) );
+				result.append(String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, systemId, occupantCount));
 			}
 
 			return result.toString();

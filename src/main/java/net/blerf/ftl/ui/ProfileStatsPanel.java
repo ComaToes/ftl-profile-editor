@@ -108,7 +108,7 @@ public class ProfileStatsPanel extends JPanel {
 		crewRecordsPanel.removeAll();
 		for ( StatType type : crewStatTypes ) {
 			CrewRecord r = stats.getCrewRecord( type );
-			crewRecordsPanel.addRow(type.toString(), r.getRace(), r.isMale(), r.getName(), r.getScore());
+			crewRecordsPanel.addRow(type.toString(), r.getRace(), r.isMale(), r.getName(), r.getValue());
 		}
 		crewRecordsPanel.addFillRow();
 
@@ -139,7 +139,8 @@ public class ProfileStatsPanel extends JPanel {
 
 		stats.getTopScores().clear();
 		for ( TopScorePanel tsp : topScorePanels ) {
-			Score s = new Score( tsp.getShipName(), tsp.getShipType(), tsp.getScore(), tsp.getSector(), tsp.getDifficulty(), tsp.isVictory() );
+			Score s = new Score( tsp.getShipName(), tsp.getShipId(), tsp.getValue(), tsp.getSector(), tsp.getDifficulty(), tsp.isVictory() );
+			s.setDLCEnabled( tsp.isDLCEnabled() );
 			stats.getTopScores().add(s);
 		}
 

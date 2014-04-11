@@ -29,6 +29,7 @@ public class GeneralAchievementsPanel extends JPanel {
 	private static final int ICON_LOCKED = 0;
 	private static final int ICON_EASY = 1;
 	private static final int ICON_NORMAL = 2;
+	private static final int ICON_HARD = 3;
 
 	private static final Logger log = LogManager.getLogger(GeneralAchievementsPanel.class);
 
@@ -56,8 +57,8 @@ public class GeneralAchievementsPanel extends JPanel {
 		panel.setBorder( BorderFactory.createTitledBorder(title) );
 		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
 		
-		// TODO: magic number 7.
-		for (int i = 0; i < 7; i++) {
+		// TODO: Magic number 7.
+		for (int i=0; i < 7; i++) {
 			Achievement ach = achievements.get( i+offset );
 			log.trace( "Setting icons for cycle button. Base image: " + "img/" + ach.getImagePath() );
 
@@ -67,7 +68,7 @@ public class GeneralAchievementsPanel extends JPanel {
 			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
 			box.addMouseListener( new StatusbarMouseListener(frame, achDesc) );
 
-			generalAchBoxes.put(ach, box);
+			generalAchBoxes.put( ach, box );
 			panel.add( box );
 		}
 		
@@ -83,10 +84,19 @@ public class GeneralAchievementsPanel extends JPanel {
 
 			for ( AchievementRecord rec : p.getAchievements() ) {
 				if ( rec.getAchievementId().equals( achId ) ) {
-					if ( rec.getDifficulty() == Difficulty.NORMAL )
-						box.setSelectedState( ICON_NORMAL );
-					else
+					if ( rec.getDifficulty() == Difficulty.EASY ) {
 						box.setSelectedState( ICON_EASY );
+					}
+					else if ( rec.getDifficulty() == Difficulty.NORMAL ) {
+						box.setSelectedState( ICON_NORMAL );
+					}
+					else if ( rec.getDifficulty() == Difficulty.HARD ) {
+						box.setSelectedState( ICON_HARD );
+					}
+					else {
+						log.warn( String.format("Unexpected difficulty for achievement (\"%s\"): %s. Changed to EASY.", achId, rec.getDifficulty().toString()) );
+						box.setSelectedState( ICON_EASY );
+					}
 				}
 			}
 		}
@@ -100,14 +110,24 @@ public class GeneralAchievementsPanel extends JPanel {
 		for ( Map.Entry<Achievement, IconCycleButton> entry : generalAchBoxes.entrySet() ) {
 			String achId = entry.getKey().getId();
 			IconCycleButton box = entry.getValue();
+
 			if ( box.getSelectedState() != ICON_LOCKED ) {
 				// Add selected achievement recs if not already present.
 
 				Difficulty difficulty = null;
-				if ( box.getSelectedState() == ICON_NORMAL )
-					difficulty = Difficulty.NORMAL;
-				else
+				if ( box.getSelectedState() == ICON_EASY ) {
 					difficulty = Difficulty.EASY;
+				}
+				else if ( box.getSelectedState() == ICON_NORMAL ) {
+					difficulty = Difficulty.NORMAL;
+				}
+				else if ( box.getSelectedState() == ICON_HARD ) {
+					difficulty = Difficulty.HARD;
+				}
+				else {
+					log.warn( String.format("Unexpected difficulty for achievement (\"%s\"): %d. Changed to EASY.", achId, box.getSelectedState()) );
+					difficulty = Difficulty.EASY;
+				}
 
 				AchievementRecord newAch = AchievementRecord.getFromListById( newAchRecs, achId );
 				if ( newAch != null ) {

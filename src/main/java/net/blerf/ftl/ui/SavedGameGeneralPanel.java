@@ -45,7 +45,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String TOTAL_SCRAP = "Total Scrap";
 	private static final String TOTAL_CREW_HIRED = "Total Crew Hired";
 	private static final String ALPHA = "Alpha?";
-	private static final String DIFFICULTY_EASY = "Easy Difficulty";
+	private static final String DIFFICULTY = "Difficulty";
 
 	private static final String SECTOR_TREE_SEED = "Sector Tree Seed";
 	private static final String SECTOR_NUMBER = "Sector Number";
@@ -84,12 +84,12 @@ public class SavedGameGeneralPanel extends JPanel {
 		sessionPanel.addRow( TOTAL_SCRAP, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( TOTAL_CREW_HIRED, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( ALPHA, FieldEditorPanel.ContentType.INTEGER );
-		sessionPanel.addRow( DIFFICULTY_EASY, FieldEditorPanel.ContentType.BOOLEAN );
+		sessionPanel.addRow( DIFFICULTY, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addBlankRow();
 		sessionPanel.addFillRow();
 
 		sessionPanel.getInt(ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown session field. Always 0?") );
-		sessionPanel.getBoolean(DIFFICULTY_EASY).addMouseListener( new StatusbarMouseListener(frame, "Uncheck for normal difficulty.") );
+		sessionPanel.getInt(DIFFICULTY).addMouseListener( new StatusbarMouseListener(frame, "Difficulty (0=Easy,1=Normal,2=Hard).") );
 
 		sectorPanel = new FieldEditorPanel( true );
 		sectorPanel.setBorder( BorderFactory.createTitledBorder("Sector") );
@@ -201,7 +201,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			sessionPanel.setIntAndReminder( TOTAL_SCRAP, gameState.getTotalScrapCollected() );
 			sessionPanel.setIntAndReminder( TOTAL_CREW_HIRED, gameState.getTotalCrewHired() );
 			sessionPanel.setIntAndReminder( ALPHA, gameState.getHeaderAlpha() );
-			sessionPanel.setBoolAndReminder( DIFFICULTY_EASY, gameState.isDifficultyEasy() );
+			sessionPanel.setIntAndReminder( DIFFICULTY, gameState.getDifficulty() );
 
 			sectorPanel.setIntAndReminder( SECTOR_TREE_SEED, gameState.getSectorTreeSeed() );
 			sectorPanel.getSlider(SECTOR_NUMBER).setMaximum( gameState.getSectorNumber()+1 );
@@ -282,7 +282,9 @@ public class SavedGameGeneralPanel extends JPanel {
 		try { gameState.setHeaderAlpha(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		gameState.setDifficultyEasy( sessionPanel.getBoolean(DIFFICULTY_EASY).isSelected() );
+		newString = sessionPanel.getInt(DIFFICULTY).getText();
+		try { gameState.setDifficulty(Integer.parseInt(newString)); }
+		catch (NumberFormatException e) {}
 
 		newString = sectorPanel.getInt(SECTOR_TREE_SEED).getText();
 		try { gameState.setSectorTreeSeed(Integer.parseInt(newString)); }

@@ -486,8 +486,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 					bottomShelf.addItem( new SavedGameParser.StoreItem( tmpItem.isAvailable(), tmpItem.getItemId() ) );
 				}
 
-				storeState.setTopShelf( topShelf );
-				storeState.setBottomShelf( bottomShelf );
+				storeState.addShelf( topShelf );
+				storeState.addShelf( bottomShelf );
 
 				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
 				beaconState.setStore( storeState );
@@ -1760,9 +1760,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		private int fuel;
 		private int missiles;
 		private int droneParts;
-		private SavedGameParser.StoreShelf topShelf = new SavedGameParser.StoreShelf();
-		private SavedGameParser.StoreShelf bottomShelf = new SavedGameParser.StoreShelf();
+		private List<SavedGameParser.StoreShelf> shelfList = new ArrayList<SavedGameParser.StoreShelf>(3);
 		private BufferedImage currentImage = null;
+
+		// TODO: Remove all references to getTopShelf()/getBottomShelf().
 
 		public StoreSprite( SavedGameParser.StoreState storeState ) {
 			if ( storeState != null ) {
@@ -1770,16 +1771,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 				missiles = storeState.getMissiles();
 				droneParts = storeState.getDroneParts();
 
-				SavedGameParser.StoreShelf tmpShelf;
-				tmpShelf = storeState.getTopShelf();
-				topShelf.setItemType( tmpShelf.getItemType() );
-				for ( SavedGameParser.StoreItem tmpItem : tmpShelf.getItems() ) {
-					topShelf.addItem( new SavedGameParser.StoreItem( tmpItem.isAvailable(), tmpItem.getItemId() ) );
-				}
-				tmpShelf = storeState.getBottomShelf();
-				bottomShelf.setItemType( tmpShelf.getItemType() );
-				for ( SavedGameParser.StoreItem tmpItem : tmpShelf.getItems() ) {
-					bottomShelf.addItem( new SavedGameParser.StoreItem( tmpItem.isAvailable(), tmpItem.getItemId() ) );
+				// Copy the store's shelves and add them to the sprite.
+				for ( SavedGameParser.StoreShelf tmpShelf : storeState.getShelfList() ) {
+					addShelf( new SavedGameParser.StoreShelf( tmpShelf ) );
 				}
 			}
 
@@ -1794,8 +1788,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public int getFuel() { return fuel; }
 		public int getMissiles() { return missiles; }
 		public int getDroneParts() { return droneParts; }
-		public SavedGameParser.StoreShelf getTopShelf() { return topShelf; }
-		public SavedGameParser.StoreShelf getBottomShelf() { return bottomShelf; }
+
+		public void addShelf( SavedGameParser.StoreShelf shelf ) { shelfList.add( shelf ); }
+		public SavedGameParser.StoreShelf getTopShelf() { return shelfList.get( 0 ); }
+		public SavedGameParser.StoreShelf getBottomShelf() { return shelfList.get( 1 ); }
 
 		@Override
 		public void paintComponent( Graphics g ) {

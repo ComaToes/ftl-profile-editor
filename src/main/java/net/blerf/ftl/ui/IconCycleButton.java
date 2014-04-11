@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
-import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
 
@@ -13,10 +13,11 @@ import javax.swing.SwingConstants;
  * A button that cycles through an array of icons when clicked.
  */
 public class IconCycleButton extends JButton implements ActionListener {
-	private ImageIcon[] icons;
+	private Icon[] icons;
 	private int state = 0;
 
-	public IconCycleButton( ImageIcon[] icons ) {
+
+	public IconCycleButton( Icon[] icons ) {
 		this.icons = icons;
 		this.setBorder( BorderFactory.createEmptyBorder( 2, 4, 2, 4 ) );
 		this.setFocusPainted( false );

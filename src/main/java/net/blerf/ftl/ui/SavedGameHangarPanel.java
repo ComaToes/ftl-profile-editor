@@ -50,8 +50,8 @@ public class SavedGameHangarPanel extends JPanel {
 
 		this.frame = frame;
 
-		Map<String, ShipBlueprint> shipMap = DataManager.get().getShips();
-		Map<String, ShipBlueprint> autoMap = DataManager.get().getAutoShips();
+		Map<String, ShipBlueprint> playerShipMap = DataManager.get().getPlayerShips();
+		Map<String, ShipBlueprint> autoShipMap = DataManager.get().getAutoShips();
 
 		GridBagConstraints hangarC = new GridBagConstraints();
 		hangarC.fill = GridBagConstraints.NONE;
@@ -83,7 +83,7 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarC.gridx = 0;
 		hangarC.gridy++;
 		final JComboBox shipCombo = new JComboBox();
-		for ( ShipBlueprint blueprint : shipMap.values() )
+		for ( ShipBlueprint blueprint : playerShipMap.values() )
 			shipCombo.addItem( blueprint );
 		hangarPanel.add( shipCombo, hangarC );
 
@@ -96,7 +96,7 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarC.gridx = 0;
 		hangarC.gridy++;
 		final JComboBox autoCombo = new JComboBox();
-		for ( ShipBlueprint blueprint : autoMap.values() )
+		for ( ShipBlueprint blueprint : autoShipMap.values() )
 			autoCombo.addItem( blueprint );
 		hangarPanel.add( autoCombo, hangarC );
 
