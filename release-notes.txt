@@ -1,3 +1,9 @@
+19
+Added read/write support for FTL 1.5.4 "ae_prof.sav" profiles.
+Added profile "Dump" tab.
+Added read-only support for FTL 1.5.4 saved games (unstable).
+Updated log4j2 to 2.0-beta9, fixing a hang when run with Java 1.7.0_25.
+
 18
 Fixed bug that required 'running as admin' on Windows.
 Fixed bug that prevented saving a ship's "Reserve Power Capacity".
