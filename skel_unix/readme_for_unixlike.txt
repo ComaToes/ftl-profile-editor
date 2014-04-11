@@ -43,7 +43,7 @@ Usage
   Exit FTL. The game must NOT be running.
   Double-click FTLProfileEditor.command.
   Switch to the appropriate tab: "Profile" or "Saved Game".
-  Open a profile (prof.sav) or saved game (continue.sav).
+  Open a profile (ae_prof.sav or prof.sav) or saved game (continue.sav).
   Make any desired changes.
   Save, and close the editor.
   Fire up FTL and try out your new ship.
