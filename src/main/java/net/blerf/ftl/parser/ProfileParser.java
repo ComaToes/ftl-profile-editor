@@ -69,12 +69,15 @@ public class ProfileParser extends Parser {
 	private List<AchievementRecord> readAchievements( InputStream in, int headerAlpha ) throws IOException {
 		List<String> extendedAchIds = new ArrayList<String>();  // TODO: Magic strings.
 		extendedAchIds.add( "PLAYER_SHIP_HARD_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_STEALTH_VICTORY" );    // Omitted, but maybe possible.
+		extendedAchIds.add( "PLAYER_SHIP_STEALTH_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_MANTIS_VICTORY" );
+		extendedAchIds.add( "PLAYER_SHIP_CIRCLE_VICTORY" );
+		extendedAchIds.add( "PLAYER_SHIP_FED_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_JELLY_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );       // Omitted, but maybe possible.
+		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_ENERGY_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_CRYSTAL_VICTORY" );
+		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );  // Not seen, but maybe possible.
 
 		int achievementCount = readInt(in);
 
@@ -143,12 +146,15 @@ public class ProfileParser extends Parser {
 	private void writeAchievements( OutputStream out, List<AchievementRecord> achievements, int headerAlpha ) throws IOException {
 		List<String> extendedAchIds = new ArrayList<String>();  // TODO: Magic strings.
 		extendedAchIds.add( "PLAYER_SHIP_HARD_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_STEALTH_VICTORY" );    // Omitted, but maybe possible.
+		extendedAchIds.add( "PLAYER_SHIP_STEALTH_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_MANTIS_VICTORY" );
+		extendedAchIds.add( "PLAYER_SHIP_CIRCLE_VICTORY" );
+		extendedAchIds.add( "PLAYER_SHIP_FED_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_JELLY_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );       // Omitted, but maybe possible.
+		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_ENERGY_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_CRYSTAL_VICTORY" );
+		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );  // Not seen, but maybe possible.
 
 		writeInt( out, achievements.size() );
 
