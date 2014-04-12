@@ -166,7 +166,7 @@ public class SavedGameParser extends Parser {
 
 				// Current beaconId was set earlier.
 
-				gameState.setUnknownTheta( readInt(in) );
+				gameState.setUnknownTheta( readInt(in) );  // Something related to a hostile nearby ship in combat?
 
 				EncounterState encounter = readEncounter(in);
 				gameState.setEncounter( encounter );
@@ -311,7 +311,7 @@ public class SavedGameParser extends Parser {
 
 		if ( headerAlpha == 7 ) {
 			shipState.setUnknownAlpha( readInt(in) );
-			shipState.setUnknownBeta( readInt(in) );
+			shipState.setUnknownBeta( readInt(in) );  // Incrementing milliseconds? Total unpaused game time?
 			shipState.setUnknownGamma( readInt(in) );
 			shipState.setUnknownDelta( readInt(in) );
 		}
@@ -344,7 +344,7 @@ public class SavedGameParser extends Parser {
 		if ( headerAlpha == 7 ) {
 			systemTypes.add( SystemType.ALPHA );  // Epsilon was 0, maybe it was this system's capacity?
 			systemTypes.add( SystemType.CLONEBAY );
-			systemTypes.add( SystemType.GAMMA );
+			systemTypes.add( SystemType.MIND );
 			systemTypes.add( SystemType.HACKING );
 		}
 
@@ -589,7 +589,7 @@ public class SavedGameParser extends Parser {
 			}
 			crew.setSpriteTintIndeces( spriteTintIndeces );
 
-			crew.setUnknownDelta( readInt(in) );
+			crew.setMindControlled( readBool(in) );
 			crew.setSavedRoomSquare( readInt(in) );
 			crew.setSavedRoomId( readInt(in) );
 		}
@@ -664,7 +664,7 @@ public class SavedGameParser extends Parser {
 			system.setCapacity( capacity );
 			system.setPower( readInt(in) );
 			system.setDamagedBars( readInt(in) );
-			system.setIonizedBars( readInt(in) );
+			system.setIonizedBars( readInt(in) );  // TODO: Active mind control has -1?
 
 			int deionizationTicks = readInt(in);
 			if ( deionizationTicks == -2147483648 )
@@ -678,7 +678,7 @@ public class SavedGameParser extends Parser {
 				system.setUnknownAlpha( readInt(in) );    // 0000 0000
 				system.setUnknownBeta( readInt(in) );     // 0000 0000
 				system.setUnknownGamma( readInt(in) );    // 0000 0000
-				system.setUnknownDelta( readInt(in) );    // E803 0000 (1000)
+				system.setUnknownDelta( readInt(in) );    // TODO: Capped capacity (<event>'s <status type="limit">)? Normally 1000.
 				system.setUnknownEpsilon( readInt(in) );  // 0000 0000
 				system.setUnknownZeta( readInt(in) );     // 0100 0000
 
@@ -813,6 +813,9 @@ public class SavedGameParser extends Parser {
 			beacon.setShipEventId( readString(in) );
 			beacon.setAutoBlueprintId( readString(in) );
 			beacon.setBeta( readInt(in) );
+
+			// TODO: When player's at this beacon, beta here matches
+			// current encounter's alpha.
 		}
 		
 		int fleetPresence = readInt(in);
@@ -937,7 +940,10 @@ public class SavedGameParser extends Parser {
 	public EncounterState readEncounter( InputStream in ) throws IOException {
 		EncounterState encounter = new EncounterState();
 
-		encounter.setUnknownAlpha( readInt(in) );
+		// When there's an enemy ship, alpha here matches
+		// the beacon's beta.
+
+		encounter.setUnknownAlpha( readInt(in) );  // A random seed?
 		encounter.setUnknownBeta( readString(in) );
 		encounter.setUnknownGamma( readString(in) );
 		encounter.setUnknownDelta( readString(in) );
@@ -947,7 +953,7 @@ public class SavedGameParser extends Parser {
 		encounter.setText( readString(in) );
 		encounter.setUnknownIota( readInt(in) );
 
-		int kappaCount = readInt(in);
+		int kappaCount = readInt(in);  // TODO: 0-based event choice index breadcrumbs?
 		ArrayList<Integer> kappaList = new ArrayList<Integer>();
 		for (int i=0; i < kappaCount; i++) {
 			kappaList.add( new Integer(readInt(in)) );
@@ -1568,6 +1574,7 @@ public class SavedGameParser extends Parser {
 
 		private int unknownPhi = 0;
 
+
 		/**
 		 * Constructs an incomplete ShipState.
 		 *
@@ -2087,6 +2094,7 @@ public class SavedGameParser extends Parser {
 		private int blueprintRoomId;
 		private int roomSquare;  // 0-based, L-to-R wrapped row.
 		private boolean playerControlled = false;
+		private boolean mindControlled = false;
 		private int savedRoomId = 0;
 		private int savedRoomSquare = 0;
 		private int pilotSkill=0, engineSkill=0, shieldSkill=0;
@@ -2099,7 +2107,6 @@ public class SavedGameParser extends Parser {
 
 		private int unknownAlpha = 0;
 		private int unknownBeta = 0;
-		private int unknownDelta = 0;
 
 		private int unknownEta = 0;
 		private int unknownTheta = 0;
@@ -2117,6 +2124,7 @@ public class SavedGameParser extends Parser {
 		private int unknownUpsilon = 0;
 		private int unknownPhi = 0;
 
+
 		public CrewState() {
 		}
 
@@ -2133,6 +2141,19 @@ public class SavedGameParser extends Parser {
 		public int getRoomId() { return blueprintRoomId; }
 		public int getRoomSquare() { return roomSquare; }
 		public boolean isPlayerControlled() { return playerControlled; }
+
+		/**
+		 * Sets whether this crew is mind controlled.
+		 *
+		 * While setPlayerControlled() is permanent this temporarily yields
+		 * control to the opposing side.
+		 *
+		 * TODO: Determine what circumstances cause this to wear off.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setMindControlled( boolean b ) { mindControlled = b; }
+		public boolean isMindControlled() { return mindControlled; }
 
 		/**
 		 * Sets a saved position to return to.
@@ -2173,11 +2194,9 @@ public class SavedGameParser extends Parser {
 
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public void setUnknownDelta( int n ) { unknownDelta = n; }
 
 		public int getUnknownAlpha() { return unknownAlpha; }
 		public int getUnknownBeta() { return unknownBeta; }
-		public int getUnknownDelta() { return unknownDelta; }
 
 		public void setUnknownEta( int n ) { unknownEta = n; }
 		public void setUnknownTheta( int n ) { unknownTheta = n; }
@@ -2236,6 +2255,16 @@ public class SavedGameParser extends Parser {
 		 *
 		 * The first Integer in the list corresponds to the first 'layer' tag
 		 * in the xml, and the Integer's value is the nth 'color' tag to use.
+		 *
+		 * Note: Normal NPC crew have a hardcoded range of layer/color indeces
+		 * based on stock blueprints. When mods add layers to a race blueprint,
+		 * NPCs that spawn won't use them. When mods remove layers, NPCs that
+		 * reference the missing layer/colors display as a gray rectangle.
+		 *
+		 * Stock layers(colors): anaerobic=1(4), crystal=1(4), energy=1(5),
+		 * engi=0(0), human=2(2/4), mantis=1(9), rock=1(7) slug=1(8).
+		 *
+		 * TODO: Test if FTL honors non-standard tints of edited NPCs.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
@@ -2312,6 +2341,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Player Controlled: %b\n", playerControlled));
 			result.append(String.format("Alpha?:            %3d\n", unknownAlpha));
 			result.append(String.format("Beta?:             %3d\n", unknownBeta));
+			result.append(String.format("Mind Controlled:   %-5b\n", mindControlled));
 
 			result.append("\nSprite Tints...\n");
 			for (int i=0; i < spriteTintIndeces.size(); i++) {
@@ -2334,7 +2364,6 @@ public class SavedGameParser extends Parser {
 			}
 			result.append("\n");
 
-			result.append(String.format("Delta?:            %3d\n", unknownDelta));
 			result.append(String.format("Saved RoomId:      %3d\n", savedRoomId));
 			result.append(String.format("Saved Room Square: %3d\n", savedRoomSquare));
 			result.append(String.format("Pilot Skill:       %3d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
@@ -2386,7 +2415,7 @@ public class SavedGameParser extends Parser {
 		ARTILLERY ("artillery",  false),
 		ALPHA     ("alpha",      false),
 		CLONEBAY  ("clonebay",   false),
-		GAMMA     ("gamma",      false),
+		MIND      ("mind",      false),
 		HACKING   ("hacking",    false);
 		// Greeks are one of: battery, mind.
 
@@ -2436,6 +2465,7 @@ public class SavedGameParser extends Parser {
 		// ionizedBars may briefly be -1 initially when a system
 		// disables itself. Then ionizedBars will be set to capacity+1.
 
+
 		public SystemState( SystemType systemType ) {
 			this.systemType = systemType;
 		}
@@ -2469,15 +2499,13 @@ public class SavedGameParser extends Parser {
 		 * to Java's equivalent minimum during reading, and back during
 		 * writing.
 		 *
-		 * Deionization of each bar counts to 5000.
+		 * Deionization of each bar counts to 5000. (TODO: Check in FTL 1.5.4)
 		 *
 		 * TODO:
 		 * Nearly every system has been observed with non-zero values,
 		 * but aside from Teleporter/Cloaking, normal use doesn't reliably
 		 * set such values. Might be unspecified garbage when not actively
 		 * counting. Sometimes has huge positive and negative values.
-		 *
-		 * Since FTL 1.5.4, this is no longer saved.
 		 */
 		public void setDeionizationTicks( int n ) { deionizationTicks = n; }
 		public int getDeionizationTicks() { return deionizationTicks; }
@@ -2528,6 +2556,10 @@ public class SavedGameParser extends Parser {
 
 		private int stationSquare = -1;
 		private int stationDirection = 4;
+
+
+		public RoomState() {
+		}
 
 		/**
 		 * Set's the oxygen percentage in the room.
@@ -2612,6 +2644,7 @@ public class SavedGameParser extends Parser {
 		public int ignitionProgress = 0;
 		public int gamma = -1;
 
+
 		public SquareState( int fireHealth, int ignitionProgress, int gamma ) {
 			this.fireHealth = fireHealth;
 			this.ignitionProgress = ignitionProgress;
@@ -2632,6 +2665,7 @@ public class SavedGameParser extends Parser {
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
 		private int unknownEpsilon = 0;
+
 
 		public DoorState() {
 		}
@@ -2678,6 +2712,7 @@ public class SavedGameParser extends Parser {
 		private boolean armed = false;
 		private int cooldownTicks = 0;
 
+
 		public WeaponState() {
 		}
 
@@ -2698,8 +2733,11 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Sets the weapon's cooldown ticks.
+		 *
 		 * This increments from 0 each second until the
 		 * weapon blueprint's cooldown. 0 when not armed.
+		 *
+		 * Since FTL 1.5.4, this is no longer saved.
 		 */
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 		public int getCooldownTicks() { return cooldownTicks; }
@@ -2761,6 +2799,7 @@ public class SavedGameParser extends Parser {
 		private int blueprintRoomId = -1;  // -1 when body not present.
 		private int roomSquare = -1;       // -1 when body not present.
 		private int health = 1;
+
 
 		public DroneState() {
 		}
@@ -2839,6 +2878,7 @@ public class SavedGameParser extends Parser {
 		// icons when the map is revealed). What and where these
 		// events are is determined by the SavedGameGameState's
 		// sector layout seed.
+
 
 		public BeaconState() {
 		}
@@ -3011,6 +3051,7 @@ public class SavedGameParser extends Parser {
 
 		// TODO: Remove all references to setTopShelf()/setBottomShelf().
 
+
 		/**
 		 * Constructs an incomplete StoreState.
 		 *
@@ -3067,6 +3108,7 @@ public class SavedGameParser extends Parser {
 		private StoreItemType itemType = StoreItemType.WEAPON;
 		private List<StoreItem> items = new ArrayList<StoreItem>(3);
 
+
 		public StoreShelf() {
 		}
 
@@ -3110,6 +3152,7 @@ public class SavedGameParser extends Parser {
 		private boolean available;
 		private String itemId;
 
+
 		public StoreItem( boolean available, String itemId ) {
 			this.available = available;
 			this.itemId = itemId;
@@ -3152,6 +3195,7 @@ public class SavedGameParser extends Parser {
 		private int unknownTheta = 0;
 		private int unknownIota = 0;
 		private ArrayList<Integer> unknownKappa = new ArrayList<Integer>();
+
 
 		public EncounterState() {
 		}
@@ -3221,6 +3265,7 @@ public class SavedGameParser extends Parser {
 		private String[] shipBlueprintIds;
 		private int pendingStage = 1;
 		private LinkedHashMap<Integer, Integer> occupancyMap = new LinkedHashMap<Integer, Integer>();
+
 
 		/**
 		 * Constructor.
@@ -3310,4 +3355,159 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
+
+
+	public static class UnknownEulabeia {
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+
+		// This class appears to be an X,Y pair, relative to an unknown origin.
+
+		public UnknownEulabeia() {
+		}
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Alpha?: %3d, Beta?: %3d\n", unknownAlpha, unknownBeta));
+
+			return result.toString();
+		}
+	}
+
+	public static class UnknownAthena {
+		private int unknownAlpha = 0;    // Incrementing milliseconds.
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+		private int unknownEpsilon = 0;
+		private int unknownZeta = 0;
+
+		private List<UnknownEulabeia> unknownEta = new ArrayList<UnknownEulabeia>();
+		private List<UnknownEulabeia> unknownTheta = new ArrayList<UnknownEulabeia>();
+
+		private int unknownIota = 0;     // Autofire?
+		private int unknownKappa = 0;
+		private int unknownLambda = 0;
+		private int unknownMu = 0;
+		private int unknownNu = 0;
+		private int unknownXi = 0;
+		private int unknownOmicron = 0;
+		private int unknownPi = 0;       // E803 0000 (1000)
+		private int unknownRho = 0;
+		private int unknownSigma = 0;
+		private int unknownTau = 0;      // E803 0000 (1000)
+		private int unknownUpsilon = 0;
+		private int unknownPhi = 0;
+		private int unknownChi = 0;
+		private int unknownPsi = 0;
+
+
+		public UnknownAthena() {
+		}
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public void setUnknownZeta( int n ) { unknownZeta = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+		public int getUnknownDelta() { return unknownDelta; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+		public int getUnknownZeta() { return unknownZeta; }
+
+		public void setUnknownEta( List<UnknownEulabeia> eulabeiaList ) { unknownEta = eulabeiaList; }
+		public void setUnknownTheta( List<UnknownEulabeia> eulabeiaList ) { unknownTheta = eulabeiaList; }
+
+		public List<UnknownEulabeia> getUnknownEta() { return unknownEta; }
+		public List<UnknownEulabeia> getUnknownTheta() { return unknownTheta; }
+
+		public void setUnknownIota( int n ) { unknownIota = n; }
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
+		public void setUnknownLambda( int n ) { unknownLambda = n; }
+		public void setUnknownMu( int n ) { unknownMu = n; }
+		public void setUnknownNu( int n ) { unknownNu = n; }
+		public void setUnknownXi( int n ) { unknownXi = n; }
+		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
+		public void setUnknownPi( int n ) { unknownPi = n; }
+		public void setUnknownRho( int n ) { unknownRho = n; }
+		public void setUnknownSigma( int n ) { unknownSigma = n; }
+		public void setUnknownTau( int n ) { unknownTau = n; }
+		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
+		public void setUnknownPhi( int n ) { unknownPhi = n; }
+		public void setUnknownChi( int n ) { unknownChi = n; }
+		public void setUnknownPsi( int n ) { unknownPsi = n; }
+
+		public int getUnknownIota() { return unknownIota; }
+		public int getUnknownKappa() { return unknownKappa; }
+		public int getUnknownLambda() { return unknownLambda; }
+		public int getUnknownMu() { return unknownMu; }
+		public int getUnknownNu() { return unknownNu; }
+		public int getUnknownXi() { return unknownXi; }
+		public int getUnknownOmicron() { return unknownOmicron; }
+		public int getUnknownPi() { return unknownPi; }
+		public int getUnknownRho() { return unknownRho; }
+		public int getUnknownSigma() { return unknownSigma; }
+		public int getUnknownTau() { return unknownTau; }
+		public int getUnknownUpsilon() { return unknownUpsilon; }
+		public int getUnknownPhi() { return unknownPhi; }
+		public int getUnknownChi() { return unknownChi; }
+		public int getUnknownPsi() { return unknownPsi; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+			boolean first = true;
+
+			result.append(String.format("Alpha?:            %3d\n", unknownAlpha));
+			result.append(String.format("Beta?:             %3d\n", unknownBeta));
+			result.append(String.format("Gamma?:            %3d\n", unknownGamma));
+			result.append(String.format("Delta?:            %3d\n", unknownDelta));
+			result.append(String.format("Epsilon?:          %3d\n", unknownEpsilon));
+			result.append(String.format("Zeta?:             %3d\n", unknownZeta));
+
+			result.append("\nEta?...\n");
+			first = true;
+			for ( UnknownEulabeia x : unknownEta ) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+				result.append(x.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
+
+			result.append("\nTheta?...\n");
+			first = true;
+			for ( UnknownEulabeia x : unknownTheta ) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+				result.append(x.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
+
+			result.append(String.format("Iota?:             %3d\n", unknownIota));
+			result.append(String.format("Kappa?:            %3d\n", unknownKappa));
+			result.append(String.format("Lambda?:           %3d\n", unknownLambda));
+			result.append(String.format("Mu?:               %3d\n", unknownMu));
+			result.append(String.format("Nu?:               %3d\n", unknownNu));
+			result.append(String.format("Xi?:               %3d\n", unknownXi));
+			result.append(String.format("Omicron?:          %3d\n", unknownOmicron));
+			result.append(String.format("Pi?:               %3d\n", unknownPi));
+			result.append(String.format("Rho?:              %3d\n", unknownRho));
+			result.append(String.format("Sigma?:            %3d\n", unknownSigma));
+			result.append(String.format("Tau?:              %3d\n", unknownTau));
+			result.append(String.format("Upsilon?:          %3d\n", unknownUpsilon));
+			result.append(String.format("Phi?:              %3d\n", unknownPhi));
+
+			return result.toString();
+		}
+	}
 }

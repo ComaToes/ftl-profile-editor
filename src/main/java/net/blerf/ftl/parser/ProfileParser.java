@@ -77,7 +77,7 @@ public class ProfileParser extends Parser {
 		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_ENERGY_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_CRYSTAL_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );  // Not seen, but maybe possible.
+		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );
 
 		int achievementCount = readInt(in);
 
