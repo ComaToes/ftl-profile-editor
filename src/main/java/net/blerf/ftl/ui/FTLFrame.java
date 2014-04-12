@@ -63,6 +63,7 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 import javax.xml.bind.JAXBException;
 
+import net.vhati.ftldat.FTLDat;
 import net.vhati.modmanager.core.FTLUtilities;
 
 import net.blerf.ftl.model.Profile;
@@ -73,6 +74,7 @@ import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.DumpPanel;
 import net.blerf.ftl.ui.ExtensionFileFilter;
 import net.blerf.ftl.ui.GeneralAchievementsPanel;
+import net.blerf.ftl.ui.HTMLEditorTransferHandler;
 import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.ProfileStatsPanel;
 import net.blerf.ftl.ui.SavedGameFloorplanPanel;
@@ -441,65 +443,53 @@ public class FTLFrame extends JFrame {
 
 				fc.setDialogTitle( "Open Profile" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
-					RandomAccessFile raf = null;
-					InputStream in = null;
+					FileInputStream in = null;
+					StringBuilder hexBuf = new StringBuilder();
+					boolean hashFailed = false;
+					Exception exception = null;
+
 					try {
 						log.trace( "File selected: "+ fc.getSelectedFile().getAbsolutePath() );
 
-						// Read whole file so we can hash it.
-						raf = new RandomAccessFile( fc.getSelectedFile(), "r" );
-						byte[] data = new byte[(int)raf.length()];
-						raf.readFully(data);
-						raf.close();
+						in = new FileInputStream( fc.getSelectedFile() );
 
-						MessageDigest md = MessageDigest.getInstance("MD5");
-						byte[] readHash = md.digest(data);
+						// Hash whole file, then go back to the beginning.
+						String readHash = FTLDat.calcStreamMD5( in );
+						in.getChannel().position( 0 );
 
-						in = new ByteArrayInputStream(data);
-						// Parse file data
+						// Read the content in advance, in case an error ocurs.
+						byte[] buf = new byte[4096];
+						int len = 0;
+						while ( (len = in.read(buf)) >= 0 ) {
+							for (int j=0; j < len; j++) {
+								hexBuf.append( String.format( "%02x", buf[j] ) );
+								if ( (j+1) % 32 == 0 ) {
+									hexBuf.append( "\n" );
+								}
+							}
+						}
+						in.getChannel().position( 0 );
+
+						// Parse file data.
 						ProfileParser ftl = new ProfileParser();
 						Profile p = ftl.readProfile(in);
-						in.close();
-
 						FTLFrame.this.loadProfile(p);
 
 						// Perform mock write.
-						ByteArrayOutputStream out = new ByteArrayOutputStream();
-						FTLFrame.this.updateProfile(profile);
-						ftl.writeProfile(out, profile);
-						out.close();
+						ByteArrayOutputStream mockOut = new ByteArrayOutputStream();
+						FTLFrame.this.updateProfile( profile );
+						ftl.writeProfile( mockOut, profile );
+						mockOut.close();
 
 						// Hash result.
-						byte[] outData = out.toByteArray();
-						md.reset();
-						byte[] writeHash = md.digest(outData);
+						ByteArrayInputStream mockIn = new ByteArrayInputStream( mockOut.toByteArray() );
+						String writeHash = FTLDat.calcStreamMD5( mockIn );
+						mockIn.close();
 
-						// Compare.
-						for (int i = 0; i < readHash.length; i++) {
-							if ( readHash[i] != writeHash[i] ) {
-								log.error( "Hash fail on mock write - Unable to assure valid parsing." );
-
-								String hex = "";
-								for (int j = 0; j < data.length; j++) {
-									hex += String.format( "%02x", data[j] );
-									if ( (j+1) % 32 == 0 )
-										hex +="\n";
-								}
-
-								StringBuilder errBuf = new StringBuilder();
-								errBuf.append( "<b>FTL Profile Editor has detected that it cannot interpret your profile correctly.<br/>" );
-								errBuf.append( "Using this app may result in loss of stats/achievements.</b>" );
-								errBuf.append( "<br/><br/>" );
-								errBuf.append( "Please copy (Ctrl-A, Ctrl-C) the following text and paste it into a new bug report <a href='"+ bugReportUrl +"'>here</a> " );
-								errBuf.append( "(GitHub signup is free) or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free)." );
-								errBuf.append( "<br/>If using GitHub, set the issue title as \"Profile Parser Error\"<br/><br/>I will fix the problem and release a new version as soon as I can." );
-								errBuf.append( "<br/><br/><pre>"+ hex +"</pre>" );
-
-								JDialog failDialog = createHtmlDialog( "Profile Parser Error", errBuf.toString() );
-								failDialog.setVisible(true);
-
-								break;
-							}
+						// Compare hashes.
+						if ( !writeHash.equals( readHash ) ) {
+							log.error( "Hash fail on mock write - Unable to assure valid parsing." );
+							hashFailed = true;
 						}
 
 						log.trace( "Profile read successfully." );
@@ -507,14 +497,45 @@ public class FTLFrame extends JFrame {
 					catch( Exception f ) {
 						log.error( "Error reading profile.", f );
 						showErrorDialog( "Error reading profile:\n"+ f.getMessage() );
+						exception = f;
 					}
 					finally {
-						try {if ( raf != null ) raf.close();}
-						catch ( IOException g ) {}
 						try {if ( in != null ) in.close();}
-						catch ( IOException g ) {}
+						catch ( IOException f ) {}
 					}
-				} else {
+
+					if ( hashFailed || exception != null ) {
+						if ( hexBuf.length() > 0 ) {
+							StringBuilder errBuf = new StringBuilder();
+							errBuf.append( "FTL Profile Editor has detected that it cannot interpret your profile correctly.<br/>" );
+
+							if ( hashFailed && exception == null ) {
+								errBuf.append( "Saving changes may result in corruption.<br/>" );
+							}
+
+							errBuf.append( "<br/>" );
+							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a> (Signup is free).<br/>");
+							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free).<br/>" );
+							errBuf.append( "<br/>" );
+							errBuf.append( "On GitHub, set the issue title as \"Profile Parser Error\".<br/>" );
+							errBuf.append( "<br/>" );
+							errBuf.append( "I will fix the problem and release a new version as soon as I can.<br/>" );
+							errBuf.append( "<br/><br/>" );
+							errBuf.append( "Copy (Ctrl-A, Ctrl-C) the following text, including \"[ code ] tags\"." );
+							errBuf.append( "<br/><br/>" );
+							errBuf.append( "<pre>" );
+							errBuf.append( fc.getSelectedFile().getName() ).append( ":\n" );
+							errBuf.append( "[code]\n" );
+							errBuf.append( hexBuf );
+							errBuf.append( "\n[/code]" );
+							errBuf.append( "</pre>" );
+
+							JDialog failDialog = createHtmlDialog( "Profile Parser Error", errBuf.toString() );
+							failDialog.setVisible(true);
+						}
+					}
+				}
+				else {
 					log.trace( "Open dialog cancelled." );
 				}
 			}
@@ -704,13 +725,33 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Open saved game button clicked." );
+
 				fc.setDialogTitle( "Open Saved Game" );
 				if ( fc.showOpenDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
+					FileInputStream in = null;
+					StringBuilder hexBuf = new StringBuilder();
+					Exception exception = null;
+
 					try {
 						log.trace( "File selected: "+ fc.getSelectedFile().getAbsolutePath() );
 
+						in = new FileInputStream( fc.getSelectedFile() );
+
+						// Read the content in advance, in case an error ocurs.
+						byte[] buf = new byte[4096];
+						int len = 0;
+						while ( (len = in.read(buf)) >= 0 ) {
+							for (int j=0; j < len; j++) {
+								hexBuf.append( String.format( "%02x", buf[j] ) );
+								if ( (j+1) % 32 == 0 ) {
+									hexBuf.append( "\n" );
+								}
+							}
+						}
+						in.getChannel().position( 0 );
+
 						SavedGameParser parser = new SavedGameParser();
-						SavedGameParser.SavedGameState gs = parser.readSavedGame( fc.getSelectedFile() );
+						SavedGameParser.SavedGameState gs = parser.readSavedGame( in );
 						loadGameState( gs );
 
 						log.trace( "Game state read successfully." );
@@ -730,8 +771,40 @@ public class FTLFrame extends JFrame {
 					catch( Exception f ) {
 						log.error( "Error reading saved game.", f );
 						showErrorDialog( "Error reading saved game:\n"+ f.getMessage() );
+						exception = f;
 					}
-				} else {
+					finally {
+						try {if ( in != null ) in.close();}
+						catch ( IOException f ) {}
+					}
+
+					if ( exception != null ) {
+						if ( hexBuf.length() > 0 ) {
+							StringBuilder errBuf = new StringBuilder();
+							errBuf.append( "FTL Profile Editor has detected that it cannot interpret your saved game correctly.<br/>" );
+							errBuf.append( "<br/>" );
+							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a> (Signup is free).<br/>");
+							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free).<br/>" );
+							errBuf.append( "<br/>" );
+							errBuf.append( "On GitHub, set the issue title as \"SavedGame Parser Error\".<br/>" );
+							errBuf.append( "<br/>" );
+							errBuf.append( "I will fix the problem and release a new version as soon as I can.<br/>" );
+							errBuf.append( "<br/><br/>" );
+							errBuf.append( "Copy (Ctrl-A, Ctrl-C) the following text, including \"[ code ] tags\"." );
+							errBuf.append( "<br/><br/>" );
+							errBuf.append( "<pre>" );
+							errBuf.append( fc.getSelectedFile().getName() ).append( ":\n" );
+							errBuf.append( "[code]\n" );
+							errBuf.append( hexBuf );
+							errBuf.append( "\n[/code]" );
+							errBuf.append( "</pre>" );
+
+							JDialog failDialog = createHtmlDialog( "SavedGame Parser Error", errBuf.toString() );
+							failDialog.setVisible(true);
+						}
+					}
+				}
+				else {
 					log.trace( "Open dialog cancelled." );
 				}
 			}
@@ -1018,15 +1091,16 @@ public class FTLFrame extends JFrame {
 		final JDialog dlg = new JDialog(this, title, true);
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
-		dlg.setContentPane(panel);
+		dlg.setContentPane( panel );
 		dlg.setSize( 600, 400 );
 		dlg.setLocationRelativeTo( this );
 
 		JEditorPane editor = new JEditorPane( "text/html", content );
-		editor.setEditable(false);
-		editor.setCaretPosition(0);
-		editor.addHyperlinkListener(linkListener);
-		panel.add( new JScrollPane(editor) );
+		editor.setEditable( false );
+		editor.setCaretPosition( 0 );
+		editor.addHyperlinkListener( linkListener );
+		editor.setTransferHandler( new HTMLEditorTransferHandler() );
+		panel.add( new JScrollPane( editor ) );
 
 		return dlg;
 	}

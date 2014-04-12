@@ -29,12 +29,26 @@ import net.blerf.ftl.xml.WeaponBlueprint;
 public class SavedGameParser extends Parser {
 
 
-	public SavedGameState readSavedGame( File datFile ) throws IOException {
+	public SavedGameState readSavedGame( File savFile ) throws IOException {
+		SavedGameState gameState = null;
+
 		FileInputStream in = null;
+		try {
+			in = new FileInputStream( savFile );
+			gameState = readSavedGame(in);
+		}
+		finally {
+			try {if (in != null) in.close();}
+			catch (IOException e) {}
+		}
+
+		return gameState;
+	}
+
+	public SavedGameState readSavedGame( FileInputStream in ) throws IOException {
 		InputStream layoutStream = null;
 		try {
 			SavedGameState gameState = new SavedGameState();
-			in = new FileInputStream( datFile );
 
 			int headerAlpha = readInt(in);
 			if ( headerAlpha == 2 ) {
@@ -192,13 +206,10 @@ public class SavedGameParser extends Parser {
 			}
 
 			return gameState;  // The finally block will still be executed.
-
-		} finally {
-			try {if (in != null) in.close();}
-			catch (IOException e) {}
-
-			try {if (layoutStream != null) in.close();}
-			catch (IOException e) {}
+		}
+		finally {
+			try {if (layoutStream != null) layoutStream.close();}
+			catch ( IOException e ) {}
 		}
 	}
 
@@ -3362,6 +3373,7 @@ public class SavedGameParser extends Parser {
 		private int unknownBeta = 0;
 
 		// This class appears to be an X,Y pair, relative to an unknown origin.
+
 
 		public UnknownEulabeia() {
 		}
