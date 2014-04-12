@@ -146,9 +146,9 @@ public class FTLFrame extends JFrame {
 		this.appVersion = appVersion;
 
 		// GUI setup
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setSize(800, 700);
-		setLocationRelativeTo(null);
+		setDefaultCloseOperation( EXIT_ON_CLOSE );
+		setSize( 800, 700 );
+		setLocationRelativeTo( null );
 		setTitle( String.format( "%s v%d", appName, appVersion ) );
 
 		try {
@@ -836,7 +836,7 @@ public class FTLFrame extends JFrame {
 		JPanel aboutPanel = new JPanel();
 		aboutPanel.setLayout( new BoxLayout(aboutPanel, BoxLayout.Y_AXIS) );
 		aboutDialog.setContentPane(aboutPanel);
-		aboutDialog.setSize(300, 250);
+		aboutDialog.setSize( 300, 300 );
 		aboutDialog.setLocationRelativeTo( this );
 
 		try {
@@ -1019,7 +1019,7 @@ public class FTLFrame extends JFrame {
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
 		dlg.setContentPane(panel);
-		dlg.setSize(600, 400);
+		dlg.setSize( 600, 400 );
 		dlg.setLocationRelativeTo( this );
 
 		JEditorPane editor = new JEditorPane( "text/html", content );
