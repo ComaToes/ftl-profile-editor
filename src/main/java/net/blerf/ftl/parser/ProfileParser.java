@@ -40,7 +40,7 @@ public class ProfileParser extends Parser {
 			p.setUnknownBeta( readInt(in) );
 		}
 		else {
-			throw new IOException( "Unexpected first byte ("+ headerAlpha +")." );
+			throw new IOException( "Unexpected first byte ("+ headerAlpha +") for a PROFILE." );
 		}
 
 		p.setAchievements( readAchievements(in, headerAlpha) );

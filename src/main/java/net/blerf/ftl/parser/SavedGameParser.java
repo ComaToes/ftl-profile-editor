@@ -66,7 +66,7 @@ public class SavedGameParser extends Parser {
 				gameState.setDLCEnabled( readBool(in) );
 			}
 			else {
-				throw new IOException( "Unexpected first byte ("+ headerAlpha +")." );
+				throw new IOException( "Unexpected first byte ("+ headerAlpha +") for a SAVED GAME." );
 			}
 
 			gameState.setDifficulty( readInt(in) );
@@ -357,7 +357,7 @@ public class SavedGameParser extends Parser {
 		systemTypes.add( SystemType.CLOAKING );
 		systemTypes.add( SystemType.ARTILLERY );
 		if ( headerAlpha == 7 ) {
-			systemTypes.add( SystemType.ALPHA );  // Epsilon was 0, maybe it was this system's capacity?
+			systemTypes.add( SystemType.BATTERY );  // Epsilon was 0, maybe it was this system's capacity?
 			systemTypes.add( SystemType.CLONEBAY );
 			systemTypes.add( SystemType.MIND );
 			systemTypes.add( SystemType.HACKING );
@@ -1915,7 +1915,7 @@ public class SavedGameParser extends Parser {
 
 			result.append("\nStarting Crew...\n");
 			first = true;
-			for (StartingCrewState sc : startingCrewList) {
+			for ( StartingCrewState sc : startingCrewList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(sc.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
@@ -2429,11 +2429,10 @@ public class SavedGameParser extends Parser {
 		TELEPORTER("teleporter", false),
 		CLOAKING  ("cloaking",   false),
 		ARTILLERY ("artillery",  false),
-		ALPHA     ("alpha",      false),
+		BATTERY   ("battery",    false),
 		CLONEBAY  ("clonebay",   false),
 		MIND      ("mind",      false),
 		HACKING   ("hacking",    false);
-		// Greeks are one of: battery, mind.
 
 		private String id;
 		private boolean subsystem;
