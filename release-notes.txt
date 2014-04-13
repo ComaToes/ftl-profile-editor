@@ -1,3 +1,8 @@
+20
+Fixed profile read error when there are victories by Engi/Fed/Lanius ships.
+Added a WIP notice when run the first time.
+Added pastable bug reports that embed the problematic files in question.
+
 19
 Added read/write support for FTL 1.5.4 "ae_prof.sav" profiles.
 Added profile "Dump" tab.
