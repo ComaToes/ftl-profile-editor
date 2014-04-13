@@ -62,7 +62,8 @@ public class ShipUnlockPanel extends JPanel {
 		this.add( shipPanel );
 
 		for ( String baseId : DataManager.get().getPlayerShipBaseIds() ) {
-			shipPanel.add( createShipUnlockPanel( baseId ) );
+			JPanel panel = createShipUnlockPanel( baseId );
+			if ( panel != null ) shipPanel.add( panel );
 		}
 
 		log.trace("Adding ship achievements");
@@ -73,7 +74,8 @@ public class ShipUnlockPanel extends JPanel {
 		this.add( shipAchPanel );
 
 		for ( String baseId : DataManager.get().getPlayerShipBaseIds() ) {
-			shipAchPanel.add( createShipAchPanel( baseId ) );
+			JPanel panel = createShipAchPanel( baseId );
+			if ( panel != null ) shipAchPanel.add( panel );
 		}
 	}
 
@@ -84,6 +86,8 @@ public class ShipUnlockPanel extends JPanel {
 		ShipBlueprint variantAShip = DataManager.get().getPlayerShipVariant( baseId, 0 );
 		ShipBlueprint variantBShip = DataManager.get().getPlayerShipVariant( baseId, 1 );
 		ShipBlueprint variantCShip = DataManager.get().getPlayerShipVariant( baseId, 2 );
+		if ( variantAShip == null ) return null;
+
 		String shipClass = variantAShip.getShipClass();
 
 		JPanel panel = new JPanel();
@@ -125,21 +129,29 @@ public class ShipUnlockPanel extends JPanel {
 		log.trace( "Creating ship achievements panel for: "+ baseId );
 
 		ShipBlueprint variantAShip = DataManager.get().getPlayerShipVariant( baseId, 0 );
+		if ( variantAShip == null ) return null;
+
 		String shipClass = variantAShip.getShipClass();
 
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
 		panel.setBorder( BorderFactory.createTitledBorder( shipClass ) );
-		
-		for ( Achievement shipAch : DataManager.get().getShipAchievements( variantAShip ) ) {
-			IconCycleButton box = frame.createCycleButton( "img/" + shipAch.getImagePath(), true );
-			box.setToolTipText( shipAch.getName() );
 
-			String achDesc = shipAch.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
-			box.addMouseListener( new StatusbarMouseListener(frame, achDesc) );
+		List<Achievement> shipAchs = DataManager.get().getShipAchievements( variantAShip );		
+		if ( shipAchs != null ) {
+			for ( Achievement shipAch : shipAchs ) {
+				IconCycleButton box = frame.createCycleButton( "img/" + shipAch.getImagePath(), true );
+				box.setToolTipText( shipAch.getName() );
 
-			shipAchBoxes.put( shipAch, box );
-			panel.add( box );
+				String achDesc = shipAch.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
+				box.addMouseListener( new StatusbarMouseListener(frame, achDesc) );
+
+				shipAchBoxes.put( shipAch, box );
+				panel.add( box );
+			}
+		}
+		else {
+			return null;
 		}
 		
 		return panel;
@@ -171,11 +183,11 @@ public class ShipUnlockPanel extends JPanel {
 
 			ShipAvailability shipAvail = p.getShipUnlockMap().get( baseId );
 			if ( shipAvail != null ) {
-				shipABox.setSelectedState( (shipAvail.isUnlockedA() ? SHIP_UNLOCKED : SHIP_LOCKED) );
-				shipCBox.setSelectedState( (shipAvail.isUnlockedC() ? SHIP_UNLOCKED : SHIP_LOCKED) );
+				if ( shipABox != null ) shipABox.setSelectedState( (shipAvail.isUnlockedA() ? SHIP_UNLOCKED : SHIP_LOCKED) );
+				if ( shipCBox != null ) shipCBox.setSelectedState( (shipAvail.isUnlockedC() ? SHIP_UNLOCKED : SHIP_LOCKED) );
 			} else {
-				shipABox.setSelectedState( SHIP_LOCKED );
-				shipCBox.setSelectedState( SHIP_LOCKED );
+				if ( shipABox != null ) shipABox.setSelectedState( SHIP_LOCKED );
+				if ( shipCBox != null ) shipCBox.setSelectedState( SHIP_LOCKED );
 			}
 		}
 
@@ -254,8 +266,8 @@ public class ShipUnlockPanel extends JPanel {
 			IconCycleButton shipABox = shipABoxes.get( baseId );
 			IconCycleButton shipCBox = shipCBoxes.get( baseId );
 
-			boolean unlockedA = ( shipABox.getSelectedState() == SHIP_UNLOCKED );
-			boolean unlockedC = ( shipCBox.getSelectedState() == SHIP_UNLOCKED );
+			boolean unlockedA = ( shipABox != null && shipABox.getSelectedState() == SHIP_UNLOCKED );
+			boolean unlockedC = ( shipCBox != null && shipCBox.getSelectedState() == SHIP_UNLOCKED );
 			ShipAvailability shipAvail = shipUnlockMap.get( baseId );
 			if ( shipAvail == null ) {
 				shipAvail = new ShipAvailability( baseId );
@@ -266,9 +278,12 @@ public class ShipUnlockPanel extends JPanel {
 
 			// Remove ship achievements for locked ships
 			if ( !unlockedA ) {
-				for ( Achievement shipAch : DataManager.get().getShipAchievements( DataManager.get().getPlayerShipVariant( baseId, 0 ) ) ) {
-					// Search for records with the doomed id.
-					AchievementRecord.removeFromListById( newAchRecs, shipAch.getId() );
+				List<Achievement> shipAchs = DataManager.get().getShipAchievements( DataManager.get().getPlayerShipVariant( baseId, 0 ) );
+				if ( shipAchs != null ) {
+					for ( Achievement shipAch : shipAchs ) {
+						// Search for records with the doomed id.
+						AchievementRecord.removeFromListById( newAchRecs, shipAch.getId() );
+					}
 				}
 			}
 		}
