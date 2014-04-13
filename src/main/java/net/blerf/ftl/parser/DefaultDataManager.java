@@ -144,9 +144,11 @@ public class DefaultDataManager extends DataManager {
 
 			allBlueprints = new LinkedHashMap<String, Blueprints>();
 			for ( String blueprintsFileName : stdBlueprintsFileNames ) {
+				if ( !hasDataInputStream( "data/"+ blueprintsFileName ) ) continue;
+
 				log.debug( String.format( "Reading \"data/%s\"...", blueprintsFileName ) );
 				InputStream tmpStream = getDataInputStream( "data/"+ blueprintsFileName );
-				streams.add(tmpStream);
+				streams.add( tmpStream );
 				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName );
 				allBlueprints.put( blueprintsFileName, tmpBlueprints );
 			}
@@ -156,7 +158,7 @@ public class DefaultDataManager extends DataManager {
 
 				log.debug( String.format( "Reading \"data/%s\"...", blueprintsFileName ) );
 				InputStream tmpStream = getDataInputStream( "data/"+ blueprintsFileName );
-				streams.add(tmpStream);
+				streams.add( tmpStream );
 				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName );
 				allBlueprints.put( blueprintsFileName, tmpBlueprints );
 			}
@@ -187,7 +189,7 @@ public class DefaultDataManager extends DataManager {
 			for ( String eventsFileName : stdEventsFileNames ) {
 				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
 				InputStream tmpStream = getDataInputStream( "data/"+ eventsFileName );
-				streams.add(tmpStream);
+				streams.add( tmpStream );
 				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName );
 				allEvents.put( eventsFileName, tmpEncounters );
 			}
@@ -197,7 +199,7 @@ public class DefaultDataManager extends DataManager {
 
 				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
 				InputStream tmpStream = getDataInputStream( "data/"+ eventsFileName );
-				streams.add(tmpStream);
+				streams.add( tmpStream );
 				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName );
 				allEvents.put( eventsFileName, tmpEncounters );
 			}
@@ -224,11 +226,15 @@ public class DefaultDataManager extends DataManager {
 			stdBlueprints = new LinkedHashMap<String, Blueprints>( stdBlueprintsFileNames.size() );
 			dlcBlueprints = new LinkedHashMap<String, Blueprints>( dlcBlueprintsFileNames.size() + stdBlueprintsFileNames.size() );
 			for ( String blueprintsFileName : stdBlueprintsFileNames ) {
-				stdBlueprints.put( blueprintsFileName, allBlueprints.get( blueprintsFileName ) );
-				dlcBlueprints.put( blueprintsFileName, allBlueprints.get( blueprintsFileName ) );
+				Blueprints blueprints = allBlueprints.get( blueprintsFileName );
+				if ( blueprints == null ) continue;
+				stdBlueprints.put( blueprintsFileName, blueprints );
+				dlcBlueprints.put( blueprintsFileName, blueprints );
 			}
 			for ( String blueprintsFileName : dlcBlueprintsFileNames ) {
-				dlcBlueprints.put( blueprintsFileName, allBlueprints.get( blueprintsFileName ) );
+				Blueprints blueprints = allBlueprints.get( blueprintsFileName );
+				if ( blueprints == null ) continue;
+				dlcBlueprints.put( blueprintsFileName, blueprints );
 			}
 
 			stdAugmentIdMap = new LinkedHashMap<String, AugBlueprint>();
@@ -462,11 +468,15 @@ public class DefaultDataManager extends DataManager {
 			stdEvents = new LinkedHashMap<String, Encounters>( stdEventsFileNames.size() );
 			dlcEvents = new LinkedHashMap<String, Encounters>( dlcEventsFileNames.size() + stdEventsFileNames.size() );
 			for ( String eventsFileName : stdEventsFileNames ) {
-				stdEvents.put( eventsFileName, allEvents.get( eventsFileName ) );
-				dlcEvents.put( eventsFileName, allEvents.get( eventsFileName ) );
+				Encounters tmpEncounters = allEvents.get( eventsFileName );
+				if ( tmpEncounters == null ) continue;
+				stdEvents.put( eventsFileName, tmpEncounters );
+				dlcEvents.put( eventsFileName, tmpEncounters );
 			}
 			for ( String eventsFileName : dlcEventsFileNames ) {
-				dlcEvents.put( eventsFileName, allEvents.get( eventsFileName ) );
+				Encounters tmpEncounters = allEvents.get( eventsFileName );
+				if ( tmpEncounters == null ) continue;
+				dlcEvents.put( eventsFileName, tmpEncounters );
 			}
 
 			stdShipEventIdMap = new LinkedHashMap<String, ShipEvent>();

@@ -172,7 +172,9 @@ public class ProfileParser extends Parser {
 				diffFlag = 2;
 			}
 			else {
-				throw new IOException( String.format("Unsupported difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), rec.getDifficulty().toString()) );
+				//throw new IOException( String.format("Unsupported difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), rec.getDifficulty().toString()) );
+				log.warn( String.format("Substituting EASY for unsupported difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), rec.getDifficulty().toString()) );
+				diffFlag = 0;
 			}
 			writeInt( out, diffFlag );
 
@@ -198,7 +200,9 @@ public class ProfileParser extends Parser {
 							variantDiffFlag = 2;
 						}
 						else {
-							throw new IOException( String.format("Unsupported per-layout difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), variantDiff.toString()) );
+							//throw new IOException( String.format("Unsupported per-layout difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), variantDiff.toString()) );
+							log.warn( String.format("Substituting EASY for unsupported per-layout difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), variantDiff.toString()) );
+							variantDiffFlag = 0;
 						}
 						writeInt( out, variantDiffFlag );
 					}
@@ -414,7 +418,9 @@ public class ProfileParser extends Parser {
 				diffFlag = 2;
 			}
 			else {
-				throw new IOException( String.format("Unsupported difficulty for score (\"%s\"): %s", score.getShipName(), score.getDifficulty().toString()) );
+				//throw new IOException( String.format("Unsupported difficulty for score (\"%s\"): %s", score.getShipName(), score.getDifficulty().toString()) );
+				log.warn( String.format("Substituting EASY for unsupported difficulty for score (\"%s\"): %s", score.getShipName(), score.getDifficulty().toString()) );
+				diffFlag = 0;
 			}
 			writeInt( out, diffFlag );
 

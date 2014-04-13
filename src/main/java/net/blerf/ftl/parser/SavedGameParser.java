@@ -1,3 +1,7 @@
+// Variables with unknown meanings are named with greek letters.
+// Classes for unknown objects are named after deities.
+// http://en.wikipedia.org/wiki/List_of_Greek_mythological_figures#Personified_concepts
+
 package net.blerf.ftl.parser;
 
 import java.awt.Point;
@@ -1471,6 +1475,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset));
 			result.append(String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge));
 			result.append(String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod));
+
 			result.append(String.format("Sector Hazards Map: %b\n", sectorHazardsVisible));
 			result.append(String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds));
 			result.append(String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible));
