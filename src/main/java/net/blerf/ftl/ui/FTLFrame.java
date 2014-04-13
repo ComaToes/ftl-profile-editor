@@ -54,6 +54,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -527,6 +528,7 @@ public class FTLFrame extends JFrame {
 					if ( hashFailed || exception != null ) {
 						if ( hexBuf.length() > 0 ) {
 							StringBuilder errBuf = new StringBuilder();
+
 							errBuf.append( "Your profile could not be interpreted correctly.<br/>" );
 
 							if ( hashFailed && exception == null ) {
@@ -543,14 +545,35 @@ public class FTLFrame extends JFrame {
 							errBuf.append( "<br/><br/>" );
 							errBuf.append( "Copy (Ctrl-A, Ctrl-C) the following text, including \"[ code ] tags\"." );
 							errBuf.append( "<br/><br/>" );
-							errBuf.append( "<pre>" );
-							errBuf.append( chosenFile.getName() ).append( ":\n" );
-							errBuf.append( "[code]\n" );
-							errBuf.append( hexBuf );
-							errBuf.append( "\n[/code]" );
-							errBuf.append( "</pre>" );
 
-							JDialog failDialog = createHtmlDialog( "Profile Parser Error", errBuf.toString() );
+							StringBuilder reportBuf = new StringBuilder();
+							reportBuf.append( "[code]\n" );
+							reportBuf.append( "Profile Parser Error\n" );
+							reportBuf.append( "\n" );
+
+							if ( exception != null ) {
+								reportBuf.append( String.format("Exception: %s\n", exception.toString()) );
+								reportBuf.append( "\n" );
+
+								reportBuf.append( "Stack Trace...\n" );
+								StackTraceElement[] traceElements = exception.getStackTrace();
+								int traceDepth = 3;
+								for (int i=0; i < traceDepth && i < traceElements.length; i++) {
+									reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
+								}
+								reportBuf.append( "\n" );
+							}
+
+							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
+							reportBuf.append( String.format("OS: %s %s\n", System.getProperty("os.name"), System.getProperty("os.version")) );
+							reportBuf.append( String.format("VM: %s, %s, %s\n", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.arch")) );
+							reportBuf.append( "\n" );
+
+							reportBuf.append( String.format("File (\"%s\")...\n", chosenFile.getName()) );
+							reportBuf.append( hexBuf );
+							reportBuf.append( "\n[/code]\n" );
+
+							JDialog failDialog = createBugReportDialog( "Profile Parser Error", errBuf.toString(), reportBuf.toString() );
 							failDialog.setVisible(true);
 						}
 					}
@@ -860,7 +883,7 @@ public class FTLFrame extends JFrame {
 					if ( exception != null ) {
 						if ( hexBuf.length() > 0 ) {
 							StringBuilder errBuf = new StringBuilder();
-							errBuf.append( "FTL Profile Editor has detected that it cannot interpret your saved game correctly.<br/>" );
+							errBuf.append( "Your saved game could not be interpreted correctly.<br/>" );
 							errBuf.append( "<br/>" );
 							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a> (Signup is free).<br/>");
 							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free).<br/>" );
@@ -871,14 +894,35 @@ public class FTLFrame extends JFrame {
 							errBuf.append( "<br/><br/>" );
 							errBuf.append( "Copy (Ctrl-A, Ctrl-C) the following text, including \"[ code ] tags\"." );
 							errBuf.append( "<br/><br/>" );
-							errBuf.append( "<pre>" );
-							errBuf.append( chosenFile.getName() ).append( ":\n" );
-							errBuf.append( "[code]\n" );
-							errBuf.append( hexBuf );
-							errBuf.append( "\n[/code]" );
-							errBuf.append( "</pre>" );
 
-							JDialog failDialog = createHtmlDialog( "SavedGame Parser Error", errBuf.toString() );
+							StringBuilder reportBuf = new StringBuilder();
+							reportBuf.append( "[code]\n" );
+							reportBuf.append( "SavedGame Parser Error\n" );
+							reportBuf.append( "\n" );
+
+							if ( exception != null ) {
+								reportBuf.append( String.format("Exception: %s\n", exception.toString()) );
+								reportBuf.append( "\n" );
+
+								reportBuf.append( "Stack Trace...\n" );
+								StackTraceElement[] traceElements = exception.getStackTrace();
+								int traceDepth = 3;
+								for (int i=0; i < traceDepth && i < traceElements.length; i++) {
+									reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
+								}
+								reportBuf.append( "\n" );
+							}
+
+							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
+							reportBuf.append( String.format("OS: %s %s\n", System.getProperty("os.name"), System.getProperty("os.version")) );
+							reportBuf.append( String.format("VM: %s, %s, %s\n", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.arch")) );
+							reportBuf.append( "\n" );
+
+							reportBuf.append( String.format("File (\"%s\")...\n", chosenFile.getName()) );
+							reportBuf.append( hexBuf );
+							reportBuf.append( "\n[/code]\n" );
+
+							JDialog failDialog = createBugReportDialog( "SavedGame Parser Error", errBuf.toString(), reportBuf.toString() );
 							failDialog.setVisible(true);
 						}
 					}
@@ -1199,7 +1243,7 @@ public class FTLFrame extends JFrame {
 
 	private JDialog createHtmlDialog( String title, String content ) {
 
-		final JDialog dlg = new JDialog(this, title, true);
+		final JDialog dlg = new JDialog( this, title, true );
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
 		dlg.setContentPane( panel );
@@ -1212,6 +1256,33 @@ public class FTLFrame extends JFrame {
 		editor.addHyperlinkListener( linkListener );
 		editor.setTransferHandler( new HTMLEditorTransferHandler() );
 		panel.add( new JScrollPane( editor ) );
+
+		return dlg;
+	}
+
+	private JDialog createBugReportDialog( String title, String message, String report ) {
+
+		final JDialog dlg = new JDialog( this, title, true );
+		JPanel panel = new JPanel( new BorderLayout() );
+		dlg.setContentPane( panel );
+		dlg.setSize( 600, 400 );
+		dlg.setLocationRelativeTo( this );
+
+		Font reportFont = new Font( "Monospaced", Font.PLAIN, 13 );
+
+		JEditorPane messageEditor = new JEditorPane( "text/html", message );
+		messageEditor.setEditable( false );
+		messageEditor.setCaretPosition( 0 );
+		messageEditor.addHyperlinkListener( linkListener );
+		messageEditor.setTransferHandler( new HTMLEditorTransferHandler() );
+		panel.add( new JScrollPane( messageEditor ), BorderLayout.NORTH );
+
+		JTextArea reportArea = new JTextArea( report );
+		reportArea.setTabSize( 4 );
+		reportArea.setFont( reportFont );
+		reportArea.setEditable( false );
+		reportArea.setCaretPosition( 0 );
+		panel.add( new JScrollPane( reportArea ), BorderLayout.CENTER );
 
 		return dlg;
 	}
