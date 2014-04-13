@@ -202,9 +202,18 @@ public class FTLFrame extends JFrame {
 		statsPanel = new ProfileStatsPanel(this);
 		profileDumpPanel = new DumpPanel();
 
-		profileTabsPane.add( "Ship Unlocks & Achievements", new JScrollPane( shipUnlockPanel ) );
-		profileTabsPane.add( "General Achievements", new JScrollPane( generalAchievementsPanel ) );
-		profileTabsPane.add( "Stats", new JScrollPane( statsPanel ) );
+		JScrollPane shipUnlockScroll = new JScrollPane( shipUnlockPanel );
+		shipUnlockScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+
+		JScrollPane generalAchievementsScroll = new JScrollPane( generalAchievementsPanel );
+		generalAchievementsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+
+		JScrollPane statsScroll = new JScrollPane( statsPanel );
+		statsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+
+		profileTabsPane.add( "Ship Unlocks & Achievements", shipUnlockScroll );
+		profileTabsPane.add( "General Achievements", generalAchievementsScroll );
+		profileTabsPane.add( "Stats", statsScroll );
 		profileTabsPane.add( "Dump", profileDumpPanel );
 
 
@@ -568,6 +577,20 @@ public class FTLFrame extends JFrame {
 				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
 					if ( "continue.sav".equals(chosenFile.getName()) ) {
 						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Profile tab, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+					}
+
+					if ( !sillyMistake && profile.getHeaderAlpha() == 4 &&
+					     "ae_prof.sav".equals(chosenFile.getName()) ) {
+
+						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is NOT an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+					}
+
+					if ( !sillyMistake && profile.getHeaderAlpha() == 9 &&
+					     "prof.sav".equals(chosenFile.getName()) ) {
+
+						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
 						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
 					}
 				}

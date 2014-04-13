@@ -25,8 +25,8 @@ public class Profile {
 	/**
 	 * Sets the magic number indicating file format, apparently.
 	 *
-	 * 4 = Saved Game, FTL 1.01-1.03.3
-	 * 9 = Saved Game, FTL 1.5.4+
+	 * 4 = Profile, FTL 1.01-1.03.3
+	 * 9 = AE Profile, FTL 1.5.4+
 	 */
 	public void setHeaderAlpha( int n ) {
 		this.unknownHeaderAlpha = n;
@@ -107,7 +107,14 @@ public class Profile {
 		                            StatType.MOST_PILOTED_EVASIONS, StatType.MOST_JUMPS_SURVIVED,
 		                            StatType.MOST_SKILL_MASTERIES};
 
-		result.append(String.format("File Format:            %4d\n", unknownHeaderAlpha));
+		String formatDesc = null;
+		switch ( unknownHeaderAlpha ) {
+			case( 4 ): formatDesc = "Profile, FTL 1.01-1.03.3"; break;
+			case( 9 ): formatDesc = "AE Profile, FTL 1.5.4+"; break;
+			default: formatDesc = "???"; break;
+		}
+
+		result.append(String.format("File Format:            %4d (%s)\n", unknownHeaderAlpha, formatDesc));
 		result.append(String.format("Beta?:                  %4d\n", unknownBeta));
 
 		result.append("\nShip Unlocks...\n");

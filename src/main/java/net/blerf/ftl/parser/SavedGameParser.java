@@ -1436,6 +1436,13 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
+			String formatDesc = null;
+			switch ( unknownHeaderAlpha ) {
+				case( 2 ): formatDesc = "Saved Game, FTL 1.01-1.03.3"; break;
+				case( 7 ): formatDesc = "Saved Game, FTL 1.5.4+"; break;
+				default: formatDesc = "???"; break;
+			}
+
 			String difficultyString = null;
 			if ( difficulty == 0 ) { difficultyString = "Easy"; }
 			else if ( difficulty == 1 ) { difficultyString = "Normal"; }
@@ -1443,7 +1450,7 @@ public class SavedGameParser extends Parser {
 			else { difficultyString = String.format("%4d (???)", difficulty); }
 
 			boolean first = true;
-			result.append(String.format("File Format:            %4d\n", unknownHeaderAlpha));
+			result.append(String.format("File Format:            %4d (%s)\n", unknownHeaderAlpha, formatDesc));
 			result.append(String.format("AE Content:             %b\n", (dlcEnabled ? "Enabled" : "Disabled") ));
 			result.append(String.format("Ship Name: %s\n", playerShipName));
 			result.append(String.format("Ship Type: %s\n", playerShipBlueprintId));
@@ -2635,18 +2642,18 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			String dirString;
+			String dirDesc;
 			switch ( stationDirection ) {
-				case( 0 ): dirString = "Down"; break;
-				case( 1 ): dirString = "Right"; break;
-				case( 2 ): dirString = "Up"; break;
-				case( 3 ): dirString = "Left"; break;
-				case( 4 ): dirString = "N/A"; break;
-				default: dirString = "???"; break;
+				case( 0 ): dirDesc = "Down"; break;
+				case( 1 ): dirDesc = "Right"; break;
+				case( 2 ): dirDesc = "Up"; break;
+				case( 3 ): dirDesc = "Left"; break;
+				case( 4 ): dirDesc = "N/A"; break;
+				default: dirDesc = "???"; break;
 			}
 
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
-			result.append(String.format("Station Square: %2d, Station Direction: %d (%s)\n", stationSquare, stationDirection, dirString));
+			result.append(String.format("Station Square: %2d, Station Direction: %d (%s)\n", stationSquare, stationDirection, dirDesc));
 			for (SquareState square : squareList) {
 				result.append(String.format("Square: Fire HP: %3d, Ignition: %3d%%, Gamma?: %2d\n", square.fireHealth, square.ignitionProgress, square.gamma));
 			}
