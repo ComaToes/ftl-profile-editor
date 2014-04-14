@@ -136,6 +136,7 @@ public class DefaultDataManager extends DataManager {
 			stdBlueprintsFileNames = new ArrayList<String>();
 			stdBlueprintsFileNames.add( "blueprints.xml" );
 			stdBlueprintsFileNames.add( "autoBlueprints.xml" );
+			stdBlueprintsFileNames.add( "bosses.xml" );  // FTL 1.5.4+
 
 			dlcBlueprintsFileNames = new ArrayList<String>();
 			dlcBlueprintsFileNames.add( "dlcBlueprints.xml" );

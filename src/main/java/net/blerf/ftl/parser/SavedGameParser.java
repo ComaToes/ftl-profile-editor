@@ -120,15 +120,20 @@ public class SavedGameParser extends Parser {
 				gameState.setUnknownEpsilon( readInt(in) );
 				gameState.setUnknownZeta( readInt(in) );
 				gameState.setUnknownEta( readInt(in) );
+				gameState.setUnknownTheta( readInt(in) );
+				gameState.setUnknownIota( readInt(in) );
+				gameState.setUnknownKappa( readInt(in) );
+				gameState.setUnknownLambda( readInt(in) );
 			}
+			else if ( headerAlpha == 2 ) {
+				gameState.setSectorHazardsVisible( readBool(in) );
 
-			gameState.setSectorHazardsVisible( readBool(in) );
+				gameState.setRebelFlagshipVisible( readBool(in) );
 
-			gameState.setRebelFlagshipVisible( readBool(in) );
+				gameState.setRebelFlagshipHop( readInt(in) );
 
-			gameState.setRebelFlagshipHop( readInt(in) );
-
-			gameState.setRebelFlagshipMoving( readBool(in) );
+				gameState.setRebelFlagshipMoving( readBool(in) );
+			}
 
 			int sectorCount = readInt(in);
 			for (int i=0; i < sectorCount; i++) {
@@ -148,7 +153,7 @@ public class SavedGameParser extends Parser {
 			gameState.setSectorNumber( sectorNumber );
 
 			gameState.setSectorIsHiddenCrystalWorlds( readBool(in) );
-			
+
 			int beaconCount = readInt(in);
 			for (int i=0; i < beaconCount; i++) {
 				gameState.addBeacon( readBeacon(in, headerAlpha) );
@@ -184,7 +189,7 @@ public class SavedGameParser extends Parser {
 
 				// Current beaconId was set earlier.
 
-				gameState.setUnknownTheta( readInt(in) );  // Something related to a hostile nearby ship in combat?
+				gameState.setUnknownMu( readInt(in) );  // Something related to a hostile nearby ship in combat?
 
 				EncounterState encounter = readEncounter(in);
 				gameState.setEncounter( encounter );
@@ -357,7 +362,7 @@ public class SavedGameParser extends Parser {
 		systemTypes.add( SystemType.CLOAKING );
 		systemTypes.add( SystemType.ARTILLERY );
 		if ( headerAlpha == 7 ) {
-			systemTypes.add( SystemType.BATTERY );  // Epsilon was 0, maybe it was this system's capacity?
+			systemTypes.add( SystemType.BATTERY );
 			systemTypes.add( SystemType.CLONEBAY );
 			systemTypes.add( SystemType.MIND );
 			systemTypes.add( SystemType.HACKING );
@@ -369,22 +374,76 @@ public class SavedGameParser extends Parser {
 		}
 
 		if ( headerAlpha == 7 ) {
-			//shipState.setUnknownEpsilon( readInt(in) );  // TODO: Currently trying out this 0 as an extra system's capacity.
-			//shipState.setUnknownZeta( readInt(in) );
-			//shipState.setUnknownEta( readInt(in) );
-			//shipState.setUnknownTheta( readInt(in) );
-			shipState.setUnknownIota( readInt(in) );
-			shipState.setUnknownKappa( readInt(in) );
-			shipState.setUnknownLambda( readInt(in) );
-			shipState.setUnknownMu( readInt(in) );
-			shipState.setUnknownNu( readInt(in) );
-			shipState.setUnknownXi( readInt(in) );
-			shipState.setUnknownOmicron( readInt(in) );
-			shipState.setUnknownPi( readInt(in) );
-			shipState.setUnknownRho( readInt(in) );
-			shipState.setUnknownSigma( readInt(in) );
-			shipState.setUnknownTau( readInt(in) );
-			shipState.setUnknownUpsilon( readInt(in) );
+			// TODO: Magic! Awful kludgy magic!!!
+
+			List<SystemVolatile> iotaList = new ArrayList<SystemVolatile>();
+			SystemState tmpSystem = null;
+
+			tmpSystem = shipState.getSystem( SystemType.CLONEBAY );
+			if ( tmpSystem != null && tmpSystem.getCapacity() > 0 ) {
+				ClonebayVolatile clonebayVolatile = new ClonebayVolatile();
+
+				clonebayVolatile.setUnknownAlpha( readInt(in) );
+				clonebayVolatile.setUnknownBeta( readInt(in) );
+				clonebayVolatile.setUnknownGamma( readInt(in) );
+
+				iotaList.add( clonebayVolatile );
+			}
+			tmpSystem = shipState.getSystem( SystemType.BATTERY );
+			if ( tmpSystem != null && tmpSystem.getCapacity() > 0 ) {
+				BatteryVolatile batteryVolatile = new BatteryVolatile();
+
+				batteryVolatile.setUnknownAlpha( readInt(in) );
+				batteryVolatile.setUnknownBeta( readInt(in) );
+				batteryVolatile.setUnknownGamma( readInt(in) );
+
+				iotaList.add( batteryVolatile );
+			}
+
+			// It's possible this isn't a single ever-present block.
+			if ( true ) {
+				UnknownAergiaVolatile aergiaVolatile = new UnknownAergiaVolatile();
+
+				aergiaVolatile.setUnknownAlpha( readInt(in) );  // Shield
+
+				aergiaVolatile.setUnknownBeta( readInt(in) );   // ZShield
+				aergiaVolatile.setUnknownGamma( readInt(in) );  // ZShield Max
+				aergiaVolatile.setUnknownDelta( readInt(in) );
+
+				// A pair. Usually (0,0). Rarely (1,1000).
+				// The rare case is STEALTH_3.
+				aergiaVolatile.setUnknownEpsilon( readInt(in) );
+				aergiaVolatile.setUnknownZeta( readInt(in) );
+
+				// A pair. Usually (1,1000). Rarely (0,0).
+				// The rare case is STEALTH_3.
+				aergiaVolatile.setUnknownEta( readInt(in) );
+				aergiaVolatile.setUnknownTheta( readInt(in) );
+
+				// A pair of 0's.
+				aergiaVolatile.setUnknownIota( readInt(in) );
+				aergiaVolatile.setUnknownKappa( readInt(in) );
+
+				// A pair. Usually noise. Sometimes 0.
+				aergiaVolatile.setUnknownLambda( readInt(in) );
+				aergiaVolatile.setUnknownMu( readInt(in) );
+
+				iotaList.add( aergiaVolatile );
+			}
+
+			tmpSystem = shipState.getSystem( SystemType.CLOAKING );
+			if ( tmpSystem != null && tmpSystem.getCapacity() > 0 ) {
+				CloakingVolatile cloakingVolatile = new CloakingVolatile();
+
+				cloakingVolatile.setUnknownAlpha( readInt(in) );
+				cloakingVolatile.setUnknownBeta( readInt(in) );
+				cloakingVolatile.setUnknownGamma( readInt(in) );
+				cloakingVolatile.setUnknownDelta( readInt(in) );
+
+				iotaList.add( cloakingVolatile );
+			}
+
+			shipState.setUnknownIota( iotaList );
 		}
 
 		int roomCount = shipLayout.getRoomCount();
@@ -572,7 +631,7 @@ public class SavedGameParser extends Parser {
 	private StartingCrewState readStartingCrewMember( InputStream in ) throws IOException {
 		String crewRace = readString(in);
 		String crewName = readString(in);
-		StartingCrewState startingCrew = new StartingCrewState(crewName, crewRace);
+		StartingCrewState startingCrew = new StartingCrewState( crewName, crewRace );
 		return startingCrew;
 	}
 
@@ -638,6 +697,12 @@ public class SavedGameParser extends Parser {
 			crew.setUnknownTau( readInt(in) );
 			crew.setUnknownUpsilon( readInt(in) );
 			crew.setUnknownPhi( readInt(in) );
+
+			if ( "crystal".equals(crew.getRace()) ) {
+				crew.setUnknownChi( readInt(in) );
+				crew.setUnknownPsi( readInt(in) );
+				crew.setUnknownOmega( readInt(in) );
+			}
 		}
 
 		return crew;
@@ -696,12 +761,6 @@ public class SavedGameParser extends Parser {
 				system.setUnknownDelta( readInt(in) );    // TODO: Capped capacity (<event>'s <status type="limit">)? Normally 1000.
 				system.setUnknownEpsilon( readInt(in) );  // 0000 0000
 				system.setUnknownZeta( readInt(in) );     // 0100 0000
-
-				if ( systemType == SystemType.HACKING ) {
-					system.setUnknownEta( readInt(in) );    // 0000 0000
-					system.setUnknownTheta( readInt(in) );  // E02E 0000 (12000)
-					system.setUnknownIota( readInt(in) );   // 18FC FFFF (-1000)
-				}
 			}
 		}
 		return system;
@@ -810,8 +869,16 @@ public class SavedGameParser extends Parser {
 	private BeaconState readBeacon( InputStream in, int headerAlpha ) throws IOException {
 		BeaconState beacon = new BeaconState();
 
-		boolean visited = readBool(in);
-		beacon.setVisited(visited);
+		int rawVisited = readInt(in);  // TODO: Decide on bool vs int.
+		boolean visited = false;
+		if ( rawVisited == 0 ) visited = false;
+		else if ( rawVisited == 1 ) visited = true;
+		else {
+			System.err.println( String.format("Warning: Substituting true for beacon's strange visited value: %d", rawVisited) );
+			visited = true;
+		}
+
+		beacon.setVisited( visited );
 		if ( visited ) {
 			beacon.setBgStarscapeImageInnerPath( readString(in) );
 			beacon.setBgSpriteImageInnerPath( readString(in) );
@@ -964,7 +1031,7 @@ public class SavedGameParser extends Parser {
 		encounter.setUnknownDelta( readString(in) );
 		encounter.setUnknownEpsilon( readString(in) );
 		encounter.setUnknownZeta( readString(in) );
-		encounter.setUnknownEta( readInt(in) );
+		encounter.setUnknownEta( readString(in) );
 		encounter.setText( readString(in) );
 		encounter.setUnknownIota( readInt(in) );
 
@@ -1091,8 +1158,12 @@ public class SavedGameParser extends Parser {
 		private int unknownEpsilon = 0;
 		private int unknownZeta = 0;
 		private int unknownEta = 0;
-
 		private int unknownTheta = 0;
+		private int unknownIota = 0;
+		private int unknownKappa = 0;
+		private int unknownLambda = 0;
+
+		private int unknownMu = 0;
 
 
 		public SavedGameState() {
@@ -1416,15 +1487,23 @@ public class SavedGameParser extends Parser {
 		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
 		public void setUnknownZeta( int n ) { unknownZeta = n; }
 		public void setUnknownEta( int n ) { unknownEta = n; }
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public void setUnknownIota( int n ) { unknownIota = n; }
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
+		public void setUnknownLambda( int n ) { unknownLambda = n; }
 
 		public int getUnknownGamma() { return unknownGamma; }
 		public int getUnknownDelta() { return unknownDelta; }
 		public int getUnknownEpsilon() { return unknownEpsilon; }
 		public int getUnknownZeta() { return unknownZeta; }
 		public int getUnknownEta() { return unknownEta; }
-
-		public void setUnknownTheta( int n ) { unknownTheta = n; }
 		public int getUnknownTheta() { return unknownTheta; }
+		public int getUnknownIota() { return unknownIota; }
+		public int getUnknownKappa() { return unknownKappa; }
+		public int getUnknownLambda() { return unknownLambda; }
+
+		public void setUnknownMu( int n ) { unknownMu = n; }
+		public int getUnknownMu() { return unknownMu; }
 
 		public void addMysteryBytes( MysteryBytes m ) {
 			mysteryList.add(m);
@@ -1482,18 +1561,24 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset));
 			result.append(String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge));
 			result.append(String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod));
-
+			result.append("\n");
+			result.append("The following are not set when parsing FTL 1.5.4+ saved games...\n");
 			result.append(String.format("Sector Hazards Map: %b\n", sectorHazardsVisible));
 			result.append(String.format("In Hidden Sector:   %b\n", sectorIsHiddenCrystalWorlds));
 			result.append(String.format("Rebel Flagship On:  %b\n", rebelFlagshipVisible));
 			result.append(String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop));
 			result.append(String.format("Flagship Moving:    %b\n", rebelFlagshipMoving));
+			result.append("\n");
 			result.append(String.format("Player BeaconId:    %5d\n", currentBeaconId));
 			result.append(String.format("Gamma?:             %5d\n", unknownGamma));
 			result.append(String.format("Delta?:             %5d\n", unknownDelta));
 			result.append(String.format("Epsilon?:           %5d\n", unknownEpsilon));
 			result.append(String.format("Zeta?:              %5d\n", unknownZeta));
 			result.append(String.format("Eta?:               %5d\n", unknownEta));
+			result.append(String.format("Theta?:             %5d\n", unknownTheta));
+			result.append(String.format("Iota?:              %5d\n", unknownIota));
+			result.append(String.format("Kappa?:             %5d\n", unknownKappa));
+			result.append(String.format("Lambda?:            %5d\n", unknownLambda));
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
@@ -1527,7 +1612,7 @@ public class SavedGameParser extends Parser {
 			}
 
 			result.append("\n");
-			result.append(String.format("Theta?:             %5d\n", unknownTheta));
+			result.append(String.format("Mu?:                %5d\n", unknownTheta));
 
 			result.append("\nCurrent Encounter...\n");
 			if ( encounter != null )
@@ -1582,18 +1667,7 @@ public class SavedGameParser extends Parser {
 		private int unknownZeta = 0;
 		private int unknownEta = 0;
 		private int unknownTheta = 0;
-		private int unknownIota = 0;
-		private int unknownKappa = 0;
-		private int unknownLambda = 0;
-		private int unknownMu = 0;  // Shield charge ticks (0-2000) waiting to add a bubble?
-		private int unknownNu = 0;
-		private int unknownXi = 0;
-		private int unknownOmicron = 0;
-		private int unknownPi = 0;
-		private int unknownRho = 0;
-		private int unknownSigma = 0;
-		private int unknownTau = 0;
-		private int unknownUpsilon = 0;
+		private List<SystemVolatile> unknownIota = new ArrayList<SystemVolatile>();
 
 		private int unknownPhi = 0;
 
@@ -1764,39 +1838,8 @@ public class SavedGameParser extends Parser {
 		public int getUnknownGamma() { return unknownGamma; }
 		public int getUnknownDelta() { return unknownDelta; }
 
-		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
-		public void setUnknownZeta( int n ) { unknownZeta = n; }
-		public void setUnknownEta( int n ) { unknownEta = n; }
-		public void setUnknownTheta( int n ) { unknownTheta = n; }
-		public void setUnknownIota( int n ) { unknownIota = n; }
-		public void setUnknownKappa( int n ) { unknownKappa = n; }
-		public void setUnknownLambda( int n ) { unknownLambda = n; }
-		public void setUnknownMu( int n ) { unknownMu = n; }
-		public void setUnknownNu( int n ) { unknownNu = n; }
-		public void setUnknownXi( int n ) { unknownXi = n; }
-		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
-		public void setUnknownPi( int n ) { unknownPi = n; }
-		public void setUnknownRho( int n ) { unknownRho = n; }
-		public void setUnknownSigma( int n ) { unknownSigma = n; }
-		public void setUnknownTau( int n ) { unknownTau = n; }
-		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
-
-		public int getUnknownEpsilon() { return unknownEpsilon; }
-		public int getUnknownZeta() { return unknownZeta; }
-		public int getUnknownEta() { return unknownEta; }
-		public int getUnknownTheta() { return unknownTheta; }
-		public int getUnknownIota() { return unknownIota; }
-		public int getUnknownKappa() { return unknownKappa; }
-		public int getUnknownLambda() { return unknownLambda; }
-		public int getUnknownMu() { return unknownMu; }
-		public int getUnknownNu() { return unknownNu; }
-		public int getUnknownXi() { return unknownXi; }
-		public int getUnknownOmicron() { return unknownOmicron; }
-		public int getUnknownPi() { return unknownPi; }
-		public int getUnknownRho() { return unknownRho; }
-		public int getUnknownSigma() { return unknownSigma; }
-		public int getUnknownTau() { return unknownTau; }
-		public int getUnknownUpsilon() { return unknownUpsilon; }
+		public void setUnknownIota( List<SystemVolatile> iotaList ) { unknownIota = iotaList; }
+		public List<SystemVolatile> getUnknownIota() { return unknownIota; }
 
 		public void setUnknownPhi( int n ) { unknownPhi = n; }
 		public int getUnknownPhi() { return unknownPhi; }
@@ -1930,7 +1973,7 @@ public class SavedGameParser extends Parser {
 
 			result.append("\nCurrent Crew...\n");
 			first = true;
-			for (CrewState c : crewList) {
+			for ( CrewState c : crewList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(c.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
@@ -1943,6 +1986,14 @@ public class SavedGameParser extends Parser {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(entry.getValue().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
+
+			result.append("\nAdditional Volatile System Vars...\n");
+			first = false;
+			for ( SystemVolatile tmpVolatile : unknownIota ) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+				result.append(tmpVolatile.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nRooms...\n");
@@ -1962,7 +2013,7 @@ public class SavedGameParser extends Parser {
 			result.append("\nHull Breaches...\n");
 			int breachId = -1;
 			first = true;
-			for (Map.Entry<Point, Integer> entry : breachMap.entrySet()) {
+			for ( Map.Entry<Point, Integer> entry : breachMap.entrySet() ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 
@@ -1988,9 +2039,11 @@ public class SavedGameParser extends Parser {
 				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
+			result.append(String.format("\nPhi?:              %3d\n", unknownPhi));
+
 			result.append("\nWeapons...\n");
 			first = true;
-			for (WeaponState w : weaponList) {
+			for ( WeaponState w : weaponList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(w.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
@@ -1998,35 +2051,16 @@ public class SavedGameParser extends Parser {
 
 			result.append("\nDrones...\n");
 			first = true;
-			for (DroneState d : droneList) {
+			for ( DroneState d : droneList ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nAugments...\n");
-			for (String augmentId : augmentIdList) {
+			for ( String augmentId : augmentIdList ) {
 				result.append(String.format("AugmentId: %s\n", augmentId));
 			}
-
-			result.append("\nOther Unknowns...\n");
-			result.append(String.format("Epsilon?:          %3d\n", unknownEpsilon));
-			result.append(String.format("Zeta?:             %3d\n", unknownZeta));
-			result.append(String.format("Eta?:              %3d\n", unknownEta));
-			result.append(String.format("Theta?:            %3d\n", unknownTheta));
-			result.append(String.format("Iota?:             %3d\n", unknownIota));
-			result.append(String.format("Kappa?:            %3d\n", unknownKappa));
-			result.append(String.format("Lambda?:           %3d\n", unknownLambda));
-			result.append(String.format("Mu?:               %3d\n", unknownMu));
-			result.append(String.format("Nu?:               %3d\n", unknownNu));
-			result.append(String.format("Xi?:               %3d\n", unknownXi));
-			result.append(String.format("Omicron?:          %3d\n", unknownOmicron));
-			result.append(String.format("Pi?:               %3d\n", unknownPi));
-			result.append(String.format("Rho?:              %3d\n", unknownRho));
-			result.append(String.format("Sigma?:            %3d\n", unknownSigma));
-			result.append(String.format("Tau?:              %3d\n", unknownTau));
-			result.append(String.format("Upsilon?:          %3d\n", unknownUpsilon));
-			result.append(String.format("Phi?:              %3d\n", unknownPhi));
 
 			return result.toString();
 		}
@@ -2147,6 +2181,10 @@ public class SavedGameParser extends Parser {
 		private int unknownUpsilon = 0;
 		private int unknownPhi = 0;
 
+		private int unknownChi = 0;
+		private int unknownPsi = 0;
+		private int unknownOmega = 0;
+
 
 		public CrewState() {
 		}
@@ -2252,6 +2290,14 @@ public class SavedGameParser extends Parser {
 		public int getUnknownTau() { return unknownTau; }
 		public int getUnknownUpsilon() { return unknownUpsilon; }
 		public int getUnknownPhi() { return unknownPhi; }
+
+		public void setUnknownChi( int n ) { unknownChi = n; }
+		public void setUnknownPsi( int n ) { unknownPsi = n; }
+		public void setUnknownOmega( int n ) { unknownOmega = n; }
+
+		public int getUnknownChi() { return unknownChi; }
+		public int getUnknownPsi() { return unknownPsi; }
+		public int getUnknownOmega() { return unknownOmega; }
 
 		/**
 		 * Sets the position of the crew's image.
@@ -2400,21 +2446,24 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Piloted Evasions:  %3d\n", pilotedEvasions));
 			result.append(String.format("Jumps Survived:    %3d\n", jumpsSurvived));
 			result.append(String.format("Skill Masteries:   %3d\n", skillMasteries));
-			result.append(String.format("Eta?:              %3d\n", unknownEta));
-			result.append(String.format("Theta?:            %3d\n", unknownTheta));
-			result.append(String.format("Iota?:             %3d\n", unknownIota));
-			result.append(String.format("Kappa?:            %3d\n", unknownKappa));
-			result.append(String.format("Lambda?:           %3d\n", unknownLambda));
-			result.append(String.format("Mu?:               %3d\n", unknownMu));
-			result.append(String.format("Nu?:               %3d\n", unknownNu));
-			result.append(String.format("Xi?:               %3d\n", unknownXi));
-			result.append(String.format("Omicron?:          %3d\n", unknownOmicron));
-			result.append(String.format("Pi?:               %3d\n", unknownPi));
-			result.append(String.format("Rho?:              %3d\n", unknownRho));
-			result.append(String.format("Sigma?:            %3d\n", unknownSigma));
-			result.append(String.format("Tau?:              %3d\n", unknownTau));
-			result.append(String.format("Upsilon?:          %3d\n", unknownUpsilon));
-			result.append(String.format("Phi?:              %3d\n", unknownPhi));
+			result.append(String.format("Eta?:           %6d\n", unknownEta));
+			result.append(String.format("Theta?:         %6d\n", unknownTheta));
+			result.append(String.format("Iota?:          %6d\n", unknownIota));
+			result.append(String.format("Kappa?:         %6d\n", unknownKappa));
+			result.append(String.format("Lambda?:        %6d\n", unknownLambda));
+			result.append(String.format("Mu?:            %6d\n", unknownMu));
+			result.append(String.format("Nu?:            %6d\n", unknownNu));
+			result.append(String.format("Xi?:            %6d\n", unknownXi));
+			result.append(String.format("Omicron?:       %6d\n", unknownOmicron));
+			result.append(String.format("Pi?:            %6d\n", unknownPi));
+			result.append(String.format("Rho?:           %6d\n", unknownRho));
+			result.append(String.format("Sigma?:         %6d\n", unknownSigma));
+			result.append(String.format("Tau?:           %6d\n", unknownTau));
+			result.append(String.format("Upsilon?:       %6d\n", unknownUpsilon));
+			result.append(String.format("Phi?:           %6d\n", unknownPhi));
+			result.append(String.format("Chi?:           %6d (Crystal only)\n", unknownChi));
+			result.append(String.format("Psi?:           %6d (Crystal only)\n", unknownPsi));
+			result.append(String.format("Omega?:         %6d (Crystal only)\n", unknownOmega));
 			return result.toString();
 		}
 	}
@@ -2539,9 +2588,12 @@ public class SavedGameParser extends Parser {
 		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
 		public void setUnknownZeta( int n ) { unknownZeta = n; }
 
-		public void setUnknownEta( int n ) { unknownEta = n; }
-		public void setUnknownTheta( int n ) { unknownTheta = n; }
-		public void setUnknownIota( int n ) { unknownIota = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+		public int getUnknownDelta() { return unknownDelta; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+		public int getUnknownZeta() { return unknownZeta; }
 
 		@Override
 		public String toString() {
@@ -2560,9 +2612,6 @@ public class SavedGameParser extends Parser {
 				result.append(String.format("Delta?:             %3d\n", unknownDelta));
 				result.append(String.format("Epsilon?:           %3d\n", unknownEpsilon));
 				result.append(String.format("Zeta?:              %3d\n", unknownZeta));
-				result.append(String.format("Eta?:               %3d (Hacking only)\n", unknownEta));
-				result.append(String.format("Theta?:             %3d (Hacking only)\n", unknownTheta));
-				result.append(String.format("Iota?:              %3d (Hacking only)\n", unknownIota));
 			} else {
 				result.append(String.format("%s: N/A\n", systemType.getId()));
 			}
@@ -2718,11 +2767,10 @@ public class SavedGameParser extends Parser {
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
+
 			result.append(String.format("Open: %b, Walking Through: %b\n", open, walkingThrough));
-			result.append(String.format("Alpha?:            %3d\n", unknownAlpha));
-			result.append(String.format("Beta?:             %3d\n", unknownBeta));
-			result.append(String.format("Gamma?:            %3d\n", unknownGamma));
-			result.append(String.format("Epsilon?:          %3d\n", unknownEpsilon));
+			result.append(String.format("Alpha?: %3d, Beta?: %3d, Gamma?: %3d, Epsilon?: %3d\n", unknownAlpha, unknownBeta, unknownGamma, unknownEpsilon));
+
 			return result.toString();
 		}
 	}
@@ -3212,7 +3260,7 @@ public class SavedGameParser extends Parser {
 		private String unknownDelta = "";
 		private String unknownEpsilon = "";
 		private String unknownZeta = "";
-		private int unknownEta = 0;
+		private String unknownEta = "";
 
 		private int unknownTheta = 0;
 		private int unknownIota = 0;
@@ -3228,7 +3276,7 @@ public class SavedGameParser extends Parser {
 		public void setUnknownDelta( String s ) { unknownDelta = s; }
 		public void setUnknownEpsilon( String s ) { unknownEpsilon = s; }
 		public void setUnknownZeta( String s ) { unknownZeta = s; }
-		public void setUnknownEta( int n ) { unknownEta = n; }
+		public void setUnknownEta( String s ) { unknownEta = s; }
 
 		public int getUnknownAlpha() { return unknownAlpha; }
 		public String getUnknownBeta() { return unknownBeta; }
@@ -3236,7 +3284,7 @@ public class SavedGameParser extends Parser {
 		public String getUnknownDelta() { return unknownDelta; }
 		public String getUnknownEpsilon() { return unknownEpsilon; }
 		public String getUnknownZeta() { return unknownZeta; }
-		public int getUnknownEta() { return unknownEta; }
+		public String getUnknownEta() { return unknownEta; }
 
 		public void setText( String s ) { text = s; }
 		public String getText() { return text; }
@@ -3259,7 +3307,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Delta?:      %s\n", unknownDelta));
 			result.append(String.format("Epsilon?:    %s\n", unknownEpsilon));
 			result.append(String.format("Zeta?:       %s\n", unknownZeta));
-			result.append(String.format("Eta?:        %3d\n", unknownEta));
+			result.append(String.format("Eta?:        %s\n", unknownEta));
 
 			result.append("\nText...\n");
 			result.append(String.format("%s\n", text));
@@ -3372,6 +3420,176 @@ public class SavedGameParser extends Parser {
 
 				result.append(String.format("RoomId: %2d (%-10s), Crew: %d\n", roomId, systemId, occupantCount));
 			}
+
+			return result.toString();
+		}
+	}
+
+
+
+	public static interface SystemVolatile {
+	}
+
+	public static class ClonebayVolatile implements SystemVolatile {
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+
+
+		public ClonebayVolatile() {
+		}
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Group:         %s\n", SystemType.CLONEBAY.toString()));
+			result.append(String.format("Alpha?:        %7d (Millisecs spent building a clone?)\n", unknownAlpha));
+			result.append(String.format("Beta?:         %7d (Millisecs needed to finish the clone?)\n", unknownBeta));
+			result.append(String.format("Gamma?:        %7d\n", unknownGamma));
+
+			return result.toString();
+		}
+	}
+
+	public static class BatteryVolatile implements SystemVolatile {
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+
+
+		public BatteryVolatile() {
+		}
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Group:         %s\n", SystemType.BATTERY.toString()));
+			result.append(String.format("Alpha?:        %7d\n", unknownAlpha));
+			result.append(String.format("Beta?:         %7d\n", unknownBeta));
+			result.append(String.format("Gamma?:        %7d\n", unknownGamma));
+
+			return result.toString();
+		}
+	}
+
+	public static class UnknownAergiaVolatile implements SystemVolatile {
+		private int unknownAlpha = 0;
+
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+
+		private int unknownEpsilon = 0;
+		private int unknownZeta = 0;
+
+		private int unknownEta = 0;
+		private int unknownTheta = 0;
+
+		private int unknownIota = 0;
+		private int unknownKappa = 0;
+
+		private int unknownLambda = 0;
+		private int unknownMu = 0;
+
+
+		public UnknownAergiaVolatile() {
+		}
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public void setUnknownZeta( int n ) { unknownZeta = n; }
+		public void setUnknownEta( int n ) { unknownEta = n; }
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public void setUnknownIota( int n ) { unknownIota = n; }
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
+		public void setUnknownLambda( int n ) { unknownLambda = n; }
+		public void setUnknownMu( int n ) { unknownMu = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+		public int getUnknownDelta() { return unknownDelta; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+		public int getUnknownZeta() { return unknownZeta; }
+		public int getUnknownEta() { return unknownEta; }
+		public int getUnknownTheta() { return unknownTheta; }
+		public int getUnknownIota() { return unknownIota; }
+		public int getUnknownKappa() { return unknownKappa; }
+		public int getUnknownLambda() { return unknownLambda; }
+		public int getUnknownMu() { return unknownMu; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Group:         %s\n", "Aergia?"));
+			result.append(String.format("Shield Layers: %2d (Currently filled bubbles)\n", unknownAlpha));
+			result.append(String.format("ZShield Units: %2d (Current Zoltan Shield)\n", unknownBeta));
+			result.append(String.format("ZShield Max:   %2d (Fully charged Zoltan Shield)\n", unknownGamma));
+			result.append(String.format("Delta?:        %7d\n", unknownDelta));
+			result.append(String.format("Epsilon?:      %7d\n", unknownEpsilon));
+			result.append(String.format("Zeta?:         %7d\n", unknownZeta));
+			result.append(String.format("Eta?:          %7d\n", unknownEta));
+			result.append(String.format("Theta?:        %7d\n", unknownTheta));
+			result.append(String.format("Iota?:         %7d\n", unknownIota));
+			result.append(String.format("Kappa?:        %7d\n", unknownKappa));
+			result.append(String.format("Lambda?:       %7d\n", unknownLambda));
+			result.append(String.format("Mu?:           %7d\n", unknownMu));
+
+			return result.toString();
+		}
+	}
+
+	public static class CloakingVolatile implements SystemVolatile {
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+
+
+		public CloakingVolatile() {
+		}
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+		public int getUnknownDelta() { return unknownDelta; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Group:         %s\n", SystemType.CLOAKING.toString()));
+			result.append(String.format("Alpha?:        %7d\n", unknownAlpha));
+			result.append(String.format("Beta?:         %7d\n", unknownBeta));
+			result.append(String.format("Gamma?:        %7d\n", unknownGamma));
+			result.append(String.format("Delta?:        %7d\n", unknownDelta));
 
 			return result.toString();
 		}
