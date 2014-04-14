@@ -557,7 +557,7 @@ public class FTLFrame extends JFrame {
 
 								reportBuf.append( "Stack Trace...\n" );
 								StackTraceElement[] traceElements = exception.getStackTrace();
-								int traceDepth = 3;
+								int traceDepth = 5;
 								for (int i=0; i < traceDepth && i < traceElements.length; i++) {
 									reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
 								}
@@ -567,9 +567,10 @@ public class FTLFrame extends JFrame {
 							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
 							reportBuf.append( String.format("OS: %s %s\n", System.getProperty("os.name"), System.getProperty("os.version")) );
 							reportBuf.append( String.format("VM: %s, %s, %s\n", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.arch")) );
+							reportBuf.append( "[/code]\n" );
 							reportBuf.append( "\n" );
-
 							reportBuf.append( String.format("File (\"%s\")...\n", chosenFile.getName()) );
+							reportBuf.append( "[code]\n" );
 							reportBuf.append( hexBuf );
 							reportBuf.append( "\n[/code]\n" );
 
@@ -906,7 +907,7 @@ public class FTLFrame extends JFrame {
 
 								reportBuf.append( "Stack Trace...\n" );
 								StackTraceElement[] traceElements = exception.getStackTrace();
-								int traceDepth = 3;
+								int traceDepth = 5;
 								for (int i=0; i < traceDepth && i < traceElements.length; i++) {
 									reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
 								}
@@ -916,9 +917,10 @@ public class FTLFrame extends JFrame {
 							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
 							reportBuf.append( String.format("OS: %s %s\n", System.getProperty("os.name"), System.getProperty("os.version")) );
 							reportBuf.append( String.format("VM: %s, %s, %s\n", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.arch")) );
+							reportBuf.append( "[/code]\n" );
 							reportBuf.append( "\n" );
-
 							reportBuf.append( String.format("File (\"%s\")...\n", chosenFile.getName()) );
+							reportBuf.append( "[code]\n" );
 							reportBuf.append( hexBuf );
 							reportBuf.append( "\n[/code]\n" );
 
@@ -1265,7 +1267,7 @@ public class FTLFrame extends JFrame {
 		final JDialog dlg = new JDialog( this, title, true );
 		JPanel panel = new JPanel( new BorderLayout() );
 		dlg.setContentPane( panel );
-		dlg.setSize( 600, 400 );
+		dlg.setSize( 600, 450 );
 		dlg.setLocationRelativeTo( this );
 
 		Font reportFont = new Font( "Monospaced", Font.PLAIN, 13 );
