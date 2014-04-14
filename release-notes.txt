@@ -1,3 +1,11 @@
+21
+Major saved game parsing improvements, thanks to many samples from users.
+Added warning nags for nonsensical actions.
+Fixed a null exception when some typical resources are missing.
+Fixed errors when using resources from FTL 1.03.3 and earlier.
+Fixed a profile read error when there's a Normal/Hard victory achievement.
+Improved bug report dialogs.
+
 20
 Fixed profile read error when there are victories by Engi/Fed/Lanius ships.
 Added a WIP notice when run the first time.
