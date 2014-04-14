@@ -120,10 +120,10 @@ public class ProfileParser extends Parser {
 						else if ( variantDiffFlag == 0 ) {
 							variantDiff = Difficulty.EASY;
 						}
-						else if ( diffFlag == 1 ) {
+						else if ( variantDiffFlag == 1 ) {
 							variantDiff = Difficulty.NORMAL;
 						}
-						else if ( diffFlag == 2 ) {
+						else if ( variantDiffFlag == 2 ) {
 							variantDiff = Difficulty.HARD;
 						}
 						else {
