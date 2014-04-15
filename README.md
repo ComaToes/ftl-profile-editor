@@ -5,13 +5,18 @@ A 3rd-party tool to edit user files for [FTL](http://www.ftlgame.com/). It depen
 
 With this, you can unlock any or all ships and achievements in your user profile, or tweak most aspects of saved games: crew, systems, weapons, fires, breaches, etc.
 
-Note: FTL 1.01-1.03.3's files are fully editable. FTL 1.5.4's "ae_prof.sav" is editable, but its saved game is read-only.
+Note:
+FTL 1.01-1.03.3's files are fully editable.
+FTL 1.5.4's "ae_prof.sav" is editable, but its saved game is read-only.
 
 <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png" width="145px" height="auto" /></a>
 
 To download compiled binaries, [click here](https://sourceforge.net/projects/ftleditor/).
 
 Comments can be made in a forum thread [here](http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959).
+
+I can accept Paypal donations [via SourceForge](https://sourceforge.net/donate/?user_id=1569627).
+That would be fantastic.
 
 
 Usage

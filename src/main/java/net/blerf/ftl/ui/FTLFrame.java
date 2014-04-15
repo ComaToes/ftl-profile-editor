@@ -1062,28 +1062,13 @@ public class FTLFrame extends JFrame {
 	}
 
 	public JButton createAboutButton() {
-		final JDialog aboutDialog = new JDialog( this, "About", true);
-		JPanel aboutPanel = new JPanel();
-		aboutPanel.setLayout( new BoxLayout(aboutPanel, BoxLayout.Y_AXIS) );
-		aboutDialog.setContentPane(aboutPanel);
-		aboutDialog.setSize( 300, 300 );
-		aboutDialog.setLocationRelativeTo( this );
-
-		try {
-			JEditorPane editor = new JEditorPane( aboutPage );
-			editor.setEditable(false);
-			editor.addHyperlinkListener(linkListener);
-			aboutPanel.add(editor);
-		}
-		catch ( IOException e ) {
-			log.error(e);
-		}
-
 		JButton aboutButton = new JButton( "About", aboutIcon );
 		aboutButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "About button clicked." );
+
+				JDialog aboutDialog = createAboutDialog();
 				aboutDialog.setVisible( true );
 			}
 		});
@@ -1144,9 +1129,8 @@ public class FTLFrame extends JFrame {
 					}
 				};
 				SwingUtilities.invokeLater(r);
-
-			} else {
-
+			}
+			else {
 				log.trace( "Already up-to-date." );
 
 				final String historyHtml = getVersionHistoryHtml( releaseNotesTemplate, 0 );
@@ -1234,8 +1218,8 @@ public class FTLFrame extends JFrame {
 				}
 			}
 			in.close();
-
-		} finally {
+		}
+		finally {
 			try {if ( in != null ) in.close();}
 			catch ( IOException e ) {}
 		}
@@ -1245,12 +1229,9 @@ public class FTLFrame extends JFrame {
 
 	private JDialog createHtmlDialog( String title, String content ) {
 
-		final JDialog dlg = new JDialog( this, title, true );
+		JDialog dlg = new JDialog( this, title, true );
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
-		dlg.setContentPane( panel );
-		dlg.setSize( 600, 400 );
-		dlg.setLocationRelativeTo( this );
 
 		JEditorPane editor = new JEditorPane( "text/html", content );
 		editor.setEditable( false );
@@ -1259,16 +1240,17 @@ public class FTLFrame extends JFrame {
 		editor.setTransferHandler( new HTMLEditorTransferHandler() );
 		panel.add( new JScrollPane( editor ) );
 
+		dlg.setContentPane( panel );
+		dlg.setSize( 600, 400 );
+		dlg.setLocationRelativeTo( this );
+
 		return dlg;
 	}
 
 	private JDialog createBugReportDialog( String title, String message, String report ) {
 
-		final JDialog dlg = new JDialog( this, title, true );
+		JDialog dlg = new JDialog( this, title, true );
 		JPanel panel = new JPanel( new BorderLayout() );
-		dlg.setContentPane( panel );
-		dlg.setSize( 600, 450 );
-		dlg.setLocationRelativeTo( this );
 
 		Font reportFont = new Font( "Monospaced", Font.PLAIN, 13 );
 
@@ -1285,6 +1267,33 @@ public class FTLFrame extends JFrame {
 		reportArea.setEditable( false );
 		reportArea.setCaretPosition( 0 );
 		panel.add( new JScrollPane( reportArea ), BorderLayout.CENTER );
+
+		dlg.setContentPane( panel );
+		dlg.setSize( 600, 450 );
+		dlg.setLocationRelativeTo( this );
+
+		return dlg;
+	}
+
+	private JDialog createAboutDialog() {
+
+		JDialog dlg = new JDialog( this, "About", true );
+		JPanel panel = new JPanel();
+		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
+
+		try {
+			JEditorPane editor = new JEditorPane( aboutPage );
+			editor.setEditable( false );
+			editor.addHyperlinkListener( linkListener );
+			panel.add( editor );
+		}
+		catch ( IOException e ) {
+			log.error(e);
+		}
+
+		dlg.setContentPane( panel );
+		dlg.setSize( 300, 320 );
+		dlg.setLocationRelativeTo( this );
 
 		return dlg;
 	}
