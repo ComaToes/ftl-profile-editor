@@ -154,11 +154,25 @@ public class ProfileParser extends Parser {
 		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_ENERGY_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_CRYSTAL_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );  // Not seen, but maybe possible.
+		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );
 
-		writeInt( out, achievements.size() );
+		List<AchievementRecord> writableAchs = new ArrayList<AchievementRecord>( achievements.size() );
 
 		for ( AchievementRecord rec : achievements ) {
+
+			// FTL 1.01-1.03.3 Profiles can't handle extended achievements. Drop them.
+			if ( headerAlpha == 4 ) {
+				if ( extendedAchIds.contains( rec.getAchievementId() ) ) {
+					continue;
+				}
+			}
+
+			writableAchs.add( rec );
+		}
+
+		writeInt( out, writableAchs.size() );
+
+		for ( AchievementRecord rec : writableAchs ) {
 			writeString( out, rec.getAchievementId() );
 
 			int diffFlag = 0;
