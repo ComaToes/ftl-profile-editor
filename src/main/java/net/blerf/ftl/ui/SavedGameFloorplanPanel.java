@@ -899,7 +899,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			SavedGameParser.RoomState roomState = shipState.getRoom(i);
 			for (int s=0; s < squaresH*squaresV; s++) {
-				int fireHealth = roomState.getSquare(s).fireHealth;
+				int fireHealth = roomState.getSquare(s).getFireHealth();
 				if ( fireHealth > 0 ) {
 					int fireX = roomX+tileEdge + (s%squaresH)*squareSize + squareSize/2;
 					int fireY = roomY+tileEdge + (s/squaresH)*squareSize + squareSize/2;
@@ -1067,12 +1067,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for (int i=0; i < shipLayout.getRoomCount(); i++) {
 			SavedGameParser.RoomState roomState = shipState.getRoom(i);
 			for ( SavedGameParser.SquareState squareState : roomState.getSquareList() )
-				squareState.fireHealth = 0;
+				squareState.setFireHealth( 0 );
 		}
 		for ( FireSprite fireSprite : fireSprites ) {
 			SavedGameParser.RoomState roomState = shipState.getRoom( fireSprite.getRoomId() );
 			SavedGameParser.SquareState squareState = roomState.getSquareList().get( fireSprite.getSquareId() );
-			squareState.fireHealth = fireSprite.getHealth();
+			squareState.setFireHealth( fireSprite.getHealth() );
 		}
 
 		// Doors.
@@ -2426,11 +2426,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addBlankRow();
 		editorPanel.addRow( IGNITION, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(IGNITION).setMaximum( 100 );
-		editorPanel.getSlider(IGNITION).setValue( roomSprite.getSquare(squareId).ignitionProgress );
+		editorPanel.getSlider(IGNITION).setValue( roomSprite.getSquare(squareId).getIgnitionProgress() );
 		editorPanel.getSlider(IGNITION).addMouseListener( new StatusbarMouseListener(frame, "A new fire spawns in this square at 100.") );
 		editorPanel.addRow( GAMMA, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.getInt(GAMMA).setText( ""+roomSprite.getSquare(squareId).gamma );
+		editorPanel.getInt(GAMMA).setText( ""+roomSprite.getSquare(squareId).getUnknownGamma() );
 		editorPanel.getInt(GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown square field. Always -1?") );
 
 		final Runnable applyCallback = new Runnable() {
@@ -2438,10 +2438,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 				String newString;
 				roomSprite.setOxygen( editorPanel.getSlider(OXYGEN).getValue() );
 
-				roomSprite.getSquare(squareId).ignitionProgress = editorPanel.getSlider(IGNITION).getValue();
+				roomSprite.getSquare(squareId).setIgnitionProgress( editorPanel.getSlider(IGNITION).getValue() );
 
 				newString = editorPanel.getInt(GAMMA).getText();
-				try { roomSprite.getSquare(squareId).gamma = Integer.parseInt(newString); }
+				try { roomSprite.getSquare(squareId).setUnknownGamma( Integer.parseInt(newString) ); }
 				catch (NumberFormatException e) {}
 
 				clearSidePanel();
@@ -3307,10 +3307,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			this.roomId = roomId;
 			setOxygen( roomState.getOxygen() );
 			for ( SavedGameParser.SquareState squareState : roomState.getSquareList() ) {
-				SavedGameParser.SquareState tmpSquare = new SavedGameParser.SquareState();
-				tmpSquare.fireHealth = squareState.fireHealth;
-				tmpSquare.ignitionProgress = squareState.ignitionProgress;
-				tmpSquare.gamma = squareState.gamma;
+				SavedGameParser.SquareState tmpSquare = new SavedGameParser.SquareState( squareState );
 				squareList.add( tmpSquare );
 			}
 			this.setOpaque(true);
