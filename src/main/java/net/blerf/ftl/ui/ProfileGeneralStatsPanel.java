@@ -5,21 +5,17 @@ import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.image.BufferedImage;
-import java.awt.image.RasterFormatException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Score;
@@ -34,20 +30,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-public class ProfileStatsPanel extends JPanel {
+public class ProfileGeneralStatsPanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger(ProfileStatsPanel.class);
+	private static final Logger log = LogManager.getLogger(ProfileGeneralStatsPanel.class);
 
 	private FTLFrame frame;
+
+	private Map<String, BufferedImage> cacheMap = new HashMap<String, BufferedImage>();
 
 	private JPanel topScoresPanel;
 	private StatsSubPanel sessionRecordsPanel;
 	private StatsSubPanel crewRecordsPanel;
 	private StatsSubPanel totalStatsPanel;
 
-	private ArrayList<TopScorePanel> topScorePanels = new ArrayList<TopScorePanel>();
+	private List<ScorePanel> topScorePanels = new ArrayList<ScorePanel>();
 
-	public ProfileStatsPanel( FTLFrame frame ) {
+
+	public ProfileGeneralStatsPanel( FTLFrame frame ) {
 		this.frame = frame;
 
 		this.setLayout( new GridLayout(0, 2) );
@@ -80,14 +79,6 @@ public class ProfileStatsPanel extends JPanel {
 	public void setProfile( Profile p ) throws IOException {
 		topScoresPanel.removeAll();
 		topScorePanels.clear();
-		int i = 0;
-		for ( Score s : p.getStats().getTopScores() ) {
-			TopScorePanel tsp = new TopScorePanel( ++i, s );
-			topScoresPanel.add( tsp );
-			topScorePanels.add( tsp );
-		}
-
-		Stats stats = p.getStats();
 
 		StatType[] sessionStatTypes = {StatType.MOST_SHIPS_DEFEATED, StatType.MOST_BEACONS_EXPLORED,
 		                               StatType.MOST_SCRAP_COLLECTED, StatType.MOST_CREW_HIRED};
@@ -97,6 +88,15 @@ public class ProfileStatsPanel extends JPanel {
 		StatType[] totalStatTypes = {StatType.TOTAL_SHIPS_DEFEATED, StatType.TOTAL_BEACONS_EXPLORED,
 		                             StatType.TOTAL_SCRAP_COLLECTED, StatType.TOTAL_CREW_HIRED,
                                  StatType.TOTAL_GAMES_PLAYED, StatType.TOTAL_VICTORIES};
+		Stats stats = p.getStats();
+
+		int i = 0;
+		for ( Score s : stats.getTopScores() ) {
+			ScorePanel tsp = new ScorePanel( ++i, s );
+			tsp.setCacheMap( cacheMap );
+			topScoresPanel.add( tsp );
+			topScorePanels.add( tsp );
+		}
 
 		sessionRecordsPanel.removeAll();
 		for ( StatType type : sessionStatTypes ) {
@@ -126,7 +126,6 @@ public class ProfileStatsPanel extends JPanel {
 	}
 
 	public void updateProfile( Profile p ) {
-		Stats stats = p.getStats();
 
 		StatType[] sessionStatTypes = {StatType.MOST_SHIPS_DEFEATED, StatType.MOST_BEACONS_EXPLORED,
 		                               StatType.MOST_SCRAP_COLLECTED, StatType.MOST_CREW_HIRED};
@@ -136,9 +135,10 @@ public class ProfileStatsPanel extends JPanel {
 		StatType[] totalStatTypes = {StatType.TOTAL_SHIPS_DEFEATED, StatType.TOTAL_BEACONS_EXPLORED,
 		                             StatType.TOTAL_SCRAP_COLLECTED, StatType.TOTAL_CREW_HIRED,
                                  StatType.TOTAL_GAMES_PLAYED, StatType.TOTAL_VICTORIES};
+		Stats stats = p.getStats();
 
 		stats.getTopScores().clear();
-		for ( TopScorePanel tsp : topScorePanels ) {
+		for ( ScorePanel tsp : topScorePanels ) {
 			Score s = new Score( tsp.getShipName(), tsp.getShipId(), tsp.getValue(), tsp.getSector(), tsp.getDifficulty(), tsp.isVictory() );
 			s.setDLCEnabled( tsp.isDLCEnabled() );
 			stats.getTopScores().add(s);

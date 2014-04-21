@@ -77,13 +77,14 @@ import net.blerf.ftl.ui.ExtensionFileFilter;
 import net.blerf.ftl.ui.GeneralAchievementsPanel;
 import net.blerf.ftl.ui.HTMLEditorTransferHandler;
 import net.blerf.ftl.ui.IconCycleButton;
-import net.blerf.ftl.ui.ProfileStatsPanel;
+import net.blerf.ftl.ui.ProfileGeneralStatsPanel;
+import net.blerf.ftl.ui.ProfileShipStatsPanel;
+import net.blerf.ftl.ui.ProfileShipUnlockPanel;
 import net.blerf.ftl.ui.SavedGameFloorplanPanel;
 import net.blerf.ftl.ui.SavedGameGeneralPanel;
 import net.blerf.ftl.ui.SavedGameHangarPanel;
 import net.blerf.ftl.ui.SavedGameSectorMapPanel;
 import net.blerf.ftl.ui.SavedGameStateVarsPanel;
-import net.blerf.ftl.ui.ShipUnlockPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 
 import org.apache.logging.log4j.LogManager;
@@ -123,9 +124,10 @@ public class FTLFrame extends JFrame {
 	private Runnable updatesCallback;
 
 	private JTabbedPane profileTabsPane;
-	private ShipUnlockPanel shipUnlockPanel;
+	private ProfileShipUnlockPanel shipUnlockPanel;
 	private GeneralAchievementsPanel generalAchievementsPanel;
-	private ProfileStatsPanel statsPanel;
+	private ProfileGeneralStatsPanel generalStatsPanel;
+	private ProfileShipStatsPanel shipStatsPanel;
 	private DumpPanel profileDumpPanel;
 
 	private JButton gameStateSaveBtn;
@@ -198,9 +200,10 @@ public class FTLFrame extends JFrame {
 		profileTabsPane = new JTabbedPane();
 		profilePane.add( profileTabsPane, BorderLayout.CENTER );
 
-		shipUnlockPanel = new ShipUnlockPanel(this);
+		shipUnlockPanel = new ProfileShipUnlockPanel(this);
 		generalAchievementsPanel = new GeneralAchievementsPanel(this);
-		statsPanel = new ProfileStatsPanel(this);
+		generalStatsPanel = new ProfileGeneralStatsPanel(this);
+		shipStatsPanel = new ProfileShipStatsPanel(this);
 		profileDumpPanel = new DumpPanel();
 
 		JScrollPane shipUnlockScroll = new JScrollPane( shipUnlockPanel );
@@ -209,12 +212,16 @@ public class FTLFrame extends JFrame {
 		JScrollPane generalAchievementsScroll = new JScrollPane( generalAchievementsPanel );
 		generalAchievementsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane statsScroll = new JScrollPane( statsPanel );
+		JScrollPane statsScroll = new JScrollPane( generalStatsPanel );
 		statsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+
+		JScrollPane shipStatsScroll = new JScrollPane( shipStatsPanel );
+		shipStatsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
 		profileTabsPane.add( "Ship Unlocks & Achievements", shipUnlockScroll );
 		profileTabsPane.add( "General Achievements", generalAchievementsScroll );
-		profileTabsPane.add( "Stats", statsScroll );
+		profileTabsPane.add( "General Stats", statsScroll );
+		profileTabsPane.add( "Ship Stats", shipStatsScroll );
 		profileTabsPane.add( "Dump", profileDumpPanel );
 
 
@@ -1300,11 +1307,12 @@ public class FTLFrame extends JFrame {
 
 	public void loadProfile( Profile p ) {
 		try {
-			log.trace( "Loading profile data into UI." );
+			log.trace( "Loading profile." );
 
-			shipUnlockPanel.setProfile(p);
-			generalAchievementsPanel.setProfile(p);
-			statsPanel.setProfile(p);
+			shipUnlockPanel.setProfile( p );
+			generalAchievementsPanel.setProfile( p );
+			generalStatsPanel.setProfile( p );
+			shipStatsPanel.setProfile( p );
 			profileDumpPanel.setText( (p != null ? p.toString() : "") );
 
 			profile = p;
@@ -1327,9 +1335,10 @@ public class FTLFrame extends JFrame {
 	public void updateProfile( Profile p ) {
 		log.trace( "Updating profile from UI selections." );
 
-		shipUnlockPanel.updateProfile(p);
-		generalAchievementsPanel.updateProfile(p);
-		statsPanel.updateProfile(p);
+		shipUnlockPanel.updateProfile( p );
+		generalAchievementsPanel.updateProfile( p );
+		generalStatsPanel.updateProfile( p );
+		shipStatsPanel.updateProfile( p );
 		// profileDumpPanel doesn't modify anything.
 
 		loadProfile(p);

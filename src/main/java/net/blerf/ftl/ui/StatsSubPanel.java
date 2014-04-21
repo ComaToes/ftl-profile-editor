@@ -35,7 +35,7 @@ import org.apache.logging.log4j.Logger;
 
 public class StatsSubPanel extends JPanel implements ActionListener {
 
-	private static final Logger log = LogManager.getLogger(ProfileStatsPanel.class);
+	private static final Logger log = LogManager.getLogger(StatsSubPanel.class);
 
 	private int COLUMN_COUNT = 0;
 	private final int DESC_COL = COLUMN_COUNT++;
@@ -53,6 +53,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	private HashMap<String,StatRow> rowMap = new HashMap<String,StatRow>();
 
 	GridBagConstraints gridC = null;
+
 
 	public StatsSubPanel() {
 		super(new GridBagLayout());

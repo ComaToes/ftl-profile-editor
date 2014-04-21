@@ -30,7 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-public class ShipUnlockPanel extends JPanel {
+public class ProfileShipUnlockPanel extends JPanel {
 
 	private static final int ACH_LOCKED = 0;
 	private static final int ACH_EASY = 1;
@@ -39,7 +39,7 @@ public class ShipUnlockPanel extends JPanel {
 	private static final int SHIP_LOCKED = 0;
 	private static final int SHIP_UNLOCKED = 1;
 
-	private static final Logger log = LogManager.getLogger(ShipUnlockPanel.class);
+	private static final Logger log = LogManager.getLogger(ProfileShipUnlockPanel.class);
 
 	private FTLFrame frame;
 
@@ -48,34 +48,32 @@ public class ShipUnlockPanel extends JPanel {
 	private HashMap<Achievement, IconCycleButton> shipAchBoxes = new HashMap<Achievement, IconCycleButton>();
 
 
-	public ShipUnlockPanel( FTLFrame frame ) {
+	public ProfileShipUnlockPanel( FTLFrame frame ) {
 		this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
 		this.frame = frame;
 
 		log.trace( "Creating Ship Unlock panel" );
 
-		log.trace("Adding ship unlocks");
-
-		JPanel shipPanel = new JPanel();
-		shipPanel.setLayout( new GridLayout(0, 3) );
-		shipPanel.setBorder( BorderFactory.createTitledBorder("Ship Unlocks") );
-		this.add( shipPanel );
+		// Unlocks.
+		JPanel shipsPanel = new JPanel();
+		shipsPanel.setLayout( new GridLayout(0, 3) );
+		shipsPanel.setBorder( BorderFactory.createTitledBorder("Ship Unlocks") );
+		this.add( shipsPanel );
 
 		for ( String baseId : DataManager.get().getPlayerShipBaseIds() ) {
 			JPanel panel = createShipUnlockPanel( baseId );
-			if ( panel != null ) shipPanel.add( panel );
+			if ( panel != null ) shipsPanel.add( panel );
 		}
 
-		log.trace("Adding ship achievements");
-
-		JPanel shipAchPanel = new JPanel();
-		shipAchPanel.setLayout( new GridLayout(0, 3) );
-		shipAchPanel.setBorder( BorderFactory.createTitledBorder("Ship Achievements") );
-		this.add( shipAchPanel );
+		// Layout achievements.
+		JPanel shipAchsPanel = new JPanel();
+		shipAchsPanel.setLayout( new GridLayout(0, 3) );
+		shipAchsPanel.setBorder( BorderFactory.createTitledBorder("Ship Achievements") );
+		this.add( shipAchsPanel );
 
 		for ( String baseId : DataManager.get().getPlayerShipBaseIds() ) {
 			JPanel panel = createShipAchPanel( baseId );
-			if ( panel != null ) shipAchPanel.add( panel );
+			if ( panel != null ) shipAchsPanel.add( panel );
 		}
 	}
 

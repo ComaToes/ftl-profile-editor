@@ -8,14 +8,22 @@ public class Score {
 
 	public enum Difficulty { EASY, NORMAL, HARD };
 
-	private String shipName;
-	private String shipId;
-	private int value;
-	private int sector;
-	private Difficulty difficulty;
-	private boolean victory;
+	private String shipName = "";
+	private String shipId = "";
+	private int value = 0;
+	private int sector = 1;
+	private Difficulty difficulty = Difficulty.EASY;
+	private boolean victory = false;
 	private boolean dlcEnabled = false;
 
+
+	/**
+	 * Constructs an incomplete Score.
+	 *
+	 * All attributes will need to be set afterward.
+	 */
+	public Score() {
+	}
 
 	/**
 	 * Constructs a Score.
@@ -23,7 +31,10 @@ public class Score {
 	 * @param shipName an arbitrary label from the player
 	 * @param shipId the id of the ShipBlueprint used
 	 * @param value the number of points earned in that campaign
+	 * @param sector the 1-based sector the player was in when that campaign ended
 	 * @param difficulty the difficulty of that campaign
+	 *
+	 * @see #setDLCEnabled(boolean)
 	 */
 	public Score( String shipName, String shipId, int value, int sector, Difficulty difficulty, boolean victory ) {
 		this.shipName = shipName;
@@ -34,17 +45,37 @@ public class Score {
 		this.victory = victory;
 	}
 
+	/**
+	 * Copy constructor.
+	 */
+	public Score( Score srcScore ) {
+		this();
+		this.shipName = srcScore.getShipName();
+		this.shipId = srcScore.getShipId();
+		this.value = srcScore.getValue();
+		this.sector = srcScore.getSector();
+		this.difficulty = srcScore.getDifficulty();
+		this.victory = srcScore.isVictory();
+		this.dlcEnabled = srcScore.isDLCEnabled();
+	}
+
 	public void setShipName( String s ) { shipName = s; }
 	public void setShipId( String s ) { shipId = s; }
 	public void setValue( int n ) { value = n; }
-	public void setSector( int n ) { sector = n; }
-	public void setDifficulty( Difficulty d ) { difficulty = d; }
-	public void setVictory( boolean b ) { victory = b; }
 
 	public String getShipName() { return shipName; }
 	public String getShipId() { return shipId; }
 	public int getValue() { return value; }
+
+	/**
+	 * Sets the 1-based sector the player was in when that campaign ended.
+	 */
+	public void setSector( int n ) { sector = n; }
 	public int getSector() { return sector; }
+
+	public void setDifficulty( Difficulty d ) { difficulty = d; }
+	public void setVictory( boolean b ) { victory = b; }
+
 	public Difficulty getDifficulty() { return difficulty; }
 	public boolean isVictory() { return victory; }
 
