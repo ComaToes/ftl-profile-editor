@@ -118,12 +118,12 @@ public class SavedGameParser extends Parser {
 				gameState.setUnknownGamma( readInt(in) );
 				gameState.setUnknownDelta( readInt(in) );
 				gameState.setUnknownEpsilon( readInt(in) );
-				gameState.setUnknownZeta( readInt(in) );
-				gameState.setUnknownEta( readInt(in) );
-				gameState.setUnknownTheta( readInt(in) );
-				gameState.setUnknownIota( readInt(in) );
+				gameState.setSectorHazardsVisible( readBool(in) );
+				gameState.setRebelFlagshipVisible( readBool(in) );
+				gameState.setRebelFlagshipHop( readInt(in) );
+				gameState.setRebelFlagshipMoving( readBool(in) );
 				gameState.setUnknownKappa( readInt(in) );
-				gameState.setUnknownLambda( readInt(in) );
+				gameState.setRebelFlagshipBaseTurns( readInt(in) );
 			}
 			else if ( headerAlpha == 2 ) {
 				gameState.setSectorHazardsVisible( readBool(in) );
@@ -185,11 +185,9 @@ public class SavedGameParser extends Parser {
 				gameState.setRebelFlagshipState( flagshipState );
 			}
 			else {
-				// TODO: Figure out how FTL 1.5.4 stores the nearby/flagship info.
-
 				// Current beaconId was set earlier.
 
-				gameState.setUnknownMu( readInt(in) );  // Something related to a hostile nearby ship in combat?
+				gameState.setUnknownMu( readInt(in) );
 
 				EncounterState encounter = readEncounter(in);
 				gameState.setEncounter( encounter );
@@ -371,74 +369,91 @@ public class SavedGameParser extends Parser {
 		shipState.setReservePowerCapacity( readInt(in) );
 		for ( SystemType systemType : systemTypes ) {
 			shipState.addSystem( readSystem(in, systemType, headerAlpha ) );
+
+			// Systems that exist in multiple rooms have additional SystemStates.
+			// Example: Boss' artillery.
+			//
+			// In FTL 1.01-1.03.3 the boss wasn't a nearby ship outside of combat,
+			// So this never occurred. There may also have been changes in 1.5.4
+			// to allow multi-room systems.
+			//
+			// TODO: Report this.
+
+			ShipBlueprint.SystemList.SystemRoom[] rooms = shipBlueprint.getSystemList().getSystemRoom( systemType );
+			if ( rooms != null && rooms.length > 1 ) {
+				System.err.println(String.format("Warning: Skipping extra rooms for system: %s", systemType.toString()));
+
+				for ( int q=0; q < rooms.length-1; q++ ) {
+					readSystem(in, systemType, headerAlpha );
+				}
+			}
 		}
 
 		if ( headerAlpha == 7 ) {
-			// TODO: Magic! Awful kludgy magic!!!
 
-			List<SystemVolatile> iotaList = new ArrayList<SystemVolatile>();
+			List<ExtendedSystemInfo> iotaList = new ArrayList<ExtendedSystemInfo>();
 			SystemState tmpSystem = null;
 
 			tmpSystem = shipState.getSystem( SystemType.CLONEBAY );
 			if ( tmpSystem != null && tmpSystem.getCapacity() > 0 ) {
-				ClonebayVolatile clonebayVolatile = new ClonebayVolatile();
+				ClonebayInfo clonebayInfo = new ClonebayInfo();
 
-				clonebayVolatile.setBuildTicks( readInt(in) );
-				clonebayVolatile.setBuildTicksGoal( readInt(in) );
-				clonebayVolatile.setUnknownGamma( readInt(in) );
+				clonebayInfo.setBuildTicks( readInt(in) );
+				clonebayInfo.setBuildTicksGoal( readInt(in) );
+				clonebayInfo.setUnknownGamma( readInt(in) );
 
-				iotaList.add( clonebayVolatile );
+				iotaList.add( clonebayInfo );
 			}
 			tmpSystem = shipState.getSystem( SystemType.BATTERY );
 			if ( tmpSystem != null && tmpSystem.getCapacity() > 0 ) {
-				BatteryVolatile batteryVolatile = new BatteryVolatile();
+				BatteryInfo batteryInfo = new BatteryInfo();
 
-				batteryVolatile.setActive( readBool(in) );
-				batteryVolatile.setUsedPower( readInt(in) );
-				batteryVolatile.setDischargeTicks( readInt(in) );
+				batteryInfo.setActive( readBool(in) );
+				batteryInfo.setUsedPower( readInt(in) );
+				batteryInfo.setDischargeTicks( readInt(in) );
 
-				iotaList.add( batteryVolatile );
+				iotaList.add( batteryInfo );
 			}
 
-			// It's possible this isn't a single ever-present block.
+			// The shields info always exists, even if the shields system doesn't.
 			if ( true ) {
-				ShieldsVolatile shieldsVolatile = new ShieldsVolatile();
+				ShieldsInfo shieldsInfo = new ShieldsInfo();
 
-				shieldsVolatile.setShieldLayers( readInt(in) );
-				shieldsVolatile.setEnergyShieldLayers( readInt(in) );
-				shieldsVolatile.setEnergyShieldMax( readInt(in) );
-				shieldsVolatile.setShieldRechargeTicks( readInt(in) );
+				shieldsInfo.setShieldLayers( readInt(in) );
+				shieldsInfo.setEnergyShieldLayers( readInt(in) );
+				shieldsInfo.setEnergyShieldMax( readInt(in) );
+				shieldsInfo.setShieldRechargeTicks( readInt(in) );
 
-				shieldsVolatile.setShieldDropAnimOn( readBool(in) );
-				shieldsVolatile.setShieldDropAnimTicks( readInt(in) );    // TODO: Confirm.
+				shieldsInfo.setShieldDropAnimOn( readBool(in) );
+				shieldsInfo.setShieldDropAnimTicks( readInt(in) );    // TODO: Confirm.
 
-				shieldsVolatile.setShieldRaiseAnimOn( readBool(in) );
-				shieldsVolatile.setShieldRaiseAnimTicks( readInt(in) );   // TODO: Confirm.
+				shieldsInfo.setShieldRaiseAnimOn( readBool(in) );
+				shieldsInfo.setShieldRaiseAnimTicks( readInt(in) );   // TODO: Confirm.
 
-				shieldsVolatile.setEnergyShieldAnimOn( readBool(in) );
-				shieldsVolatile.setEnergyShieldAnimTicks( readInt(in) );  // TODO: Confirm.
+				shieldsInfo.setEnergyShieldAnimOn( readBool(in) );
+				shieldsInfo.setEnergyShieldAnimTicks( readInt(in) );  // TODO: Confirm.
 
 				// A pair. Usually noise. Sometimes 0.
-				shieldsVolatile.setUnknownLambda( readInt(in) );   // TODO: Confirm: Shield down point X.
-				shieldsVolatile.setUnknownMu( readInt(in) );       // TODO: Confirm: Shield down point Y.
+				shieldsInfo.setUnknownLambda( readInt(in) );   // TODO: Confirm: Shield down point X.
+				shieldsInfo.setUnknownMu( readInt(in) );       // TODO: Confirm: Shield down point Y.
 
-				iotaList.add( shieldsVolatile );
+				iotaList.add( shieldsInfo );
 			}
 
 			tmpSystem = shipState.getSystem( SystemType.CLOAKING );
 			if ( tmpSystem != null && tmpSystem.getCapacity() > 0 ) {
-				CloakingVolatile cloakingVolatile = new CloakingVolatile();
+				CloakingInfo cloakingInfo = new CloakingInfo();
 
-				cloakingVolatile.setUnknownAlpha( readInt(in) );
-				cloakingVolatile.setUnknownBeta( readInt(in) );
-				cloakingVolatile.setUnknownGamma( readInt(in) );
+				cloakingInfo.setUnknownAlpha( readInt(in) );
+				cloakingInfo.setUnknownBeta( readInt(in) );
+				cloakingInfo.setCloakTicksGoal( readInt(in) );
 
 				int delta = readInt(in);
 				if ( delta == -2147483648 )
 					delta = Integer.MIN_VALUE;
-				cloakingVolatile.setUnknownDelta( delta );
+				cloakingInfo.setCloakTicks( delta );
 
-				iotaList.add( cloakingVolatile );
+				iotaList.add( cloakingInfo );
 			}
 
 			shipState.setUnknownIota( iotaList );
@@ -680,14 +695,14 @@ public class SavedGameParser extends Parser {
 		crew.setSkillMasteries( readInt(in) );
 
 		if ( headerAlpha == 7 ) {
-			crew.setUnknownEta( readInt(in) );
+			crew.setStunTicks( readInt(in) );
 			crew.setUnknownTheta( readInt(in) );
 			crew.setUnknownIota( readInt(in) );
 			crew.setUnknownKappa( readInt(in) );
 			crew.setUnknownLambda( readInt(in) );
-			crew.setUnknownMu( readInt(in) );  // TODO: Confirm: Beacons seen in one lifespan?
+			crew.setUnknownMu( readInt(in) );
 			crew.setUnknownNu( readInt(in) );
-			crew.setUnknownXi( readInt(in) );  // TODO: Confirm: Number of deaths?
+			crew.setUnknownXi( readInt(in) );
 			crew.setUnknownOmicron( readInt(in) );
 			crew.setUnknownPi( readInt(in) );
 			crew.setUnknownRho( readInt(in) );
@@ -697,8 +712,8 @@ public class SavedGameParser extends Parser {
 			crew.setUnknownPhi( readInt(in) );
 
 			if ( "crystal".equals(crew.getRace()) ) {
-				crew.setUnknownChi( readInt(in) );
-				crew.setUnknownPsi( readInt(in) );
+				crew.setLockdownRechargeTicks( readInt(in) );
+				crew.setLockdownRechargeGoal( readInt(in) );
 				crew.setUnknownOmega( readInt(in) );
 			}
 		}
@@ -754,8 +769,8 @@ public class SavedGameParser extends Parser {
 
 			if ( headerAlpha == 7 ) {
 				system.setBatteryPower( readInt(in) );
-				system.setUnknownBeta( readInt(in) );     // TODO: Confirm: Hack level.
-				system.setUnknownGamma( readInt(in) );    // TODO: Confirm: Is hacked (Bool).
+				system.setHackLevel( readInt(in) );
+				system.setHacked( readBool(in) );
 				system.setTemporaryCapacityCap( readInt(in) );
 				system.setTemporaryCapacityLoss( readInt(in) );
 				system.setTemporaryCapacityDivisor( readInt(in) );
@@ -820,9 +835,9 @@ public class SavedGameParser extends Parser {
 		DoorState door = new DoorState();
 
 		if ( headerAlpha == 7 ) {
-			door.setUnknownAlpha( readInt(in) );  // TODO: Confirm: Current door strength.
-			door.setUnknownBeta( readInt(in) );   // TODO: Confirm: Door strength minus breaching progress.
-			door.setUnknownGamma( readInt(in) );  // TODO: Confirm: Nominal door strength, affected by hacking?
+			door.setCurrentMaxHealth( readInt(in) );
+			door.setHealth( readInt(in) );
+			door.setNominalHealth( readInt(in) );
 		}
 
 		door.setOpen( readBool(in) );
@@ -892,10 +907,10 @@ public class SavedGameParser extends Parser {
 		if ( enemyPresent ) {
 			beacon.setShipEventId( readString(in) );
 			beacon.setAutoBlueprintId( readString(in) );
-			beacon.setBeta( readInt(in) );
+			beacon.setShipEventSeed( readInt(in) );
 
-			// TODO: When player's at this beacon, beta here matches
-			// current encounter's alpha.
+			// When player's at this beacon, the seed here matches
+			// current encounter's seed.
 		}
 		
 		int fleetPresence = readInt(in);
@@ -948,7 +963,7 @@ public class SavedGameParser extends Parser {
 		if ( beacon.isEnemyPresent() ) {
 			writeString( out, beacon.getShipEventId() );
 			writeString( out, beacon.getAutoBlueprintId() );
-			writeInt( out, beacon.getBeta() );
+			writeInt( out, beacon.getShipEventSeed() );
 		}
 
 		FleetPresence fleetPresence = beacon.getFleetPresence();
@@ -1020,10 +1035,7 @@ public class SavedGameParser extends Parser {
 	public EncounterState readEncounter( InputStream in ) throws IOException {
 		EncounterState encounter = new EncounterState();
 
-		// When there's an enemy ship, alpha here matches
-		// the beacon's beta.
-
-		encounter.setUnknownAlpha( readInt(in) );  // A random seed?
+		encounter.setShipEventSeed( readInt(in) );  // Matches the beacon's seed.
 		encounter.setUnknownBeta( readString(in) );
 		encounter.setUnknownGamma( readString(in) );
 		encounter.setUnknownDelta( readString(in) );
@@ -1086,11 +1098,15 @@ public class SavedGameParser extends Parser {
 		REACTOR_UPGRADE("reactor_upgrade", "Reactor (power bar) upgrades beyond the ship's default levels."),
 		STORE_PURCHASE ("store_purchase",  "Non-repair crew/items purchased. (selling isn't counted)"),
 		STORE_REPAIR   ("store_repair",    "Store repair button clicks."),
+		SUFFOCATED_CREW("suffocated_crew", "???"),
 		SYSTEM_UPGRADE ("system_upgrade",  "System (and subsystem; not reactor) upgrades beyond the ship's default levels."),
 		TELEPORTED     ("teleported",      "Teleporter activations, in either direction."),
 		USED_DRONE     ("used_drone",      "The number of times drone parts were consumed."),
 		USED_MISSILE   ("used_missile",    "Missile/bomb weapon discharges. (see also: fired_shot)"),
 		WEAPON_UPGRADE ("weapon_upgrade",  "Weapons system upgrades beyond the ship's default levels. (see also: system_upgrade)");
+
+		// The following were introduced in FTL 1.5.4.
+		// HIGH_O2, SUFFOCATED_CREW
 
 		private String id;
 		private String description;
@@ -1139,6 +1155,7 @@ public class SavedGameParser extends Parser {
 		private boolean rebelFlagshipVisible = false;
 		private int rebelFlagshipHop = 0;
 		private boolean rebelFlagshipMoving = false;
+		private int rebelFlagshipBaseTurns = 0;
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
 		private boolean sectorIsHiddenCrystalWorlds = false;
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
@@ -1154,12 +1171,7 @@ public class SavedGameParser extends Parser {
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
 		private int unknownEpsilon = 0;
-		private int unknownZeta = 0;
-		private int unknownEta = 0;
-		private int unknownTheta = 0;
-		private int unknownIota = 0;
 		private int unknownKappa = 0;
-		private int unknownLambda = 0;
 
 		private int unknownMu = 0;
 
@@ -1360,9 +1372,11 @@ public class SavedGameParser extends Parser {
 		 * The flagship will be at its Nth random beacon. (0-based)
 		 * The sector layout seed affects where that will be.
 		 *
-		 * At or above the last hop (which varies), it causes instant loss.
+		 * At or above the last hop (which varies), it causes instant loss in
+		 * FTL 1.01-1.03.3. (Observed game-ending values: 5, 7, potentially 9.)
 		 *
-		 * (observed game-ending values: 5, 7, potentially 9)
+		 * Since FTL 1.5.4, the flagship must idle at the federation base for
+		 * a few turns before tge game ends.
 		 *
 		 * If moving, this will be the beacon it's departing from.
 		 */
@@ -1374,6 +1388,19 @@ public class SavedGameParser extends Parser {
 		 */
 		public void setRebelFlagshipMoving( boolean b ) { rebelFlagshipMoving = b; }
 		public boolean isRebelFlagshipMoving() { return rebelFlagshipMoving; }
+
+		/**
+		 * Sets the number of turns the rebel flagship has started at the
+		 * federation base.
+		 *
+		 * At the 4th turn, the game will end. (TODO: Confirm.)
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @param n 0-4
+		 */
+		public void setRebelFlagshipBaseTurns( int n ) { rebelFlagshipBaseTurns = n; }
+		public int getRebelFlagshipBaseTurns() { return rebelFlagshipBaseTurns; }
 
 		/**
 		 * Adds a dot of the sector tree.
@@ -1488,22 +1515,12 @@ public class SavedGameParser extends Parser {
 		public void setUnknownGamma( int n ) { unknownGamma = n; }
 		public void setUnknownDelta( int n ) { unknownDelta = n; }
 		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
-		public void setUnknownZeta( int n ) { unknownZeta = n; }
-		public void setUnknownEta( int n ) { unknownEta = n; }
-		public void setUnknownTheta( int n ) { unknownTheta = n; }
-		public void setUnknownIota( int n ) { unknownIota = n; }
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
-		public void setUnknownLambda( int n ) { unknownLambda = n; }
 
 		public int getUnknownGamma() { return unknownGamma; }
 		public int getUnknownDelta() { return unknownDelta; }
 		public int getUnknownEpsilon() { return unknownEpsilon; }
-		public int getUnknownZeta() { return unknownZeta; }
-		public int getUnknownEta() { return unknownEta; }
-		public int getUnknownTheta() { return unknownTheta; }
-		public int getUnknownIota() { return unknownIota; }
 		public int getUnknownKappa() { return unknownKappa; }
-		public int getUnknownLambda() { return unknownLambda; }
 
 		public void setUnknownMu( int n ) { unknownMu = n; }
 		public int getUnknownMu() { return unknownMu; }
@@ -1564,24 +1581,19 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset));
 			result.append(String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge));
 			result.append(String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod));
-			result.append("\n");
-			result.append("The following are not set when parsing FTL 1.5.4+ saved games...\n");
 			result.append(String.format("Sector Hazards Map: %5b\n", sectorHazardsVisible));
+			result.append("\n");
 			result.append(String.format("In Hidden Sector:   %5b\n", sectorIsHiddenCrystalWorlds));
 			result.append(String.format("Rebel Flagship On:  %5b\n", rebelFlagshipVisible));
 			result.append(String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop));
 			result.append(String.format("Flagship Moving:    %5b\n", rebelFlagshipMoving));
+			result.append(String.format("Flagship Base Turns:%5d\n", rebelFlagshipBaseTurns));
 			result.append("\n");
 			result.append(String.format("Player BeaconId:    %5d\n", currentBeaconId));
 			result.append(String.format("Gamma?:             %5d\n", unknownGamma));
 			result.append(String.format("Delta?:             %5d\n", unknownDelta));
 			result.append(String.format("Epsilon?:           %5d\n", unknownEpsilon));
-			result.append(String.format("Zeta?:              %5d\n", unknownZeta));
-			result.append(String.format("Eta?:               %5d\n", unknownEta));
-			result.append(String.format("Theta?:             %5d\n", unknownTheta));
-			result.append(String.format("Iota?:              %5d\n", unknownIota));
 			result.append(String.format("Kappa?:             %5d\n", unknownKappa));
-			result.append(String.format("Lambda?:            %5d\n", unknownLambda));
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
@@ -1615,7 +1627,7 @@ public class SavedGameParser extends Parser {
 			}
 
 			result.append("\n");
-			result.append(String.format("Mu?:                %5d\n", unknownTheta));
+			result.append(String.format("Mu?:                %5d\n", unknownMu));
 
 			result.append("\nCurrent Encounter...\n");
 			if ( encounter != null )
@@ -1671,7 +1683,7 @@ public class SavedGameParser extends Parser {
 		private int unknownZeta = 0;
 		private int unknownEta = 0;
 		private int unknownTheta = 0;
-		private List<SystemVolatile> unknownIota = new ArrayList<SystemVolatile>();
+		private List<ExtendedSystemInfo> unknownIota = new ArrayList<ExtendedSystemInfo>();
 
 		private int unknownPhi = 0;
 
@@ -1848,8 +1860,8 @@ public class SavedGameParser extends Parser {
 		public int getUnknownGamma() { return unknownGamma; }
 		public int getUnknownDelta() { return unknownDelta; }
 
-		public void setUnknownIota( List<SystemVolatile> iotaList ) { unknownIota = iotaList; }
-		public List<SystemVolatile> getUnknownIota() { return unknownIota; }
+		public void setUnknownIota( List<ExtendedSystemInfo> iotaList ) { unknownIota = iotaList; }
+		public List<ExtendedSystemInfo> getUnknownIota() { return unknownIota; }
 
 		public void setUnknownPhi( int n ) { unknownPhi = n; }
 		public int getUnknownPhi() { return unknownPhi; }
@@ -1970,7 +1982,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Scrap:       %3d\n", scrapAmt));
 			result.append("\n");
 			result.append(String.format("Alpha?:      %3d\n", unknownAlpha));
-			result.append(String.format("Jump Ticks:  %3d (Fully charged at 85000)\n", jumpTicks));
+			result.append(String.format("Jump Ticks:  %3d (85000 is fully charged)\n", jumpTicks));
 			result.append(String.format("Gamma?:      %3d\n", unknownGamma));
 			result.append(String.format("Delta?:      %3d\n", unknownDelta));
 
@@ -1999,12 +2011,12 @@ public class SavedGameParser extends Parser {
 				result.append(entry.getValue().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
-			result.append("\nAdditional Volatile System Vars...\n");
+			result.append("\nExtended System Info...\n");
 			first = false;
-			for ( SystemVolatile tmpVolatile : unknownIota ) {
+			for ( ExtendedSystemInfo tmpInfo : unknownIota ) {
 				if (first) { first = false; }
 				else { result.append(",\n"); }
-				result.append(tmpVolatile.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append(tmpInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nRooms...\n");
@@ -2145,14 +2157,14 @@ public class SavedGameParser extends Parser {
 
 	public static class CrewState {
 		// TODO: Magic numbers.
-		public static final int MASTERY_INTERVAL_PILOT = 15;
-		public static final int MASTERY_INTERVAL_ENGINE = 15;
-		public static final int MASTERY_INTERVAL_SHIELD = 55;
-		public static final int MASTERY_INTERVAL_WEAPON = 65;
-		public static final int MASTERY_INTERVAL_REPAIR = 18;
-		public static final int MASTERY_INTERVAL_COMBAT = 8;
+		public static final int MASTERY_INTERVAL_PILOT = 15;   // 13 in FTL 1.5.4.
+		public static final int MASTERY_INTERVAL_ENGINE = 15;  // 13 in FTL 1.5.4.
+		public static final int MASTERY_INTERVAL_SHIELD = 55;  // 50 in FTL 1.5.4.
+		public static final int MASTERY_INTERVAL_WEAPON = 65;  // 58 in FTL 1.5.4.
+		public static final int MASTERY_INTERVAL_REPAIR = 18;  // 16 in FTL 1.5.4.
+		public static final int MASTERY_INTERVAL_COMBAT = 8;   //  7 in FTL 1.5.4.
 
-		// Neither Crystal crews' lockdown, nor its cooldown is stored.
+		// Crystal crews' lockdown wall-coating is not stored, but ability recharge is.
 		// Zoltan-produced power is not stored in SystemState.
 
 		private String name = "Frank";
@@ -2169,6 +2181,7 @@ public class SavedGameParser extends Parser {
 		private int weaponSkill=0, repairSkill=0, combatSkill=0;
 		private int repairs=0, combatKills=0, pilotedEvasions=0;
 		private int jumpsSurvived=0, skillMasteries=0;
+		private int stunTicks = 0;
 		private int spriteX=0, spriteY=0;
 		private List<Integer> spriteTintIndeces = new ArrayList<Integer>();
 		private boolean male=true;
@@ -2176,7 +2189,6 @@ public class SavedGameParser extends Parser {
 		private int unknownAlpha = 0;
 		private int unknownBeta = 0;
 
-		private int unknownEta = 0;
 		private int unknownTheta = 0;
 		private int unknownIota = 0;
 		private int unknownKappa = 0;
@@ -2192,8 +2204,8 @@ public class SavedGameParser extends Parser {
 		private int unknownUpsilon = 0;
 		private int unknownPhi = 0;
 
-		private int unknownChi = 0;
-		private int unknownPsi = 0;
+		private int lockdownRechargeTicks = 0;
+		private int lockdownRechargeGoal = 0;
 		private int unknownOmega = 0;
 
 
@@ -2264,13 +2276,28 @@ public class SavedGameParser extends Parser {
 		public int getJumpsSurvived() { return jumpsSurvived; }
 		public int getSkillMasteries() { return skillMasteries; }
 
+		/**
+		 * Sets time required for stun to wear off.
+		 *
+		 * If greater than 0, the crew will become unresponsive while this
+		 * number decrements to 0. Additional stuns will probably add to it.
+		 *
+		 * A weapon adds X*1000 ticks, where X is the value of the 'stun' tag
+		 * in its WeaponBlueprint xml.
+		 *
+		 * When not stunned, this will be 0.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setStunTicks( int n ) { stunTicks = n; }
+		public int getStunTicks() { return stunTicks; }
+
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public void setUnknownBeta( int n ) { unknownBeta = n; }
 
 		public int getUnknownAlpha() { return unknownAlpha; }
 		public int getUnknownBeta() { return unknownBeta; }
 
-		public void setUnknownEta( int n ) { unknownEta = n; }
 		public void setUnknownTheta( int n ) { unknownTheta = n; }
 		public void setUnknownIota( int n ) { unknownIota = n; }
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
@@ -2286,7 +2313,6 @@ public class SavedGameParser extends Parser {
 		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
 		public void setUnknownPhi( int n ) { unknownPhi = n; }
 
-		public int getUnknownEta() { return unknownEta; }
 		public int getUnknownTheta() { return unknownTheta; }
 		public int getUnknownIota() { return unknownIota; }
 		public int getUnknownKappa() { return unknownKappa; }
@@ -2302,12 +2328,31 @@ public class SavedGameParser extends Parser {
 		public int getUnknownUpsilon() { return unknownUpsilon; }
 		public int getUnknownPhi() { return unknownPhi; }
 
-		public void setUnknownChi( int n ) { unknownChi = n; }
-		public void setUnknownPsi( int n ) { unknownPsi = n; }
-		public void setUnknownOmega( int n ) { unknownOmega = n; }
+		/**
+		 * Sets time elapsed waiting for the lockdown ability to recharge.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @param n a positive int less than, or equal to, the goal (0 when not charging)
+		 *
+		 * @see #setLockdownRechargeGoal(int)
+		 */
+		public void setLockdownRechargeTicks( int n ) { lockdownRechargeTicks = n; }
+		public int getLockdownRechargeTicks() { return lockdownRechargeTicks; }
 
-		public int getUnknownChi() { return unknownChi; }
-		public int getUnknownPsi() { return unknownPsi; }
+		/**
+		 * Sets the ticks needed to recharge the lockdown ability.
+		 *
+		 * This is normally 50000 while charging, 0 otherwise.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setLockdownRechargeTicks(int)
+		 */
+		public void setLockdownRechargeGoal( int n ) { lockdownRechargeGoal = n; }
+		public int getLockdownRechargeGoal() { return lockdownRechargeGoal; }
+
+		public void setUnknownOmega( int n ) { unknownOmega = n; }
 		public int getUnknownOmega() { return unknownOmega; }
 
 		/**
@@ -2457,7 +2502,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Piloted Evasions:  %5d\n", pilotedEvasions));
 			result.append(String.format("Jumps Survived:    %5d\n", jumpsSurvived));
 			result.append(String.format("Skill Masteries:   %5d\n", skillMasteries));
-			result.append(String.format("Eta?:             %6d\n", unknownEta));
+			result.append(String.format("Stun Ticks:       %6d (Decrements to 0)\n", stunTicks));
 			result.append(String.format("Theta?:           %6d\n", unknownTheta));
 			result.append(String.format("Iota?:            %6d\n", unknownIota));
 			result.append(String.format("Kappa?:           %6d\n", unknownKappa));
@@ -2472,8 +2517,8 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Tau?:             %6d\n", unknownTau));
 			result.append(String.format("Upsilon?:         %6d\n", unknownUpsilon));
 			result.append(String.format("Phi?:             %6d\n", unknownPhi));
-			result.append(String.format("Chi?:             %6d (Crystal only)\n", unknownChi));
-			result.append(String.format("Psi?:             %6d (Crystal only)\n", unknownPsi));
+			result.append(String.format("Lockdown Ticks:   %6d (Crystal only, time spent recharging)\n", lockdownRechargeTicks));
+			result.append(String.format("Lockdown Goal:    %6d (Crystal only, ticks needed to recharge)\n", lockdownRechargeGoal));
 			result.append(String.format("Omega?:           %6d (Crystal only)\n", unknownOmega));
 			return result.toString();
 		}
@@ -2537,8 +2582,8 @@ public class SavedGameParser extends Parser {
 		private int temporaryCapacityLoss = 0;
 		private int temporaryCapacityDivisor = 1;
 
-		private int unknownBeta = 0;
-		private int unknownGamma = 0;
+		private int hackLevel = 0;
+		private boolean hacked = false;
 
 
 		public SystemState( SystemType systemType ) {
@@ -2648,11 +2693,32 @@ public class SavedGameParser extends Parser {
 		public void setBatteryPower( int n ) { batteryPower = n; }
 		public int getBatteryPower() { return batteryPower; }
 
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		/**
+		 * Sets the level-based effect that a hacking drone's disruption will
+		 * have when it activates.
+		 *
+		 * TODO: Revise this description.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @param n the 1-based level of the hacker's system, or 0 for none
+		 *
+		 * @see #setHacked(int)
+		 */
+		public void setHackLevel( int n ) { hackLevel = n; }
+		public int getHackLevel() { return hackLevel; }
 
-		public int getUnknownBeta() { return unknownBeta; }
-		public int getUnknownGamma() { return unknownGamma; }
+		/**
+		 * Toggles whether this system has a hacking drone attached.
+		 *
+		 * TODO: Revise this description.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setHackLevel(int)
+		 */
+		public void setHacked( boolean b ) { hacked = b; }
+		public boolean isHacked() { return hacked; }
 
 		/**
 		 * Sets an upper limit on this system's capacity.
@@ -2715,7 +2781,7 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 			if (capacity > 0) {
 				result.append(String.format("SystemId:              %s\n", systemType.getId()));
-				result.append(String.format("Power:                 %d/%d\n", power, capacity));
+				result.append(String.format("Power:                  %d/%d\n", power, capacity));
 				result.append(String.format("Damaged Bars:          %3d\n", damagedBars));
 				result.append(String.format("Ionized Bars:          %3d\n", ionizedBars));
 				result.append(String.format("Repair Progress:       %3d%%\n", repairProgress));
@@ -2723,8 +2789,8 @@ public class SavedGameParser extends Parser {
 				result.append(String.format("Deionization Ticks:    %s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ));
 				result.append("\n");
 				result.append(String.format("Battery Power:         %3d\n", batteryPower));
-				result.append(String.format("Beta?:                 %3d\n", unknownBeta));
-				result.append(String.format("Gamma?:                %3d\n", unknownGamma));
+				result.append(String.format("Hack Level:            %3d\n", hackLevel));
+				result.append(String.format("Hacked:                %5b\n", hacked));
 				result.append(String.format("Temp Capacity Cap:     %3d\n", temporaryCapacityCap));
 				result.append(String.format("Temp Capacity Loss:    %3d\n", temporaryCapacityLoss));
 				result.append(String.format("Temp Capacity Divisor: %3d\n", temporaryCapacityDivisor));
@@ -2883,9 +2949,9 @@ public class SavedGameParser extends Parser {
 		private boolean open = false;
 		private boolean walkingThrough = false;
 
-		private int unknownAlpha = 0;
-		private int unknownBeta = 0;
-		private int unknownGamma = 0;
+		private int currentMaxHealth = 0;
+		private int health = 0;
+		private int nominalHealth = 0;
 		private int unknownDelta = 0;
 		private int unknownEpsilon = 0;
 
@@ -2904,27 +2970,36 @@ public class SavedGameParser extends Parser {
 		public boolean isOpen() { return open; }
 		public boolean isWalkingThrough() { return walkingThrough; }
 
+
 		/**
-		 * Sets current door strength. (Reportedly)
+		 * Sets current max door health.
+		 *
+		 * This is affected by situational modifiers like Crystal lockdown,
+		 * but it likely copies the nominal value at some point.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public int getUnknownAlpha() { return unknownAlpha; }
+		public void setCurrentMaxHealth( int n ) { currentMaxHealth = n; }
+		public int getCurrentMaxHealth() { return currentMaxHealth; }
 
 		/**
-		 * Sets door health. (Reportedly)
+		 * Sets the current door health.
 		 *
-		 * Starting at full strength, this decreases as someone tries to
-		 * break it down.
+		 * Starting at current max, this decreases as someone tries to break it
+		 * down.
+		 *
+		 * TODO: After combat in which a hacking drone boosts the door's health,
+		 * the current max returns to normal, but the actual health stays high
+		 * for some reason.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public int getUnknownBeta() { return unknownBeta; }
+		public void setHealth( int n ) { health = n; }
+		public int getHealth() { return health; }
 
 		/**
-		 * Sets nominal door strength. (Reportedly)
+		 * Sets nominal max door health.
+		 * This is the value to which the current max will eventually reset.
 		 *
 		 * Values:
 		 *   04 = Level 0 (un-upgraded or damaged door system).
@@ -2933,12 +3008,13 @@ public class SavedGameParser extends Parser {
 		 *   18 = Level 3 (max, plus manned)
 		 *   50 = Lockdown.
 		 *
-		 * Hacking appears to increase door strength to the next available level.
+		 * TODO: Investigate why an attached hacking drone adds 6 to ALL THREE
+		 * healths.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public int getUnknownGamma() { return unknownGamma; }
+		public void setNominalHealth( int n ) { nominalHealth = n; }
+		public int getNominalHealth() { return nominalHealth; }
 
 		/**
 		 * ???
@@ -2949,7 +3025,7 @@ public class SavedGameParser extends Parser {
 		public int getUnknownDelta() { return unknownDelta; }
 
 		/**
-		 * Sets hacking drone lockdown status. (Reportedly)
+		 * Sets hacking drone lockdown status.
 		 *
 		 * Values:
 		 *   0 = N/A
@@ -2972,7 +3048,7 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 
 			result.append(String.format("Open: %-5b, Walking Through: %-5b\n", open, walkingThrough));
-			result.append(String.format("Alpha?: %3d, Beta?: %3d, Gamma?: %3d, Epsilon?: %3d\n", unknownAlpha, unknownBeta, unknownGamma, unknownEpsilon));
+			result.append(String.format("Full HP: %3d, Current HP: %3d, Nominal HP: %3d, Delta?: %3d, Epsilon?: %3d\n", currentMaxHealth, health, nominalHealth, unknownDelta, unknownEpsilon));
 
 			return result.toString();
 		}
@@ -3135,7 +3211,7 @@ public class SavedGameParser extends Parser {
 		private boolean enemyPresent = false;
 		private String shipEventId = null;
 		private String autoBlueprintId = null;
-		private int beta = 0;
+		private int shipEventSeed = 0;
 
 		private FleetPresence fleetPresence = FleetPresence.NONE;
 
@@ -3244,11 +3320,13 @@ public class SavedGameParser extends Parser {
 		public String getAutoBlueprintId() { return autoBlueprintId; }
 
 		/**
-		 * Sets an unknown erratic integer.
-		 * (observed values: 126 to 32424)
+		 * Sets a seed to randomly generate the enemy ship (layout, etc).
+		 *
+		 * When the player ship visits this beacon, the resulting encounter
+		 * will use this seed. When no enemy ship is present, this is 0.
 		 */
-		public void setBeta( int n ) { beta = n; }
-		public int getBeta() { return beta; }
+		public void setShipEventSeed( int n ) { shipEventSeed = n; }
+		public int getShipEventSeed() { return shipEventSeed; }
 
 		/**
 		 * Sets fleet background sprites and possibly the beacon icon.
@@ -3286,28 +3364,28 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Visited:        %5b\n", visited));
+			result.append(String.format("Visited:               %5b\n", visited));
 			if ( visited ) {
 				result.append(String.format("  Bkg Starscape:       %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("  Bkg Sprite:          %s\n", bgSpriteImageInnerPath));
-				result.append(String.format("  Bkg Sprite Position: %3d,%3d\n", bgSpritePosX, bgSpritePosY));
-				result.append(String.format("  Bkg Sprite Rotation: %3d\n", bgSpriteRotation));
+				result.append(String.format("  Bkg Sprite Position:   %3d,%3d\n", bgSpritePosX, bgSpritePosY));
+				result.append(String.format("  Bkg Sprite Rotation:   %3d\n", bgSpriteRotation));
 			}
 
-			result.append(String.format("Seen:           %5b\n", seen));
+			result.append(String.format("Seen:                  %5b\n", seen));
 
-			result.append(String.format("Enemy Present:  %5b\n", enemyPresent));
+			result.append(String.format("Enemy Present:         %5b\n", enemyPresent));
 			if ( enemyPresent ) {
-				result.append(String.format("  Ship Event ID:     %s\n", shipEventId));
-				result.append(String.format("  Auto Blueprint ID: %s\n", autoBlueprintId));
-				result.append(String.format("  Beta?:             %5d\n", beta));
+				result.append(String.format("  Ship Event ID:       %s\n", shipEventId));
+				result.append(String.format("  Auto Blueprint ID:   %s\n", autoBlueprintId));
+				result.append(String.format("  Ship Event Seed:     %5d\n", shipEventSeed));
 			}
 
-			result.append(String.format("Fleets Present: %s\n", fleetPresence));
+			result.append(String.format("Fleets Present:        %s\n", fleetPresence));
 
-			result.append(String.format("Under Attack:   %5b\n", underAttack));
+			result.append(String.format("Under Attack:          %5b\n", underAttack));
 
-			result.append(String.format("Store Present:  %5b\n", storePresent));
+			result.append(String.format("Store Present:         %5b\n", storePresent));
 			if ( storePresent ) {
 				result.append( store.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 			}
@@ -3457,7 +3535,7 @@ public class SavedGameParser extends Parser {
 	public static class EncounterState {
 		private String text = "";
 
-		private int unknownAlpha = 0;
+		private int shipEventSeed = 0;
 		private String unknownBeta = "";
 		private String unknownGamma = "";
 		private String unknownDelta = "";
@@ -3473,7 +3551,15 @@ public class SavedGameParser extends Parser {
 		public EncounterState() {
 		}
 
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		/**
+		 * Sets a seed to randomly generate the enemy ship (layout, etc).
+		 *
+		 * When the player ship visits a beacon, the resulting encounter
+		 * will use the beacon's enemy ship event seed.
+		 */
+		public void setShipEventSeed( int n ) { shipEventSeed = n; }
+		public int getShipEventSeed() { return shipEventSeed; }
+
 		public void setUnknownBeta( String s ) { unknownBeta = s; }
 		public void setUnknownGamma( String s ) { unknownGamma = s; }
 		public void setUnknownDelta( String s ) { unknownDelta = s; }
@@ -3481,7 +3567,6 @@ public class SavedGameParser extends Parser {
 		public void setUnknownZeta( String s ) { unknownZeta = s; }
 		public void setUnknownEta( String s ) { unknownEta = s; }
 
-		public int getUnknownAlpha() { return unknownAlpha; }
 		public String getUnknownBeta() { return unknownBeta; }
 		public String getUnknownGamma() { return unknownGamma; }
 		public String getUnknownDelta() { return unknownDelta; }
@@ -3504,7 +3589,7 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
-			result.append(String.format("Alpha?:      %3d\n", unknownAlpha));
+			result.append(String.format("Ship Event Seed:  %3d\n", shipEventSeed));
 			result.append(String.format("Beta?:       %s\n", unknownBeta));
 			result.append(String.format("Gamma?:      %s\n", unknownGamma));
 			result.append(String.format("Delta?:      %s\n", unknownDelta));
@@ -3630,16 +3715,16 @@ public class SavedGameParser extends Parser {
 
 
 
-	public static interface SystemVolatile {
+	public static interface ExtendedSystemInfo {
 	}
 
-	public static class ClonebayVolatile implements SystemVolatile {
+	public static class ClonebayInfo implements ExtendedSystemInfo {
 		private int buildTicks = 0;
 		private int buildTicksGoal = 0;
 		private int unknownGamma = 0;
 
 
-		public ClonebayVolatile() {
+		public ClonebayInfo() {
 		}
 
 		public void setBuildTicks( int n ) { buildTicks = n; }
@@ -3664,7 +3749,7 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
-	public static class BatteryVolatile implements SystemVolatile {
+	public static class BatteryInfo implements ExtendedSystemInfo {
 		private boolean active = false;
 		private int usedPower = 0;
 		private int dischargeTicks = 0;
@@ -3673,7 +3758,7 @@ public class SavedGameParser extends Parser {
 		// Storms only halve *reserve* power.
 
 
-		public BatteryVolatile() {
+		public BatteryInfo() {
 		}
 
 		/**
@@ -3720,7 +3805,7 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
-	public static class ShieldsVolatile implements SystemVolatile {
+	public static class ShieldsInfo implements ExtendedSystemInfo {
 		private int shieldLayers = 0;
 		private int energyShieldLayers = 0;
 		private int energyShieldMax = 0;
@@ -3739,7 +3824,7 @@ public class SavedGameParser extends Parser {
 		private int unknownMu = 0;
 
 
-		public ShieldsVolatile() {
+		public ShieldsInfo() {
 		}
 
 		/**
@@ -3779,6 +3864,8 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Toggles whether the regular shield drop animation is being played.
+		 *
+		 * Note: The drop and raise anims can both play simultaneously.
 		 */
 		public void setShieldDropAnimOn( boolean b ) { shieldDropAnimOn = b; }
 		public boolean isShieldDropAnimOn() { return shieldDropAnimOn; }
@@ -3794,6 +3881,8 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Toggles whether the regular shield raise animation is being played.
+		 *
+		 * Note: The drop and raise anims can both play simultaneously.
 		 */
 		public void setShieldRaiseAnimOn( boolean b ) { shieldRaiseAnimOn = b; }
 		public boolean isShieldRaiseAnimOn() { return shieldRaiseAnimOn; }
@@ -3838,34 +3927,51 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Energy Shield Max:        %5d (Layers when fully charged)\n", energyShieldLayers));
 			result.append(String.format("Shield Recharge Ticks:    %5d\n", shieldRechargeTicks));
 			result.append("\n");
-			result.append(String.format("Shield Drop Anim:     On: %-5b, Ticks: %4d\n", shieldDropAnimOn, shieldDropAnimTicks));
-			result.append(String.format("Shield Raise Anim:    On: %-5b, Ticks: %4d\n", shieldRaiseAnimOn, shieldRaiseAnimTicks));
-			result.append(String.format("Energy Shield Anim:   On: %-5b, Ticks: %4d\n", energyShieldAnimOn, energyShieldAnimTicks));
+			result.append(String.format("Shield Drop Anim:   Play: %-5b, Ticks: %4d\n", shieldDropAnimOn, shieldDropAnimTicks));
+			result.append(String.format("Shield Raise Anim:  Play: %-5b, Ticks: %4d\n", shieldRaiseAnimOn, shieldRaiseAnimTicks));
+			result.append(String.format("Energy Shield Anim: Play: %-5b, Ticks: %4d\n", energyShieldAnimOn, energyShieldAnimTicks));
 			result.append(String.format("Lambda?, Mu?:           %7d,%7d (Some kind of coord, divide by 1000?)\n", unknownLambda, unknownMu));
 
 			return result.toString();
 		}
 	}
 
-	public static class CloakingVolatile implements SystemVolatile {
+	public static class CloakingInfo implements ExtendedSystemInfo {
 		private int unknownAlpha = 0;
 		private int unknownBeta = 0;
-		private int unknownGamma = 0;
-		private int unknownDelta = 0;
+		private int cloakTicksGoal = 0;
+		private int cloakTicks = 0;
 
 
-		public CloakingVolatile() {
+		public CloakingInfo() {
 		}
 
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public void setUnknownDelta( int n ) { unknownDelta = n; }
 
 		public int getUnknownAlpha() { return unknownAlpha; }
 		public int getUnknownBeta() { return unknownBeta; }
-		public int getUnknownGamma() { return unknownGamma; }
-		public int getUnknownDelta() { return unknownDelta; }
+
+		/**
+		 * Sets total time the cloak will stay engaged.
+		 *
+		 * This can vary depending on the system level when the cloak is
+		 * initially engaged. When not engaged, this is 0.
+		 *
+		 * @see #setCloakTicks(int)
+		 */
+		public void setCloakTicksGoal( int n ) { cloakTicksGoal = n; }
+		public int getCloakTicksGoal() { return cloakTicksGoal; }
+
+		/**
+		 * Sets elapsed time while the cloak is engaged.
+		 *
+		 * @param n a positive int less than, or equal to, the goal (MIN_INT when not engaged)
+		 *
+		 * @see #setCloakTicksGoal(int)
+		 */
+		public void setCloakTicks( int n ) { cloakTicks = n; }
+		public int getCloakTicks() { return cloakTicks; }
 
 		@Override
 		public String toString() {
@@ -3874,8 +3980,8 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("SystemId:                 %s\n", SystemType.CLOAKING.toString()));
 			result.append(String.format("Alpha?:                 %7d\n", unknownAlpha));
 			result.append(String.format("Beta?:                  %7d\n", unknownBeta));
-			result.append(String.format("Gamma?:                 %7d\n", unknownGamma));
-			result.append(String.format("Delta?:                 %7s\n", (unknownDelta==Integer.MIN_VALUE ? "MIN_INT" : unknownDelta) ));
+			result.append(String.format("Cloak Ticks Goal:       %7d\n", cloakTicksGoal));
+			result.append(String.format("Cloak Ticks:            %7s\n", (cloakTicks==Integer.MIN_VALUE ? "MIN_INT" : cloakTicks) ));
 
 			return result.toString();
 		}
@@ -3909,7 +4015,7 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
-	// Volatile info for individual weapons.
+	// Extended info for individual weapons.
 	// Game states contain two lists of these objects: player and nearby ship.
 	public static class UnknownAthena {
 		private int unknownAlpha = 0;    // Incrementing millisecs elapsed during cooldown.

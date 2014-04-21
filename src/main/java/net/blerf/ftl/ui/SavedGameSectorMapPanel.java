@@ -428,7 +428,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			beaconState.setEnemyPresent( false );
 			beaconState.setShipEventId( null );
 			beaconState.setAutoBlueprintId( null );
-			beaconState.setBeta( 0 );
+			beaconState.setShipEventSeed( 0 );
 
 			beaconState.setStorePresent( false );
 			beaconState.setStore( null );
@@ -455,7 +455,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 					beaconState.setEnemyPresent( true );
 					beaconState.setShipEventId( beaconSprite.getShipEventId() );
 					beaconState.setAutoBlueprintId( beaconSprite.getAutoBlueprintId() );
-					beaconState.setBeta( beaconSprite.getBeta() );
+					beaconState.setShipEventSeed( beaconSprite.getShipEventSeed() );
 				}
 
 				beaconState.setFleetPresence( beaconSprite.getFleetPresence() );
@@ -886,7 +886,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final String ENEMY_PRESENT = "Enemy Present";
 		final String SHIP_EVENT = "Ship Event";
 		final String AUTO_SHIP = "Auto Ship";
-		final String BETA = "Beta?";
+		final String SHIP_EVENT_SEED = "Ship Event Seed";
 		final String FLEET = "Fleet";
 		final String UNDER_ATTACK = "Under Attack";
 
@@ -936,11 +936,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getString(AUTO_SHIP).setEditable( false );
 		editorPanel.getString(AUTO_SHIP).setEnabled( false );
 		editorPanel.getString(AUTO_SHIP).addMouseListener( new StatusbarMouseListener(frame, "The blueprint (or blueprintList) of an auto ship to appear.") );
-		editorPanel.addRow( BETA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(BETA).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.getInt(BETA).setText( "0" );
-		editorPanel.getInt(BETA).setEnabled( false );
-		editorPanel.getInt(BETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown erratic integer. (Observed values: 126 to 32424)") );
+		editorPanel.addRow( SHIP_EVENT_SEED, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(SHIP_EVENT_SEED).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(SHIP_EVENT_SEED).setText( "0" );
+		editorPanel.getInt(SHIP_EVENT_SEED).setEnabled( false );
+		editorPanel.getInt(SHIP_EVENT_SEED).addMouseListener( new StatusbarMouseListener(frame, "A constant that seeds the random generation of the enemy ship.") );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( FLEET, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(FLEET).addMouseListener( new StatusbarMouseListener(frame, "Fleet background sprites.") );
@@ -987,7 +987,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		if ( beaconSprite.isEnemyPresent() ) {
 			editorPanel.getCombo(SHIP_EVENT).setEnabled( true );
 			editorPanel.getString(AUTO_SHIP).setEnabled( true );
-			editorPanel.getInt(BETA).setEnabled( true );
+			editorPanel.getInt(SHIP_EVENT_SEED).setEnabled( true );
 
 			editorPanel.getBoolean(ENEMY_PRESENT).setSelected( true );
 
@@ -997,7 +997,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			editorPanel.getString(AUTO_SHIP).setText( beaconSprite.getAutoBlueprintId() );
 
-			editorPanel.getInt(BETA).setText( ""+ beaconSprite.getBeta() );
+			editorPanel.getInt(SHIP_EVENT_SEED).setText( ""+ beaconSprite.getShipEventSeed() );
 		}
 
 		for ( SavedGameParser.FleetPresence fleetPresence : SavedGameParser.FleetPresence.values() ) {
@@ -1074,7 +1074,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 				String shipEventId = null;
 				String autoBlueprintId = null;
-				int beta = 0;
+				int shipEventSeed = 0;
 				boolean enemyPresent = editorPanel.getBoolean(ENEMY_PRESENT).isSelected();
 
 				Object shipEventObj = editorPanel.getCombo(SHIP_EVENT).getSelectedItem();
@@ -1083,20 +1083,20 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 				autoBlueprintId = editorPanel.getString(AUTO_SHIP).getText();
 
-				newString = editorPanel.getInt(BETA).getText();
-				try { beta = Integer.parseInt(newString); }
+				newString = editorPanel.getInt(SHIP_EVENT_SEED).getText();
+				try { shipEventSeed = Integer.parseInt(newString); }
 				catch (NumberFormatException e) {}
 
 				if ( enemyPresent && shipEventId != null && autoBlueprintId.length() > 0 && !"null".equals(autoBlueprintId) ) {
 					beaconSprite.setEnemyPresent( true );
 					beaconSprite.setShipEventId( shipEventId );
 					beaconSprite.setAutoBlueprintId( autoBlueprintId );
-					beaconSprite.setBeta( beta );
+					beaconSprite.setShipEventSeed( shipEventSeed );
 				} else {
 					beaconSprite.setEnemyPresent( false );
 					beaconSprite.setShipEventId( null );
 					beaconSprite.setAutoBlueprintId( null );
-					beaconSprite.setBeta( 0 );
+					beaconSprite.setShipEventSeed( 0 );
 				}
 
 				beaconSprite.setFleetPresence( (SavedGameParser.FleetPresence)editorPanel.getCombo(FLEET).getSelectedItem() );
@@ -1122,7 +1122,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			private JCheckBox enemyPresentCheck = editorPanel.getBoolean(ENEMY_PRESENT);
 			private JComboBox shipEventCombo = editorPanel.getCombo(SHIP_EVENT);
 			private JTextField autoShipField = editorPanel.getString(AUTO_SHIP);
-			private JTextField betaField = editorPanel.getInt(BETA);
+			private JTextField shipEventSeedField = editorPanel.getInt(SHIP_EVENT_SEED);
 
 			public void actionPerformed(ActionEvent e) {
 				Object source = e.getSource();
@@ -1174,11 +1174,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 					boolean enemyPresent = enemyPresentCheck.isSelected();
 					if ( !enemyPresent ) {
 						shipEventCombo.setSelectedItem( "" );
-						betaField.setText( "0" );
+						shipEventSeedField.setText( "0" );
 					}
 					shipEventCombo.setEnabled( enemyPresent );
 					autoShipField.setEnabled( enemyPresent );
-					betaField.setEnabled( enemyPresent );
+					shipEventSeedField.setEnabled( enemyPresent );
 				}
 				else if ( source == shipEventCombo ) {
 					Object shipEventObj = shipEventCombo.getSelectedItem();
@@ -1643,7 +1643,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		private boolean enemyPresent = false;
 		private String shipEventId = null;
 		private String autoBlueprintId = null;
-		private int beta = 0;
+		private int shipEventSeed = 0;
 
 		private SavedGameParser.FleetPresence fleetPresence = SavedGameParser.FleetPresence.NONE;
 		private boolean underAttack = false;
@@ -1663,7 +1663,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				enemyPresent = beaconState.isEnemyPresent();
 				shipEventId = beaconState.getShipEventId();
 				autoBlueprintId = beaconState.getAutoBlueprintId();
-				beta = beaconState.getBeta();
+				shipEventSeed = beaconState.getShipEventSeed();
 
 				fleetPresence = beaconState.getFleetPresence();
 				underAttack = beaconState.isUnderAttack();
@@ -1681,7 +1681,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public boolean isEnemyPresent() { return enemyPresent; }
 		public String getShipEventId() { return shipEventId; }
 		public String getAutoBlueprintId() { return autoBlueprintId; }
-		public int getBeta() { return beta; }
+		public int getShipEventSeed() { return shipEventSeed; }
 		public SavedGameParser.FleetPresence getFleetPresence() { return fleetPresence; }
 		public boolean isUnderAttack() { return underAttack; }
 
@@ -1695,7 +1695,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public void setEnemyPresent( boolean b ) { enemyPresent = b; }
 		public void setShipEventId( String s ) { shipEventId = s; }
 		public void setAutoBlueprintId( String s ) { autoBlueprintId = s; }
-		public void setBeta( int n ) { beta = n; }
+		public void setShipEventSeed( int n ) { shipEventSeed = n; }
 		public void setFleetPresence( SavedGameParser.FleetPresence fp ) { fleetPresence = fp; }
 		public void setUnderAttack( boolean b ) { underAttack = b; }
 
@@ -1723,7 +1723,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				enemyPresent = false;
 				shipEventId = null;
 				autoBlueprintId = null;
-				beta = 0;
+				shipEventSeed = 0;
 			}
 
 			if ( fleetPresence == SavedGameParser.FleetPresence.REBEL ) {

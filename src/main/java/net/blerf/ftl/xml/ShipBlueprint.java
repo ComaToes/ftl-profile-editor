@@ -300,9 +300,10 @@ public class ShipBlueprint {
 			else if ( SystemType.DRONE_CTRL.equals(systemType) ) systemRoom = getDroneRoom();
 			else if ( SystemType.TELEPORTER.equals(systemType) ) systemRoom = getTeleporterRoom();
 			else if ( SystemType.CLOAKING.equals(systemType) ) systemRoom = getCloakRoom();
+			else if ( SystemType.BATTERY.equals(systemType) ) systemRoom = getBatteryRoom();
 			else if ( SystemType.CLONEBAY.equals(systemType) ) systemRoom = getCloneRoom();
+			else if ( SystemType.MIND.equals(systemType) ) systemRoom = getMindRoom();
 			else if ( SystemType.HACKING.equals(systemType) ) systemRoom = getHackRoom();
-			// TODO: Include the other two greek system types.
 
 			if ( systemRoom != null ) return new SystemList.SystemRoom[] { systemRoom };
 
