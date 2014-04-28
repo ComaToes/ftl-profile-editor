@@ -74,7 +74,7 @@ public class Parser {
 		if ( in instanceof FileInputStream ) {
 			FileInputStream fin = (FileInputStream)in;
 			long position = fin.getChannel().position();
-			if ( length > fin.getChannel().size() - position)
+			if ( position + length  > fin.getChannel().size() )
 				throw new RuntimeException( "Expected string length ("+ length +") would extend beyond the end of the stream, from current position ("+ position +")" );
 		}
 		else {
@@ -96,7 +96,7 @@ public class Parser {
 		if ( offset < strBytes.length )
 			throw new RuntimeException( "End of stream reached before reading enough bytes for string of length "+ length );
 
-		return new String(strBytes, "US-ASCII");
+		return new String( strBytes, "US-ASCII" );
 	}
 
 	protected void writeString( OutputStream out, String str ) throws IOException {
