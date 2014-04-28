@@ -1026,8 +1026,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Systems.
-		Map<SystemType, SavedGameParser.SystemState> systemMap = shipState.getSystemMap();
-		systemMap.clear();
+		shipState.getSystemsMap().clear();
+
 		for ( SystemSprite systemSprite : systemSprites ) {
 			SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemSprite.getSystemType() );
 			systemState.setCapacity( systemSprite.getCapacity() );
@@ -1037,12 +1037,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 			systemState.setRepairProgress( systemSprite.getRepairProgress() );
 			systemState.setDamageProgress( systemSprite.getDamageProgress() );
 			systemState.setDeionizationTicks( systemSprite.getDeionizationTicks() );
-			systemMap.put( systemState.getSystemType(), systemState );
+			shipState.addSystem( systemState );
 		}
 		// Add omitted systems.
 		for ( SystemType systemType : SystemType.values() ) {
-			if ( !systemMap.containsKey( systemType ))
-				systemMap.put( systemType, new SavedGameParser.SystemState( systemType ) );
+			if ( shipState.getSystem( systemType ) == null )
+				shipState.addSystem( new SavedGameParser.SystemState( systemType ) );
 		}
 
 		// Breaches.

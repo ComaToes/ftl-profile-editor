@@ -389,17 +389,13 @@ public class SavedGameParser extends Parser {
 			// Example: Boss' artillery.
 			//
 			// In FTL 1.01-1.03.3 the boss wasn't a nearby ship outside of combat,
-			// So this never occurred. There may also have been changes in 1.5.4
-			// to allow multi-room systems.
-			//
-			// TODO: Report this.
+			// So this never occurred. TODO: There may also have been changes in 
+			// 1.5.4 to allow multi-room systems on non-boss ships.
 
 			ShipBlueprint.SystemList.SystemRoom[] rooms = shipBlueprint.getSystemList().getSystemRoom( systemType );
 			if ( rooms != null && rooms.length > 1 ) {
-				System.err.println(String.format("Warning: Skipping extra rooms for system: %s", systemType.toString()));
-
-				for ( int q=0; q < rooms.length-1; q++ ) {
-					readSystem(in, systemType, headerAlpha );
+				for ( int q=1; q < rooms.length; q++ ) {
+					shipState.addSystem( readSystem(in, systemType, headerAlpha ) );
 				}
 			}
 		}
@@ -588,13 +584,16 @@ public class SavedGameParser extends Parser {
 
 		writeInt( out, shipState.getReservePowerCapacity() );
 
-		Map<SystemType, SystemState> systemMap = shipState.getSystemMap();
 		for ( SystemType systemType : systemTypes ) {
-			SystemState systemState = systemMap.get(systemType);
-			if ( systemState != null )
-				writeSystem( out, systemState );
-			else
-				writeInt( out, 0 );
+			List<SystemState> systemList = shipState.getSystems( systemType );
+			if ( systemList.size() > 0 ) {
+				for ( SystemState systemState : systemList ) {
+					writeSystem( out, systemState );
+				}
+			}
+			else {
+				writeInt( out, 0 );  // Equivalent to constructing and writing a 0-capacity system.
+			}
 		}
 
 		for (RoomState room : shipState.getRoomList()) {
@@ -1689,7 +1688,7 @@ public class SavedGameParser extends Parser {
 		private int hullAmt=0, fuelAmt=0, dronePartsAmt=0, missilesAmt=0, scrapAmt=0;
 		private ArrayList<CrewState> crewList = new ArrayList<CrewState>();
 		private int reservePowerCapacity = 0;
-		private LinkedHashMap<SystemType, SystemState> systemMap = new LinkedHashMap<SystemType, SystemState>();
+		private LinkedHashMap<SystemType, List<SystemState>> systemsMap = new LinkedHashMap<SystemType, List<SystemState>>();
 		private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
 		private ArrayList<RoomState> roomList = new ArrayList<RoomState>();
 		private LinkedHashMap<Point, Integer> breachMap = new LinkedHashMap<Point, Integer>();
@@ -1747,7 +1746,7 @@ public class SavedGameParser extends Parser {
 			ShipLayout shipLayout = DataManager.get().getShipLayout( shipBlueprint.getLayout() );
 
 			// Systems.
-			getSystemMap().clear();
+			systemsMap.clear();
 			int powerRequired = 0;
 			for ( SystemType systemType : SystemType.values() ) {
 				SavedGameParser.SystemState systemState = new SavedGameParser.SystemState( systemType );
@@ -1911,13 +1910,44 @@ public class SavedGameParser extends Parser {
 		public int getReservePowerCapacity() { return reservePowerCapacity; }
 
 		public void addSystem( SystemState s ) {
-			systemMap.put( s.getSystemType(), s );
-		}
-		public SystemState getSystem( SystemType systemType ) {
-			return systemMap.get( systemType );
+			List<SystemState> systemList = systemsMap.get( s.getSystemType() );
+			if ( systemList == null ) {
+				systemList = new ArrayList( 0 );
+				systemsMap.put( s.getSystemType(), systemList );
+			}
+			systemList.add( s );
 		}
 
-		public LinkedHashMap<SystemType, SystemState> getSystemMap() { return systemMap; }
+		/**
+		 * Returns the first SystemState of a given type, or null.
+		 */
+		public SystemState getSystem( SystemType systemType ) {
+			List<SystemState> systemList = systemsMap.get( systemType );
+
+			if ( systemList != null && !systemList.isEmpty() ) {
+				return systemList.get( 0 );
+			}
+
+			return null;
+		}
+
+		/**
+		 * Returns a list of all SystemStates of a given type.
+		 *
+		 * If no SystemStates are present, an empty list is returned.
+		 * That same list object will later contain systems if any are added.
+		 */
+		public List<SystemState> getSystems( SystemType systemType ) {
+			List<SystemState> systemList = systemsMap.get( systemType );
+			if ( systemList == null ) {
+				systemList = new ArrayList( 0 );
+				systemsMap.put( systemType, systemList );
+			}
+
+			return systemList;
+		}
+
+		public Map<SystemType, List<SystemState>> getSystemsMap() { return systemsMap; }
 
 
 		public void addRoom( RoomState r ) {
@@ -2044,10 +2074,12 @@ public class SavedGameParser extends Parser {
 			result.append("\nSystems...\n");
 			result.append(String.format("  Reserve Power Capacity: %2d\n", reservePowerCapacity));
 			first = true;
-			for ( Map.Entry<SystemType, SystemState> entry : systemMap.entrySet() ) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(entry.getValue().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			for ( Map.Entry<SystemType, List<SystemState>> entry : systemsMap.entrySet() ) {
+				for ( SystemState s : entry.getValue() ) {
+					if (first) { first = false; }
+					else { result.append(",\n"); }
+					result.append(s.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				}
 			}
 
 			result.append("\nExtended System Info...\n");
