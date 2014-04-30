@@ -242,8 +242,20 @@ public class SavedGameParser extends Parser {
 	 */
 	public void writeSavedGame( OutputStream out, SavedGameState gameState ) throws IOException {
 
-		// This should always be 2.
-		writeInt( out, 2 );
+		int headerAlpha = gameState.getHeaderAlpha();
+
+		if ( headerAlpha == 2 ) {
+			// FTL 1.03.3 and earlier.
+			writeInt( out, headerAlpha );
+		}
+		else if ( headerAlpha == 7 ) {
+			// FTL 1.5.4+.
+			writeInt( out, headerAlpha );
+			writeBool( out, gameState.isDLCEnabled() );
+		}
+		else {
+			throw new IOException( "Unsupported headerAlpha: "+ headerAlpha );
+		}
 
 		writeInt( out, gameState.getDifficulty() );
 		writeInt( out, gameState.getTotalShipsDefeated() );
@@ -257,7 +269,7 @@ public class SavedGameParser extends Parser {
 		// Redundant 1-based sector number.
 		writeInt( out, gameState.getSectorNumber()+1 );
 
-		writeInt( out, gameState.getHeaderAlpha() );
+		writeInt( out, gameState.getUnknownBeta() );
 
 		writeInt( out, gameState.getStateVars().size() );
 		for (Map.Entry<String, Integer> entry : gameState.getStateVars().entrySet()) {
@@ -265,7 +277,7 @@ public class SavedGameParser extends Parser {
 			writeInt( out, entry.getValue().intValue() );
 		}
 
-		writeShip( out, gameState.getPlayerShipState() );
+		writeShip( out, gameState.getPlayerShipState(), headerAlpha );
 
 		writeInt( out, gameState.getCargoIdList().size() );
 		for (String cargoItemId : gameState.getCargoIdList()) {
@@ -277,10 +289,26 @@ public class SavedGameParser extends Parser {
 		writeInt( out, gameState.getRebelFleetOffset() );
 		writeInt( out, gameState.getRebelFleetFudge() );
 		writeInt( out, gameState.getRebelPursuitMod() );
-		writeBool( out, gameState.areSectorHazardsVisible() );
-		writeBool( out, gameState.isRebelFlagshipVisible() );
-		writeInt( out, gameState.getRebelFlagshipHop() );
-		writeBool( out, gameState.isRebelFlagshipMoving() );
+
+		if ( headerAlpha == 7 ) {
+			writeInt( out, gameState.getCurrentBeaconId() );
+
+			writeInt( out, gameState.getUnknownGamma() );
+			writeInt( out, gameState.getUnknownDelta() );
+			writeInt( out, gameState.getUnknownEpsilon() );
+			writeBool( out, gameState.areSectorHazardsVisible() );
+			writeBool( out, gameState.isRebelFlagshipVisible() );
+			writeInt( out, gameState.getRebelFlagshipHop() );
+			writeBool( out, gameState.isRebelFlagshipMoving() );
+			writeInt( out, gameState.getUnknownKappa() );
+			writeInt( out, gameState.getRebelFlagshipBaseTurns() );
+		}
+		else if ( headerAlpha == 2 ) {
+			writeBool( out, gameState.areSectorHazardsVisible() );
+			writeBool( out, gameState.isRebelFlagshipVisible() );
+			writeInt( out, gameState.getRebelFlagshipHop() );
+			writeBool( out, gameState.isRebelFlagshipMoving() );
+		}
 
 		writeInt( out, gameState.getSectorList().size() );
 		for (Boolean visited : gameState.getSectorList()) {
@@ -292,7 +320,7 @@ public class SavedGameParser extends Parser {
 
 		writeInt( out, gameState.getBeaconList().size() );
 		for (BeaconState beacon : gameState.getBeaconList()) {
-			writeBeacon( out, beacon );
+			writeBeacon( out, beacon, headerAlpha );
 		}
 
 		writeInt( out, gameState.getQuestEventMap().size() );
@@ -306,16 +334,36 @@ public class SavedGameParser extends Parser {
 			writeString( out, questEventId );
 		}
 
-		writeInt( out, gameState.getCurrentBeaconId() );
+		if ( headerAlpha == 2 ) {
+			writeInt( out, gameState.getCurrentBeaconId() );
 
-		ShipState nearbyShip = gameState.getNearbyShipState();
-		writeBool( out, (nearbyShip != null) );
-		if ( nearbyShip != null ) {
-			writeShip( out, nearbyShip );
+			ShipState nearbyShip = gameState.getNearbyShipState();
+			writeBool( out, (nearbyShip != null) );
+			if ( nearbyShip != null ) {
+				writeShip( out, nearbyShip, headerAlpha );
+			}
+
+			writeRebelFlagship( out, gameState.getRebelFlagshipState() );
 		}
+		else if ( headerAlpha == 7 ) {
+			// Current beaconId was set earlier.
 
-		writeRebelFlagship( out, gameState.getRebelFlagshipState() );
+			writeInt( out, gameState.getUnknownMu() );
 
+			writeEncounter( out, gameState.getEncounter() );
+
+			ShipState nearbyShip = gameState.getNearbyShipState();
+			writeBool( out, (nearbyShip != null) );
+			if ( nearbyShip != null ) {
+				writeInt( out, gameState.getUnknownNu() );
+
+				writeShip( out, nearbyShip, headerAlpha );
+			}
+
+			// Flagship state is set much later.
+
+			writeZeus( out, gameState, gameState.getUnknownZeus() );
+		}
 	}
 
 	private ShipState readShip( InputStream in, boolean auto, int headerAlpha, boolean dlcEnabled ) throws IOException {
@@ -410,7 +458,7 @@ public class SavedGameParser extends Parser {
 
 				clonebayInfo.setBuildTicks( readInt(in) );
 				clonebayInfo.setBuildTicksGoal( readInt(in) );
-				clonebayInfo.setUnknownGamma( readInt(in) );
+				clonebayInfo.setDoomTicks( readInt(in) );
 
 				shipState.addExtendedSystemInfo( clonebayInfo );
 			}
@@ -533,7 +581,7 @@ public class SavedGameParser extends Parser {
 		return shipState;
 	}
 
-	public void writeShip( OutputStream out, ShipState shipState ) throws IOException {
+	public void writeShip( OutputStream out, ShipState shipState, int headerAlpha ) throws IOException {
 		String shipBlueprintId = shipState.getShipBlueprintId();
 
 		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
@@ -556,6 +604,13 @@ public class SavedGameParser extends Parser {
 			writeStartingCrewMember( out, startingCrew );
 		}
 
+		if ( headerAlpha == 7 ) {
+			writeInt( out, shipState.getUnknownAlpha() );
+			writeInt( out, shipState.getJumpTicks() );
+			writeInt( out, shipState.getUnknownGamma() );
+			writeInt( out, shipState.getUnknownDelta() );
+		}
+
 		writeInt( out, shipState.getHullAmt() );
 		writeInt( out, shipState.getFuelAmt() );
 		writeInt( out, shipState.getDronePartsAmt() );
@@ -564,7 +619,7 @@ public class SavedGameParser extends Parser {
 
 		writeInt( out, shipState.getCrewList().size() );
 		for (CrewState crew : shipState.getCrewList()) {
-			writeCrewMember( out, crew );
+			writeCrewMember( out, crew, headerAlpha );
 		}
 
 		// System info is stored in this order.
@@ -581,6 +636,12 @@ public class SavedGameParser extends Parser {
 		systemTypes.add( SystemType.TELEPORTER );
 		systemTypes.add( SystemType.CLOAKING );
 		systemTypes.add( SystemType.ARTILLERY );
+		if ( headerAlpha == 7 ) {
+			systemTypes.add( SystemType.BATTERY );
+			systemTypes.add( SystemType.CLONEBAY );
+			systemTypes.add( SystemType.MIND );
+			systemTypes.add( SystemType.HACKING );
+		}
 
 		writeInt( out, shipState.getReservePowerCapacity() );
 
@@ -588,7 +649,7 @@ public class SavedGameParser extends Parser {
 			List<SystemState> systemList = shipState.getSystems( systemType );
 			if ( systemList.size() > 0 ) {
 				for ( SystemState systemState : systemList ) {
-					writeSystem( out, systemState );
+					writeSystem( out, systemState, headerAlpha );
 				}
 			}
 			else {
@@ -596,8 +657,53 @@ public class SavedGameParser extends Parser {
 			}
 		}
 
+		if ( headerAlpha == 7 ) {
+
+			List<ClonebayInfo> clonebayInfoList = shipState.getExtendedSystemInfoList( ClonebayInfo.class );
+			for ( ClonebayInfo clonebayInfo : clonebayInfoList ) {
+				writeInt( out, clonebayInfo.getBuildTicks() );
+				writeInt( out, clonebayInfo.getBuildTicksGoal() );
+				writeInt( out, clonebayInfo.getDoomTicks() );
+			}
+			List<BatteryInfo> batteryInfoList = shipState.getExtendedSystemInfoList( BatteryInfo.class );
+			for ( BatteryInfo batteryInfo : batteryInfoList ) {
+				writeBool( out, batteryInfo.isActive() );
+				writeInt( out, batteryInfo.getUsedPower() );
+				writeInt( out, batteryInfo.getDischargeTicks() );
+			}
+
+			List<ShieldsInfo> shieldsInfoList = shipState.getExtendedSystemInfoList( ShieldsInfo.class );
+			for ( ShieldsInfo shieldsInfo : shieldsInfoList ) {
+				writeInt( out, shieldsInfo.getShieldLayers() );
+				writeInt( out, shieldsInfo.getEnergyShieldLayers() );
+				writeInt( out, shieldsInfo.getEnergyShieldMax() );
+				writeInt( out, shieldsInfo.getShieldRechargeTicks() );
+
+				writeBool( out, shieldsInfo.isShieldDropAnimOn() );
+				writeInt( out, shieldsInfo.getShieldDropAnimTicks() );
+
+				writeBool( out, shieldsInfo.isShieldRaiseAnimOn() );
+				writeInt( out, shieldsInfo.getShieldRaiseAnimTicks() );
+
+				writeBool( out, shieldsInfo.isEnergyShieldAnimOn() );
+				writeInt( out, shieldsInfo.getEnergyShieldAnimTicks() );
+
+				writeInt( out, shieldsInfo.getUnknownLambda() );
+				writeInt( out, shieldsInfo.getUnknownMu() );
+			}
+
+			List<CloakingInfo> cloakingInfoList = shipState.getExtendedSystemInfoList( CloakingInfo.class );
+			for ( CloakingInfo cloakingInfo : cloakingInfoList ) {
+				writeInt( out, cloakingInfo.getUnknownAlpha() );
+				writeInt( out, cloakingInfo.getUnknownBeta() );
+				writeInt( out, cloakingInfo.getCloakTicksGoal() );
+
+				writeMinMaxedInt( out, cloakingInfo.getCloakTicks() );  // May be MIN_VALUE.
+			}
+    }
+
 		for (RoomState room : shipState.getRoomList()) {
-			writeRoom( out, room );
+			writeRoom( out, room, headerAlpha );
 		}
 
 		writeInt( out, shipState.getBreachMap().size() );
@@ -623,19 +729,26 @@ public class SavedGameParser extends Parser {
 				vacuumDoorMap.put( doorCoord, doorInfo );
 				continue;
 			}
-			writeDoor( out, shipDoorMap.get( doorCoord ) );
+			writeDoor( out, shipDoorMap.get( doorCoord ), headerAlpha );
 		}
 		for (Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet()) {
 			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 
-			writeDoor( out, shipDoorMap.get( doorCoord ) );
+			writeDoor( out, shipDoorMap.get( doorCoord ), headerAlpha );
+		}
+
+		if ( headerAlpha == 7 ) {
+			writeInt( out, shipState.getUnknownPhi() );
 		}
 
 		writeInt( out, shipState.getWeaponList().size() );
 		for (WeaponState weapon : shipState.getWeaponList()) {
 			writeString( out, weapon.getWeaponId() );
 			writeBool( out, weapon.isArmed() );
-			writeInt( out, weapon.getCooldownTicks() );
+
+			if ( headerAlpha == 2 ) {  // No longer used as of FTL 1.5.4.
+				writeInt( out, weapon.getCooldownTicks() );
+			}
 		}
 
 		writeInt( out, shipState.getDroneList().size() );
@@ -729,7 +842,7 @@ public class SavedGameParser extends Parser {
 		return crew;
 	}
 
-	public void writeCrewMember( OutputStream out, CrewState crew ) throws IOException {
+	public void writeCrewMember( OutputStream out, CrewState crew, int headerAlpha ) throws IOException {
 		writeString( out, crew.getName() );
 		writeString( out, crew.getRace() );
 		writeBool( out, crew.isEnemyBoardingDrone() );
@@ -739,6 +852,21 @@ public class SavedGameParser extends Parser {
 		writeInt( out, crew.getRoomId() );
 		writeInt( out, crew.getRoomSquare() );
 		writeBool( out, crew.isPlayerControlled() );
+
+		if ( headerAlpha == 7 ) {
+			writeInt( out, crew.getUnknownAlpha() );
+			writeInt( out, crew.getUnknownBeta() );
+
+			writeInt( out, crew.getSpriteTintIndeces().size() );
+			for ( Integer tintInt : crew.getSpriteTintIndeces() ) {
+				writeInt( out, tintInt.intValue() );
+			}
+
+			writeBool( out, crew.isMindControlled() );
+			writeInt( out, crew.getSavedRoomSquare() );
+			writeInt( out, crew.getSavedRoomId() );
+		}
+
 		writeInt( out, crew.getPilotSkill() );
 		writeInt( out, crew.getEngineSkill() );
 		writeInt( out, crew.getShieldSkill() );
@@ -751,6 +879,30 @@ public class SavedGameParser extends Parser {
 		writeInt( out, crew.getPilotedEvasions() );
 		writeInt( out, crew.getJumpsSurvived() );
 		writeInt( out, crew.getSkillMasteries() );
+
+		if ( headerAlpha == 7 ) {
+			writeInt( out, crew.getStunTicks() );
+			writeInt( out, crew.getUnknownTheta() );
+			writeInt( out, crew.getUnknownIota() );
+			writeInt( out, crew.getUnknownKappa() );
+			writeInt( out, crew.getUnknownLambda() );
+			writeInt( out, crew.getUnknownMu() );
+			writeInt( out, crew.getUnknownNu() );
+			writeInt( out, crew.getUnknownXi() );
+			writeInt( out, crew.getUnknownOmicron() );
+			writeInt( out, crew.getUnknownPi() );
+			writeInt( out, crew.getUnknownRho() );
+			writeInt( out, crew.getUnknownSigma() );
+			writeInt( out, crew.getUnknownTau() );
+			writeInt( out, crew.getUnknownUpsilon() );
+			writeInt( out, crew.getUnknownPhi() );
+
+			if ( "crystal".equals(crew.getRace()) ) {
+				writeInt( out, crew.getLockdownRechargeTicks() );
+				writeInt( out, crew.getLockdownRechargeGoal() );
+				writeInt( out, crew.getUnknownOmega() );
+			}
+		}
 	}
 
 	private SystemState readSystem( InputStream in, SystemType systemType, int headerAlpha ) throws IOException {
@@ -784,20 +936,26 @@ public class SavedGameParser extends Parser {
 		return system;
 	}
 
-	public void writeSystem( OutputStream out, SystemState system ) throws IOException {
+	public void writeSystem( OutputStream out, SystemState system, int headerAlpha ) throws IOException {
 		writeInt( out, system.getCapacity() );
 		if ( system.getCapacity() > 0 ) {
 			writeInt( out, system.getPower() );
 			writeInt( out, system.getDamagedBars() );
 			writeInt( out, system.getIonizedBars() );
 
-			if ( system.getDeionizationTicks() == Integer.MIN_VALUE )
-				writeInt( out, -2147483648 );
-			else
-				writeInt( out, system.getDeionizationTicks() );
+			writeMinMaxedInt( out, system.getDeionizationTicks() );  // May be MIN_VALUE.
 
 			writeInt( out, system.getRepairProgress() );
 			writeInt( out, system.getDamageProgress() );
+
+			if ( headerAlpha == 7 ) {
+				writeInt( out, system.getBatteryPower() );
+				writeInt( out, system.getHackLevel() );
+				writeBool( out, system.isHacked() );
+				writeInt( out, system.getTemporaryCapacityCap() );
+				writeInt( out, system.getTemporaryCapacityLoss() );
+				writeInt( out, system.getTemporaryCapacityDivisor() );
+			}
 		}
 	}
 
@@ -826,13 +984,18 @@ public class SavedGameParser extends Parser {
 		return room;
 	}
 
-	public void writeRoom( OutputStream out, RoomState room ) throws IOException {
+	public void writeRoom( OutputStream out, RoomState room, int headerAlpha ) throws IOException {
 		writeInt( out, room.getOxygen() );
 
 		for (SquareState square : room.getSquareList()) {
 			writeInt( out, square.getFireHealth() );
 			writeInt( out, square.getIgnitionProgress() );
 			writeInt( out, square.getUnknownGamma() );
+		}
+
+		if ( headerAlpha == 7 ) {
+			writeInt( out, room.getStationSquare() );
+			writeInt( out, room.getStationDirection() );
 		}
 	}
 
@@ -856,9 +1019,20 @@ public class SavedGameParser extends Parser {
 		return door;
 	}
 
-	public void writeDoor( OutputStream out, DoorState door ) throws IOException {
+	public void writeDoor( OutputStream out, DoorState door, int headerAlpha ) throws IOException {
+		if ( headerAlpha == 7 ) {
+			writeInt( out, door.getCurrentMaxHealth() );
+			writeInt( out, door.getHealth() );
+			writeInt( out, door.getNominalHealth() );
+		}
+
 		writeBool( out, door.isOpen() );
 		writeBool( out, door.isWalkingThrough() );
+
+		if ( headerAlpha == 7 ) {
+			writeInt( out, door.getUnknownDelta() );
+			writeInt( out, door.getUnknownEpsilon() );
+		}
 	}
 
 	private DroneState readDrone( InputStream in ) throws IOException {
@@ -887,17 +1061,10 @@ public class SavedGameParser extends Parser {
 	private BeaconState readBeacon( InputStream in, int headerAlpha ) throws IOException {
 		BeaconState beacon = new BeaconState();
 
-		int rawVisited = readInt(in);  // TODO: Decide on bool vs int.
-		boolean visited = false;
-		if ( rawVisited == 0 ) visited = false;
-		else if ( rawVisited == 1 ) visited = true;
-		else {
-			System.err.println( String.format("Warning: Substituting true for beacon's strange visited value: %d", rawVisited) );
-			visited = true;
-		}
-
+		// TODO: Visited looked like a bool until 1.5.4; the base beacon has "2" when visited.
+		int visited = readInt(in);
 		beacon.setVisited( visited );
-		if ( visited ) {
+		if ( visited > 0 ) {
 			beacon.setBgStarscapeImageInnerPath( readString(in) );
 			beacon.setBgSpriteImageInnerPath( readString(in) );
 			beacon.setBgSpritePosX( readInt(in) );
@@ -935,7 +1102,7 @@ public class SavedGameParser extends Parser {
 			StoreState store = new StoreState();
 
 			int shelfCount = 2;          // FTL 1.01-1.03.3 only had two shelves.
-			if ( headerAlpha == 7 ) {
+			if ( headerAlpha == 7 ) {    // FTL 1.5.4 made shelves into a list.
 				shelfCount = readInt(in);
 			}
 			for (int i=0; i < shelfCount; i++) {
@@ -952,9 +1119,10 @@ public class SavedGameParser extends Parser {
 		
 	}
 
-	public void writeBeacon( OutputStream out, BeaconState beacon ) throws IOException {
-		writeBool( out, beacon.isVisited() );
-		if ( beacon.isVisited() ) {
+	public void writeBeacon( OutputStream out, BeaconState beacon, int headerAlpha ) throws IOException {
+		// FTL 1.01-1.03.3 might only allow visited to be 0 or 1.
+		writeInt( out, beacon.getVisited() );
+		if ( beacon.getVisited() > 0 ) {
 			writeString( out, beacon.getBgStarscapeImageInnerPath() );
 			writeString( out, beacon.getBgSpriteImageInnerPath() );
 			writeInt( out, beacon.getBgSpritePosX() );
@@ -983,8 +1151,16 @@ public class SavedGameParser extends Parser {
 		writeBool( out, beacon.isStorePresent() );
 		if ( beacon.isStorePresent() ) {
 			StoreState store = beacon.getStore();
-			writeStoreShelf( out, store.getTopShelf() );
-			writeStoreShelf( out, store.getBottomShelf() );
+
+			int shelfCount = 2;
+			if ( headerAlpha == 7 ) {
+				shelfCount = store.getShelfList().size();
+				writeInt( out, shelfCount );
+			}
+			for (int i=0; i < shelfCount; i++) {
+				writeStoreShelf( out, store.getShelfList().get( i ) );
+			}
+
 			writeInt( out, store.getFuel() );
 			writeInt( out, store.getMissiles() );
 			writeInt( out, store.getDroneParts() );
@@ -1058,6 +1234,23 @@ public class SavedGameParser extends Parser {
 		encounter.setUnknownKappa( kappaList );
 
 		return encounter;
+	}
+
+	public void writeEncounter( OutputStream out, EncounterState encounter ) throws IOException {
+		writeInt( out, encounter.getShipEventSeed() );
+		writeString( out, encounter.getUnknownBeta() );
+		writeString( out, encounter.getUnknownGamma() );
+		writeString( out, encounter.getUnknownDelta() );
+		writeString( out, encounter.getUnknownEpsilon() );
+		writeString( out, encounter.getUnknownZeta() );
+		writeString( out, encounter.getUnknownEta() );
+		writeString( out, encounter.getText() );
+		writeInt( out, encounter.getUnknownIota() );
+
+		writeInt( out, encounter.getUnknownKappa().size() );
+		for ( Integer kappaInt : encounter.getUnknownKappa() ) {
+			writeInt( out, kappaInt.intValue() );
+		}
 	}
 
 	public RebelFlagshipState readRebelFlagship( InputStream in ) throws IOException {
@@ -1261,17 +1454,18 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Toggles FTL:AE content.
 		 *
-		 * This content was introduced in FTL 1.5.4.
-		 *
-		 * Note Bad things may happen if you change the value
+		 * Note: Bad things may happen if you change the value
 		 * from true to false, if this saved game depends on
 		 * AE resources.
+		 *
+		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setDLCEnabled( boolean b ) { dlcEnabled = b; }
 		public boolean isDLCEnabled() { return dlcEnabled; }
 
 		/**
 		 * Sets a state var.
+		 *
 		 * State vars are mostly used to test candidacy for achievements.
 		 *
 		 * See StateVar enums for known vars and descriptions.
@@ -1345,7 +1539,7 @@ public class SavedGameParser extends Parser {
 		 * sector to sector, but it's consistent while within
 		 * each sector. Except in The Last Stand, in which it is
 		 * always 200 (the warning circle will extend beyond
-		 * both edges of the map).
+		 * the righthand edge of the map, covering everything).
 		 */
 		public void setRebelFleetFudge( int n ) { rebelFleetFudge = n; }
 		public int getRebelFleetFudge() { return rebelFleetFudge; }
@@ -1505,8 +1699,6 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Sets info about the next encounter with the rebel flagship.
-		 *
-		 * Since FTL 1.5.4, this is no longer saved.
 		 */
 		public void setRebelFlagshipState( RebelFlagshipState flagshipState ) {
 			this.rebelFlagshipState = flagshipState;
@@ -1858,6 +2050,8 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Sets time elapsed while waiting for the FTL drive to charge.
 		 *
+		 * This counts to 85000.
+		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setJumpTicks( int n ) { jumpTicks = n; }
@@ -1890,6 +2084,16 @@ public class SavedGameParser extends Parser {
 
 		public void setExtendedSystemInfoList( List<ExtendedSystemInfo> iotaList ) { this.extendedSystemInfoList = extendedSystemInfoList; }
 		public List<ExtendedSystemInfo> getExtendedSystemInfoList() { return extendedSystemInfoList; }
+
+		public <T extends ExtendedSystemInfo> List<T> getExtendedSystemInfoList( Class<T> infoClass ) {
+			List<T> result = new ArrayList<T>( 1 );
+			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
+				if ( infoClass.isInstance(info) ) {
+					result.add( infoClass.cast(info) );
+				}
+			}
+			return result;
+		}
 
 
 		public void setUnknownPhi( int n ) { unknownPhi = n; }
@@ -3305,7 +3509,7 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static class BeaconState {
-		private boolean visited = false;
+		private int visited = 0;
 		private String bgStarscapeImageInnerPath = null;
 		private String bgSpriteImageInnerPath = null;
 		private int bgSpritePosX = -1, bgSpritePosY = -1;
@@ -3325,6 +3529,8 @@ public class SavedGameParser extends Parser {
 		private boolean storePresent = false;
 		private StoreState store = null;
 
+		// TODO: Make 'visited' an enum.
+
 		// Randomly generated events at unvisited beacons are not
 		// stored in the beacons themselves. They're tentatively
 		// placed on the sector map in-game, and any that would
@@ -3340,14 +3546,19 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Sets whether the player has been to this beacon.
 		 *
-		 * If true, starscape and sprite paths must be set,
+		 * If non-zero, starscape and sprite paths must be set,
 		 * as well as the sprite's X, Y, and rotation.
 		 *
-		 * When true, this prevents randomly generated events
+		 * When non-zero, this prevents randomly generated events
 		 * from triggering. The sector exit will still exist.
+		 *
+		 * Values:
+		 *   0 = Unvisited
+		 *   1 = Visited
+		 *   2 = ??? (Seen on the base beacon in sector 8 in FTL 1.5.4)
 		 */
-		public void setVisited( boolean b ) { visited = b; }
-		public boolean isVisited() { return visited; }
+		public void setVisited( int n ) { visited = n; }
+		public int getVisited() { return visited; }
 
 		/**
 		 * Sets a fullscreen starscape image for the background.
@@ -3469,8 +3680,8 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Visited:               %5b\n", visited));
-			if ( visited ) {
+			result.append(String.format("Visited:               %5d\n", visited));
+			if ( visited > 0 ) {
 				result.append(String.format("  Bkg Starscape:       %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("  Bkg Sprite:          %s\n", bgSpriteImageInnerPath));
 				result.append(String.format("  Bkg Sprite Position:   %3d,%3d\n", bgSpritePosX, bgSpritePosY));
@@ -3813,20 +4024,43 @@ public class SavedGameParser extends Parser {
 	public static class ClonebayInfo implements ExtendedSystemInfo {
 		private int buildTicks = 0;
 		private int buildTicksGoal = 0;
-		private int unknownGamma = 0;  // TODO: Doom ticks (Incrementing to 4000)?
+		private int doomTicks = 0;
 
 
 		public ClonebayInfo() {
 		}
 
+		/**
+		 * Sets elapsed time while building a clone.
+		 *
+		 * @param n a positive int less than, or equal to, the goal (0 when not engaged)
+		 *
+		 * @see #setBuildTicksGoal(int)
+		 */
 		public void setBuildTicks( int n ) { buildTicks = n; }
 		public int getBuildTicks() { return buildTicks; }
 
+
+		/**
+		 * Sets total time needed to finish building a clone.
+		 *
+		 * This can vary depending on the system level when the clonebay is
+		 * initially engaged. When not engaged, this value lingers.
+		 *
+		 * @see #setBuildTicks(int)
+		 */
 		public void setBuildTicksGoal( int n ) { buildTicksGoal = n; }
 		public int getBuildTicksGoal() { return buildTicksGoal; }
 
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public int getUnknownGamma() { return unknownGamma; }
+		/**
+		 * Sets elapsed time while there are dead crew and the clonebay is unpowered.
+		 *
+		 * This counts to 3000, at which point dead crew are lost.
+		 *
+		 * @param n 0-3000, or -1000
+		 */
+		public void setDoomTicks( int n ) { doomTicks = n; }
+		public int getDoomTicks() { return doomTicks; }
 
 		@Override
 		public String toString() {
@@ -3835,7 +4069,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("SystemId:                 %s\n", SystemType.CLONEBAY.toString()));
 			result.append(String.format("Build Ticks:            %7d (For the roster's topmost dead crew)\n", buildTicks));
 			result.append(String.format("Build Ticks Goal:       %7d\n", buildTicksGoal));
-			result.append(String.format("Gamma?:                 %7d\n", unknownGamma));
+			result.append(String.format("DoomTicks:              %7d (If unpowered, dead crew are lost at 3000)\n", doomTicks));
 
 			return result.toString();
 		}
@@ -4337,25 +4571,41 @@ public class SavedGameParser extends Parser {
 		public void setUnknownAlpha( List<Integer> alphaList ) { unknownAlpha = alphaList; }
 		public void setUnknownBeta( List<Integer> betaList ) { unknownBeta = betaList; }
 
+		public List<Integer> getUnknownAlpha() { return unknownAlpha; }
+		public List<Integer> getUnknownBeta() { return unknownBeta; }
+
 		public void setUnknownEnyo( UnknownEnyo enyo ) { unknownEnyo = enyo; }
+		public UnknownEnyo getUnknownEnyo() { return unknownEnyo; }
 
 		public void setUnknownDelta( List<Integer> deltaList ) { unknownDelta = deltaList; }
+		public List<Integer> getUnknownDelta() { return unknownDelta; }
 
 		public void setHekaergeList( List<UnknownHekaerge> hekaergeList ) { this.hekaergeList = hekaergeList; }
+		public List<UnknownHekaerge> getHekaergeList() { return hekaergeList; }
 
 		public void setPlayerHephaestus( UnknownHephaestus hephaestus ) { playerHephaestus = hephaestus; }
+		public UnknownHephaestus getPlayerHephaestus() { return playerHephaestus; }
 
 		public void setNearbyHephaestus( UnknownHephaestus hephaestus ) { nearbyHephaestus = hephaestus; }
+		public UnknownHephaestus getNearbyHephaestus() { return nearbyHephaestus; }
 
 		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
 		public void setUnknownZeta( Integer zeta ) { unknownZeta = zeta; }
 
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+		public Integer getUnknownZeta() { return unknownZeta; }
+
 		public void setAutofire( boolean b ) { autofire = b; }
+		public boolean getAutofire() { return autofire; }
 
 		public void setUnknownEta( int n ) { unknownEta = n; }
+		public int getUnknownEta() { return unknownEta; }
 
 		public void setUnknownIota( int n ) { unknownIota = n; }
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
+
+		public int getUnknownIota() { return unknownIota; }
+		public int getUnknownKappa() { return unknownKappa; }
 
 
 		private String prettyInt( int n ) {
@@ -4375,20 +4625,32 @@ public class SavedGameParser extends Parser {
 			result.append("(Numbers in greek lists are not necessarily related. Just conserving letters.)\n");
 
 			result.append("\nAlpha?...\n");
-			first = true;
-			for ( Integer alphaInt : unknownAlpha ) {
-				if (first) { first = false; }
-				else { result.append(", "); }
+			for (int i=0; i < unknownAlpha.size(); i++) {
+				Integer alphaInt = unknownAlpha.get( i );
 				result.append(String.format("%7d", alphaInt.intValue()));
+
+				if ( i != unknownAlpha.size()-1 ) {
+					if ( i % 3 == 2 ) {
+						result.append(",\n");
+					} else {
+						result.append(", ");
+					}
+				}
 			}
 			result.append("\n");
 
 			result.append("\nBeta?...\n");
-			first = true;
-			for ( Integer betaInt : unknownBeta ) {
-				if (first) { first = false; }
-				else { result.append(", "); }
+			for (int i=0; i < unknownBeta.size(); i++) {
+				Integer betaInt = unknownBeta.get( i );
 				result.append(String.format("%7d", betaInt.intValue()));
+
+				if ( i != unknownBeta.size()-1 ) {
+					if ( i % 3 == 2 ) {
+						result.append(",\n");
+					} else {
+						result.append(", ");
+					}
+				}
 			}
 			result.append("\n");
 
@@ -4397,11 +4659,17 @@ public class SavedGameParser extends Parser {
 				result.append(unknownEnyo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nDelta?...\n");
-			first = true;
-			for ( Integer deltaInt : unknownDelta ) {
-				if (first) { first = false; }
-				else { result.append(", "); }
+			for (int i=0; i < unknownDelta.size(); i++) {
+				Integer deltaInt = unknownDelta.get( i );
 				result.append(String.format("%7d", deltaInt.intValue()));
+
+				if ( i != unknownDelta.size()-1 ) {
+					if ( i % 3 == 2 ) {
+						result.append(",\n");
+					} else {
+						result.append(", ");
+					}
+				}
 			}
 			result.append("\n");
 
@@ -4446,6 +4714,7 @@ public class SavedGameParser extends Parser {
 		}
 
 		public void setUnknownAlpha( int index, int n ) { unknownAlpha[index] = n; }
+		public int[] getUnknownAlpha() { return unknownAlpha; }
 
 
 		private String prettyInt( int n ) {
@@ -4493,12 +4762,26 @@ public class SavedGameParser extends Parser {
 		public void setExtendedSystemInfoList( List<ExtendedSystemInfo> iotaList ) { this.extendedSystemInfoList = extendedSystemInfoList; }
 		public List<ExtendedSystemInfo> getExtendedSystemInfoList() { return extendedSystemInfoList; }
 
+		public <T extends ExtendedSystemInfo> List<T> getExtendedSystemInfoList( Class<T> infoClass ) {
+			List<T> result = new ArrayList<T>( 1 );
+			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
+				if ( infoClass.isInstance(info) ) {
+					result.add( infoClass.cast(info) );
+				}
+			}
+			return result;
+		}
+
 
 		public void setPolemosList( List<UnknownPolemos> polemosList ) { this.polemosList = polemosList; }
+		public List<UnknownPolemos> getPolemosList() { return polemosList; }
 
 		public void setAthenaList( List<UnknownAthena> athenaList ) { this.athenaList = athenaList; }
+		public List<UnknownAthena> getAthenaList() { return athenaList; }
 
 		public void setEnyaliusList( List<UnknownEnyalius> enyaliusList ) { this.enyaliusList = enyaliusList; }
+		public List<UnknownEnyalius> getEnyaliusList() { return enyaliusList; }
+
 
 		@Override
 		public String toString() {
@@ -4628,19 +4911,36 @@ public class SavedGameParser extends Parser {
 		public void setUnknownBeta( int index, int n ) { unknownBeta[index] = n; }
 		public void setUnknownGamma( int index, int n ) { unknownGamma[index] = n; }
 
+		public int[] getUnknownAlpha() { return unknownAlpha; }
+		public int[] getUnknownBeta() { return unknownBeta; }
+		public int[] getUnknownGamma() { return unknownGamma; }
+
 		public void setExplosionAnimId( String s ) { explosionAnimId = s; }
 		public void setProjectileAnimId( String s ) { projectileAnimId = s; }
+
+		public String getExplosionAnimId() {return explosionAnimId; }
+		public String getProjectileAnimId() {return projectileAnimId; }
 
 		public void setUnknownDelta( int index, int n ) { unknownDelta[index] = n; }
 		public void setUnknownEpsilon( int index, int n ) { unknownEpsilon[index] = n; }
 		public void setUnknownZeta( int index, int n ) { unknownZeta[index] = n; }
+
+		public int[] getUnknownDelta() { return unknownDelta; }
+		public int[] getUnknownEpsilon() { return unknownEpsilon; }
+		public int[] getUnknownZeta() { return unknownZeta; }
 
 		public void setHitHullSound( String s ) { hitHullSound = s; }
 		public void setHitShieldSound( String s ) { hitShieldSound = s; }
 		public void setMissSound( String s ) { missSound = s; }
 		public void setUnknownEta( int n ) { unknownEta = n; }
 
+		public String getHitHullSound() {return hitHullSound; }
+		public String getHitShieldSound() {return hitShieldSound; }
+		public String getMissSound() {return missSound; }
+		public int getUnknownEta() { return unknownEta; }
+
 		public void setUnknownTheta( List<Integer> thetaList ) { unknownTheta = thetaList; }
+		public List<Integer> getUnknownTheta() { return unknownTheta; }
 
 
 		private String prettyInt( int n ) {
@@ -4766,12 +5066,23 @@ public class SavedGameParser extends Parser {
 		}
 
 		public void setDroneType( DroneType droneType ) { this.droneType = droneType; }
+		public DroneType getDroneType() { return droneType; }
+
 		public void setUnknownAlpha( int index, int n ) { unknownAlpha[index] = n; }
 		public void setUnknownBeta( int index, int n ) { unknownBeta[index] = n; }
 		public void setUnknownGamma( int index, int n ) { unknownGamma[index] = n; }
 		public void setUnknownDelta( int index, int n ) { unknownDelta[index] = n; }
+
+		public int[] getUnknownAlpha() { return unknownAlpha; }
+		public int[] getUnknownBeta() { return unknownBeta; }
+		public int[] getUnknownGamma() { return unknownGamma; }
+		public int[] getUnknownDelta() { return unknownDelta; }
+
 		public void setUnknownEpsilon( List<Integer> epsilonList ) { unknownEpsilon = epsilonList; }
 		public void setUnknownZeta( List<Integer> zetaList ) { unknownZeta = zetaList; }
+
+		public List<Integer> getUnknownEpsilon() { return unknownEpsilon; }
+		public List<Integer> getUnknownZeta() { return unknownZeta; }
 
 
 		private String prettyInt( int n ) {
@@ -4860,7 +5171,16 @@ public class SavedGameParser extends Parser {
 
 		public void setUnknownAlpha( boolean b ) { unknownAlpha = b; }
 		public void setUnknownBeta( boolean b ) { unknownBeta = b; }
+
+		public boolean getUnknownAlpha() { return unknownAlpha; }
+		public boolean getUnknownBeta() { return unknownBeta; }
+
+		/**
+		 * Sets extended drone info, which varies by DroneType (even null sometimes).
+		 */
 		public void setUnknownAres( UnknownAres ares ) { unknownAres = ares; }
+		public UnknownAres getUnknownAres() { return unknownAres; }
+
 
 		@Override
 		public String toString() {
@@ -4896,10 +5216,19 @@ public class SavedGameParser extends Parser {
 		}
 
 		public void setDroneId( String s ) { droneId = s; }
+		public String getDroneId() { return droneId; }
+
 		public void setUnknownAres( UnknownAres ares ) { unknownAres = ares; }
+		public UnknownAres getUnknownAres() { return unknownAres; }
+
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public void setUnknownBeta( int n ) { unknownBeta = n; }
 		public void setUnknownGamma( int n ) { unknownGamma = n; }
+
+		public int getUnknownAlpha() { return unknownAlpha; }
+		public int getUnknownBeta() { return unknownBeta; }
+		public int getUnknownGamma() { return unknownGamma; }
+
 
 		@Override
 		public String toString() {
@@ -4929,7 +5258,7 @@ public class SavedGameParser extends Parser {
 		private int unknownBeta = 0;     // Goal cooldown time. Resembles WeaponBlueprint's value, and other factors?
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
-		private int unknownEpsilon = 0;  // Possibly a boost count (Chain Laser +X).
+		private int boost = 0;
 		private int charge = 0;
 
 		// These two lists hold identical values, often in duplicate.
@@ -4962,13 +5291,23 @@ public class SavedGameParser extends Parser {
 		public void setUnknownBeta( int n ) { unknownBeta = n; }
 		public void setUnknownGamma( int n ) { unknownGamma = n; }
 		public void setUnknownDelta( int n ) { unknownDelta = n; }
-		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
 
 		public int getUnknownAlpha() { return unknownAlpha; }
 		public int getUnknownBeta() { return unknownBeta; }
 		public int getUnknownGamma() { return unknownGamma; }
 		public int getUnknownDelta() { return unknownDelta; }
-		public int getUnknownEpsilon() { return unknownEpsilon; }
+
+		/**
+		 * Sets the boost level on a weapon whose cooldown decreases with
+		 * consecutive shots.
+		 *
+		 * This is represented in-game as "Name +X".
+		 * Example: LASER_CHAINGUN.
+		 *
+		 * @param number of consecutive shots, up to the blueprint's boost count limit, or 0
+		 */
+		public void setBoost( int n ) { boost = n; }
+		public int getBoost() { return boost; }
 
 		/**
 		 * Sets the number of charges on a charge weapon, or 0.
@@ -5030,7 +5369,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("Beta?:             %3d\n", unknownBeta));
 			result.append(String.format("Gamma?:            %3d\n", unknownGamma));
 			result.append(String.format("Delta?:            %3d\n", unknownDelta));
-			result.append(String.format("Epsilon?:          %3d\n", unknownEpsilon));
+			result.append(String.format("Boost:             %3d\n", boost));
 			result.append(String.format("Charge:            %3d\n", charge));
 
 			result.append("\nEta?... (Reticle Coords?)\n");
@@ -5121,14 +5460,27 @@ public class SavedGameParser extends Parser {
 		return n;
 	}
 
+	private void writeMinMaxedInt( OutputStream out, int n ) throws IOException {
+		if ( n == Integer.MIN_VALUE ) {
+			n = -2147483648;
+		}
+		else if ( n == Integer.MAX_VALUE ) {
+			n = 2147483647;
+		}
+
+		writeInt( out, n );
+	}
+
 
 	private UnknownZeus readZeus( FileInputStream in, SavedGameState gameState ) throws IOException {
 System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 		UnknownZeus zeus = new UnknownZeus();
 
 		long fileSize = in.getChannel().size();
-		int weirdNumber;
 
+		// TODO: Awful kludge.
+
+		int weirdNumber;
 		List<Integer> alphaList = new ArrayList<Integer>();
 		List<Integer> betaList = new ArrayList<Integer>();
 
@@ -5147,7 +5499,9 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 			List<Integer> deltaList = new ArrayList<Integer>();
 			int deltaCount = 5;
 			for (int i=0; i < deltaCount; i++) {
-				deltaList.add( new Integer(readInt(in)) );
+				int n = readInt(in);
+				if ( i == 1 && n == 1 ) deltaCount = 5+5;  // TODO: Dubious cue for asteroid chunk.
+				deltaList.add( new Integer(n) );
 			}
 			zeus.setUnknownDelta( deltaList );
 		}
@@ -5200,6 +5554,61 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 		return zeus;
 	}
 
+	public void writeZeus( OutputStream out, SavedGameState gameState, UnknownZeus zeus ) throws IOException {
+		// TODO: Awful kludge.
+
+		if ( zeus.getUnknownAlpha().size() > 0 ) {
+			for ( Integer alphaInt : zeus.getUnknownAlpha() ) {
+				writeInt( out, alphaInt.intValue() );
+			}
+
+			if ( gameState.getNearbyShipState() != null ) {
+				writeEnyo( out, zeus.getUnknownEnyo() );
+			}
+
+			for ( Integer deltaInt : zeus.getUnknownDelta() ) {
+				writeInt( out, deltaInt.intValue() );
+			}
+		}
+		else {
+			for ( Integer betaInt : zeus.getUnknownBeta() ) {
+				writeInt( out, betaInt.intValue() );
+			}
+		}
+
+		writeInt( out, zeus.getHekaergeList().size() );
+		for ( UnknownHekaerge hekaerge : zeus.getHekaergeList() ) {
+			writeHekaerge( out, hekaerge );
+		}
+
+		writeHephaestus( out, zeus.getPlayerHephaestus(), gameState.getPlayerShipState() );
+
+		if ( gameState.getNearbyShipState() != null ) {
+			writeHephaestus( out, zeus.getNearbyHephaestus(), gameState.getNearbyShipState() );
+		}
+
+		writeInt( out, zeus.getUnknownEpsilon() );
+
+		if ( gameState.getNearbyShipState() != null ) {
+			writeInt( out, zeus.getUnknownZeta().intValue() );
+		}
+
+		writeBool( out, zeus.getAutofire() );
+
+		RebelFlagshipState flagship = gameState.getRebelFlagshipState();
+
+		writeInt( out, zeus.getUnknownEta() );
+		writeInt( out, flagship.getPendingStage() );
+		writeInt( out, zeus.getUnknownIota() );
+		writeInt( out, zeus.getUnknownKappa() );
+
+		writeInt( out, flagship.getOccupancyMap().size() );
+		for (Map.Entry<Integer, Integer> entry : flagship.getOccupancyMap().entrySet()) {
+			int occupantCount = entry.getValue().intValue();
+			writeInt( out, occupantCount );
+		}
+	}
+
 	private UnknownEnyo readEnyo( FileInputStream in ) throws IOException {
 System.err.println(String.format("Enyo: @%d", in.getChannel().position()));
 		UnknownEnyo enyo = new UnknownEnyo();
@@ -5209,6 +5618,12 @@ System.err.println(String.format("Enyo: @%d", in.getChannel().position()));
 		}
 
 		return enyo;
+	}
+
+	public void writeEnyo( OutputStream out, UnknownEnyo enyo ) throws IOException {
+		for ( int n : enyo.getUnknownAlpha() ) {
+			writeInt( out, n );
+		}
 	}
 
 	private UnknownHekaerge readHekaerge( FileInputStream in ) throws IOException {
@@ -5254,6 +5669,44 @@ System.err.println(String.format("Hekaerge: @%d", in.getChannel().position()));
 		hekaerge.setUnknownTheta( thetaList );
 
 		return hekaerge;
+	}
+
+	public void writeHekaerge( OutputStream out, UnknownHekaerge hekaerge ) throws IOException {
+		for ( int n : hekaerge.getUnknownAlpha() ) {
+			writeInt( out, n );
+		}
+
+		for ( int n : hekaerge.getUnknownBeta() ) {
+			writeInt( out, n );
+		}
+
+		for ( int n : hekaerge.getUnknownGamma() ) {
+			writeInt( out, n );
+		}
+
+		writeString( out, hekaerge.getExplosionAnimId() );
+		writeString( out, hekaerge.getProjectileAnimId() );
+
+		for ( int n : hekaerge.getUnknownDelta() ) {
+			writeInt( out, n );
+		}
+
+		for ( int n : hekaerge.getUnknownEpsilon() ) {
+			writeInt( out, n );
+		}
+
+		for ( int n : hekaerge.getUnknownZeta() ) {
+			writeInt( out, n );
+		}
+
+		writeString( out, hekaerge.getHitHullSound() );
+		writeString( out, hekaerge.getHitShieldSound() );
+		writeString( out, hekaerge.getMissSound() );
+		writeInt( out, hekaerge.getUnknownEta() );
+
+		for ( Integer thetaInt : hekaerge.getUnknownTheta() ) {
+			writeInt( out, thetaInt.intValue() );
+		}
 	}
 
 	private UnknownHephaestus readHephaestus( FileInputStream in, ShipState shipState ) throws IOException {
@@ -5345,18 +5798,11 @@ System.err.println(String.format("Hephaestus: @%d", in.getChannel().position()))
 			hephaestus.setAthenaList( athenaList );
 		}
 
-		// TODO: Get ALL artillery rooms' SystemStates from the ShipState.
-		SystemState artilleryState = shipState.getSystem( SystemType.ARTILLERY );
-		if ( artilleryState != null && artilleryState.getCapacity() > 0 ) {
-			String shipBlueprintId = shipState.getShipBlueprintId();
+		// Get ALL artillery rooms' SystemStates from the ShipState.
+		List<SystemState> artilleryStateList = shipState.getSystems( SystemType.ARTILLERY );
+		for ( SystemState artilleryState : artilleryStateList ) {
 
-			ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
-			if ( shipBlueprint == null )
-				throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
-
-			ShipBlueprint.SystemList.SystemRoom[] rooms = shipBlueprint.getSystemList().getSystemRoom( SystemType.ARTILLERY );
-
-			for (int i=0; i < rooms.length; i++) {
+			if ( artilleryState.getCapacity() > 0 ) {
 				ArtilleryInfo artilleryInfo = new ArtilleryInfo();
 
 				artilleryInfo.setUnknownAthena( readAthena(in) );
@@ -5392,6 +5838,80 @@ System.err.println(String.format("Hephaestus: @%d", in.getChannel().position()))
 		hephaestus.setEnyaliusList( enyaliusList );
 
 		return hephaestus;
+	}
+
+	public void writeHephaestus( OutputStream out, UnknownHephaestus hephaestus, ShipState shipState ) throws IOException {
+		// There is no explicit list count for drones.
+		for ( UnknownPolemos polemos : hephaestus.getPolemosList() ) {
+			writeBool( out, polemos.getUnknownAlpha() );
+			writeBool( out, polemos.getUnknownBeta() );
+
+			if ( polemos.getUnknownAres() != null ) {
+				writeAres( out, polemos.getUnknownAres() );
+			}
+		}
+
+		SystemState hackingState = shipState.getSystem( SystemType.HACKING );
+		if ( hackingState != null && hackingState.getCapacity() > 0 ) {
+			// TODO: Compare system room count with extended info count.
+
+			List<HackingInfo> hackingInfoList = hephaestus.getExtendedSystemInfoList( HackingInfo.class );
+			for ( HackingInfo hackingInfo : hackingInfoList ) {
+				writeInt( out, hackingInfo.getUnknownAlpha() );
+				writeInt( out, hackingInfo.getUnknownBeta() );
+				writeInt( out, hackingInfo.getUnknownGamma() );
+				writeInt( out, hackingInfo.getUnknownDelta() );
+
+				writeInt( out, hackingInfo.getDisruptionTicks() );
+				writeInt( out, hackingInfo.getDisruptionTicksGoal() );
+
+				writeInt( out, hackingInfo.getUnknownTheta() );
+
+				writeAres( out, hackingInfo.getUnknownAres() );
+
+				for ( Integer iotaInt : hackingInfo.getUnknownIota() ) {
+					writeInt( out, iotaInt.intValue() );
+				}
+
+				for ( Integer kappaInt : hackingInfo.getUnknownKappa() ) {
+					writeInt( out, kappaInt.intValue() );
+				}
+
+				writeInt( out, hackingInfo.getUnknownLambda() );
+				writeInt( out, hackingInfo.getUnknownMu() );
+			}
+		}
+
+		List<MindInfo> mindInfoList = hephaestus.getExtendedSystemInfoList( MindInfo.class );
+		for ( MindInfo mindInfo : mindInfoList ) {
+			writeInt( out, mindInfo.getMindControlTicks() );
+			writeInt( out, mindInfo.getMindControlTicksGoal() );
+		}
+
+		// If there's a Weapons system, write the weapon Athenas (even if there are 0 of them).
+		SystemState weaponsState = shipState.getSystem( SystemType.WEAPONS );
+		if ( weaponsState != null && weaponsState.getCapacity() > 0 ) {
+			writeInt( out, hephaestus.getAthenaList().size() );
+			for ( UnknownAthena athena : hephaestus.getAthenaList() ) {
+				writeAthena( out, athena );
+			}
+		}
+
+		List<ArtilleryInfo> artilleryInfoList = hephaestus.getExtendedSystemInfoList( ArtilleryInfo.class );
+		for ( ArtilleryInfo artilleryInfo : artilleryInfoList ) {
+			writeAthena( out, artilleryInfo.getUnknownAthena() );
+		}
+
+		writeInt( out, hephaestus.getEnyaliusList().size() );
+		for ( UnknownEnyalius enyalius : hephaestus.getEnyaliusList() ) {
+			writeString( out, enyalius.getDroneId() );
+
+			writeAres( out, enyalius.getUnknownAres() );
+
+			writeInt( out, enyalius.getUnknownAlpha() );
+			writeInt( out, enyalius.getUnknownBeta() );
+			writeInt( out, enyalius.getUnknownGamma() );
+		}
 	}
 
 	private UnknownAres readAres( FileInputStream in, DroneType droneType ) throws IOException {
@@ -5458,7 +5978,31 @@ System.err.println(String.format("Ares: @%d", in.getChannel().position()));
 		return ares;
 	}
 
+	public void writeAres( OutputStream out, UnknownAres ares ) throws IOException {
+		for ( int n : ares.getUnknownAlpha() ) {
+			writeInt( out, n );
+		}
 
+		for ( int n : ares.getUnknownBeta() ) {
+			writeInt( out, n );
+		}
+
+		for ( int n : ares.getUnknownGamma() ) {
+			writeInt( out, n );
+		}
+
+		for ( int n : ares.getUnknownDelta() ) {
+			writeInt( out, n );
+		}
+
+		for ( Integer epsilonInt : ares.getUnknownEpsilon() ) {
+			writeInt( out, epsilonInt.intValue() );
+		}
+
+		for ( Integer zetaInt : ares.getUnknownZeta() ) {
+			writeInt( out, zetaInt.intValue() );
+		}
+	}
 
 	private UnknownAthena readAthena( FileInputStream in ) throws IOException {
 System.err.println(String.format("Athena: @%d", in.getChannel().position()));
@@ -5468,7 +6012,7 @@ System.err.println(String.format("Athena: @%d", in.getChannel().position()));
 		athena.setUnknownBeta( readInt(in) );
 		athena.setUnknownGamma( readInt(in) );
 		athena.setUnknownDelta( readInt(in) );
-		athena.setUnknownEpsilon( readInt(in) );
+		athena.setBoost( readInt(in) );
 		athena.setCharge( readInt(in) );
 
 		int etaCount = readInt(in);
@@ -5510,6 +6054,45 @@ System.err.println(String.format("Athena: @%d", in.getChannel().position()));
 		return athena;
 	}
 
+	public void writeAthena( OutputStream out, UnknownAthena athena ) throws IOException {
+		writeInt( out, athena.getUnknownAlpha() );
+		writeInt( out, athena.getUnknownBeta() );
+		writeInt( out, athena.getUnknownGamma() );
+		writeInt( out, athena.getUnknownDelta() );
+		writeInt( out, athena.getBoost() );
+		writeInt( out, athena.getCharge() );
+
+		writeInt( out, athena.getUnknownEta().size() );
+		for ( UnknownEulabeia eulabeia : athena.getUnknownEta() ) {
+			writeEulabeia( out, eulabeia );
+		}
+
+		writeInt( out, athena.getUnknownTheta().size() );
+		for ( UnknownEulabeia eulabeia : athena.getUnknownTheta() ) {
+			writeEulabeia( out, eulabeia );
+		}
+
+		writeInt( out, athena.getUnknownIota() );
+		writeInt( out, athena.getUnknownKappa() );
+		writeInt( out, athena.getUnknownLambda() );
+		writeInt( out, athena.getUnknownMu() );
+		writeInt( out, athena.getUnknownNu() );
+		writeInt( out, athena.getUnknownXi() );
+		writeInt( out, athena.getUnknownOmicron() );
+		writeInt( out, athena.getUnknownPi() );
+		writeInt( out, athena.getUnknownRho() );
+		writeInt( out, athena.getUnknownSigma() );
+		writeInt( out, athena.getUnknownTau() );
+		writeInt( out, athena.getUnknownUpsilon() );
+		writeInt( out, athena.getUnknownPhi() );
+		writeInt( out, athena.getUnknownChi() );
+
+		writeInt( out, athena.getPendingProjectiles().size() );
+		for ( UnknownHekaerge hekaerge : athena.getPendingProjectiles() ) {
+			writeHekaerge( out, hekaerge );
+		}
+	}
+
 	private UnknownEulabeia readEulabeia( FileInputStream in ) throws IOException {
 		UnknownEulabeia eulabeia = new UnknownEulabeia();
 
@@ -5517,5 +6100,10 @@ System.err.println(String.format("Athena: @%d", in.getChannel().position()));
 		eulabeia.setUnknownBeta( readInt(in) );
 
 		return eulabeia;
+	}
+
+	public void writeEulabeia( OutputStream out, UnknownEulabeia eulabeia ) throws IOException {
+		writeInt( out, eulabeia.getUnknownAlpha() );
+		writeInt( out, eulabeia.getUnknownBeta() );
 	}
 }

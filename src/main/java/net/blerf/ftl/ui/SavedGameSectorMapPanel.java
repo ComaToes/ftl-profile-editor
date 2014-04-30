@@ -416,7 +416,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		// Reset Beacon states.
 		for ( SavedGameParser.BeaconState beaconState : beaconStateList ) {
-			beaconState.setVisited( false );
+			beaconState.setVisited( 0 );
 			beaconState.setBgStarscapeImageInnerPath( null );
 			beaconState.setBgSpriteImageInnerPath( null );
 			beaconState.setBgSpritePosX( -1 );
@@ -440,8 +440,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 			if ( beaconId > 0 && beaconId < beaconStateList.size() ) {
 				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
 
-				if ( beaconSprite.isVisited() ) {
-					beaconState.setVisited( true );
+				if ( beaconSprite.getVisited() > 0 ) {
+					beaconState.setVisited( beaconSprite.getVisited() );
 					beaconState.setBgStarscapeImageInnerPath( beaconSprite.getBgStarscapeImageInnerPath() );
 					beaconState.setBgSpriteImageInnerPath( beaconSprite.getBgSpriteImageInnerPath() );
 					beaconState.setBgSpritePosX( beaconSprite.getBgSpritePosX() );
@@ -896,9 +896,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		String title = String.format( "Beacon %02d", mapLayout.getBeaconId(beaconSprite) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
-		editorPanel.addRow( VISITED, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(VISITED).setSelected( beaconSprite.isVisited() );
-		editorPanel.getBoolean(VISITED).addMouseListener( new StatusbarMouseListener(frame, "The player has been here. Random events won't occur. (All nearby fields need values.)") );
+		editorPanel.addRow( VISITED, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.getCombo(VISITED).addMouseListener( new StatusbarMouseListener(frame, "The player has been here. Random events won't occur. (All nearby fields need values.)") );
 		editorPanel.addRow( STARS_LIST, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(STARS_LIST).setEnabled( false );
 		editorPanel.getCombo(STARS_LIST).addMouseListener( new StatusbarMouseListener(frame, "An image list from which to choose a background starscape. (BG_*)") );
@@ -948,6 +947,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconSprite.isUnderAttack() );
 		editorPanel.getBoolean(UNDER_ATTACK).addMouseListener( new StatusbarMouseListener(frame, "The beacon is under attack by rebels (flashing red).") );
 
+		editorPanel.getCombo(VISITED).addItem( "0 (Unvisited)" );
+		editorPanel.getCombo(VISITED).addItem( "1 (Visited)" );
+		editorPanel.getCombo(VISITED).addItem( "2 (???)" );
+		editorPanel.getCombo(VISITED).setSelectedIndex( 0 );
+
 		editorPanel.getCombo(STARS_LIST).addItem( "" );
 		editorPanel.getCombo(SPRITE_LIST).addItem( "" );
 		editorPanel.getCombo(STARS_IMAGE).addItem( "" );
@@ -962,7 +966,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			editorPanel.getCombo(SHIP_EVENT).addItem( shipEvent );
 		}
 
-		if ( beaconSprite.isVisited() ) {
+		if ( beaconSprite.getVisited() > 0 ) {
 			editorPanel.getCombo(STARS_LIST).setEnabled( true );
 			editorPanel.getCombo(STARS_IMAGE).setEnabled( true );
 			editorPanel.getCombo(SPRITE_LIST).setEnabled( true );
@@ -971,7 +975,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			editorPanel.getInt(SPRITE_Y).setEnabled( true );
 			editorPanel.getInt(SPRITE_ROT).setEnabled( true );
 
-			editorPanel.getBoolean(VISITED).setSelected( true );
+			editorPanel.getCombo(VISITED).setSelectedIndex( beaconSprite.getVisited() );
 
 			editorPanel.getCombo(STARS_IMAGE).addItem( beaconSprite.getBgStarscapeImageInnerPath() );
 			editorPanel.getCombo(STARS_IMAGE).setSelectedItem( beaconSprite.getBgStarscapeImageInnerPath() );
@@ -1016,7 +1020,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				int bgSpritePosX = 0;
 				int bgSpritePosY = 0;
 				int bgSpriteRotation = 0;
-				boolean visited = editorPanel.getBoolean(VISITED).isSelected();
+				int visited = editorPanel.getCombo(VISITED).getSelectedIndex();
 
 				Object bgStarscapeImageInnerPathObj = editorPanel.getCombo(STARS_IMAGE).getSelectedItem();
 				if ( bgStarscapeImageInnerPathObj instanceof BackgroundImage ) {
@@ -1054,15 +1058,15 @@ public class SavedGameSectorMapPanel extends JPanel {
 					bgSpriteRotation = 0;
 				}
 
-				if ( visited && bgStarscapeImageInnerPath != null && bgSpriteImageInnerPath != null ) {
-					beaconSprite.setVisited( true );
+				if ( visited > 0 && bgStarscapeImageInnerPath != null && bgSpriteImageInnerPath != null ) {
+					beaconSprite.setVisited( visited );
 					beaconSprite.setBgStarscapeImageInnerPath( bgStarscapeImageInnerPath );
 					beaconSprite.setBgSpriteImageInnerPath( bgSpriteImageInnerPath );
 					beaconSprite.setBgSpritePosX( bgSpritePosX );
 					beaconSprite.setBgSpritePosY( bgSpritePosY );
 					beaconSprite.setBgSpriteRotation( bgSpriteRotation );
 				} else {
-					beaconSprite.setVisited( false );
+					beaconSprite.setVisited( visited );
 					beaconSprite.setBgStarscapeImageInnerPath( null );
 					beaconSprite.setBgSpriteImageInnerPath( null );
 					beaconSprite.setBgSpritePosX( -1 );
@@ -1110,7 +1114,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		createSidePanel( title, editorPanel, applyCallback );
 
 		ActionListener beaconListener = new ActionListener() {
-			private JCheckBox visitedCheck = editorPanel.getBoolean(VISITED);
+			private JComboBox visitedCombo = editorPanel.getCombo(VISITED);
 			private JComboBox starsListCombo = editorPanel.getCombo(STARS_LIST);
 			private JComboBox starsImageCombo = editorPanel.getCombo(STARS_IMAGE);
 			private JComboBox spriteListCombo = editorPanel.getCombo(SPRITE_LIST);
@@ -1127,9 +1131,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				Object source = e.getSource();
 				boolean resize = false;
-				if ( source == visitedCheck ) {
-					boolean visited = visitedCheck.isSelected();
-					if ( !visited ) {
+				if ( source == visitedCombo ) {
+					int visited = visitedCombo.getSelectedIndex();
+					if ( visited == 0 ) {
 						starsListCombo.setSelectedItem( "" );
 						spriteListCombo.setSelectedItem( "" );
 						starsImageCombo.setSelectedItem( "" );
@@ -1139,13 +1143,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 						spriteRotField.setText( "0" );
 					}
 
-					starsListCombo.setEnabled( visited );
-					starsImageCombo.setEnabled( visited );
-					spriteListCombo.setEnabled( visited );
-					spriteImageCombo.setEnabled( visited );
-					spriteXField.setEnabled( visited );
-					spriteYField.setEnabled( visited );
-					spriteRotField.setEnabled( visited );
+					starsListCombo.setEnabled( (visited > 0) );
+					starsImageCombo.setEnabled( (visited > 0) );
+					spriteListCombo.setEnabled( (visited > 0) );
+					spriteImageCombo.setEnabled( (visited > 0) );
+					spriteXField.setEnabled( (visited > 0) );
+					spriteYField.setEnabled( (visited > 0) );
+					spriteRotField.setEnabled( (visited > 0) );
 				}
 				else if ( source == starsListCombo ) {
 					Object imageListObj = starsListCombo.getSelectedItem();
@@ -1195,7 +1199,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				}
 			}
 		};
-		editorPanel.getBoolean(VISITED).addActionListener( beaconListener );
+		editorPanel.getCombo(VISITED).addActionListener( beaconListener );
 		editorPanel.getCombo(STARS_LIST).addActionListener( beaconListener );
 		editorPanel.getCombo(SPRITE_LIST).addActionListener( beaconListener );
 		editorPanel.getBoolean(ENEMY_PRESENT).addActionListener( beaconListener );
@@ -1225,8 +1229,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 					randomImages[i] = defaultLists[i].getImages().get( (int)(Math.random()*defaultLists[i].getImages().size()) );
 				}
 
-				if ( !editorPanel.getBoolean(VISITED).isSelected() )
-					editorPanel.getBoolean(VISITED).doClick(); // setSelected() won't fire ActionEvents.
+				if ( editorPanel.getCombo(VISITED).getSelectedIndex() == 0 )
+					editorPanel.getCombo(VISITED).setSelectedIndex( 1 );
 
 				for ( int i=0; i < listCombos.length; i++ ) {
 					editorPanel.getCombo(listCombos[i]).setSelectedItem( defaultLists[i] );
@@ -1631,7 +1635,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 
 	public class BeaconSprite extends JComponent {
-		private boolean visited = false;
+		private int visited = 0;
 		private String bgStarscapeImageInnerPath = null;
 		private String bgSpriteImageInnerPath = null;
 		private int bgSpritePosX = -1;
@@ -1651,7 +1655,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		public BeaconSprite( SavedGameParser.BeaconState beaconState ) {
 			if ( beaconState != null ) {
-				visited = beaconState.isVisited();
+				visited = beaconState.getVisited();
 				bgStarscapeImageInnerPath = beaconState.getBgStarscapeImageInnerPath();
 				bgSpriteImageInnerPath = beaconState.getBgSpriteImageInnerPath();
 				bgSpritePosX = beaconState.getBgSpritePosX();
@@ -1671,7 +1675,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			makeSane();
 		}
 
-		public boolean isVisited() { return visited; }
+		public int getVisited() { return visited; }
 		public String getBgStarscapeImageInnerPath() { return bgStarscapeImageInnerPath; }
 		public String getBgSpriteImageInnerPath() { return bgSpriteImageInnerPath; }
 		public int getBgSpritePosX() { return bgSpritePosX; }
@@ -1685,7 +1689,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public SavedGameParser.FleetPresence getFleetPresence() { return fleetPresence; }
 		public boolean isUnderAttack() { return underAttack; }
 
-		public void setVisited( boolean b ) { visited = b; }
+		public void setVisited( int n ) { visited = n; }
 		public void setBgStarscapeImageInnerPath( String s ) { bgStarscapeImageInnerPath = s; }
 		public void setBgSpriteImageInnerPath( String s ) { bgSpriteImageInnerPath = s; }
 		public void setBgSpritePosX( int n ) { bgSpritePosX = n; }
@@ -1700,10 +1704,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public void setUnderAttack( boolean b ) { underAttack = b; }
 
 		public void makeSane() {
-			if ( visited && (bgStarscapeImageInnerPath == null || bgSpriteImageInnerPath == null) ) {
-				visited = false;
+			if ( visited > 0 && (bgStarscapeImageInnerPath == null || bgSpriteImageInnerPath == null) ) {
+				visited = 0;
 			}
-			if ( visited == false ) {
+			if ( visited == 0 ) {
 				bgStarscapeImageInnerPath = null;
 				bgSpriteImageInnerPath = null;
 				bgSpritePosX = -1;
@@ -1729,7 +1733,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			if ( fleetPresence == SavedGameParser.FleetPresence.REBEL ) {
 				currentImage = getImage( "img/map/map_icon_warning.png" );
 			}
-			else if ( visited ) {
+			else if ( visited > 0 ) {
 				currentImage = getImage( "img/map/map_icon_diamond_blue.png" );
 			}
 			else {

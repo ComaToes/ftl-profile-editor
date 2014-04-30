@@ -1376,6 +1376,24 @@ public class FTLFrame extends JFrame {
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), true );
 			gameStateSaveBtn.setEnabled( true );
 		}
+		else if ( gs != null && gs.getHeaderAlpha() == 7 ) {
+			// FTL 1.5.4 is only partially editable.
+
+			savedGameGeneralPanel.setGameState( gs );
+			savedGamePlayerFloorplanPanel.setShipState( null );
+			savedGameNearbyFloorplanPanel.setShipState( null );
+			savedGameSectorMapPanel.setGameState( null );
+			savedGameStateVarsPanel.setGameState( gs );
+
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "General" ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Player Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Nearby Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Change Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Sector Map" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), true );
+			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( "Dump" ) );
+			gameStateSaveBtn.setEnabled( true );
+		}
 		else {
 			savedGameGeneralPanel.setGameState( null );
 			savedGamePlayerFloorplanPanel.setShipState( null );
@@ -1397,16 +1415,32 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gs ) {
-		// savedGameDumpPanel doesn't modify anything.
-		savedGameGeneralPanel.updateGameState( gs );
-		savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
-		savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
-		savedGameSectorMapPanel.updateGameState( gs );
-		savedGameStateVarsPanel.updateGameState( gs );
+		if ( gs != null && gs.getHeaderAlpha() == 2 ) {
+			// savedGameDumpPanel doesn't modify anything.
+			savedGameGeneralPanel.updateGameState( gs );
+			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
+			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
+			savedGameSectorMapPanel.updateGameState( gs );
+			savedGameStateVarsPanel.updateGameState( gs );
 
-		// Sync session's redundant ship info with player ship.
-		gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
-		gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
+			// Sync session's redundant ship info with player ship.
+			gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
+			gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
+		}
+		else if ( gs != null && gs.getHeaderAlpha() == 7 ) {
+			// FTL 1.5.4 is only partially editable.
+
+			// savedGameDumpPanel doesn't modify anything.
+			savedGameGeneralPanel.updateGameState( gs );
+			//savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
+			//savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
+			//savedGameSectorMapPanel.updateGameState( gs );
+			savedGameStateVarsPanel.updateGameState( gs );
+
+			// Sync session's redundant ship info with player ship.
+			gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
+			gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
+		}
 
 		loadGameState(gs);
 	}
