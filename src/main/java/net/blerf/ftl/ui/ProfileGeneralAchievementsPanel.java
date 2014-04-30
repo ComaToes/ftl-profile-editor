@@ -24,21 +24,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-public class GeneralAchievementsPanel extends JPanel {
+public class ProfileGeneralAchievementsPanel extends JPanel {
 
 	private static final int ICON_LOCKED = 0;
 	private static final int ICON_EASY = 1;
 	private static final int ICON_NORMAL = 2;
 	private static final int ICON_HARD = 3;
 
-	private static final Logger log = LogManager.getLogger(GeneralAchievementsPanel.class);
+	private static final Logger log = LogManager.getLogger(ProfileGeneralAchievementsPanel.class);
 
 	private FTLFrame frame;
 
 	private HashMap<Achievement, IconCycleButton> generalAchBoxes = new HashMap<Achievement, IconCycleButton>();
 
 
-	public GeneralAchievementsPanel( FTLFrame frame ) {
+	public ProfileGeneralAchievementsPanel( FTLFrame frame ) {
 		this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
 		this.frame = frame;
 

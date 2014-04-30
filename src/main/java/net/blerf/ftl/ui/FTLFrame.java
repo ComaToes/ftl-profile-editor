@@ -74,9 +74,9 @@ import net.blerf.ftl.parser.ProfileParser;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.DumpPanel;
 import net.blerf.ftl.ui.ExtensionFileFilter;
-import net.blerf.ftl.ui.GeneralAchievementsPanel;
 import net.blerf.ftl.ui.HTMLEditorTransferHandler;
 import net.blerf.ftl.ui.IconCycleButton;
+import net.blerf.ftl.ui.ProfileGeneralAchievementsPanel;
 import net.blerf.ftl.ui.ProfileGeneralStatsPanel;
 import net.blerf.ftl.ui.ProfileShipStatsPanel;
 import net.blerf.ftl.ui.ProfileShipUnlockPanel;
@@ -124,10 +124,10 @@ public class FTLFrame extends JFrame {
 	private Runnable updatesCallback;
 
 	private JTabbedPane profileTabsPane;
-	private ProfileShipUnlockPanel shipUnlockPanel;
-	private GeneralAchievementsPanel generalAchievementsPanel;
-	private ProfileGeneralStatsPanel generalStatsPanel;
-	private ProfileShipStatsPanel shipStatsPanel;
+	private ProfileShipUnlockPanel profileShipUnlockPanel;
+	private ProfileGeneralAchievementsPanel profileGeneralAchsPanel;
+	private ProfileGeneralStatsPanel profileGeneralStatsPanel;
+	private ProfileShipStatsPanel profileShipStatsPanel;
 	private DumpPanel profileDumpPanel;
 
 	private JButton gameStateSaveBtn;
@@ -200,28 +200,28 @@ public class FTLFrame extends JFrame {
 		profileTabsPane = new JTabbedPane();
 		profilePane.add( profileTabsPane, BorderLayout.CENTER );
 
-		shipUnlockPanel = new ProfileShipUnlockPanel(this);
-		generalAchievementsPanel = new GeneralAchievementsPanel(this);
-		generalStatsPanel = new ProfileGeneralStatsPanel(this);
-		shipStatsPanel = new ProfileShipStatsPanel(this);
+		profileShipUnlockPanel = new ProfileShipUnlockPanel(this);
+		profileGeneralAchsPanel = new ProfileGeneralAchievementsPanel(this);
+		profileGeneralStatsPanel = new ProfileGeneralStatsPanel(this);
+		profileShipStatsPanel = new ProfileShipStatsPanel(this);
 		profileDumpPanel = new DumpPanel();
 
-		JScrollPane shipUnlockScroll = new JScrollPane( shipUnlockPanel );
-		shipUnlockScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+		JScrollPane profileShipUnlockScroll = new JScrollPane( profileShipUnlockPanel );
+		profileShipUnlockScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane generalAchievementsScroll = new JScrollPane( generalAchievementsPanel );
-		generalAchievementsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+		JScrollPane profileGeneralAchsScroll = new JScrollPane( profileGeneralAchsPanel );
+		profileGeneralAchsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane statsScroll = new JScrollPane( generalStatsPanel );
-		statsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+		JScrollPane profileGeneralStatsScroll = new JScrollPane( profileGeneralStatsPanel );
+		profileGeneralStatsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane shipStatsScroll = new JScrollPane( shipStatsPanel );
-		shipStatsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+		JScrollPane profileShipStatsScroll = new JScrollPane( profileShipStatsPanel );
+		profileShipStatsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		profileTabsPane.add( "Ship Unlocks & Achievements", shipUnlockScroll );
-		profileTabsPane.add( "General Achievements", generalAchievementsScroll );
-		profileTabsPane.add( "General Stats", statsScroll );
-		profileTabsPane.add( "Ship Stats", shipStatsScroll );
+		profileTabsPane.add( "Ship Unlocks & Achievements", profileShipUnlockScroll );
+		profileTabsPane.add( "General Achievements", profileGeneralAchsScroll );
+		profileTabsPane.add( "General Stats", profileGeneralStatsScroll );
+		profileTabsPane.add( "Ship Stats", profileShipStatsScroll );
 		profileTabsPane.add( "Dump", profileDumpPanel );
 
 
@@ -243,8 +243,11 @@ public class FTLFrame extends JFrame {
 		savedGameSectorMapPanel = new SavedGameSectorMapPanel(this);
 		savedGameStateVarsPanel = new SavedGameStateVarsPanel(this);
 
+		JScrollPane savedGameGeneralScroll = new JScrollPane( savedGameGeneralPanel );
+		savedGameGeneralScroll.getVerticalScrollBar().setUnitIncrement( 14 );
+
 		savedGameTabsPane.add( "Dump", savedGameDumpPanel );
-		savedGameTabsPane.add( "General", new JScrollPane( savedGameGeneralPanel ) );
+		savedGameTabsPane.add( "General", savedGameGeneralScroll );
 		savedGameTabsPane.add( "Player Ship", savedGamePlayerFloorplanPanel );
 		savedGameTabsPane.add( "Nearby Ship", savedGameNearbyFloorplanPanel );
 		savedGameTabsPane.add( "Change Ship", savedGameHangarPanel );
@@ -722,7 +725,7 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Unlock all ships button clicked." );
-				shipUnlockPanel.unlockAllShips();
+				profileShipUnlockPanel.unlockAllShips();
 			}
 		});
 		profileUnlockShipsBtn.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ships (except Type-B).") );
@@ -734,7 +737,7 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Unlock all ship achievements button clicked." );
-				shipUnlockPanel.unlockAllShipAchievements();
+				profileShipUnlockPanel.unlockAllShipAchievements();
 			}
 		});
 		profileUnlockShipAchsBtn.addMouseListener( new StatusbarMouseListener(this, "Unlock All Ship Achievements (and Type-B ships).") );
@@ -1309,10 +1312,10 @@ public class FTLFrame extends JFrame {
 		try {
 			log.trace( "Loading profile." );
 
-			shipUnlockPanel.setProfile( p );
-			generalAchievementsPanel.setProfile( p );
-			generalStatsPanel.setProfile( p );
-			shipStatsPanel.setProfile( p );
+			profileShipUnlockPanel.setProfile( p );
+			profileGeneralAchsPanel.setProfile( p );
+			profileGeneralStatsPanel.setProfile( p );
+			profileShipStatsPanel.setProfile( p );
 			profileDumpPanel.setText( (p != null ? p.toString() : "") );
 
 			profile = p;
@@ -1335,10 +1338,10 @@ public class FTLFrame extends JFrame {
 	public void updateProfile( Profile p ) {
 		log.trace( "Updating profile from UI selections." );
 
-		shipUnlockPanel.updateProfile( p );
-		generalAchievementsPanel.updateProfile( p );
-		generalStatsPanel.updateProfile( p );
-		shipStatsPanel.updateProfile( p );
+		profileShipUnlockPanel.updateProfile( p );
+		profileGeneralAchsPanel.updateProfile( p );
+		profileGeneralStatsPanel.updateProfile( p );
+		profileShipStatsPanel.updateProfile( p );
 		// profileDumpPanel doesn't modify anything.
 
 		loadProfile(p);
