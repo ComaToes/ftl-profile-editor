@@ -199,7 +199,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 		for ( Score s : p.getStats().getShipBest() ) {
 			List<Score> shipScoreList = allBestMap.get( s.getShipId() );
 			if ( shipScoreList == null ) {
-				shipScoreList = new ArrayList<Score>(4);
+				shipScoreList = new ArrayList<Score>( 4 );
 				allBestMap.put( s.getShipId(), shipScoreList );
 			}
 			shipScoreList.add( new Score( s ) );

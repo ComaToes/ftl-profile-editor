@@ -26,6 +26,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import net.blerf.ftl.constants.AdvancedFTLConstants;
+import net.blerf.ftl.constants.FTLConstants;
+import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
@@ -834,7 +837,7 @@ public class SavedGameParser extends Parser {
 
 			if ( "crystal".equals(crew.getRace()) ) {
 				crew.setLockdownRechargeTicks( readInt(in) );
-				crew.setLockdownRechargeGoal( readInt(in) );
+				crew.setLockdownRechargeTicksGoal( readInt(in) );
 				crew.setUnknownOmega( readInt(in) );
 			}
 		}
@@ -899,7 +902,7 @@ public class SavedGameParser extends Parser {
 
 			if ( "crystal".equals(crew.getRace()) ) {
 				writeInt( out, crew.getLockdownRechargeTicks() );
-				writeInt( out, crew.getLockdownRechargeGoal() );
+				writeInt( out, crew.getLockdownRechargeTicksGoal() );
 				writeInt( out, crew.getUnknownOmega() );
 			}
 		}
@@ -1882,9 +1885,6 @@ public class SavedGameParser extends Parser {
 
 
 	public static class ShipState {
-		public static final int MAX_RESERVE_POWER = 25;  // TODO: Magic number.
-		                                                 // Reserve + Battery can exceed this.
-
 		private boolean auto = false;  // Is autoShip.
 		private String shipName, shipBlueprintId, shipLayoutId;
 		private String shipGfxBaseName;
@@ -2447,13 +2447,6 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static class CrewState {
-		// TODO: Magic numbers.
-		public static final int MASTERY_INTERVAL_PILOT = 15;   // 13 in FTL 1.5.4.
-		public static final int MASTERY_INTERVAL_ENGINE = 15;  // 13 in FTL 1.5.4.
-		public static final int MASTERY_INTERVAL_SHIELD = 55;  // 50 in FTL 1.5.4.
-		public static final int MASTERY_INTERVAL_WEAPON = 65;  // 58 in FTL 1.5.4.
-		public static final int MASTERY_INTERVAL_REPAIR = 18;  // 16 in FTL 1.5.4.
-		public static final int MASTERY_INTERVAL_COMBAT = 8;   //  7 in FTL 1.5.4.
 
 		// Crystal crews' lockdown wall-coating is not stored, but ability recharge is.
 		// Zoltan-produced power is not stored in SystemState.
@@ -2649,7 +2642,7 @@ public class SavedGameParser extends Parser {
 		 *
 		 * @param n a positive int less than, or equal to, the goal (0 when not charging)
 		 *
-		 * @see #setLockdownRechargeGoal(int)
+		 * @see #setLockdownRechargeTicksGoal(int)
 		 */
 		public void setLockdownRechargeTicks( int n ) { lockdownRechargeTicks = n; }
 		public int getLockdownRechargeTicks() { return lockdownRechargeTicks; }
@@ -2663,8 +2656,8 @@ public class SavedGameParser extends Parser {
 		 *
 		 * @see #setLockdownRechargeTicks(int)
 		 */
-		public void setLockdownRechargeGoal( int n ) { lockdownRechargeGoal = n; }
-		public int getLockdownRechargeGoal() { return lockdownRechargeGoal; }
+		public void setLockdownRechargeTicksGoal( int n ) { lockdownRechargeGoal = n; }
+		public int getLockdownRechargeTicksGoal() { return lockdownRechargeGoal; }
 
 		public void setUnknownOmega( int n ) { unknownOmega = n; }
 		public int getUnknownOmega() { return unknownOmega; }
@@ -2805,14 +2798,17 @@ public class SavedGameParser extends Parser {
 			}
 			result.append("\n");
 
+			FTLConstants origConstants = new OriginalFTLConstants();
+			FTLConstants advConstants = new AdvancedFTLConstants();
+
 			result.append(String.format("Saved RoomId:      %5d\n", savedRoomId));
 			result.append(String.format("Saved Room Square: %5d\n", savedRoomSquare));
-			result.append(String.format("Pilot Skill:       %5d (Mastery Interval: %2d)\n", pilotSkill, MASTERY_INTERVAL_PILOT));
-			result.append(String.format("Engine Skill:      %5d (Mastery Interval: %2d)\n", engineSkill, MASTERY_INTERVAL_ENGINE));
-			result.append(String.format("Shield Skill:      %5d (Mastery Interval: %2d)\n", shieldSkill, MASTERY_INTERVAL_SHIELD));
-			result.append(String.format("Weapon Skill:      %5d (Mastery Interval: %2d)\n", weaponSkill, MASTERY_INTERVAL_WEAPON));
-			result.append(String.format("Repair Skill:      %5d (Mastery Interval: %2d)\n", repairSkill, MASTERY_INTERVAL_REPAIR));
-			result.append(String.format("Combat Skill:      %5d (Mastery Interval: %2d)\n", combatSkill, MASTERY_INTERVAL_COMBAT));
+			result.append(String.format("Pilot Skill:       %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot(), advConstants.getMasteryIntervalPilot()));
+			result.append(String.format("Engine Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine(), advConstants.getMasteryIntervalEngine()));
+			result.append(String.format("Shield Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", shieldSkill, origConstants.getMasteryIntervalShield(), advConstants.getMasteryIntervalShield()));
+			result.append(String.format("Weapon Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", weaponSkill, origConstants.getMasteryIntervalWeapon(), advConstants.getMasteryIntervalWeapon()));
+			result.append(String.format("Repair Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", repairSkill, origConstants.getMasteryIntervalRepair(), advConstants.getMasteryIntervalRepair()));
+			result.append(String.format("Combat Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", combatSkill, origConstants.getMasteryIntervalCombat(), advConstants.getMasteryIntervalCombat()));
 			result.append(String.format("Repairs:           %5d\n", repairs));
 			result.append(String.format("Combat Kills:      %5d\n", combatKills));
 			result.append(String.format("Piloted Evasions:  %5d\n", pilotedEvasions));
@@ -2881,8 +2877,6 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static class SystemState {
-		public static final int MAX_IONIZED_BARS = 9;  // TODO: Magic number.
-
 		private SystemType systemType;
 		private int capacity = 0;
 		private int power = 0;
@@ -2941,6 +2935,8 @@ public class SavedGameParser extends Parser {
 		 *
 		 * When a system disables itself, this may briefly be -1 initially. Then
 		 * the count of ionized bars will be set to capacity + 1.
+		 *
+		 * @see net.blerf.ftl.constants.FTLConstants#getMaxIonizedBars()
 		 */
 		public void setIonizedBars( int n ) { ionizedBars = n; }
 		public int getIonizedBars() { return ionizedBars; }
@@ -3397,10 +3393,10 @@ public class SavedGameParser extends Parser {
 		public boolean isArmed() { return armed; }
 
 		/**
-		 * Sets the weapon's cooldown ticks.
+		 * Sets time elapsed waiting for the weapon to cool down.
 		 *
-		 * This increments from 0 each second until the
-		 * weapon blueprint's cooldown. 0 when not armed.
+		 * This increments from 0, by 1 each second, until the
+		 * weaponBlueprint's cooldown (0 when not armed).
 		 *
 		 * Since FTL 1.5.4, this is no longer saved.
 		 */
@@ -3417,6 +3413,7 @@ public class SavedGameParser extends Parser {
 			result.append(String.format("WeaponId:       %s\n", weaponId));
 			result.append(String.format("Armed:          %b\n", armed));
 			result.append(String.format("Cooldown Ticks: %2d (max: %-2s) (Not used as of FTL 1.5.4.)\n", cooldownTicks, cooldownString));
+
 			return result.toString();
 		}
 	}
@@ -5277,8 +5274,9 @@ public class SavedGameParser extends Parser {
 	// Extended info for individual weapons.
 	// Game states contain two lists of these objects: player and nearby ship.
 	public static class UnknownAthena {
-		private int unknownAlpha = 0;    // Incrementing ticks elapsed during cooldown.
-		private int unknownBeta = 0;     // Goal cooldown time. Resembles WeaponBlueprint's value, and other factors?
+		private int cooldownTicks = 0;
+		private int cooldownTicksGoal = 0;
+
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
 		private int boost = 0;
@@ -5310,13 +5308,29 @@ public class SavedGameParser extends Parser {
 		public UnknownAthena() {
 		}
 
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		/**
+		 * Sets time elapsed waiting for the weapon to cool down.
+		 *
+		 * @param n a positive int less than, or equal to, the goal (0 when not armed)
+		 *
+		 * @see #setCooldownTicksGoal(int)
+		 */
+		public void setCooldownTicks( int n ) { cooldownTicks = n; }
+		public int getCooldownTicks() { return cooldownTicks; }
+
+		/**
+		 * Sets total time needed for the weapon to cool down.
+		 *
+		 * This can vary depending on weapon features and situational factors.
+		 *
+		 * @see #setCooldownTicks(int)
+		 */
+		public void setCooldownTicksGoal( int n ) { cooldownTicksGoal = n; }
+		public int getCooldownTicksGoal() { return cooldownTicksGoal; }
+
 		public void setUnknownGamma( int n ) { unknownGamma = n; }
 		public void setUnknownDelta( int n ) { unknownDelta = n; }
 
-		public int getUnknownAlpha() { return unknownAlpha; }
-		public int getUnknownBeta() { return unknownBeta; }
 		public int getUnknownGamma() { return unknownGamma; }
 		public int getUnknownDelta() { return unknownDelta; }
 
@@ -5388,8 +5402,8 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
 
-			result.append(String.format("Alpha?:            %3d\n", unknownAlpha));
-			result.append(String.format("Beta?:             %3d\n", unknownBeta));
+			result.append(String.format("Cooldown Ticks:    %3d\n", cooldownTicks));
+			result.append(String.format("Cooldown Goal:     %3d\n", cooldownTicksGoal));
 			result.append(String.format("Gamma?:            %3d\n", unknownGamma));
 			result.append(String.format("Delta?:            %3d\n", unknownDelta));
 			result.append(String.format("Boost:             %3d\n", boost));
@@ -6031,8 +6045,8 @@ System.err.println(String.format("Ares: @%d", in.getChannel().position()));
 System.err.println(String.format("Athena: @%d", in.getChannel().position()));
 		UnknownAthena athena = new UnknownAthena();
 
-		athena.setUnknownAlpha( readInt(in) );
-		athena.setUnknownBeta( readInt(in) );
+		athena.setCooldownTicks( readInt(in) );
+		athena.setCooldownTicksGoal( readInt(in) );
 		athena.setUnknownGamma( readInt(in) );
 		athena.setUnknownDelta( readInt(in) );
 		athena.setBoost( readInt(in) );
@@ -6078,8 +6092,8 @@ System.err.println(String.format("Athena: @%d", in.getChannel().position()));
 	}
 
 	public void writeAthena( OutputStream out, UnknownAthena athena ) throws IOException {
-		writeInt( out, athena.getUnknownAlpha() );
-		writeInt( out, athena.getUnknownBeta() );
+		writeInt( out, athena.getCooldownTicks() );
+		writeInt( out, athena.getCooldownTicksGoal() );
 		writeInt( out, athena.getUnknownGamma() );
 		writeInt( out, athena.getUnknownDelta() );
 		writeInt( out, athena.getBoost() );

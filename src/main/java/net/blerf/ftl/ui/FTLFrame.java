@@ -1401,8 +1401,8 @@ public class FTLFrame extends JFrame {
 
 		if ( gs != null && gs.getHeaderAlpha() == 2 ) {
 			savedGameGeneralPanel.setGameState( gs );
-			savedGamePlayerFloorplanPanel.setShipState( gs.getPlayerShipState() );
-			savedGameNearbyFloorplanPanel.setShipState( gs.getNearbyShipState() );
+			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
+			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
 			savedGameSectorMapPanel.setGameState( gs );
 			savedGameStateVarsPanel.setGameState( gs );
 
@@ -1418,8 +1418,8 @@ public class FTLFrame extends JFrame {
 			// FTL 1.5.4 is only partially editable.
 
 			savedGameGeneralPanel.setGameState( gs );
-			savedGamePlayerFloorplanPanel.setShipState( null );
-			savedGameNearbyFloorplanPanel.setShipState( null );
+			savedGamePlayerFloorplanPanel.setShipState( null, null );
+			savedGameNearbyFloorplanPanel.setShipState( null, null );
 			savedGameSectorMapPanel.setGameState( gs );
 			savedGameStateVarsPanel.setGameState( gs );
 
@@ -1434,8 +1434,8 @@ public class FTLFrame extends JFrame {
 		}
 		else {
 			savedGameGeneralPanel.setGameState( null );
-			savedGamePlayerFloorplanPanel.setShipState( null );
-			savedGameNearbyFloorplanPanel.setShipState( null );
+			savedGamePlayerFloorplanPanel.setShipState( null, null );
+			savedGameNearbyFloorplanPanel.setShipState( null, null );
 			savedGameSectorMapPanel.setGameState( null );
 			savedGameStateVarsPanel.setGameState( null );
 

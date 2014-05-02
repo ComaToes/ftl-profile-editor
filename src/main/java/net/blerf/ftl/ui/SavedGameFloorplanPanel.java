@@ -63,6 +63,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 
+import net.blerf.ftl.constants.AdvancedFTLConstants;
+import net.blerf.ftl.constants.FTLConstants;
+import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
@@ -115,6 +118,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private FTLFrame frame;
 
+	private FTLConstants ftlConstants = new OriginalFTLConstants();
 	private ShipBlueprint shipBlueprint = null;
 	private ShipLayout shipLayout = null;
 	private ShipChassis shipChassis = null;
@@ -526,7 +530,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		this.add( sideScroll, BorderLayout.EAST );
 	}
 
-	public void setShipState( SavedGameParser.ShipState shipState ) {
+	public void setShipState( SavedGameParser.SavedGameState gameState, SavedGameParser.ShipState shipState ) {
 		String prevGfxBaseName = shipGfxBaseName;
 		miscSelector.setVisible( false );
 		miscSelector.setMousePoint( -1, -1 );
@@ -594,6 +598,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			wallLbl.setIcon(null);
 			return;
+		}
+
+		if ( gameState != null && gameState.getHeaderAlpha() == 2 ) {
+			ftlConstants = new OriginalFTLConstants();
+		} else {
+			ftlConstants = new AdvancedFTLConstants();
 		}
 
 		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
@@ -1103,13 +1113,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			crewState.setCombatSkill( crewSprite.getCombatSkill() );
 
 			int masteries = 0;
-			masteries += crewSprite.getPilotSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_PILOT;
-			masteries += crewSprite.getEngineSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_ENGINE;
-			masteries += crewSprite.getShieldSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_SHIELD;
-			masteries += crewSprite.getWeaponSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_WEAPON;
-			masteries += crewSprite.getRepairSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_REPAIR;
-			masteries += crewSprite.getCombatSkill() / SavedGameParser.CrewState.MASTERY_INTERVAL_COMBAT;
-			crewState.setSkillMasteries(masteries);
+			masteries += crewSprite.getPilotSkill() / ftlConstants.getMasteryIntervalPilot();
+			masteries += crewSprite.getEngineSkill() / ftlConstants.getMasteryIntervalEngine();
+			masteries += crewSprite.getShieldSkill() / ftlConstants.getMasteryIntervalShield();
+			masteries += crewSprite.getWeaponSkill() / ftlConstants.getMasteryIntervalWeapon();
+			masteries += crewSprite.getRepairSkill() / ftlConstants.getMasteryIntervalRepair();
+			masteries += crewSprite.getCombatSkill() / ftlConstants.getMasteryIntervalCombat();
+			crewState.setSkillMasteries( masteries );
 
 			crewState.setRepairs( crewSprite.getRepairs() );
 			crewState.setCombatKills( crewSprite.getCombatKills() );
@@ -2498,7 +2508,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( RESERVE_CAPACITY, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(RESERVE_CAPACITY).setMaximum( SavedGameParser.ShipState.MAX_RESERVE_POWER );
+		editorPanel.getSlider(RESERVE_CAPACITY).setMaximum( ftlConstants.getMaxReservePower() );
 		editorPanel.getSlider(RESERVE_CAPACITY).setMinimum( otherPower );
 		editorPanel.getSlider(RESERVE_CAPACITY).setValue( shipReservePowerCapacity );
 		editorPanel.getSlider(RESERVE_CAPACITY).addMouseListener( new StatusbarMouseListener(frame, "Total possible reactor bars (Increase to upgrade).") );
@@ -2522,7 +2532,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( IONIZED_BARS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(IONIZED_BARS).setDocument( new RegexDocument("-?1?|[0-9]*") );
 		editorPanel.getInt(IONIZED_BARS).setText( ""+systemSprite.getIonizedBars() );
-		editorPanel.getInt(IONIZED_BARS).addMouseListener( new StatusbarMouseListener(frame, String.format("Ionized bars (can exceed %d but the number won't appear in-game).", SavedGameParser.SystemState.MAX_IONIZED_BARS)) );
+		editorPanel.getInt(IONIZED_BARS).addMouseListener( new StatusbarMouseListener(frame, String.format("Ionized bars (can exceed %d but the number won't appear in-game).", ftlConstants.getMaxIonizedBars())) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( REPAIR_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(REPAIR_PROGRESS).setMaximum( (systemSprite.getDamagedBars() == 0 ? 0 : 100) );
@@ -2899,12 +2909,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String ENEMY_DRONE = "Enemy Drone";
 		final String SEX = "Male";
 
-		int pilotInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_PILOT;
-		int engineInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_ENGINE;
-		int shieldInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_SHIELD;
-		int weaponInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_WEAPON;
-		int repairInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_REPAIR;
-		int combatInterval = SavedGameParser.CrewState.MASTERY_INTERVAL_COMBAT;
+		int pilotInterval = ftlConstants.getMasteryIntervalPilot();
+		int engineInterval = ftlConstants.getMasteryIntervalEngine();
+		int shieldInterval = ftlConstants.getMasteryIntervalShield();
+		int weaponInterval = ftlConstants.getMasteryIntervalWeapon();
+		int repairInterval = ftlConstants.getMasteryIntervalRepair();
+		int combatInterval = ftlConstants.getMasteryIntervalCombat();
 
 		int maxHealth = CrewType.getMaxHealth(crewSprite.getRace());
 
