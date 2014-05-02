@@ -14,7 +14,8 @@ About
 
   Note:
   FTL 1.01-1.03.3's files are fully editable.
-  FTL 1.5.4's "ae_prof.sav" is editable, but its saved game is read-only.
+  FTL 1.5.4's "ae_prof.sav" is fully editable.
+  FTL 1.5.4's saved game is only partially editable.
 
 
 Requirements

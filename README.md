@@ -7,7 +7,8 @@ With this, you can unlock any or all ships and achievements in your user profile
 
 Note:
 FTL 1.01-1.03.3's files are fully editable.
-FTL 1.5.4's "ae_prof.sav" is editable, but its saved game is read-only.
+FTL 1.5.4's "ae_prof.sav" is fully editable.
+FTL 1.5.4's saved game is only partially editable.
 
 <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png" width="145px" height="auto" /></a>
 
