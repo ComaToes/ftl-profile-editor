@@ -86,6 +86,9 @@ public class SectorMapLayout implements LayoutManager2 {
 		}
 	}
 
+	/**
+	 * Returns the beacon id at which a component was placed, or -1.
+	 */
 	public int getBeaconId( Component comp ) {
 		if ( beaconList.contains( comp) )
 			return beaconList.indexOf( comp );

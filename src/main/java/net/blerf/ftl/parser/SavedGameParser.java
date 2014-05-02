@@ -1084,7 +1084,7 @@ public class SavedGameParser extends Parser {
 			// When player's at this beacon, the seed here matches
 			// current encounter's seed.
 		}
-		
+
 		int fleetPresence = readInt(in);
 		switch ( fleetPresence ) {
 			case 0: beacon.setFleetPresence( FleetPresence.NONE ); break;
@@ -1093,11 +1093,11 @@ public class SavedGameParser extends Parser {
 			case 3: beacon.setFleetPresence( FleetPresence.BOTH ); break;
 			default: throw new RuntimeException( "Unknown fleet presence: " + fleetPresence );
 		}
-	
+
 		beacon.setUnderAttack( readBool(in) );
-		
+
 		boolean storePresent = readBool(in);
-		beacon.setStorePresent(storePresent);
+		beacon.setStorePresent( storePresent );
 		if ( storePresent ) {
 			StoreState store = new StoreState();
 

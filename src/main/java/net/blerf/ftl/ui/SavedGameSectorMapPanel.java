@@ -419,30 +419,16 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		}
 
-		// Reset Beacon states.
-		for ( SavedGameParser.BeaconState beaconState : beaconStateList ) {
-			beaconState.setVisited( 0 );
-			beaconState.setBgStarscapeImageInnerPath( null );
-			beaconState.setBgSpriteImageInnerPath( null );
-			beaconState.setBgSpritePosX( -1 );
-			beaconState.setBgSpritePosY( -1 );
-			beaconState.setBgSpriteRotation( 0 );
-
-			beaconState.setSeen( false );
-
-			beaconState.setEnemyPresent( false );
-			beaconState.setShipEventId( null );
-			beaconState.setAutoBlueprintId( null );
-			beaconState.setShipEventSeed( 0 );
-
-			beaconState.setStorePresent( false );
-			beaconState.setStore( null );
+		// Add N vanilla beacons all at once, to modify in any order.
+		beaconStateList.clear();
+		for (int i=0; i < beaconSprites.size(); i++) {
+			beaconStateList.add( new SavedGameParser.BeaconState() );
 		}
 
 		// Beacons.
-		for ( BeaconSprite beaconSprite : beaconSprites) {
+		for ( BeaconSprite beaconSprite : beaconSprites ) {
 			int beaconId = mapLayout.getBeaconId( beaconSprite );
-			if ( beaconId > 0 && beaconId < beaconStateList.size() ) {
+			if ( beaconId != -1 && beaconId < beaconStateList.size() ) {
 				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
 
 				if ( beaconSprite.getVisited() > 0 ) {
@@ -466,12 +452,15 @@ public class SavedGameSectorMapPanel extends JPanel {
 				beaconState.setFleetPresence( beaconSprite.getFleetPresence() );
 				beaconState.setUnderAttack( beaconSprite.isUnderAttack() );
 			}
+			else {
+				log.error( "SectorMapPanel scrambled the beacon list!" );
+			}
 		}
 
 		// Stores.
 		for ( StoreSprite storeSprite : storeSprites ) {
 			int beaconId = mapLayout.getBeaconId( storeSprite );
-			if ( beaconId > 0 && beaconId < beaconStateList.size() ) {
+			if ( beaconId != -1 && beaconId < beaconStateList.size() ) {
 				SavedGameParser.StoreState storeState = new SavedGameParser.StoreState();
 				storeState.setFuel( storeSprite.getFuel() );
 				storeState.setMissiles( storeSprite.getMissiles() );
