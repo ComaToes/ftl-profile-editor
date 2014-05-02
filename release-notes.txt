@@ -1,3 +1,10 @@
+22
+Partial editing for 1.5.4 saved games (ships themselves are not editable yet).
+Added "Ship Best" score editing in profiles.
+Added backups when overwriting a profile or saved game.
+Fixed read error when a ship's system spans multiple rooms (boss artillery).
+Fixed bug that always reset the first beacon when a saved game was saved.
+
 21
 Major saved game parsing improvements, thanks to many samples from users.
 Added warning nags for nonsensical actions.
