@@ -634,6 +634,25 @@ public class FTLFrame extends JFrame {
 					try {
 						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
 
+						if ( chosenFile.exists() ) {
+							String bakName = chosenFile.getName() +".bak";
+							File bakFile = new File( chosenFile.getParentFile(), bakName );
+							boolean bakValid = true;
+
+							if ( bakFile.exists() ) {
+								bakValid = bakFile.delete();
+								if ( !bakValid ) log.warn( "Profile will be overwritten. Could not delete existing backup: "+ bakName );
+							}
+							if ( bakValid ) {
+								bakValid = chosenFile.renameTo( bakFile );
+								if ( !bakValid ) log.warn( "Profile will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
+							}
+
+							if ( bakValid ) {
+								log.info( "Profile was backed up: "+ bakName );
+							}
+						}
+
 						out = new FileOutputStream( chosenFile );
 
 						ProfileParser ftl = new ProfileParser();
@@ -976,6 +995,25 @@ public class FTLFrame extends JFrame {
 					FileOutputStream out = null;
 					try {
 						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
+
+						if ( chosenFile.exists() ) {
+							String bakName = chosenFile.getName() +".bak";
+							File bakFile = new File( chosenFile.getParentFile(), bakName );
+							boolean bakValid = true;
+
+							if ( bakFile.exists() ) {
+								bakValid = bakFile.delete();
+								if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not delete existing backup: "+ bakName );
+							}
+							if ( bakValid ) {
+								bakValid = chosenFile.renameTo( bakFile );
+								if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
+							}
+
+							if ( bakValid ) {
+								log.info( "Saved game was backed up: "+ bakName );
+							}
+						}
 
 						out = new FileOutputStream( chosenFile );
 
