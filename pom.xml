@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.blerf.ftl</groupId>
 	<artifactId>ftl-profile-editor</artifactId>
-	<version>21</version>
+	<version>22</version>
 	<name>FTL Profile Editor</name>
 
 	<properties>
