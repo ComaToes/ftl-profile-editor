@@ -360,7 +360,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		// Stores.
 		beaconId = 0;
 		for ( SavedGameParser.BeaconState beaconState : beaconStateList ) {
-			if ( beaconState.isStorePresent() ) {
+			if ( beaconState.getStore() != null ) {
 				StoreSprite storeSprite = new StoreSprite( beaconState.getStore() );
 				SectorMapConstraints storeC = new SectorMapConstraints( SectorMapConstraints.MISC_BOX );
 				storeC.setBeaconId( beaconId );
@@ -473,7 +473,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
 				beaconState.setStore( storeState );
-				beaconState.setStorePresent( true );
 			}
 		}
 

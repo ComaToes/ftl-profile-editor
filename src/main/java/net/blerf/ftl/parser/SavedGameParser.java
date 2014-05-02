@@ -1097,7 +1097,6 @@ public class SavedGameParser extends Parser {
 		beacon.setUnderAttack( readBool(in) );
 
 		boolean storePresent = readBool(in);
-		beacon.setStorePresent( storePresent );
 		if ( storePresent ) {
 			StoreState store = new StoreState();
 
@@ -1148,8 +1147,10 @@ public class SavedGameParser extends Parser {
 
 		writeBool( out, beacon.isUnderAttack() );
 
-		writeBool( out, beacon.isStorePresent() );
-		if ( beacon.isStorePresent() ) {
+		boolean storePresent = (beacon.getStore() != null);
+		writeBool( out, storePresent );
+
+		if ( storePresent ) {
 			StoreState store = beacon.getStore();
 
 			if ( headerAlpha == 2 ) {
@@ -3538,7 +3539,6 @@ public class SavedGameParser extends Parser {
 
 		private boolean underAttack = false;
 
-		private boolean storePresent = false;
 		private StoreState store = null;
 
 		// TODO: Make 'visited' an enum.
@@ -3630,7 +3630,7 @@ public class SavedGameParser extends Parser {
 		 * Sets whether an enemy ship is waiting at this beacon.
 		 *
 		 * If true, a ShipEvent and AutoBlueprint must be set,
-		 * as well as the unknown beta.
+		 * as well as the ShipEvent seed.
 		 */
 		public void setEnemyPresent( boolean b ) { enemyPresent = b; }
 		public boolean isEnemyPresent() { return enemyPresent; }
@@ -3678,13 +3678,8 @@ public class SavedGameParser extends Parser {
 		public boolean isUnderAttack() { return underAttack; }
 
 		/**
-		 * Sets whether a store is present.
-		 *
-		 * If true, a store must be set.
+		 * Places a store at this beacon, or null for none.
 		 */
-		public void setStorePresent( boolean b ) { storePresent = b; }
-		public boolean isStorePresent() { return storePresent; }
-
 		public void setStore( StoreState storeState ) { store = storeState; }
 		public StoreState getStore() { return store; }
 
@@ -3713,8 +3708,7 @@ public class SavedGameParser extends Parser {
 
 			result.append(String.format("Under Attack:          %5b\n", underAttack));
 
-			result.append(String.format("Store Present:         %5b\n", storePresent));
-			if ( storePresent ) {
+			if ( store != null ) {
 				result.append( store.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 			}
 
