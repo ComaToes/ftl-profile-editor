@@ -61,7 +61,7 @@ public class Stats {
 		crewMap.put( type, r );
 	}
 	public CrewRecord getCrewRecord( StatType  type ) {
-		if ( !crewMap.containsKey(type) )
+		if ( !crewMap.containsKey( type ) )
 			log.error( "No crew record found for type: "+ type );
 		return crewMap.get( type );
 	}
@@ -70,7 +70,7 @@ public class Stats {
 		intMap.put( type, new Integer(n) );
 	}
 	public int getIntRecord( StatType type ) {
-		if ( !intMap.containsKey(type) )
+		if ( !intMap.containsKey( type ) )
 			log.error( "No int record found for type: "+ type );
 		return intMap.get( type ).intValue();
 	}

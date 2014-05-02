@@ -42,18 +42,18 @@ public class Profile {
 		return achievements;
 	}
 
-	public void setStats( Stats stats ) {
-		this.stats = stats;
-	}
-	public Stats getStats() {
-		return stats;
-	}
-
 	public void setShipUnlockMap( Map<String, ShipAvailability> shipUnlockMap ) {
 		this.shipUnlockMap = shipUnlockMap;
 	}
 	public Map<String, ShipAvailability> getShipUnlockMap() {
 		return shipUnlockMap;
+	}
+
+	public void setStats( Stats stats ) {
+		this.stats = stats;
+	}
+	public Stats getStats() {
+		return stats;
 	}
 
 	public void setUnknownBeta( int n ) {
@@ -67,8 +67,8 @@ public class Profile {
 	public static Profile createEmptyProfile() {
 		Profile profile = new Profile();
 		profile.setHeaderAlpha( 4 );
-		profile.setShipUnlockMap( new LinkedHashMap<String, ShipAvailability>() );
 		profile.setAchievements( new ArrayList<AchievementRecord>() );
+		profile.setShipUnlockMap( new LinkedHashMap<String, ShipAvailability>() );
 
 		Stats stats = new Stats();
 		stats.setTopScores( new ArrayList<Score>() );

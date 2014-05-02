@@ -4,7 +4,7 @@ package net.blerf.ftl.model;
 /**
  * A summary of a single past campaign.
  */
-public class Score {
+public class Score implements Comparable<Score> {
 
 	public enum Difficulty { EASY, NORMAL, HARD };
 
@@ -86,6 +86,15 @@ public class Score {
 	 */
 	public void setDLCEnabled( boolean b ) { dlcEnabled = b; }
 	public boolean isDLCEnabled() { return dlcEnabled; }
+
+
+	@Override
+	public int compareTo( Score other ) {
+		if ( this.getValue() > other.getValue() ) return 1;
+		if ( this.getValue() < other.getValue() ) return -1;
+		return 0;
+	}
+
 
 	@Override
 	public String toString() {

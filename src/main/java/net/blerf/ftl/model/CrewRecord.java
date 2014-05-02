@@ -1,7 +1,7 @@
 package net.blerf.ftl.model;
 
 
-public class CrewRecord {
+public class CrewRecord implements Comparable<CrewRecord> {
 
 	private String name;
 	private String race;
@@ -16,6 +16,16 @@ public class CrewRecord {
 		this.value = value;
 	}
 
+	/**
+	 * Copy constructor.
+	 */
+	public CrewRecord( CrewRecord srcRec ) {
+		name = srcRec.getName();
+		race = srcRec.getRace();
+		male = srcRec.isMale();
+		value = srcRec.getValue();
+	}
+
 	public void setName( String s ) { name = s; }
 	public void setRace( String s ) { race = s; }
 	public void setMale( boolean b ) { male = b; }
@@ -25,6 +35,15 @@ public class CrewRecord {
 	public String getRace() { return race; }
 	public boolean isMale() { return male; }
 	public int getValue() { return value; }
+
+
+	@Override
+	public int compareTo( CrewRecord other ) {
+		if ( this.getValue() > other.getValue() ) return 1;
+		if ( this.getValue() < other.getValue() ) return -1;
+		return 0;
+	}
+
 
 	@Override
 	public String toString() {

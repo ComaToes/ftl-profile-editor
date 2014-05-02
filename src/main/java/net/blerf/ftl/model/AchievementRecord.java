@@ -21,11 +21,23 @@ public class AchievementRecord {
 		this.difficulty = difficulty;
 	}
 
-	public void setDifficulty( Difficulty d ) { difficulty = d; }
-	public void setAchievementId( String s ) { achievementId = s; }
+	/**
+	 * Copy constructor.
+	 */
+	public AchievementRecord( AchievementRecord srcAch ) {
+		achievementId = srcAch.getAchievementId();
+		difficulty = srcAch.getDifficulty();
 
-	public Difficulty getDifficulty() { return difficulty; }
+		typeADiff = srcAch.getCompletedWithTypeA();
+		typeBDiff = srcAch.getCompletedWithTypeB();
+		typeCDiff = srcAch.getCompletedWithTypeC();
+	}
+
+	public void setAchievementId( String s ) { achievementId = s; }
 	public String getAchievementId() { return achievementId; }
+
+	public void setDifficulty( Difficulty d ) { difficulty = d; }
+	public Difficulty getDifficulty() { return difficulty; }
 
 	/**
 	 * Sets whether a ship's Type-A layout completed this achievement.
@@ -33,12 +45,12 @@ public class AchievementRecord {
 	 * The game will synchronize the difficulty of the achievement and all
 	 * layout types with the highest one among them.
 	 *
-	 * This manifests in-game in the ship list's "V" with three dots.
+	 * This manifests in-game as a "V" on the ship list, with three dots.
 	 *
 	 * Note: This is only used by PLAYER_SHIP_*_VICTORY achievements.
 	 * This was introduced in FTL 1.5.4.
 	 *
-	 * @param d difficulty for that run, or null (0=EASY, 1=NORMAL, 2=HARD, -1=N/A)
+	 * @param d difficulty for that run, or null
 	 */
 	public void setCompletedWithTypeA( Difficulty d ) { typeADiff = d; }
 	public void setCompletedWithTypeB( Difficulty d ) { typeBDiff = d; }

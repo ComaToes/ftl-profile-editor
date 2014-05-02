@@ -19,6 +19,15 @@ public class ShipAvailability {
 	}
 
 	/**
+	 * Copy constructor.
+	 */
+	public ShipAvailability( ShipAvailability srcAvail ) {
+		this( srcAvail.getShipId(), srcAvail.isUnlockedA(), srcAvail.isUnlockedC() );
+	}
+
+	public String getShipId() { return shipId; }
+
+	/**
 	 * Sets whether the Type-A variant is unlocked.
 	 */
 	public void setUnlockedA( boolean b ) { unlockedA = b; }
