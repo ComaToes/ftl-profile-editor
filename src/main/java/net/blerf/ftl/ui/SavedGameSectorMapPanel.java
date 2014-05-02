@@ -34,10 +34,12 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -56,6 +58,7 @@ import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.SectorMapLayout;
 import net.blerf.ftl.ui.SectorMapLayout.SectorMapConstraints;
+import net.blerf.ftl.ui.StoreShelfPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.ui.hud.SpriteSelector;
 import net.blerf.ftl.ui.hud.SpriteSelector.SpriteCriteria;
@@ -214,7 +217,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		//ctrlPanel.add( Box.createVerticalStrut(8) );
 
 		ActionListener ctrlListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				//if ( shipBlueprint == null ) return;  // No map to edit!
 
 				Object source = e.getSource();
@@ -292,7 +296,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		//borderPanel.add( noticeLbl, BorderLayout.NORTH );
 
 		columnCtrlListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 
 				BasicArrowButton srcBtn = (BasicArrowButton)source;
@@ -472,22 +477,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 				storeState.setMissiles( storeSprite.getMissiles() );
 				storeState.setDroneParts( storeSprite.getDroneParts() );
 
-				SavedGameParser.StoreShelf tmpShelf;
-				SavedGameParser.StoreShelf topShelf = new SavedGameParser.StoreShelf();
-				tmpShelf = storeSprite.getTopShelf();
-				topShelf.setItemType( tmpShelf.getItemType() );
-				for ( SavedGameParser.StoreItem tmpItem : tmpShelf.getItems() ) {
-					topShelf.addItem( new SavedGameParser.StoreItem( tmpItem.isAvailable(), tmpItem.getItemId() ) );
+				storeState.getShelfList().clear();
+				for ( SavedGameParser.StoreShelf shelf : storeSprite.getShelfList() ) {
+					storeState.addShelf( new SavedGameParser.StoreShelf( shelf ) );
 				}
-				SavedGameParser.StoreShelf bottomShelf = new SavedGameParser.StoreShelf();
-				tmpShelf = storeSprite.getBottomShelf();
-				bottomShelf.setItemType( tmpShelf.getItemType() );
-				for ( SavedGameParser.StoreItem tmpItem : tmpShelf.getItems() ) {
-					bottomShelf.addItem( new SavedGameParser.StoreItem( tmpItem.isAvailable(), tmpItem.getItemId() ) );
-				}
-
-				storeState.addShelf( topShelf );
-				storeState.addShelf( bottomShelf );
 
 				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
 				beaconState.setStore( storeState );
@@ -812,10 +805,15 @@ public class SavedGameSectorMapPanel extends JPanel {
 	 * More can be added to the side panel manually.
 	 *
 	 * Afterward, showSidePanel() should be called.
+	 *
+	 * @param title
+	 * @param editorPanel
+	 * @param extraContent optional component(s) to add before cancel/apply buttons
+	 * @param applyCallback method to call when the apply button is clicked
 	 */
-	private void createSidePanel( String title, final FieldEditorPanel editorPanel, final Runnable applyCallback ) {
+	private void createSidePanel( String title, final FieldEditorPanel editorPanel, JComponent extraContent, final Runnable applyCallback ) {
 		clearSidePanel();
-		JLabel titleLbl = new JLabel(title);
+		JLabel titleLbl = new JLabel( title );
 		titleLbl.setAlignmentX( Component.CENTER_ALIGNMENT );
 		sidePanel.add( titleLbl );
 		addSidePanelSeparator(4);
@@ -824,25 +822,32 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
 		sidePanel.add( editorPanel );
 
+		if ( extraContent != null ) {
+			sidePanel.add( Box.createVerticalStrut(10) );
+			sidePanel.add( extraContent );
+		}
+
 		sidePanel.add( Box.createVerticalStrut(10) );
 
 		JPanel applyPanel = new JPanel();
 		applyPanel.setLayout( new BoxLayout(applyPanel, BoxLayout.X_AXIS) );
-		JButton cancelBtn = new JButton("Cancel");
+		JButton cancelBtn = new JButton( "Cancel" );
 		applyPanel.add( cancelBtn );
 		applyPanel.add( Box.createRigidArea( new Dimension(15, 1)) );
-		JButton applyBtn = new JButton("Apply");
+		JButton applyBtn = new JButton( "Apply" );
 		applyPanel.add( applyBtn );
 		sidePanel.add( applyPanel );
 
 		cancelBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 			}
 		});
 
 		applyBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				applyCallback.run();
 			}
 		});
@@ -1111,7 +1116,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				clearSidePanel();
 			}
 		};
-		createSidePanel( title, editorPanel, applyCallback );
+		createSidePanel( title, editorPanel, null, applyCallback );
 
 		ActionListener beaconListener = new ActionListener() {
 			private JComboBox visitedCombo = editorPanel.getCombo(VISITED);
@@ -1128,7 +1133,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 			private JTextField autoShipField = editorPanel.getString(AUTO_SHIP);
 			private JTextField shipEventSeedField = editorPanel.getInt(SHIP_EVENT_SEED);
 
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				boolean resize = false;
 				if ( source == visitedCombo ) {
@@ -1213,7 +1219,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sidePanel.add(visitBtn);
 
 		visitBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				String[] listCombos = new String[] {STARS_LIST, SPRITE_LIST};
 				String[] listNames = new String[] {"BACKGROUND", "PLANET"};
 				BackgroundImageList[] defaultLists = new BackgroundImageList[listCombos.length];
@@ -1269,16 +1276,17 @@ public class SavedGameSectorMapPanel extends JPanel {
 			public void run() {
 			}
 		};
-		createSidePanel( title, editorPanel, applyCallback );
+		createSidePanel( title, editorPanel, null, applyCallback );
 
 		addSidePanelSeparator(6);
 
-		JButton moveBtn = new JButton("Move To...");
+		JButton moveBtn = new JButton( "Move To..." );
 		moveBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		sidePanel.add(moveBtn);
+		sidePanel.add( moveBtn );
 
 		moveBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				movePlayerShip( playerShipSprite );
 			}
 		});
@@ -1290,55 +1298,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final String FUEL = "Fuel";
 		final String MISSILES = "Missiles";
 		final String DRONE_PARTS = "Drone Parts";
-		final String TOP_TYPE = "Top Type";
-		final String TOP_ONE = "T1 Item";
-		final String TOP_AVAIL_ONE = "T1 In Stock";
-		final String TOP_TWO = "T2 Item";
-		final String TOP_AVAIL_TWO = "T2 In Stock";
-		final String TOP_THREE = "T3 Item";
-		final String TOP_AVAIL_THREE = "T3 In Stock";
-		final String BOTTOM_TYPE = "Bottom Type";
-		final String BOTTOM_ONE = "B1 Item";
-		final String BOTTOM_AVAIL_ONE = "B1 In Stock";
-		final String BOTTOM_TWO = "B2 Item";
-		final String BOTTOM_AVAIL_TWO = "B2 In Stock";
-		final String BOTTOM_THREE = "B3 Item";
-		final String BOTTOM_AVAIL_THREE = "B3 In Stock";
-
-		final String[] topSlots = new String[] { TOP_ONE, TOP_TWO, TOP_THREE };
-		final String[] topAvail = new String[] { TOP_AVAIL_ONE, TOP_AVAIL_TWO, TOP_AVAIL_THREE };
-		final String[] bottomSlots = new String[] { BOTTOM_ONE, BOTTOM_TWO, BOTTOM_THREE };
-		final String[] bottomAvail = new String[] { BOTTOM_AVAIL_ONE, BOTTOM_AVAIL_TWO, BOTTOM_AVAIL_THREE };
-		final SavedGameParser.StoreItemType[] itemTypes = SavedGameParser.StoreItemType.values();
-
-		// Use array-loops to manage both shelves.
-		final SavedGameParser.StoreShelf[] shelves = new SavedGameParser.StoreShelf[] { storeSprite.getTopShelf(), storeSprite.getBottomShelf() };
-		final String[] types = new String[] { TOP_TYPE, BOTTOM_TYPE };
-		final String[][] slots = new String[][] { topSlots, bottomSlots };
-		final String[][] avails = new String[][] { topAvail, bottomAvail };
-
-		// Build interchangeable id-vs-toStringable maps, mapped by item type.
-		Map weaponLookup = DataManager.get().getWeapons();
-		Map droneLookup = DataManager.get().getDrones();
-		Map augmentLookup = DataManager.get().getAugments();
-		Map<String, CrewType> crewLookup = new LinkedHashMap<String, CrewType>();
-		for ( CrewType race : new CrewType[] {
-			CrewType.CRYSTAL, CrewType.ENERGY,
-			CrewType.ENGI, CrewType.HUMAN,
-			CrewType.MANTIS, CrewType.ROCK,
-			CrewType.SLUG } ) {
-			crewLookup.put( race.getId(), race );
-		}
-		Map<String, SystemType> systemLookup = new LinkedHashMap<String, SystemType>();
-		for ( SystemType systemType : SystemType.values() ) {
-			systemLookup.put( systemType.getId(), systemType );
-		}
-		final Map<SavedGameParser.StoreItemType, Map> itemLookups = new HashMap<SavedGameParser.StoreItemType, Map>();
-		itemLookups.put( SavedGameParser.StoreItemType.WEAPON, weaponLookup );
-		itemLookups.put( SavedGameParser.StoreItemType.DRONE, droneLookup );
-		itemLookups.put( SavedGameParser.StoreItemType.AUGMENT, augmentLookup );
-		itemLookups.put( SavedGameParser.StoreItemType.CREW, crewLookup );
-		itemLookups.put( SavedGameParser.StoreItemType.SYSTEM, systemLookup );
 
 		String title = String.format("Store (Beacon %02d)", mapLayout.getBeaconId(storeSprite) );
 
@@ -1350,48 +1309,36 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(DRONE_PARTS).setText( ""+storeSprite.getDroneParts() );
 
-		List<String> badIds = new ArrayList<String>();
-		for (int i=0; i < shelves.length; i++) {
-			editorPanel.addBlankRow();
-			editorPanel.addRow( types[i], FieldEditorPanel.ContentType.COMBO );
-			for (int j=0; j < itemTypes.length; j++) {
-				editorPanel.getCombo(types[i]).addItem( itemTypes[j] );
-			}
-			editorPanel.getCombo(types[i]).setSelectedItem( shelves[i].getItemType() );
+		final JTabbedPane shelfTabsPane = new JTabbedPane();
+		shelfTabsPane.setTabLayoutPolicy( JTabbedPane.SCROLL_TAB_LAYOUT );
 
-			for (int j=0; j < slots[i].length; j++) {
-				editorPanel.addRow( slots[i][j], FieldEditorPanel.ContentType.COMBO );
-				editorPanel.addRow( avails[i][j], FieldEditorPanel.ContentType.BOOLEAN );
+		final List<StoreShelfPanel> shelfPanels = new ArrayList<StoreShelfPanel>();
 
-				editorPanel.getCombo(slots[i][j]).addItem( "" );
-				Map lookupMap = itemLookups.get( shelves[i].getItemType() );
-				if ( lookupMap != null ) {
-					for ( Object o : lookupMap.values() ) {
-						editorPanel.getCombo(slots[i][j]).addItem( o );
-					}
-					if ( shelves[i].getItems().size() > j ) {
-						String itemId = shelves[i].getItems().get(j).getItemId();
-						Object itemChoice = lookupMap.get( itemId );
-						if ( itemChoice != null ) {
-							editorPanel.getCombo(slots[i][j]).setSelectedItem( itemChoice );
-						} else {
-							editorPanel.getCombo(slots[i][j]).setSelectedItem( "" );
-							badIds.add( itemId );
-						}
-
-						editorPanel.getBoolean(avails[i][j]).setSelected( shelves[i].getItems().get(j).isAvailable() );
-					}
-				}
-			}
+		for ( SavedGameParser.StoreShelf shelf : storeSprite.getShelfList() ) {
+			StoreShelfPanel shelfPanel = new StoreShelfPanel();
+			shelfPanel.setShelf( shelf );
+			shelfPanels.add( shelfPanel );
+			shelfTabsPane.addTab( "Shelf #"+ (shelfPanels.size()-1), shelfPanel );
 		}
-		if ( badIds.size() > 0 ) {
-			String message = "The following item ids are unrecognized:";
-			for ( String badId : badIds )
-				message += " "+ badId;
-			message += ".";
-			log.debug( message );
-			frame.setStatusText( message );
-		}
+
+		JPanel extraPanel = new JPanel();
+		extraPanel.setLayout( new BoxLayout(extraPanel, BoxLayout.Y_AXIS) );
+
+		JPanel shelfCtrlPanel = new JPanel();
+		shelfCtrlPanel.setLayout( new BoxLayout(shelfCtrlPanel, BoxLayout.X_AXIS) );
+		JButton shelfRemBtn = new JButton( "-1 Shelf" );
+		shelfRemBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove a shelf. (FTL 1.01-1.03.3 is limited to two shelves.)") );
+		shelfCtrlPanel.add( shelfRemBtn );
+		shelfCtrlPanel.add( Box.createRigidArea( new Dimension(15, 1)) );
+		JButton shelfAddBtn = new JButton( "+1 Shelf" );
+		shelfAddBtn.addMouseListener( new StatusbarMouseListener(frame, "Add a shelf. (FTL 1.01-1.03.3 is limited to two shelves.)") );
+		shelfCtrlPanel.add( shelfAddBtn );
+		extraPanel.add( shelfCtrlPanel );
+
+		extraPanel.add( Box.createVerticalStrut(10) );
+
+		shelfTabsPane.setMaximumSize( new Dimension( Integer.MAX_VALUE, shelfTabsPane.getPreferredSize().height ) );
+		extraPanel.add( shelfTabsPane );
 
 		final Runnable applyCallback = new Runnable() {
 			public void run() {
@@ -1409,102 +1356,56 @@ public class SavedGameSectorMapPanel extends JPanel {
 				try { storeSprite.setDroneParts( Integer.parseInt(newString) ); }
 				catch (NumberFormatException e) {}
 
-				for (int i=0; i < shelves.length; i++) {
-					SavedGameParser.StoreItemType itemType = (SavedGameParser.StoreItemType)editorPanel.getCombo(types[i]).getSelectedItem();
-					shelves[i].setItemType( itemType );
-					shelves[i].getItems().clear();
-					for (int j=0; j < slots[i].length; j++) {
-						Object selectedItem = editorPanel.getCombo(slots[i][j]).getSelectedItem();
-						if ( "".equals( selectedItem ) == false && itemLookups.get(itemType) != null ) {
-							// Do a reverse lookup on the map to get an item id.
-							for ( Object entry : itemLookups.get(itemType).entrySet() ) {
-								if ( ((Map.Entry)entry).getValue().equals( selectedItem ) ) {
-									boolean available = editorPanel.getBoolean(avails[i][j]).isSelected();
-									String id = (String)((Map.Entry)entry).getKey();
+				storeSprite.getShelfList().clear();
+				for ( StoreShelfPanel shelfPanel : shelfPanels ) {
+					SavedGameParser.StoreShelf newShelf = new SavedGameParser.StoreShelf();
 
-									SavedGameParser.StoreItem newItem = new SavedGameParser.StoreItem( available, id );
-									shelves[i].getItems().add( newItem );
-									break;
-								}
-							}
-						}
+					SavedGameParser.StoreItemType itemType = shelfPanel.getItemType();
+					List<SavedGameParser.StoreItem> items = shelfPanel.getItems();
+
+					newShelf.setItemType( itemType );
+					for ( SavedGameParser.StoreItem item : items ) {
+						newShelf.addItem( item );
 					}
+
+					storeSprite.addShelf( newShelf );
 				}
 
 				clearSidePanel();
 			}
 		};
-		createSidePanel( title, editorPanel, applyCallback );
-
-		ActionListener shelfListener = new ActionListener() {
-			private boolean ignoreChanges = false;
-
-			public void actionPerformed(ActionEvent e) {
-				if ( ignoreChanges ) return;
-				ignoreChanges = true;
-
-				Object source = e.getSource();
-				boolean resize = false;
-				for (int i=0; i < shelves.length; i++) {
-					JComboBox typeCombo = editorPanel.getCombo(types[i]);
-					if ( source == typeCombo ) {
-						for (int j=0; j < slots[i].length; j++) {
-							JComboBox itemCombo = editorPanel.getCombo(slots[i][j]);
-							itemCombo.removeAllItems();
-							Object selectedType = typeCombo.getSelectedItem();
-
-							itemCombo.addItem( "" );
-							Map lookupMap = itemLookups.get( selectedType );
-							if ( lookupMap != null ) {
-								for ( Object o : lookupMap.values() ) {
-									editorPanel.getCombo(slots[i][j]).addItem( o );
-								}
-							}
-
-							editorPanel.getBoolean(avails[i][j]).setSelected( false );
-						}
-						resize = true;
-					}
-					else {
-						// Check if the source was a slot combo.
-						for (int j=0; j < slots[i].length; j++) {
-							JComboBox itemCombo = editorPanel.getCombo(slots[i][j]);
-							if ( source == itemCombo ) {
-								// Toggle the avail checkbox to sell items and disable "".
-								editorPanel.getBoolean(avails[i][j]).setSelected( !"".equals( itemCombo.getSelectedItem() ) );
-								break;
-							}
-						}
-					}
-				}
-				if ( resize ) {
-					editorPanel.setMaximumSize(editorPanel.getPreferredSize());
-					fitSidePanel();
-				}
-
-				// After all the secondary events, resume monitoring.
-				SwingUtilities.invokeLater(new Runnable() {
-					public void run() {
-						ignoreChanges = false;
-					}
-				});
-			}
-		};
-		for (int i=0; i < shelves.length; i++) {
-			editorPanel.getCombo(types[i]).addActionListener( shelfListener );
-			for (int j=0; j < slots[i].length; j++) {
-				editorPanel.getCombo(slots[i][j]).addActionListener( shelfListener );
-			}
-		}
+		createSidePanel( title, editorPanel, extraPanel, applyCallback );
 
 		addSidePanelSeparator(6);
 
-		JButton removeBtn = new JButton("Remove");
+		JButton removeBtn = new JButton( "Remove" );
 		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		sidePanel.add(removeBtn);
+		sidePanel.add( removeBtn );
+
+		shelfRemBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
+				if ( !shelfPanels.isEmpty() ) {
+					int lastIndex = shelfPanels.size()-1;
+					shelfPanels.remove( lastIndex );
+					shelfTabsPane.removeTabAt( lastIndex );
+				}
+			}
+		});
+
+		shelfAddBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
+				StoreShelfPanel shelfPanel = new StoreShelfPanel();
+				shelfPanels.add( shelfPanel );
+				shelfTabsPane.addTab( "Shelf #"+ (shelfPanels.size()-1), shelfPanel );
+				shelfTabsPane.setSelectedIndex( shelfPanels.size()-1 );
+			}
+		});
 
 		removeBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 				storeSprites.remove( storeSprite );
 				mapPanel.remove( storeSprite );
@@ -1538,7 +1439,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			FTLEvent currentEvent = entry.getValue().getEventById(questSprite.getQuestId());
 			FTLEventList currentEventList = entry.getValue().getEventListById(questSprite.getQuestId());
 			if ( currentEvent != null || currentEventList != null ) {
-				editorPanel.getCombo(ENCOUNTERS_FILE).setSelectedItem(entry.getKey());
+				editorPanel.getCombo(ENCOUNTERS_FILE).setSelectedItem( entry.getKey() );
 
 				for ( FTLEvent tmpEvent : entry.getValue().getEvents() ) {
 					if ( tmpEvent.getId() != null )
@@ -1562,7 +1463,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		// If no file contains the current event, complain.
 		if ( "".equals( editorPanel.getCombo(ENCOUNTERS_FILE).getSelectedItem() ) ) {
 			String message = "The current event/eventlist id is unrecognized: "+ questSprite.getQuestId() +".";
-			log.debug( message );
+			log.error( message );
 			frame.setStatusText( message );
 		}
 
@@ -1580,13 +1481,14 @@ public class SavedGameSectorMapPanel extends JPanel {
 				clearSidePanel();
 			}
 		};
-		createSidePanel( title, editorPanel, applyCallback );
+		createSidePanel( title, editorPanel, null, applyCallback );
 
 		ActionListener questListener = new ActionListener() {
 			private JComboBox fileCombo = editorPanel.getCombo(ENCOUNTERS_FILE);
 			private JComboBox eventCombo = editorPanel.getCombo(EVENT);
 
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				if ( source == fileCombo ) {
 					eventCombo.removeAllItems();
@@ -1616,12 +1518,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		addSidePanelSeparator(6);
 
-		JButton removeBtn = new JButton("Remove");
+		JButton removeBtn = new JButton( "Remove" );
 		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		sidePanel.add(removeBtn);
+		sidePanel.add( removeBtn );
 
 		removeBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 				questSprites.remove( questSprite );
 				mapPanel.remove( questSprite );
@@ -1767,7 +1670,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 		private List<SavedGameParser.StoreShelf> shelfList = new ArrayList<SavedGameParser.StoreShelf>(3);
 		private BufferedImage currentImage = null;
 
-		// TODO: Remove all references to getTopShelf()/getBottomShelf().
 
 		public StoreSprite( SavedGameParser.StoreState storeState ) {
 			if ( storeState != null ) {
@@ -1794,8 +1696,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public int getDroneParts() { return droneParts; }
 
 		public void addShelf( SavedGameParser.StoreShelf shelf ) { shelfList.add( shelf ); }
-		public SavedGameParser.StoreShelf getTopShelf() { return shelfList.get( 0 ); }
-		public SavedGameParser.StoreShelf getBottomShelf() { return shelfList.get( 1 ); }
+		public List<SavedGameParser.StoreShelf> getShelfList() { return shelfList; }
 
 		@Override
 		public void paintComponent( Graphics g ) {

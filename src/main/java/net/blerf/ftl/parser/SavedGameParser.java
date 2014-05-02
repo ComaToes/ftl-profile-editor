@@ -1102,7 +1102,7 @@ public class SavedGameParser extends Parser {
 			StoreState store = new StoreState();
 
 			int shelfCount = 2;          // FTL 1.01-1.03.3 only had two shelves.
-			if ( headerAlpha == 7 ) {    // FTL 1.5.4 made shelves into a list.
+			if ( headerAlpha == 7 ) {    // FTL 1.5.4 made shelves into an N-sized list.
 				shelfCount = readInt(in);
 			}
 			for (int i=0; i < shelfCount; i++) {
@@ -1152,13 +1152,25 @@ public class SavedGameParser extends Parser {
 		if ( beacon.isStorePresent() ) {
 			StoreState store = beacon.getStore();
 
-			int shelfCount = 2;
-			if ( headerAlpha == 7 ) {
-				shelfCount = store.getShelfList().size();
-				writeInt( out, shelfCount );
+			if ( headerAlpha == 2 ) {
+				// FTL 1.01-1.03.3 always had two shelves.
+
+				int shelfLimit = 2;
+				int shelfCount = Math.min( store.getShelfList().size(), shelfLimit );
+				for (int i=0; i < shelfCount; i++) {
+					writeStoreShelf( out, store.getShelfList().get( i ) );
+				}
+				for (int i=0; i < shelfLimit - shelfCount; i++) {
+					StoreShelf dummyShelf = new StoreShelf();
+					writeStoreShelf( out, dummyShelf );
+				}
 			}
-			for (int i=0; i < shelfCount; i++) {
-				writeStoreShelf( out, store.getShelfList().get( i ) );
+			else if ( headerAlpha == 7 ) {
+				writeInt( out, store.getShelfList().size() );
+
+				for ( StoreShelf shelf : store.getShelfList() ) {
+					writeStoreShelf( out, shelf );
+				}
 			}
 
 			writeInt( out, store.getFuel() );
@@ -3720,9 +3732,11 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Constructs an incomplete StoreState.
+		 * Constructs a StoreState.
 		 *
-		 * It will need two StoreShelf objects for FTL 1.01-1.03.3.
+		 * FTL 1.01-1.03.3 always had two StoreShelf objects.
+		 * If more are added, only the first two will be saved.
+		 * If fewer, writeBeacon() will add dummy shelves with no items.
 		 */
 		public StoreState() {
 		}
@@ -3776,6 +3790,12 @@ public class SavedGameParser extends Parser {
 		private List<StoreItem> items = new ArrayList<StoreItem>(3);
 
 
+		/**
+		 * Constructor.
+		 *
+		 * Up to 3 StoreItems may to be added (Set the StoreItemType, too.)
+		 * Fewer StoreItems mean empty space on the shelf.
+		 */
 		public StoreShelf() {
 		}
 
@@ -3815,11 +3835,20 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
+	/**
+	 * An item in a store that either can be bought or has been bought already.
+	 */
 	public static class StoreItem {
 		private boolean available;
 		private String itemId;
 
 
+		/**
+		 * Constructor.
+		 *
+		 * @param available true if the item has not been sold already, false otherwise
+		 * @param itemId an id of a blueprint/race/system
+		 */
 		public StoreItem( boolean available, String itemId ) {
 			this.available = available;
 			this.itemId = itemId;

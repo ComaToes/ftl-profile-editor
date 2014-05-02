@@ -191,7 +191,7 @@ public class FTLFrame extends JFrame {
 		contentPane.add( tasksPane, BorderLayout.CENTER );
 
 		JPanel profilePane = new JPanel( new BorderLayout() );
-		tasksPane.add( "Profile", profilePane );
+		tasksPane.addTab( "Profile", profilePane );
 
 		JToolBar profileToolbar = new JToolBar();
 		setupProfileToolbar(profileToolbar);
@@ -218,15 +218,15 @@ public class FTLFrame extends JFrame {
 		JScrollPane profileShipStatsScroll = new JScrollPane( profileShipStatsPanel );
 		profileShipStatsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		profileTabsPane.add( "Ship Unlocks & Achievements", profileShipUnlockScroll );
-		profileTabsPane.add( "General Achievements", profileGeneralAchsScroll );
-		profileTabsPane.add( "General Stats", profileGeneralStatsScroll );
-		profileTabsPane.add( "Ship Stats", profileShipStatsScroll );
-		profileTabsPane.add( "Dump", profileDumpPanel );
+		profileTabsPane.addTab( "Ship Unlocks & Achievements", profileShipUnlockScroll );
+		profileTabsPane.addTab( "General Achievements", profileGeneralAchsScroll );
+		profileTabsPane.addTab( "General Stats", profileGeneralStatsScroll );
+		profileTabsPane.addTab( "Ship Stats", profileShipStatsScroll );
+		profileTabsPane.addTab( "Dump", profileDumpPanel );
 
 
 		JPanel savedGamePane = new JPanel( new BorderLayout() );
-		tasksPane.add( "Saved Game", savedGamePane );
+		tasksPane.addTab( "Saved Game", savedGamePane );
 
 		JToolBar savedGameToolbar = new JToolBar();
 		setupSavedGameToolbar(savedGameToolbar);
@@ -246,13 +246,13 @@ public class FTLFrame extends JFrame {
 		JScrollPane savedGameGeneralScroll = new JScrollPane( savedGameGeneralPanel );
 		savedGameGeneralScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		savedGameTabsPane.add( "Dump", savedGameDumpPanel );
-		savedGameTabsPane.add( "General", savedGameGeneralScroll );
-		savedGameTabsPane.add( "Player Ship", savedGamePlayerFloorplanPanel );
-		savedGameTabsPane.add( "Nearby Ship", savedGameNearbyFloorplanPanel );
-		savedGameTabsPane.add( "Change Ship", savedGameHangarPanel );
-		savedGameTabsPane.add( "Sector Map", savedGameSectorMapPanel );
-		savedGameTabsPane.add( "State Vars", savedGameStateVarsPanel );
+		savedGameTabsPane.addTab( "Dump", savedGameDumpPanel );
+		savedGameTabsPane.addTab( "General", savedGameGeneralScroll );
+		savedGameTabsPane.addTab( "Player Ship", savedGamePlayerFloorplanPanel );
+		savedGameTabsPane.addTab( "Nearby Ship", savedGameNearbyFloorplanPanel );
+		savedGameTabsPane.addTab( "Change Ship", savedGameHangarPanel );
+		savedGameTabsPane.addTab( "Sector Map", savedGameSectorMapPanel );
+		savedGameTabsPane.addTab( "State Vars", savedGameStateVarsPanel );
 
 		JPanel statusPanel = new JPanel();
 		statusPanel.setLayout( new BoxLayout(statusPanel, BoxLayout.Y_AXIS) );
@@ -1382,14 +1382,14 @@ public class FTLFrame extends JFrame {
 			savedGameGeneralPanel.setGameState( gs );
 			savedGamePlayerFloorplanPanel.setShipState( null );
 			savedGameNearbyFloorplanPanel.setShipState( null );
-			savedGameSectorMapPanel.setGameState( null );
+			savedGameSectorMapPanel.setGameState( gs );
 			savedGameStateVarsPanel.setGameState( gs );
 
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "General" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Player Ship" ), false );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Nearby Ship" ), false );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Change Ship" ), false );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Sector Map" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Sector Map" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), true );
 			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( "Dump" ) );
 			gameStateSaveBtn.setEnabled( true );
@@ -1434,7 +1434,7 @@ public class FTLFrame extends JFrame {
 			savedGameGeneralPanel.updateGameState( gs );
 			//savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
 			//savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
-			//savedGameSectorMapPanel.updateGameState( gs );
+			savedGameSectorMapPanel.updateGameState( gs );
 			savedGameStateVarsPanel.updateGameState( gs );
 
 			// Sync session's redundant ship info with player ship.
