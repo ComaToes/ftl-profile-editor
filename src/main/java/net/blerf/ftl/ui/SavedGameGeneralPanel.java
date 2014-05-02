@@ -334,7 +334,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		try { gameState.setTotalCrewHired(Integer.parseInt(newString)); }
 		catch (NumberFormatException e) {}
 
-		gameState.setDLCEnabled( sectorPanel.getBoolean(DLC).isSelected() );
+		gameState.setDLCEnabled( sessionPanel.getBoolean(DLC).isSelected() );
 
 		newString = sessionPanel.getInt(DIFFICULTY).getText();
 		try { gameState.setDifficulty(Integer.parseInt(newString)); }
