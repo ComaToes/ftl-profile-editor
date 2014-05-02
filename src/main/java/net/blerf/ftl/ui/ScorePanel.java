@@ -24,8 +24,8 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.Score;
-import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.xml.ShipBlueprint;

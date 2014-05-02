@@ -3,7 +3,7 @@ package net.blerf.ftl.model;
 import java.util.List;
 import java.util.ListIterator;
 
-import net.blerf.ftl.model.Score.Difficulty;
+import net.blerf.ftl.constants.Difficulty;
 
 
 public class AchievementRecord {

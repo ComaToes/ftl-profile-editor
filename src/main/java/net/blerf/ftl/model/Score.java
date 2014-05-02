@@ -1,12 +1,12 @@
 package net.blerf.ftl.model;
 
+import net.blerf.ftl.constants.Difficulty;
+
 
 /**
  * A summary of a single past campaign.
  */
 public class Score implements Comparable<Score> {
-
-	public enum Difficulty { EASY, NORMAL, HARD };
 
 	private String shipName = "";
 	private String shipId = "";

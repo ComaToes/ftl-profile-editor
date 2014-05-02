@@ -21,6 +21,7 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
 
+import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.FieldEditorPanel;
@@ -104,14 +105,14 @@ public class SavedGameGeneralPanel extends JPanel {
 		sessionPanel.addRow( TOTAL_SCRAP, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( TOTAL_CREW_HIRED, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( DLC, FieldEditorPanel.ContentType.BOOLEAN );
-		sessionPanel.addRow( DIFFICULTY, FieldEditorPanel.ContentType.INTEGER );
+		sessionPanel.addRow( DIFFICULTY, FieldEditorPanel.ContentType.COMBO );
 		sessionPanel.addRow( TOP_BETA, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.getInt(TOP_BETA).setDocument( new RegexDocument("-?[0-9]*") );
 		sessionPanel.addBlankRow();
 		sessionPanel.addFillRow();
 
 		sessionPanel.getBoolean(DLC).addMouseListener( new StatusbarMouseListener(frame, "Toggle FTL:AE content (changing to false may be dangerous).") );
-		sessionPanel.getInt(DIFFICULTY).addMouseListener( new StatusbarMouseListener(frame, "Difficulty (0=Easy,1=Normal,2=Hard).") );
+		sessionPanel.getCombo(DIFFICULTY).addMouseListener( new StatusbarMouseListener(frame, "Difficulty (FTL 1.01-1.03.3 did not have HARD).") );
 		sessionPanel.getInt(TOP_BETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown session field. Always 0?") );
 
 		sectorPanel = new FieldEditorPanel( true );
@@ -276,12 +277,16 @@ public class SavedGameGeneralPanel extends JPanel {
 			if ( shipBlueprint == null )
 				throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
 
+			for ( Difficulty d : Difficulty.values() ) {
+				sessionPanel.getCombo(DIFFICULTY).addItem( d );
+			}
+
 			sessionPanel.setIntAndReminder( TOTAL_SHIPS_DEFEATED, gameState.getTotalShipsDefeated() );
 			sessionPanel.setIntAndReminder( TOTAL_BEACONS, gameState.getTotalBeaconsExplored() );
 			sessionPanel.setIntAndReminder( TOTAL_SCRAP, gameState.getTotalScrapCollected() );
 			sessionPanel.setIntAndReminder( TOTAL_CREW_HIRED, gameState.getTotalCrewHired() );
 			sessionPanel.setBoolAndReminder( DLC, gameState.isDLCEnabled() );
-			sessionPanel.setIntAndReminder( DIFFICULTY, gameState.getDifficulty() );
+			sessionPanel.setComboAndReminder( DIFFICULTY, gameState.getDifficulty() );
 			sessionPanel.setIntAndReminder( TOP_BETA, gameState.getUnknownBeta() );
 
 			sectorPanel.setIntAndReminder( SECTOR_TREE_SEED, gameState.getSectorTreeSeed() );
@@ -356,7 +361,7 @@ public class SavedGameGeneralPanel extends JPanel {
 
 			if ( zeusEnabled ) {
 				zeusPanel.setIntAndReminder( ZEUS_EPSILON, zeus.getUnknownEpsilon() );
-				zeusPanel.setIntAndReminder( ZEUS_ZETA, zeus.getUnknownZeta() );
+				zeusPanel.setIntAndReminder( ZEUS_ZETA, (zeus.getUnknownZeta() != null ? zeus.getUnknownZeta().intValue() : 0) );
 				zeusPanel.setBoolAndReminder( ZEUS_AUTOFIRE, zeus.getAutofire() );
 				zeusPanel.setIntAndReminder( ZEUS_ETA, zeus.getUnknownEta() );
 				zeusPanel.setIntAndReminder( ZEUS_IOTA, zeus.getUnknownIota() );
@@ -367,6 +372,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		this.repaint();
 	}
 
+	@SuppressWarnings("unchecked")
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
 		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 		String newString = null;
@@ -389,9 +395,8 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		gameState.setDLCEnabled( sessionPanel.getBoolean(DLC).isSelected() );
 
-		newString = sessionPanel.getInt(DIFFICULTY).getText();
-		try { gameState.setDifficulty(Integer.parseInt(newString)); }
-		catch ( NumberFormatException e ) {}
+		Object diffObj = sessionPanel.getCombo(DIFFICULTY).getSelectedItem();
+		gameState.setDifficulty( (Difficulty)diffObj );
 
 		newString = sessionPanel.getInt(TOP_BETA).getText();
 		try { gameState.setUnknownBeta(Integer.parseInt(newString)); }
@@ -491,7 +496,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			catch ( NumberFormatException e ) {}
 
 			newString = zeusPanel.getInt(ZEUS_ZETA).getText();
-			try { zeus.setUnknownZeta(Integer.parseInt(newString)); }
+			try { zeus.setUnknownZeta( new Integer(Integer.parseInt(newString)) ); }
 			catch ( NumberFormatException e ) {}
 
 			zeus.setAutofire( zeusPanel.getBoolean(ZEUS_AUTOFIRE).isSelected() );

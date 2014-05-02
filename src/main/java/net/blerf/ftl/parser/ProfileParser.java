@@ -8,11 +8,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.AchievementRecord;
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.model.Score;
-import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.ShipAvailability;
 import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.model.Stats.StatType;

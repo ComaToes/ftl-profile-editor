@@ -13,10 +13,6 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -27,6 +23,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import net.blerf.ftl.constants.AdvancedFTLConstants;
+import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.ShipLayout;
@@ -38,16 +35,16 @@ import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 public class SavedGameParser extends Parser {
 
-	private CharsetDecoder stringTestDecoder = null;
+	private static final Logger log = LogManager.getLogger(SavedGameParser.class);
 
 
 	public SavedGameParser() {
-		stringTestDecoder = Charset.forName( "US-ASCII" ).newDecoder();
-		stringTestDecoder.onUnmappableCharacter( CodingErrorAction.REPORT );
-		stringTestDecoder.onMalformedInput( CodingErrorAction.REPORT );
 	}
 
 	public SavedGameState readSavedGame( File savFile ) throws IOException {
@@ -86,7 +83,22 @@ public class SavedGameParser extends Parser {
 				throw new IOException( "Unexpected first byte ("+ headerAlpha +") for a SAVED GAME." );
 			}
 
-			gameState.setDifficulty( readInt(in) );
+			int diffFlag = readInt(in);
+			Difficulty diff;
+			if ( diffFlag == 0 ) {
+				diff = Difficulty.EASY;
+			}
+			else if ( diffFlag == 1 ) {
+				diff = Difficulty.NORMAL;
+			}
+			else if ( diffFlag == 2 && headerAlpha == 7 ) {
+				diff = Difficulty.HARD;
+			}
+			else {
+				throw new IOException( String.format("Unsupported difficulty flag for saved game: %d", diffFlag) );
+			}
+
+			gameState.setDifficulty( diff );
 			gameState.setTotalShipsDefeated( readInt(in) );
 			gameState.setTotalBeaconsExplored( readInt(in) );
 			gameState.setTotalScrapCollected( readInt(in) );
@@ -260,7 +272,22 @@ public class SavedGameParser extends Parser {
 			throw new IOException( "Unsupported headerAlpha: "+ headerAlpha );
 		}
 
-		writeInt( out, gameState.getDifficulty() );
+		int diffFlag = 0;
+		if ( gameState.getDifficulty() == Difficulty.EASY ) {
+			diffFlag = 0;
+		}
+		else if ( gameState.getDifficulty() == Difficulty.NORMAL ) {
+			diffFlag = 1;
+		}
+		else if ( gameState.getDifficulty() == Difficulty.HARD && headerAlpha == 7 ) {
+			diffFlag = 2;
+		}
+		else {
+			//throw new IOException( String.format("Unsupported difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), rec.getDifficulty().toString()) );
+			log.warn( String.format("Substituting EASY for unsupported difficulty for saved game: %s", gameState.getDifficulty().toString()) );
+			diffFlag = 0;
+		}
+		writeInt( out, diffFlag );
 		writeInt( out, gameState.getTotalShipsDefeated() );
 		writeInt( out, gameState.getTotalBeaconsExplored() );
 		writeInt( out, gameState.getTotalScrapCollected() );
@@ -1346,7 +1373,7 @@ public class SavedGameParser extends Parser {
 	public static class SavedGameState {
 		private int unknownHeaderAlpha = 0;   // Magic number indicating file format.
 		private boolean dlcEnabled = false;
-		private int difficulty = 0;
+		private Difficulty difficulty = Difficulty.EASY;
 		private int totalShipsDefeated = 0;
 		private int totalBeaconsExplored = 0;
 		private int totalScrapCollected = 0;
@@ -1401,8 +1428,8 @@ public class SavedGameParser extends Parser {
 		 * 1 = Normal
 		 * 2 = Hard   (FTL 1.5.4+)
 		 */
-		public void setDifficulty( int n ) { difficulty = n; }
-		public int getDifficulty() { return difficulty; }
+		public void setDifficulty( Difficulty d ) { difficulty = d; }
+		public Difficulty getDifficulty() { return difficulty; }
 
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
 		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
@@ -1764,18 +1791,12 @@ public class SavedGameParser extends Parser {
 				default: formatDesc = "???"; break;
 			}
 
-			String difficultyString = null;
-			if ( difficulty == 0 ) { difficultyString = "Easy"; }
-			else if ( difficulty == 1 ) { difficultyString = "Normal"; }
-			else if ( difficulty == 2 ) { difficultyString = "Hard"; }
-			else { difficultyString = String.format("%4d (???)", difficulty); }
-
 			boolean first = true;
 			result.append(String.format("File Format:            %5d (%s)\n", unknownHeaderAlpha, formatDesc));
 			result.append(String.format("AE Content:             %5b\n", (dlcEnabled ? "Enabled" : "Disabled") ));
 			result.append(String.format("Ship Name:  %s\n", playerShipName));
 			result.append(String.format("Ship Type:  %s\n", playerShipBlueprintId));
-			result.append(String.format("Difficulty: %s\n", difficultyString ));
+			result.append(String.format("Difficulty: %s\n", difficulty.toString() ));
 			result.append(String.format("Sector:                 %5d (%d)\n", sectorNumber, sectorNumber+1));
 			result.append(String.format("Beta?:                  %5d (Always 0?)\n", unknownBeta));
 			result.append(String.format("Total Ships Defeated:   %5d\n", totalShipsDefeated));

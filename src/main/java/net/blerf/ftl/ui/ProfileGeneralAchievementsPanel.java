@@ -11,8 +11,8 @@ import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 
+import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.AchievementRecord;
-import net.blerf.ftl.model.Score.Difficulty;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FTLFrame;
