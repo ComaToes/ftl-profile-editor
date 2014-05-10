@@ -161,17 +161,22 @@ public class FTLProfileEditor {
 			String wipMsg = "";
 			wipMsg += "FTL:Advanced Edition (1.5.4+) added lots of new info to profiles and saved games.\n";
 			wipMsg += "\n";
-			wipMsg += "Previous editions stored their profile in \"prof.sav\". AE uses \"ae_prof.sav\" instead.\n";
+			wipMsg += "Previous editions stored their profile in \"prof.sav\".\n";
+			wipMsg += "AE uses \"ae_prof.sav\" instead.\n";
+			wipMsg += "\n";
 			wipMsg += "AE reads the old profile the first time you play to migrate scores and such.\n";
 			wipMsg += "Profiles from all editions are fully editable.\n";
 			wipMsg += "\n";
-			wipMsg += "Much of the new saved game info has yet to be deciphered, so AE's \"continue.sav\" is ";
-			wipMsg += "read-only for now.\n";
+			wipMsg += "Much of the new saved game info has yet to be deciphered, so AE's \"continue.sav\" is \n";
+			wipMsg += "only partially editable for now.\n";
 			wipMsg += "\n";
 			wipMsg += "Saved games from FTL 1.03.3 and earlier are still fully editable.\n";
 			wipMsg += "\n";
+			wipMsg += "An old saved game or profile will just ignore the new fields.\n";
+			wipMsg += "\n";
+			wipMsg += "\n";
 			wipMsg += "If you encounter a read error opening a file, that means the editor saw something \n";
-			wipMsg += "new that it doesn't recognize. Including the file in a bug report would be helpful.";
+			wipMsg += "new that it doesn't recognize. Submitting a bug report would be helpful.";
 			JOptionPane.showMessageDialog(null, wipMsg, "Work in Progress", JOptionPane.PLAIN_MESSAGE);
 		}
 
