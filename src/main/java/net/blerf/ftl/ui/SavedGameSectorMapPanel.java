@@ -626,6 +626,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId(beaconId) == null ) {
 						StoreSprite storeSprite = new StoreSprite( null );
+						storeSprite.addShelf( new SavedGameParser.StoreShelf() );
 						SectorMapConstraints storeC = new SectorMapConstraints( SectorMapConstraints.MISC_BOX );
 						storeC.setBeaconId( beaconId );
 						storeSprites.add( storeSprite );
@@ -1373,7 +1374,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		shelfRemBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				if ( !shelfPanels.isEmpty() ) {
+				if ( shelfPanels.size() > 1 ) {
 					int lastIndex = shelfPanels.size()-1;
 					shelfPanels.remove( lastIndex );
 					shelfTabsPane.removeTabAt( lastIndex );

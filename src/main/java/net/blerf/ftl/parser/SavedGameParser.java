@@ -1177,7 +1177,7 @@ public class SavedGameParser extends Parser {
 
 		writeBool( out, beacon.isUnderAttack() );
 
-		boolean storePresent = (beacon.getStore() != null);
+		boolean storePresent = ( beacon.getStore() != null );
 		writeBool( out, storePresent );
 
 		if ( storePresent ) {
@@ -1197,9 +1197,20 @@ public class SavedGameParser extends Parser {
 				}
 			}
 			else if ( headerAlpha == 7 ) {
-				writeInt( out, store.getShelfList().size() );
+				// FTL 1.5.4 requires at least one shelf.
+				int shelfReq = 1;
 
-				for ( StoreShelf shelf : store.getShelfList() ) {
+				List<StoreShelf> pendingShelves = new ArrayList<StoreShelf>();
+				pendingShelves.addAll( store.getShelfList() );
+
+				while ( pendingShelves.size() < shelfReq ) {
+					StoreShelf dummyShelf = new StoreShelf();
+					pendingShelves.add( dummyShelf );
+				}
+
+				writeInt( out, pendingShelves.size() );
+
+				for ( StoreShelf shelf : pendingShelves ) {
 					writeStoreShelf( out, shelf );
 				}
 			}
@@ -3765,11 +3776,6 @@ public class SavedGameParser extends Parser {
 		public List<StoreShelf> getShelfList() { return shelfList; }
 
 		public void addShelf( StoreShelf shelf ) { shelfList.add( shelf ); }
-		public void setTopShelf( StoreShelf shelf ) { shelfList.set( 0, shelf ); }
-		public void setBottomShelf( StoreShelf shelf ) { shelfList.set( 1, shelf ); }
-
-		public StoreShelf getTopShelf() { return shelfList.get( 0 ); }
-		public StoreShelf getBottomShelf() { return shelfList.get( 1 ); }
 
 		@Override
 		public String toString() {
