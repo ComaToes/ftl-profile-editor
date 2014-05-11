@@ -1,12 +1,38 @@
 package net.blerf.ftl.constants;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import net.blerf.ftl.constants.FTLConstants;
+import net.blerf.ftl.parser.SavedGameParser.CrewType;
 
 
 /**
  * Constants for FTL 1.5.4.
+ *
+ * TODO: Determine the "ghost" race's skill mastery intervals in AE.
  */
 public class AdvancedFTLConstants implements FTLConstants {
+
+	private final List<CrewType> crewTypes;
+
+
+	public AdvancedFTLConstants() {
+		List<CrewType> mutableCrewTypes = new ArrayList<CrewType>();
+		mutableCrewTypes.add( CrewType.ANAEROBIC );
+		mutableCrewTypes.add( CrewType.BATTLE );
+		mutableCrewTypes.add( CrewType.CRYSTAL );
+		mutableCrewTypes.add( CrewType.ENERGY );
+		mutableCrewTypes.add( CrewType.ENGI );
+		mutableCrewTypes.add( CrewType.GHOST );
+		mutableCrewTypes.add( CrewType.HUMAN );
+		mutableCrewTypes.add( CrewType.MANTIS );
+		mutableCrewTypes.add( CrewType.ROCK );
+		mutableCrewTypes.add( CrewType.SLUG );
+		crewTypes = Collections.unmodifiableList( mutableCrewTypes );
+	}
+
 
 	@Override
 	public int getMaxReservePower() { return 25; }
@@ -17,20 +43,44 @@ public class AdvancedFTLConstants implements FTLConstants {
 
 
 	@Override
-	public int getMasteryIntervalPilot() { return 13; }
+	public List<CrewType> getCrewTypes() {
+		return crewTypes;
+	}
+
 
 	@Override
-	public int getMasteryIntervalEngine() { return 13; }
+	public int getMasteryIntervalPilot( String race ) {
+		if ( CrewType.HUMAN.getId().equals(race) ) return 13;
+		return 15;
+	}
 
 	@Override
-	public int getMasteryIntervalShield() { return 50; }
+	public int getMasteryIntervalEngine( String race ) {
+		if ( CrewType.HUMAN.getId().equals(race) ) return 13;
+		return 15;
+	}
 
 	@Override
-	public int getMasteryIntervalWeapon() { return 58; }
+	public int getMasteryIntervalShield( String race ) {
+		if ( CrewType.HUMAN.getId().equals(race) ) return 50;
+		return 55;
+	}
 
 	@Override
-	public int getMasteryIntervalRepair() { return 16; }
+	public int getMasteryIntervalWeapon( String race ) {
+		if ( CrewType.HUMAN.getId().equals(race) ) return 58;
+		return 65;
+	}
 
 	@Override
-	public int getMasteryIntervalCombat() { return 7; }
+	public int getMasteryIntervalRepair( String race ) {
+		if ( CrewType.HUMAN.getId().equals(race) ) return 16;
+		return 18;
+	}
+
+	@Override
+	public int getMasteryIntervalCombat( String race ) {
+		if ( CrewType.HUMAN.getId().equals(race) ) return 7;
+		return 8;
+	}
 }

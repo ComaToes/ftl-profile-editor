@@ -1113,12 +1113,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 			crewState.setCombatSkill( crewSprite.getCombatSkill() );
 
 			int masteries = 0;
-			masteries += crewSprite.getPilotSkill() / ftlConstants.getMasteryIntervalPilot();
-			masteries += crewSprite.getEngineSkill() / ftlConstants.getMasteryIntervalEngine();
-			masteries += crewSprite.getShieldSkill() / ftlConstants.getMasteryIntervalShield();
-			masteries += crewSprite.getWeaponSkill() / ftlConstants.getMasteryIntervalWeapon();
-			masteries += crewSprite.getRepairSkill() / ftlConstants.getMasteryIntervalRepair();
-			masteries += crewSprite.getCombatSkill() / ftlConstants.getMasteryIntervalCombat();
+			masteries += crewSprite.getPilotSkill() / ftlConstants.getMasteryIntervalPilot( crewState.getRace() );
+			masteries += crewSprite.getEngineSkill() / ftlConstants.getMasteryIntervalEngine( crewState.getRace() );
+			masteries += crewSprite.getShieldSkill() / ftlConstants.getMasteryIntervalShield( crewState.getRace() );
+			masteries += crewSprite.getWeaponSkill() / ftlConstants.getMasteryIntervalWeapon( crewState.getRace() );
+			masteries += crewSprite.getRepairSkill() / ftlConstants.getMasteryIntervalRepair( crewState.getRace() );
+			masteries += crewSprite.getCombatSkill() / ftlConstants.getMasteryIntervalCombat( crewState.getRace() );
 			crewState.setSkillMasteries( masteries );
 
 			crewState.setRepairs( crewSprite.getRepairs() );
@@ -2909,76 +2909,87 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String ENEMY_DRONE = "Enemy Drone";
 		final String SEX = "Male";
 
-		int pilotInterval = ftlConstants.getMasteryIntervalPilot();
-		int engineInterval = ftlConstants.getMasteryIntervalEngine();
-		int shieldInterval = ftlConstants.getMasteryIntervalShield();
-		int weaponInterval = ftlConstants.getMasteryIntervalWeapon();
-		int repairInterval = ftlConstants.getMasteryIntervalRepair();
-		int combatInterval = ftlConstants.getMasteryIntervalCombat();
-
-		int maxHealth = CrewType.getMaxHealth(crewSprite.getRace());
-
 		String title = "Crew";
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( NAME, FieldEditorPanel.ContentType.STRING );
 		editorPanel.getString(NAME).setText( crewSprite.getName() );
 		editorPanel.addRow( RACE, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(RACE).addItem( CrewType.BATTLE.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.CRYSTAL.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.ENERGY.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.ENGI.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.GHOST.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.HUMAN.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.MANTIS.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.ROCK.getId() );
-		editorPanel.getCombo(RACE).addItem( CrewType.SLUG.getId() );
-		editorPanel.getCombo(RACE).setSelectedItem( crewSprite.getRace() );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(HEALTH).setMaximum( maxHealth );
-		editorPanel.getSlider(HEALTH).setValue( crewSprite.getHealth() );
 		editorPanel.addRow( PILOT_SKILL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(PILOT_SKILL).setMaximum( pilotInterval*2 );
-		editorPanel.getSlider(PILOT_SKILL).setValue( crewSprite.getPilotSkill() );
 		editorPanel.addRow( ENGINE_SKILL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(ENGINE_SKILL).setMaximum( engineInterval*2 );
-		editorPanel.getSlider(ENGINE_SKILL).setValue( crewSprite.getEngineSkill() );
 		editorPanel.addRow( SHIELD_SKILL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(SHIELD_SKILL).setMaximum( shieldInterval*2 );
-		editorPanel.getSlider(SHIELD_SKILL).setValue( crewSprite.getShieldSkill() );
 		editorPanel.addRow( WEAPON_SKILL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(WEAPON_SKILL).setMaximum( weaponInterval*2 );
-		editorPanel.getSlider(WEAPON_SKILL).setValue( crewSprite.getWeaponSkill() );
 		editorPanel.addRow( REPAIR_SKILL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(REPAIR_SKILL).setMaximum( repairInterval*2 );
-		editorPanel.getSlider(REPAIR_SKILL).setValue( crewSprite.getRepairSkill() );
 		editorPanel.addRow( COMBAT_SKILL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(COMBAT_SKILL).setMaximum( combatInterval*2 );
-		editorPanel.getSlider(COMBAT_SKILL).setValue( crewSprite.getCombatSkill() );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( REPAIRS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(REPAIRS).setText( ""+crewSprite.getRepairs() );
 		editorPanel.addRow( COMBAT_KILLS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(COMBAT_KILLS).setText( ""+crewSprite.getCombatKills() );
 		editorPanel.addRow( PILOTED_EVASIONS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(PILOTED_EVASIONS).setText( ""+crewSprite.getPilotedEvasions() );
 		editorPanel.addRow( JUMPS_SURVIVED, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(JUMPS_SURVIVED).setText( ""+crewSprite.getJumpsSurvived() );
 		editorPanel.addRow( PLAYER_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(PLAYER_CONTROLLED).setSelected( crewSprite.isPlayerControlled() );
 		editorPanel.getBoolean(PLAYER_CONTROLLED).addMouseListener( new StatusbarMouseListener(frame, "Player controlled vs NPC.") );
 		editorPanel.addRow( ENEMY_DRONE, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(ENEMY_DRONE).setSelected( crewSprite.isEnemyBoardingDrone() );
 		editorPanel.getBoolean(ENEMY_DRONE).addMouseListener( new StatusbarMouseListener(frame, "Turn into a boarding drone (clobbering other fields), hostile to this ship.") );
 		editorPanel.addRow( SEX, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(SEX).setSelected( crewSprite.isMale() );
 		editorPanel.getBoolean(SEX).addMouseListener( new StatusbarMouseListener(frame, "Only human females have a distinct sprite (Other races look the same either way).") );
+
+		ActionListener crewListener = new ActionListener() {
+			private JComboBox raceCombo = editorPanel.getCombo(RACE);
+			private JSlider healthSlider = editorPanel.getSlider(HEALTH);
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Object source = e.getSource();
+				if ( source == raceCombo ) {
+					CrewType crewType = (CrewType)raceCombo.getSelectedItem();
+
+					int pilotInterval = ftlConstants.getMasteryIntervalPilot( crewType.getId() );
+					int engineInterval = ftlConstants.getMasteryIntervalEngine( crewType.getId() );
+					int shieldInterval = ftlConstants.getMasteryIntervalShield( crewType.getId() );
+					int weaponInterval = ftlConstants.getMasteryIntervalWeapon( crewType.getId() );
+					int repairInterval = ftlConstants.getMasteryIntervalRepair( crewType.getId() );
+					int combatInterval = ftlConstants.getMasteryIntervalCombat( crewType.getId() );
+
+					healthSlider.setMaximum( crewType.getMaxHealth() );
+
+					editorPanel.getSlider(PILOT_SKILL).setMaximum( pilotInterval*2 );
+					editorPanel.getSlider(ENGINE_SKILL).setMaximum( engineInterval*2 );
+					editorPanel.getSlider(SHIELD_SKILL).setMaximum( shieldInterval*2 );
+					editorPanel.getSlider(WEAPON_SKILL).setMaximum( weaponInterval*2 );
+					editorPanel.getSlider(REPAIR_SKILL).setMaximum( repairInterval*2 );
+					editorPanel.getSlider(COMBAT_SKILL).setMaximum( combatInterval*2 );
+				}
+			}
+		};
+		editorPanel.getCombo(RACE).addActionListener( crewListener );
+
+		for ( CrewType crewType : ftlConstants.getCrewTypes() ) {
+			editorPanel.getCombo(RACE).addItem( crewType );
+		}
+		editorPanel.getCombo(RACE).setSelectedItem( CrewType.findById( crewSprite.getRace() ) );
+
+		editorPanel.getSlider(HEALTH).setValue( crewSprite.getHealth() );
+		editorPanel.getSlider(PILOT_SKILL).setValue( crewSprite.getPilotSkill() );
+		editorPanel.getSlider(ENGINE_SKILL).setValue( crewSprite.getEngineSkill() );
+		editorPanel.getSlider(SHIELD_SKILL).setValue( crewSprite.getShieldSkill() );
+		editorPanel.getSlider(WEAPON_SKILL).setValue( crewSprite.getWeaponSkill() );
+		editorPanel.getSlider(REPAIR_SKILL).setValue( crewSprite.getRepairSkill() );
+		editorPanel.getSlider(COMBAT_SKILL).setValue( crewSprite.getCombatSkill() );
+
+		editorPanel.getInt(REPAIRS).setText( ""+crewSprite.getRepairs() );
+		editorPanel.getInt(COMBAT_KILLS).setText( ""+crewSprite.getCombatKills() );
+		editorPanel.getInt(PILOTED_EVASIONS).setText( ""+crewSprite.getPilotedEvasions() );
+		editorPanel.getInt(JUMPS_SURVIVED).setText( ""+crewSprite.getJumpsSurvived() );
+		editorPanel.getBoolean(PLAYER_CONTROLLED).setSelected( crewSprite.isPlayerControlled() );
+		editorPanel.getBoolean(ENEMY_DRONE).setSelected( crewSprite.isEnemyBoardingDrone() );
+		editorPanel.getBoolean(SEX).setSelected( crewSprite.isMale() );
 
 		final Runnable applyCallback = new Runnable() {
 			public void run() {
 				String newString;
 				crewSprite.setName( editorPanel.getString(NAME).getText() );
-				crewSprite.setRace( (String)editorPanel.getCombo(RACE).getSelectedItem() );
+				crewSprite.setRace( ((CrewType)editorPanel.getCombo(RACE).getSelectedItem()).getId() );
 				crewSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
 				crewSprite.setPilotSkill( editorPanel.getSlider(PILOT_SKILL).getValue() );
 				crewSprite.setEngineSkill( editorPanel.getSlider(ENGINE_SKILL).getValue() );
@@ -3012,19 +3023,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		};
 		createSidePanel( title, editorPanel, applyCallback );
-
-		ActionListener crewListener = new ActionListener() {
-			private JComboBox raceCombo = editorPanel.getCombo(RACE);
-			private JSlider healthSlider = editorPanel.getSlider(HEALTH);
-
-			public void actionPerformed(ActionEvent e) {
-				Object source = e.getSource();
-				if ( source == raceCombo ) {
-					healthSlider.setMaximum( CrewType.getMaxHealth( (String)raceCombo.getSelectedItem() ) );
-				}
-			}
-		};
-		editorPanel.getCombo(RACE).addActionListener( crewListener );
 
 		addSidePanelSeparator(6);
 

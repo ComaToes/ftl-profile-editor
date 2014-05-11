@@ -1,12 +1,34 @@
 package net.blerf.ftl.constants;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import net.blerf.ftl.constants.FTLConstants;
+import net.blerf.ftl.parser.SavedGameParser.CrewType;
 
 
 /**
  * Constants for FTL 1.01-1.03.3.
  */
 public class OriginalFTLConstants implements FTLConstants {
+
+	private final List<CrewType> crewTypes;
+
+
+	public OriginalFTLConstants() {
+		List<CrewType> mutableCrewTypes = new ArrayList<CrewType>();
+		mutableCrewTypes.add( CrewType.BATTLE );
+		mutableCrewTypes.add( CrewType.CRYSTAL );
+		mutableCrewTypes.add( CrewType.ENERGY );
+		mutableCrewTypes.add( CrewType.ENGI );
+		mutableCrewTypes.add( CrewType.GHOST );
+		mutableCrewTypes.add( CrewType.HUMAN );
+		mutableCrewTypes.add( CrewType.MANTIS );
+		mutableCrewTypes.add( CrewType.ROCK );
+		mutableCrewTypes.add( CrewType.SLUG );
+		crewTypes = Collections.unmodifiableList( mutableCrewTypes );
+	}
 
 	@Override
 	public int getMaxReservePower() { return 25; }
@@ -17,20 +39,26 @@ public class OriginalFTLConstants implements FTLConstants {
 
 
 	@Override
-	public int getMasteryIntervalPilot() { return 15; }
+	public List<CrewType> getCrewTypes() {
+		return crewTypes;
+	}
+
 
 	@Override
-	public int getMasteryIntervalEngine() { return 15; }
+	public int getMasteryIntervalPilot( String race ) { return 15; }
 
 	@Override
-	public int getMasteryIntervalShield() { return 55; }
+	public int getMasteryIntervalEngine( String race ) { return 15; }
 
 	@Override
-	public int getMasteryIntervalWeapon() { return 65; }
+	public int getMasteryIntervalShield( String race ) { return 55; }
 
 	@Override
-	public int getMasteryIntervalRepair() { return 18; }
+	public int getMasteryIntervalWeapon( String race ) { return 65; }
 
 	@Override
-	public int getMasteryIntervalCombat() { return 8; }
+	public int getMasteryIntervalRepair( String race ) { return 18; }
+
+	@Override
+	public int getMasteryIntervalCombat( String race ) { return 8; }
 }

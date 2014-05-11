@@ -2778,13 +2778,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 	public static enum CrewType {
 		// TODO: Magic numbers.
+		ANAEROBIC("anaerobic", 100),
 		BATTLE   ("battle",    150),
 		CRYSTAL  ("crystal",   120),
 		ENERGY   ("energy",     70),
 		ENGI     ("engi",      100),
 		GHOST    ("ghost",      50),
 		HUMAN    ("human",     100),
-		ANAEROBIC("anaerobic", 100),
 		MANTIS   ("mantis",    100),
 		ROCK     ("rock",      150),
 		SLUG     ("slug",      100);
@@ -3173,12 +3173,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("Saved RoomId:      %5d\n", savedRoomId));
 			result.append(String.format("Saved Room Square: %5d\n", savedRoomSquare));
-			result.append(String.format("Pilot Skill:       %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot(), advConstants.getMasteryIntervalPilot()));
-			result.append(String.format("Engine Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine(), advConstants.getMasteryIntervalEngine()));
-			result.append(String.format("Shield Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", shieldSkill, origConstants.getMasteryIntervalShield(), advConstants.getMasteryIntervalShield()));
-			result.append(String.format("Weapon Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", weaponSkill, origConstants.getMasteryIntervalWeapon(), advConstants.getMasteryIntervalWeapon()));
-			result.append(String.format("Repair Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", repairSkill, origConstants.getMasteryIntervalRepair(), advConstants.getMasteryIntervalRepair()));
-			result.append(String.format("Combat Skill:      %5d (Mastery Interval: %2d in FTL 1.5.4+, Originally %2d)\n", combatSkill, origConstants.getMasteryIntervalCombat(), advConstants.getMasteryIntervalCombat()));
+			result.append(String.format("Pilot Skill:       %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot(race), advConstants.getMasteryIntervalPilot(race)));
+			result.append(String.format("Engine Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine(race), advConstants.getMasteryIntervalEngine(race)));
+			result.append(String.format("Shield Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", shieldSkill, origConstants.getMasteryIntervalShield(race), advConstants.getMasteryIntervalShield(race)));
+			result.append(String.format("Weapon Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", weaponSkill, origConstants.getMasteryIntervalWeapon(race), advConstants.getMasteryIntervalWeapon(race)));
+			result.append(String.format("Repair Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", repairSkill, origConstants.getMasteryIntervalRepair(race), advConstants.getMasteryIntervalRepair(race)));
+			result.append(String.format("Combat Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", combatSkill, origConstants.getMasteryIntervalCombat(race), advConstants.getMasteryIntervalCombat(race)));
 			result.append(String.format("Repairs:           %5d\n", repairs));
 			result.append(String.format("Combat Kills:      %5d\n", combatKills));
 			result.append(String.format("Piloted Evasions:  %5d\n", pilotedEvasions));
