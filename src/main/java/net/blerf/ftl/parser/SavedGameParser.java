@@ -3223,7 +3223,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		TELEPORTER("teleporter", false),
 		CLOAKING  ("cloaking",   false),
 		ARTILLERY ("artillery",  false),
-		BATTERY   ("battery",    false),
+		BATTERY   ("battery",    true),
 		CLONEBAY  ("clonebay",   false),
 		MIND      ("mind",      false),
 		HACKING   ("hacking",    false);
