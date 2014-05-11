@@ -1453,6 +1453,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		ProjectileState projectile = new ProjectileState();
 
 		projectile.setProjectileType( readInt(in) );
+
+		if ( projectile.getProjectileType() == 0 ) {  // ProjectileType=0 is a null shot!?
+			return projectile;
+		}
+
 		projectile.setCurrentPositionX( readInt(in) );
 		projectile.setCurrentPositionY( readInt(in) );
 		projectile.setPreviousPositionX( readInt(in) );
@@ -1498,12 +1503,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		List<Integer> alphaList = new ArrayList<Integer>();  // TODO: Awful kludge!
 		if ( projectile.getProjectileType() == 1 ) {
 			if ( projectile.getType() == 2 ) {                   // Flak
-				alphaList.add( new Integer(readMinMaxedInt(in)) );
-				alphaList.add( new Integer(readMinMaxedInt(in)) );
+				for (int i=0; i < 2; i++) {
+					alphaList.add( new Integer(readMinMaxedInt(in)) );
+				}
 			}
 			else if ( projectile.getType() == 4 ) {              // Ion
-				alphaList.add( new Integer(readMinMaxedInt(in)) );
-				alphaList.add( new Integer(readMinMaxedInt(in)) );
+				for (int i=0; i < 2; i++) {
+					alphaList.add( new Integer(readMinMaxedInt(in)) );
+				}
 			}
 			else if ( projectile.getType() == 5 ) {              // Beam
 				for (int i=0; i < 25; i++) {
@@ -1542,6 +1549,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 	public void writeProjectile( OutputStream out, ProjectileState projectile ) throws IOException {
 		writeInt( out, projectile.getProjectileType() );
+
+		if ( projectile.getProjectileType() == 0 ) {  // ProjectileType=0 is a null shot!?
+			return;
+		}
+
 		writeInt( out, projectile.getCurrentPositionX() );
 		writeInt( out, projectile.getCurrentPositionY() );
 		writeInt( out, projectile.getPreviousPositionX() );
@@ -5511,6 +5523,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			StringBuilder result = new StringBuilder();
 
 			result.append(String.format("Projectile Type?:  %7d\n", projectileType));
+
+			if ( projectileType == 0 ) {
+				result.append("\n");
+				result.append("(When Projectile Type is 0, no other fields are set.)\n");
+				return result.toString();
+			}
+
 			result.append(String.format("Current Position:  %7d,%7d (%8.03f,%8.03f)\n", currentPosX, currentPosY, currentPosX/1000f, currentPosY/1000f));
 			result.append(String.format("Previous Position: %7d,%7d (%8.03f,%8.03f)\n", prevPosX, prevPosY, prevPosX/1000f, prevPosY/1000f));
 			result.append(String.format("Speed?:            %7d\n", speed));
