@@ -201,11 +201,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		MouseInputAdapter miscListener = new MouseInputAdapter() {
 			@Override
-			public void mouseMoved(MouseEvent e) {
+			public void mouseMoved( MouseEvent e ) {
 				miscSelector.setMousePoint( e.getX(), e.getY() );
 			}
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void mouseClicked( MouseEvent e ) {
 				// Left-click triggers callback. Other buttons cancel.
 
 				if ( e.getButton() == MouseEvent.BUTTON1 ) {
@@ -224,12 +224,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 			@Override
-			public void mouseEntered(MouseEvent e) {
+			public void mouseEntered( MouseEvent e ) {
 				//miscSelector.setDescriptionVisible( true );
 				shipViewport.setStatusString( miscSelector.getCriteria().getDescription() );
 			}
 			@Override
-			public void mouseExited(MouseEvent e) {
+			public void mouseExited( MouseEvent e ) {
 				//miscSelector.setDescriptionVisible( false );
 				shipViewport.setStatusString( null );
 				miscSelector.setMousePoint( -1, -1 );
@@ -240,17 +240,21 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Door, Drone, or Weapon";
+
+			@Override
 			public String getDescription() { return desc; }
 		});
 
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite instanceof DoorSprite )
+				if ( sprite instanceof DoorSprite ) {
 					showDoorEditor( (DoorSprite)sprite );
-				else if ( sprite instanceof DroneSprite )
+				} else if ( sprite instanceof DroneSprite ) {
 					showDroneEditor( (DroneSprite)sprite );
-				else if ( sprite instanceof WeaponSprite )
+				} else if ( sprite instanceof WeaponSprite ) {
 					showWeaponEditor( (WeaponSprite)sprite );
+				}
 
 				return true;
 			}
@@ -263,11 +267,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		MouseInputAdapter squareListener = new MouseInputAdapter() {
 			@Override
-			public void mouseMoved(MouseEvent e) {
+			public void mouseMoved( MouseEvent e ) {
 				squareSelector.setMousePoint( e.getX(), e.getY() );
 			}
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void mouseClicked( MouseEvent e ) {
 				// Left-click triggers callback. Other buttons cancel.
 
 				if ( e.getButton() == MouseEvent.BUTTON1 ) {
@@ -284,12 +288,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 			@Override
-			public void mouseEntered(MouseEvent e) {
+			public void mouseEntered( MouseEvent e ) {
 				//squareSelector.setDescriptionVisible( true );
 				shipViewport.setStatusString( squareSelector.getCriteria().getDescription() +"   (Right-click to cancel)" );
 			}
 			@Override
-			public void mouseExited(MouseEvent e) {
+			public void mouseExited( MouseEvent e ) {
 				//squareSelector.setDescriptionVisible( false );
 				shipViewport.setStatusString( null );
 				squareSelector.setMousePoint( -1, -1 );
@@ -391,7 +395,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		ctrlPanel.add( ctrlRowTwoPanel );
 
 		ActionListener ctrlListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				if ( shipBlueprint == null ) return;  // No ship to edit!
 
 				Object source = e.getSource();
@@ -961,6 +966,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipViewport.repaint();
 
 		SwingUtilities.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				shipViewport.setViewPosition(new Point(0,0));
 			}
@@ -1143,9 +1149,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.reset();
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Select: Room";
+
+			@Override
 			public String getDescription() { return desc; }
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				RoomSprite roomSprite = roomSprites.get( roomId );
 				showRoomEditor( roomSprite, squareId );
@@ -1160,8 +1169,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Select: System";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				RoomSprite roomSprite = roomSprites.get( roomId );
@@ -1176,6 +1187,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				RoomSprite roomSprite = roomSprites.get( roomId );
 
@@ -1196,8 +1208,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Select: Crew";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for ( CrewSprite crewSprite : crewSprites ) {
@@ -1209,6 +1223,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				for ( CrewSprite crewSprite : crewSprites ) {
 					if ( crewSprite.getRoomId() == roomId && crewSprite.getSquareId() == squareId ) {
@@ -1227,8 +1242,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Select: Breach";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for ( BreachSprite breachSprite : breachSprites ) {
@@ -1240,6 +1257,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				for ( BreachSprite breachSprite : breachSprites ) {
 					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
@@ -1258,8 +1276,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Select: Fire";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				for ( FireSprite fireSprite : fireSprites ) {
@@ -1271,6 +1291,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				for ( FireSprite fireSprite : fireSprites ) {
 					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
@@ -1289,8 +1310,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Add: Crew";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -1304,6 +1327,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				Point center = squareSelector.getSquareCenter();
 				SavedGameParser.CrewState crewState = new SavedGameParser.CrewState();
@@ -1328,8 +1352,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Add: Breach";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -1343,6 +1369,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				Point center = squareSelector.getSquareCenter();
 				addBreachSprite( center.x, center.y, roomId, squareId, 100 );
@@ -1358,8 +1385,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Add: Fire";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -1373,6 +1402,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				Point center = squareSelector.getSquareCenter();
 				addFireSprite( center.x, center.y, roomId, squareId, 100 );
@@ -1388,8 +1418,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setCriteria(new SquareCriteria() {
 			private final String desc = "Move: Crew";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
 				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
@@ -1403,6 +1435,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				Point center = squareSelector.getSquareCenter();
 				placeSprite( center.x, center.y, mobileSprite );
@@ -1865,6 +1898,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		this.repaint();
 
 		SwingUtilities.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				sideScroll.getVerticalScrollBar().setValue(0);
 			}
@@ -1912,13 +1946,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add( applyPanel );
 
 		cancelBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 			}
 		});
 
 		applyBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				applyCallback.run();
 			}
 		});
@@ -1975,6 +2011,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(SCRAP).setText( ""+shipScrap );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				String newString;
 				newString = editorPanel.getString(SHIP_NAME).getText();
@@ -2035,6 +2072,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				shipAugmentIdList.clear();
 
@@ -2049,7 +2087,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		createSidePanel( title, editorPanel, applyCallback );
 
 		ActionListener augListener = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				for (int i=0; i < augSlots.length; i++) {
 					JComboBox augCombo = editorPanel.getCombo(augSlots[i]);
@@ -2162,6 +2201,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				Object blueprintObj = editorPanel.getCombo(ID).getSelectedItem();
 				String droneId = null;
@@ -2199,7 +2239,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			private JCheckBox playerControlledCheck = editorPanel.getBoolean(PLAYER_CONTROLLED);
 			private JSlider healthSlider = editorPanel.getSlider(HEALTH);
 
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				if ( source == idCombo ) {
 					availablePowerSlider.setValue( availablePower );
@@ -2333,6 +2374,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				Object blueprintObj = editorPanel.getCombo(ID).getSelectedItem();
 				String weaponId = null;
@@ -2368,7 +2410,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			private JCheckBox armedCheck = editorPanel.getBoolean(ARMED);
 			private JSlider cooldownSlider = editorPanel.getSlider(COOLDOWN_TICKS);
 
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				if ( source == idCombo ) {
 					availablePowerSlider.setValue( availablePower );
@@ -2444,6 +2487,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown square field. Always -1?") );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				String newString;
 				roomSprite.setOxygen( editorPanel.getSlider(OXYGEN).getValue() );
@@ -2592,7 +2636,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			private boolean ignoreChanges = false;
 			// Avoid getValueIsAdjusting() checks, which can fail on brief drags.
 
-			public void stateChanged(ChangeEvent e) {
+			@Override
+			public void stateChanged( ChangeEvent e ) {
 				if ( ignoreChanges ) return;
 				ignoreChanges = true;
 
@@ -2692,6 +2737,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getSlider(DAMAGE_PROGRESS).addChangeListener(barListener);
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				String newString;
 				shipReservePowerCapacity = editorPanel.getSlider(RESERVE_CAPACITY).getValue();
@@ -2803,6 +2849,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getSlider(HEALTH).setValue( breachSprite.getHealth() );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				breachSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
 
@@ -2818,7 +2865,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add(removeBtn);
 
 		removeBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 				breachSprites.remove( breachSprite );
 				shipPanel.remove( breachSprite );
@@ -2839,6 +2887,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getSlider(HEALTH).setValue( fireSprite.getHealth() );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				fireSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
 
@@ -2854,7 +2903,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add(removeBtn);
 
 		removeBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 				fireSprites.remove( fireSprite );
 				shipPanel.remove( fireSprite );
@@ -2879,6 +2929,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getBoolean(WALKING_THROUGH).addMouseListener( new StatusbarMouseListener(frame, "Momentarily open as someone walks through.") );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				doorSprite.setOpen( editorPanel.getBoolean(OPEN).isSelected() );
 				doorSprite.setWalkingThrough( editorPanel.getBoolean(WALKING_THROUGH).isSelected() );
@@ -2939,7 +2990,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			private JSlider healthSlider = editorPanel.getSlider(HEALTH);
 
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				if ( source == raceCombo ) {
 					CrewType crewType = (CrewType)raceCombo.getSelectedItem();
@@ -2986,6 +3037,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getBoolean(SEX).setSelected( crewSprite.isMale() );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				String newString;
 				crewSprite.setName( editorPanel.getString(NAME).getText() );
@@ -3037,13 +3089,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add(removeBtn);
 
 		moveBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				moveCrew( crewSprite );
 			}
 		});
 
 		removeBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 				crewSprites.remove( crewSprite );
 				shipPanel.remove( crewSprite );

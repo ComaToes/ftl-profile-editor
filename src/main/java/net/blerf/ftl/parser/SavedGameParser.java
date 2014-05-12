@@ -1383,7 +1383,7 @@ System.err.println(String.format("Environment: @%d", in.getChannel().position())
 			env.setAsteroidField( asteroidField );
 		}
 		env.setSolarFlareFadeTicks( readInt(in) );
-		env.setSolarFlareTicks( readInt(in) );
+		env.setHavocTicks( readInt(in) );
 		env.setPDSTicks( readInt(in) );
 
 		return env;
@@ -1421,7 +1421,7 @@ System.err.println(String.format("Environment: @%d", in.getChannel().position())
 		}
 
 		writeInt( out, env.getSolarFlareFadeTicks() );
-		writeInt( out, env.getSolarFlareTicks() );
+		writeInt( out, env.getHavocTicks() );
 		writeInt( out, env.getPDSTicks() );
 	}
 
@@ -1649,7 +1649,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		DESTROYED_ROCK ("destroyed_rock",  "Rock ships destroyed. (including pirates)"),
 		ENV_DANGER     ("env_danger",      "Jumps into beacons with environmental dangers."),
 		FIRED_SHOT     ("fired_shot",      "Individual beams/blasts/projectiles fired. (see also: used_missile)"),
-		HIGH_O2        ("higho2",          "Times oxygen exceeded 20%, incremented when jumping from a beacon (Bug: Or saving in FTL 1.5.4-1.5.10)."),
+		HIGH_O2        ("higho2",          "Times oxygen exceeded 20%, incremented when arriving at a beacon (Bug: Or loading in FTL 1.5.4-1.5.10)."),
 		KILLED_CREW    ("killed_crew",     "Enemy crew killed. (and possibly beam friendly fire?)"),
 		LOST_CREW      ("lost_crew",       "Crew you've lost: killed, abandoned on nearby ships, taken by events?, but not dismissed. (see also: dead_crew)"),
 		NEBULA         ("nebula",          "Jumps into nebula beacons."),
@@ -4035,6 +4035,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * When the player ship visits this beacon, the resulting encounter
 		 * will use this seed. When no enemy ship is present, this is 0.
+		 *
+		 * In distant beacons occupied by the rebel fleet, this has been
+		 * observed varying between saves during a single fight!?
 		 */
 		public void setShipEventSeed( int n ) { shipEventSeed = n; }
 		public int getShipEventSeed() { return shipEventSeed; }
@@ -4309,6 +4312,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Each integer in the list corresponds to a prompt, and the Integer's
 		 * value is the Nth choice that was clicked. (0-based)
+		 *
+		 * The event will still be in-progress if there aren't enough
+		 * breadcrumbs to renavigate to the end of the event.
+		 *
+		 * The list typically ends with a 0, since events usually conclude with
+		 * a lone "continue" choice.
 		 */
 		public void setChoiceList( ArrayList<Integer> choiceList ) { this.choiceList = choiceList; }
 		public ArrayList<Integer> getChoiceList() { return choiceList; }
@@ -4471,8 +4480,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private HazardVulnerability vulnerableShips = HazardVulnerability.BOTH_SHIPS;
 		private AsteroidFieldState asteroidField = null;
 		private int solarFlareFadeTicks = 0;
-		private int solarFlareTicks = 0;
-		private int pdsTicks = 0;
+		private int havocTicks = 0;
+		private int pdsTicks = 0;  // Used by: PDS. Value lingers after leaving a beacon (sometimes varying by 1).
 
 
 		public EnvironmentState() {
@@ -4502,7 +4511,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Sets elapsed time while the screen fades to/from white during a
-		 * solar flare from a sun/pulsar.
+		 * solar flare from a red giant or pulsar.
 		 *
 		 * TODO: Determine the number this counts to.
 		 */
@@ -4510,15 +4519,20 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getSolarFlareFadeTicks() { return solarFlareFadeTicks; }
 
 		/**
-		 * Sets elapsed time while waiting for a solar flare from a sun/pulsar.
+		 * Sets elapsed time while waiting for havoc from a red giant/pulsar/PDS.
 		 *
-		 * This counts to 30000, triggers a solar flare, and returns to 0.
-		 * A warning appears around 25000.
+		 * For red giants, This counts to 30000, triggers a solar flare, and
+		 * returns to 0. A warning appears around 25000.
 		 *
-		 * TODO: Other environments use this field, too... for some trason.
+		 * For pulsars, this hasn't been observed over 11000.
+		 *
+		 * For PDS, this might count to 20000 before firing AT the ship (as
+		 * opposed to decorative misses)?
+		 *
+		 * After leaving a beacon with such hazards, this value lingers (+/-1).
 		 */
-		public void setSolarFlareTicks( int n ) { solarFlareTicks = n; }
-		public int getSolarFlareTicks() { return solarFlareTicks; }
+		public void setHavocTicks( int n ) { havocTicks = n; }
+		public int getHavocTicks() { return havocTicks; }
 
 		public void setPDSTicks( int n ) { pdsTicks = n; }
 		public int getPDSTicks() { return pdsTicks; }
@@ -4539,8 +4553,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append("\n");
 
 			result.append(String.format("Flare Fade Ticks?: %7d\n", solarFlareFadeTicks));
-			result.append(String.format("Flare Ticks?:      %7d (Counts to 30000)\n", solarFlareTicks));
-			result.append(String.format("PDS Ticks?:        %7d\n", pdsTicks));
+			result.append(String.format("Havoc Ticks?:      %7d (Red Giant/Pulsar/PDS only, Goal varies)\n", havocTicks));
+			result.append(String.format("PDS Ticks?:        %7d (PDS only)\n", pdsTicks));
 
 			return result.toString();
 		}
@@ -5379,7 +5393,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int speed = 0;
 		private int goalPosX = 0, goalPosY = 0;
 		private int heading = 0;
-		private int ownerId = 0;
+		private int ownerId = 0;  // Might be 0 for player ship, 1 for nearby ship?
 		private int selfId = 0;
 
 		private DamageState damage = null;
@@ -5678,6 +5692,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	// Extended info for drones.
 	public static class UnknownAres {
 		// ALPHA
+		//
+		// Alpha[0] decrements from just over 8406 (10000) during preiod of
+		// post-destruction un-redeployability. After it passes 0, the value
+		// lingers.
 		//
 		// Alpha[1] went from 1 (when a hacking drone was moving claw-upwards
 		// toward the top, from the nearby ship that launched it) to 0 (after

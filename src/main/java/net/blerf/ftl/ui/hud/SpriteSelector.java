@@ -7,6 +7,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.font.LineMetrics;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JComponent;
 
@@ -20,7 +21,7 @@ import javax.swing.JComponent;
 public class SpriteSelector extends JComponent {
 	private SpriteCriteria defaultCriteria = new SpriteCriteria();
 
-	private ArrayList<ArrayList<? extends JComponent>> spriteLists = new ArrayList<ArrayList<? extends JComponent>>();;
+	private ArrayList<List<? extends JComponent>> spriteLists = new ArrayList<List<? extends JComponent>>();;
 	private SpriteCriteria spriteCriteria = defaultCriteria;
 	private SpriteSelectionCallback callback = null;
 	private Point mousePoint = new Point( -1, -1 );
@@ -35,7 +36,7 @@ public class SpriteSelector extends JComponent {
 		spriteLists.clear();
 	}
 
-	public void addSpriteList( ArrayList<? extends JComponent> spriteList ) {
+	public void addSpriteList( List<? extends JComponent> spriteList ) {
 		spriteLists.add( spriteList );
 	}
 
@@ -46,7 +47,7 @@ public class SpriteSelector extends JComponent {
 
 			JComponent newSprite = null;
 			if ( mousePoint.x > 0 && mousePoint.y > 0 ) {
-				for ( ArrayList<? extends JComponent> spriteList : spriteLists ) {
+				for ( List<? extends JComponent> spriteList : spriteLists ) {
 					for ( JComponent sprite : spriteList ) {
 						if ( sprite.getBounds().contains( mousePoint ) ) {
 							newSprite = sprite;

@@ -138,11 +138,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		MouseInputAdapter miscListener = new MouseInputAdapter() {
 			@Override
-			public void mouseMoved(MouseEvent e) {
+			public void mouseMoved( MouseEvent e ) {
 				miscSelector.setMousePoint( e.getX(), e.getY() );
 			}
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void mouseClicked( MouseEvent e ) {
 				// Left-click triggers callback. Other buttons cancel.
 
 				if ( e.getButton() == MouseEvent.BUTTON1 ) {
@@ -159,12 +159,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 				}
 			}
 			@Override
-			public void mouseEntered(MouseEvent e) {
+			public void mouseEntered( MouseEvent e ) {
 				//miscSelector.setDescriptionVisible( true );
 				mapViewport.setStatusString( miscSelector.getCriteria().getDescription() +"   (Right-click to cancel)" );
 			}
 			@Override
-			public void mouseExited(MouseEvent e) {
+			public void mouseExited( MouseEvent e ) {
 				//miscSelector.setDescriptionVisible( false );
 				mapViewport.setStatusString( null );
 				miscSelector.setMousePoint( -1, -1 );
@@ -494,8 +494,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Beacon";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite == null ) return false;
 				if ( sprite instanceof BeaconSprite ) {
@@ -505,6 +507,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof BeaconSprite ) {
 					showBeaconEditor( (BeaconSprite)sprite );
@@ -521,8 +524,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Player Ship";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite == null ) return false;
 				if ( sprite instanceof PlayerShipSprite ) {
@@ -532,6 +537,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof PlayerShipSprite ) {
 					showPlayerShipEditor( (PlayerShipSprite)sprite );
@@ -549,8 +555,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Store";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite == null ) return false;
 				if ( sprite instanceof StoreSprite ) {
@@ -560,6 +568,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof StoreSprite ) {
 					showStoreEditor( (StoreSprite)sprite );
@@ -577,8 +586,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Quest";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite == null ) return false;
 				if ( sprite instanceof QuestSprite ) {
@@ -588,6 +599,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof QuestSprite ) {
 					showQuestEditor( (QuestSprite)sprite );
@@ -605,8 +617,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Add: Store";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite == null ) return false;
 				if ( sprite instanceof BeaconSprite ) {
@@ -620,6 +634,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
@@ -650,8 +665,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Add: Quest";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite == null ) return false;
 				if ( sprite instanceof BeaconSprite ) {
@@ -665,6 +682,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
@@ -694,8 +712,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Move: Player Ship";
 
+			@Override
 			public String getDescription() { return desc; }
 
+			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite == null ) return false;
 				if ( sprite instanceof BeaconSprite ) {
@@ -705,6 +725,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setCallback(new SpriteSelectionCallback() {
+			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
@@ -761,6 +782,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		this.repaint();
 
 		SwingUtilities.invokeLater(new Runnable() {
+			@Override
 			public void run() {
 				sideScroll.getVerticalScrollBar().setValue(0);
 			}
@@ -1006,6 +1028,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconSprite.isUnderAttack() );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				String newString;
 
@@ -1262,6 +1285,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 			}
 		};
@@ -1330,6 +1354,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		extraPanel.add( shelfTabsPane );
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				String newString;
 
@@ -1457,6 +1482,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		}
 
 		final Runnable applyCallback = new Runnable() {
+			@Override
 			public void run() {
 				Object evtObj = editorPanel.getCombo(EVENT).getSelectedItem();
 				if ( evtObj instanceof FTLEvent ) {

@@ -81,7 +81,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String ENV_ASTEROID_BKG_TICKS = "Bkg Drift Ticks";
 	private static final String ENV_ASTEROID_TARGET = "Current Target?";
 	private static final String ENV_FLARE_FADE_TICKS = "Flare Fade Ticks?";
-	private static final String ENV_FLARE_TICKS = "Flare Ticks?";
+	private static final String ENV_HAVOC_TICKS = "Havoc Ticks?";
 	private static final String ENV_PDS_TICKS = "PDS Ticks?";
 
 	private static final String AI_SURRENDERED = "Surrendered";
@@ -238,8 +238,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		envPanel.addBlankRow();
 		envPanel.addRow( ENV_FLARE_FADE_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		envPanel.getInt(ENV_FLARE_FADE_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
-		envPanel.addRow( ENV_FLARE_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_FLARE_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.addRow( ENV_HAVOC_TICKS, FieldEditorPanel.ContentType.INTEGER );
+		envPanel.getInt(ENV_HAVOC_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
 		envPanel.addRow( ENV_PDS_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		envPanel.getInt(ENV_PDS_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
 		envPanel.addBlankRow();
@@ -255,8 +255,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		envPanel.getInt(ENV_ASTEROID_GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 		envPanel.getInt(ENV_ASTEROID_BKG_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 		envPanel.getInt(ENV_ASTEROID_TARGET).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_FLARE_FADE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_FLARE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Not just for flares?") );
+		envPanel.getInt(ENV_FLARE_FADE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Active during red giant/pulsar flares, when the entire screen fades.") );
+		envPanel.getInt(ENV_HAVOC_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Red giant/pulsar/PDS only. Goal varies.") );
 		envPanel.getInt(ENV_PDS_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 
 		envPanel.getBoolean(ENV_ASTEROID_FIELD).addItemListener(new ItemListener() {
@@ -486,7 +486,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			envPanel.getInt(ENV_ASTEROID_BKG_TICKS).setEnabled( envEnabled );
 			envPanel.getInt(ENV_ASTEROID_TARGET).setEnabled( envEnabled );
 			envPanel.getInt(ENV_FLARE_FADE_TICKS).setEnabled( envEnabled );
-			envPanel.getInt(ENV_FLARE_TICKS).setEnabled( envEnabled );
+			envPanel.getInt(ENV_HAVOC_TICKS).setEnabled( envEnabled );
 			envPanel.getInt(ENV_PDS_TICKS).setEnabled( envEnabled );
 
 			forceCheckBox( envPanel.getBoolean(ENV_ASTEROID_FIELD), false );
@@ -510,7 +510,7 @@ public class SavedGameGeneralPanel extends JPanel {
 				}
 
 				envPanel.setIntAndReminder( ENV_FLARE_FADE_TICKS, env.getSolarFlareFadeTicks() );
-				envPanel.setIntAndReminder( ENV_FLARE_TICKS, env.getSolarFlareTicks() );
+				envPanel.setIntAndReminder( ENV_HAVOC_TICKS, env.getHavocTicks() );
 				envPanel.setIntAndReminder( ENV_PDS_TICKS, env.getPDSTicks() );
 			}
 
@@ -709,8 +709,8 @@ public class SavedGameGeneralPanel extends JPanel {
 			try { env.setSolarFlareFadeTicks(Integer.parseInt(newString)); }
 			catch ( NumberFormatException e ) {}
 
-			newString = envPanel.getInt(ENV_FLARE_TICKS).getText();
-			try { env.setSolarFlareTicks(Integer.parseInt(newString)); }
+			newString = envPanel.getInt(ENV_HAVOC_TICKS).getText();
+			try { env.setHavocTicks(Integer.parseInt(newString)); }
 			catch ( NumberFormatException e ) {}
 
 			newString = envPanel.getInt(ENV_PDS_TICKS).getText();
