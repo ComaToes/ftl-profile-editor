@@ -305,7 +305,7 @@ public class FTLFrame extends JFrame {
 		}
 		finally {
 			try {if ( stream != null ) stream.close();}
-			catch ( IOException f ) {}
+			catch ( IOException e ) {}
 		}
 		g.dispose();
 
@@ -414,7 +414,7 @@ public class FTLFrame extends JFrame {
 		}
 		finally {
 			try {if ( stream != null ) stream.close();}
-			catch ( IOException f ) {}
+			catch ( IOException e ) {}
 		}
 		return null;
 	}
@@ -527,7 +527,7 @@ public class FTLFrame extends JFrame {
 					}
 					catch( Exception f ) {
 						log.error( String.format("Error reading profile (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error reading profile (\"%s\"):\n%s", chosenFile.getName(), f.getMessage()) );
+						showErrorDialog( String.format("Error reading profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
 						exception = f;
 					}
 					finally {
@@ -661,7 +661,7 @@ public class FTLFrame extends JFrame {
 					}
 					catch( IOException f ) {
 						log.error( String.format("Error saving profile (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error saving profile (\"%s\"):\n%s", f.getMessage()) );
+						showErrorDialog( String.format("Error saving profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
@@ -722,11 +722,11 @@ public class FTLFrame extends JFrame {
 					}
 					catch( IOException f ) {
 						log.error( String.format("Error dumping profile (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error dumping profile (\"%s\"):\n%s", chosenFile.getName(), f.getMessage()) );
+						showErrorDialog( String.format("Error dumping profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
-						catch ( IOException g ) {}
+						catch ( IOException f ) {}
 					}
 				}
 				else {
@@ -788,9 +788,9 @@ public class FTLFrame extends JFrame {
 
 						JOptionPane.showMessageDialog( FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE );
 					}
-					catch( IOException ex ) {
-						log.error( "Error extracting dats.", ex );
-						showErrorDialog( "Error extracting dats:\n"+ ex.getMessage() );
+					catch( IOException f ) {
+						log.error( "Error extracting dats.", f );
+						showErrorDialog( String.format("Error extracting dats:\n%s: %s", f.getClass().getSimpleName(), f.getMessage()) );
 					}
 				}
 				else {
@@ -902,7 +902,7 @@ public class FTLFrame extends JFrame {
 					}
 					catch( Exception f ) {
 						log.error( String.format("Error reading saved game (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error reading saved game (\"%s\"):\n%s", chosenFile.getName(), f.getMessage()) );
+						showErrorDialog( String.format("Error reading saved game (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
 						exception = f;
 					}
 					finally {
@@ -1023,7 +1023,7 @@ public class FTLFrame extends JFrame {
 					}
 					catch( IOException f ) {
 						log.error( String.format("Error saving game state (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error saving game state (\"%s\"):\n%s", chosenFile.getName(), f.getMessage()) );
+						showErrorDialog( String.format("Error saving game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
@@ -1084,7 +1084,7 @@ public class FTLFrame extends JFrame {
 					}
 					catch( IOException f ) {
 						log.error( String.format("Error dumping game state (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error dumping game state (\"%s\"):\n%s", chosenFile.getName(), f.getMessage()) );
+						showErrorDialog( String.format("Error dumping game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
@@ -1418,14 +1418,14 @@ public class FTLFrame extends JFrame {
 			// FTL 1.5.4 is only partially editable.
 
 			savedGameGeneralPanel.setGameState( gs );
-			savedGamePlayerFloorplanPanel.setShipState( null, null );
-			savedGameNearbyFloorplanPanel.setShipState( null, null );
+			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
+			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
 			savedGameSectorMapPanel.setGameState( gs );
 			savedGameStateVarsPanel.setGameState( gs );
 
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "General" ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Player Ship" ), false );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Nearby Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Player Ship" ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Nearby Ship" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Change Ship" ), false );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Sector Map" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), true );
@@ -1470,8 +1470,8 @@ public class FTLFrame extends JFrame {
 
 			// savedGameDumpPanel doesn't modify anything.
 			savedGameGeneralPanel.updateGameState( gs );
-			//savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
-			//savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
+			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
+			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
 			savedGameSectorMapPanel.updateGameState( gs );
 			savedGameStateVarsPanel.updateGameState( gs );
 

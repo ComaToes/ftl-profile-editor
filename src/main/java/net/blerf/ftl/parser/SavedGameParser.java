@@ -2,6 +2,10 @@
 // Classes for unknown objects are named after deities.
 // http://en.wikipedia.org/wiki/List_of_Greek_mythological_figures#Personified_concepts
 
+// For reference on weapons and projectiles, see the "Complete Weapon Attribute Table":
+// http://www.ftlgame.com/forum/viewtopic.php?f=12&t=24600
+
+
 package net.blerf.ftl.parser;
 
 import java.awt.Point;
@@ -855,7 +859,7 @@ public class SavedGameParser extends Parser {
 
 		if ( headerAlpha == 7 ) {
 			crew.setStunTicks( readInt(in) );
-			crew.setUnknownTheta( readInt(in) );
+			crew.setHealthBoost( readInt(in) );
 			crew.setUnknownIota( readInt(in) );
 			crew.setUnknownKappa( readInt(in) );
 			crew.setUnknownLambda( readInt(in) );
@@ -920,7 +924,7 @@ public class SavedGameParser extends Parser {
 
 		if ( headerAlpha == 7 ) {
 			writeInt( out, crew.getStunTicks() );
-			writeInt( out, crew.getUnknownTheta() );
+			writeInt( out, crew.getHealthBoost() );
 			writeInt( out, crew.getUnknownIota() );
 			writeInt( out, crew.getUnknownKappa() );
 			writeInt( out, crew.getUnknownLambda() );
@@ -1013,9 +1017,27 @@ public class SavedGameParser extends Parser {
 		if ( headerAlpha == 7 ) {
 			room.setStationSquare( readInt(in) );
 
-			int stationDirection = readInt(in);
-			if ( stationDirection < 0 || stationDirection > 4 )
-				throw new IOException( "Invalid room station direction: "+ stationDirection );
+			StationDirection stationDirection = null;
+			int stationDirectionFlag = readInt(in);
+
+			if ( stationDirectionFlag == 0 ) {
+				stationDirection = StationDirection.DOWN;
+			}
+			else if ( stationDirectionFlag == 1 ) {
+				stationDirection = StationDirection.RIGHT;
+			}
+			else if ( stationDirectionFlag == 2 ) {
+				stationDirection = StationDirection.UP;
+			}
+			else if ( stationDirectionFlag == 3 ) {
+				stationDirection = StationDirection.LEFT;
+			}
+			else if ( stationDirectionFlag == 4 ) {
+				stationDirection = StationDirection.NONE;
+			}
+			else {
+				throw new IOException( "Unsupported room station direction flag: "+ stationDirection );
+			}
 			room.setStationDirection( stationDirection );
 		}
 
@@ -1033,7 +1055,27 @@ public class SavedGameParser extends Parser {
 
 		if ( headerAlpha == 7 ) {
 			writeInt( out, room.getStationSquare() );
-			writeInt( out, room.getStationDirection() );
+
+			int stationDirectionFlag = 0;
+			if ( room.getStationDirection() == StationDirection.DOWN ) {
+				stationDirectionFlag = 0;
+			}
+			else if ( room.getStationDirection() == StationDirection.RIGHT ) {
+				stationDirectionFlag = 1;
+			}
+			else if ( room.getStationDirection() == StationDirection.UP ) {
+				stationDirectionFlag = 2;
+			}
+			else if ( room.getStationDirection() == StationDirection.LEFT ) {
+				stationDirectionFlag = 3;
+			}
+			else if ( room.getStationDirection() == StationDirection.NONE ) {
+				stationDirectionFlag = 4;
+			}
+			else {
+				throw new IOException( "Unsupported room station direction: "+ room.getStationDirection().toString() );
+			}
+			writeInt( out, stationDirectionFlag );
 		}
 	}
 
@@ -2837,25 +2879,23 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private String race = CrewType.HUMAN.getId();
 		private boolean enemyBoardingDrone = false;
 		private int health = 0;
-		private int blueprintRoomId;
-		private int roomSquare;  // 0-based, L-to-R wrapped row.
+		private int spriteX=0, spriteY=0;
+		private int roomId = -1;
+		private int roomSquare = -1;
 		private boolean playerControlled = false;
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private List<Integer> spriteTintIndeces = new ArrayList<Integer>();
 		private boolean mindControlled = false;
 		private int savedRoomId = 0;
 		private int savedRoomSquare = 0;
 		private int pilotSkill=0, engineSkill=0, shieldSkill=0;
 		private int weaponSkill=0, repairSkill=0, combatSkill=0;
+		private boolean male = true;
 		private int repairs=0, combatKills=0, pilotedEvasions=0;
 		private int jumpsSurvived=0, skillMasteries=0;
 		private int stunTicks = 0;
-		private int spriteX=0, spriteY=0;
-		private List<Integer> spriteTintIndeces = new ArrayList<Integer>();
-		private boolean male=true;
-
-		private int unknownAlpha = 0;
-		private int unknownBeta = 0;
-
-		private int unknownTheta = 0;
+		private int healthBoost = 0;
 		private int unknownIota = 0;
 		private int unknownKappa = 0;
 		private int unknownLambda = 0;
@@ -2869,51 +2909,195 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownTau = 0;
 		private int unknownUpsilon = 0;
 		private int unknownPhi = 0;
-
 		private int lockdownRechargeTicks = 0;
-		private int lockdownRechargeGoal = 0;
+		private int lockdownRechargeTicksGoal = 0;
 		private int unknownOmega = 0;
 
 
 		public CrewState() {
 		}
 
-		public void setName( String s ) {name = s; }
-		public void setRace( String s ) {race = s; }
+		/**
+		 * Copy constructor.
+		 */
+		public CrewState( CrewState srcCrew ) {
+			name = srcCrew.getName();
+			race = srcCrew.getRace();
+			enemyBoardingDrone = srcCrew.isEnemyBoardingDrone();
+			health = srcCrew.getHealth();
+			spriteX = srcCrew.getSpriteX();
+			spriteY = srcCrew.getSpriteY();
+			roomId = srcCrew.getRoomId();
+			roomSquare = srcCrew.getRoomSquare();
+			playerControlled = srcCrew.isPlayerControlled();
+			unknownAlpha = srcCrew.getUnknownAlpha();
+			unknownBeta = srcCrew.getUnknownBeta();
 
+			for ( Integer colorIndex : srcCrew.getSpriteTintIndeces() ) {
+				spriteTintIndeces.add( new Integer( colorIndex ) );
+			}
+
+			mindControlled = srcCrew.isMindControlled();
+			savedRoomId = srcCrew.getSavedRoomId();
+			savedRoomSquare = srcCrew.getSavedRoomSquare();
+			pilotSkill = srcCrew.getPilotSkill();
+			engineSkill = srcCrew.getEngineSkill();
+			shieldSkill = srcCrew.getShieldSkill();
+			weaponSkill = srcCrew.getWeaponSkill();
+			repairSkill = srcCrew.getRepairSkill();
+			combatSkill = srcCrew.getCombatSkill();
+			male = srcCrew.isMale();
+			repairs = srcCrew.getRepairs();
+			combatKills = srcCrew.getCombatKills();
+			pilotedEvasions = srcCrew.getPilotedEvasions();
+			jumpsSurvived = srcCrew.getJumpsSurvived();
+			skillMasteries = srcCrew.getSkillMasteries();
+			stunTicks = srcCrew.getStunTicks();
+			healthBoost = srcCrew.getHealthBoost();
+			unknownIota = srcCrew.getUnknownIota();
+			unknownKappa = srcCrew.getUnknownKappa();
+			unknownLambda = srcCrew.getUnknownLambda();
+			unknownMu = srcCrew.getUnknownMu();
+			unknownNu = srcCrew.getUnknownNu();
+			unknownXi = srcCrew.getUnknownXi();
+			unknownOmicron = srcCrew.getUnknownOmicron();
+			unknownPi = srcCrew.getUnknownPi();
+			unknownRho = srcCrew.getUnknownRho();
+			unknownSigma = srcCrew.getUnknownSigma();
+			unknownTau = srcCrew.getUnknownTau();
+			unknownUpsilon = srcCrew.getUnknownUpsilon();
+			unknownPhi = srcCrew.getUnknownPhi();
+			lockdownRechargeTicks = srcCrew.getLockdownRechargeTicks();
+			lockdownRechargeTicksGoal = srcCrew.getLockdownRechargeTicksGoal();
+			unknownOmega = srcCrew.getUnknownOmega();
+		}
+
+		public void setName( String s ) { name = s; }
 		public String getName() { return name; }
+
+		public void setRace( String s ) { race = s; }
 		public String getRace() { return race; }
+
+		/**
+		 * Sets whether this crew member is a hostile boarding drone.
+		 *
+		 * Upon loading after setting this on a crew member,
+		 * name will change to "Anti-Personnel Drone", race
+		 * will be "battle", and playerControlled will be
+		 * false on the player ship or true on a nearby ship.
+		 *
+		 * If after loading in-game, you re-edit this to false
+		 * and leave the "battle" race, the game will change
+		 * it to "human".
+		 *
+		 * Drones on nearby ships (which are playerControlled)
+		 * will not be preserved the next time the game saves,
+		 * even if you modify the player ship's drone list to
+		 * have an armed boarder.
+		 *
+		 * Presumably this is so intruders can persist without
+		 * a ship, which would normally have a drones section
+		 * to contain them.
+		 *
+		 * TODO: Jump away from Boss #2 to see what its
+		 * drone is (blueprints.xml mentions BOARDER_BOSS).
+		 */
+		public void setEnemyBoardingDrone( boolean b ) {
+			enemyBoardingDrone = b;
+		}
+		public boolean isEnemyBoardingDrone() { return enemyBoardingDrone; }
 
 		/**
 		 * Sets this crew's current hit points.
 		 *
 		 * For preserved dead crew, which have no body, this is 0.
+		 *
+		 * This value includes any temporary modifiers, and may exceed the
+		 * CrewType's normal max health. FTL 1.01-1.03.3 had no such modifiers
+		 * and capped health at the max.
+		 *
+		 * @see setHealthBoost(int)
 		 */
-		public void setHealth( int n ) {health = n; }
+		public void setHealth( int n ) { health = n; }
 		public int getHealth() { return health; }
+
+		/**
+		 * Sets the position of the crew's image.
+		 *
+		 * Technically the roomId/square fields set the crew's desired location.
+		 * This field is where the crew really is, possibly en route.
+		 *
+		 * It's the position of the crew image's center, relative to the
+		 * top-left square's corner, in pixels, plus (the ShipLayout's offset
+		 * times the square-size, which is 35).
+		 *
+		 * For preserved dead crew, which have no body, this lingers, or may be
+		 * (0,0).
+		 */
+		public void setSpriteX( int n ) { spriteX = n; };
+		public void setSpriteY( int n ) { spriteY = n; };
+		public int getSpriteX() { return spriteX; }
+		public int getSpriteY() { return spriteY; }
 
 		/**
 		 * Sets the room this crew is in (or at least trying to move toward).
 		 *
 		 * For preserved dead crew, which have no body, this is -1.
 		 *
-		 * The crew's room square must be set as well.
+		 * roomId and roomSquare need to be specified together.
 		 */
-		public void setRoomId( int n ) {blueprintRoomId = n; }
-		public int getRoomId() { return blueprintRoomId; }
+		public void setRoomId( int n ) { roomId = n; }
+		public int getRoomId() { return roomId; }
 
 		/**
 		 * Sets the square this crew is in (or at least trying to move toward).
 		 *
+		 * Squares are indexed horizontally, left-to-right, wrapping into the
+		 * next row down.
+		 *
 		 * For preserved dead crew, which have no body, this is -1.
 		 *
-		 * The crew's roomId must be set as well.
+		 * roomId and roomSquare need to be specified together.
 		 */
 		public void setRoomSquare( int n ) { roomSquare = n; }
 		public int getRoomSquare() { return roomSquare; }
 
 		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public boolean isPlayerControlled() { return playerControlled; }
+
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public int getUnknownBeta() { return unknownBeta; }
+
+		/**
+		 * Sets a list of tints to apply to the sprite.
+		 *
+		 * The tints themselves are defined in
+		 * blueprints.xml:crewBlueprint/colorList
+		 *
+		 * The first Integer in the list corresponds to the first 'layer' tag
+		 * in the xml, and the Integer's value is the nth 'color' tag to use.
+		 *
+		 * Note: Normal NPC crew have a hardcoded range of layer/color indeces
+		 * based on stock blueprints. When mods add layers to a race blueprint,
+		 * NPCs that spawn won't use them. When mods remove layers, NPCs that
+		 * reference the missing layer/colors display as a gray rectangle.
+		 *
+		 * Stock layers(colors): anaerobic=1(4), crystal=1(4), energy=1(5),
+		 * engi=0(0), human=2(2/4), mantis=1(9), rock=1(7) slug=1(8).
+		 *
+		 * TODO: Test if FTL honors non-standard tints of edited NPCs.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setSpriteTintIndeces( List<Integer> indeces ) {
+			spriteTintIndeces = indeces;
+		}
+		public List<Integer> getSpriteTintIndeces() {
+			return spriteTintIndeces;
+		}
 
 		/**
 		 * Sets whether this crew is mind controlled.
@@ -2941,17 +3125,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setSavedRoomSquare( int n ) { savedRoomSquare = n; }
 		public int getSavedRoomSquare() { return savedRoomSquare; }
 
-		public void setPilotSkill( int n ) {pilotSkill = n; }
-		public void setEngineSkill( int n ) {engineSkill = n; }
-		public void setShieldSkill( int n ) {shieldSkill = n; }
-		public void setWeaponSkill( int n ) {weaponSkill = n; }
-		public void setRepairSkill( int n ) {repairSkill = n; }
-		public void setCombatSkill( int n ) {combatSkill = n; }
-		public void setRepairs( int n ) { repairs = n; }
-		public void setCombatKills( int n ) { combatKills = n; }
-		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
-		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
-		public void setSkillMasteries( int n ) { skillMasteries = n; }
+		public void setPilotSkill( int n ) { pilotSkill = n; }
+		public void setEngineSkill( int n ) { engineSkill = n; }
+		public void setShieldSkill( int n ) { shieldSkill = n; }
+		public void setWeaponSkill( int n ) { weaponSkill = n; }
+		public void setRepairSkill( int n ) { repairSkill = n; }
+		public void setCombatSkill( int n ) { combatSkill = n; }
 
 		public int getPilotSkill() { return pilotSkill; }
 		public int getEngineSkill() { return engineSkill; }
@@ -2959,20 +3138,51 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getWeaponSkill() { return weaponSkill; }
 		public int getRepairSkill() { return repairSkill; }
 		public int getCombatSkill() { return combatSkill; }
+
+		/**
+		 * Toggles sex.
+		 * Humans with this set to false have a
+		 * female image. Other races accept the
+		 * flag but use the same image as male.
+		 *
+		 * No Andorians in the game, so this is
+		 * only a two-state boolean.
+		 */
+		public void setMale( boolean b ) { male = b; }
+		public boolean isMale() { return male; }
+
+		public void setRepairs( int n ) { repairs = n; }
+		public void setCombatKills( int n ) { combatKills = n; }
+		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
+		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
+
 		public int getRepairs() { return repairs; }
 		public int getCombatKills() { return combatKills; }
 		public int getPilotedEvasions() { return pilotedEvasions; }
 		public int getJumpsSurvived() { return jumpsSurvived; }
+
+		/**
+		 * Sets the total number of skill masteries ever earned.
+		 *
+		 * This is incremented when any skill reaches the first or second
+		 * mastery interval. So this is intended to max out at 12.
+		 *
+		 * Bug: In FTL 1.5.4-1.5.10, Clonebay skill penalties allowed crew to
+		 * re-earn masteries and increment further.
+		 */
+		public void setSkillMasteries( int n ) { skillMasteries = n; }
 		public int getSkillMasteries() { return skillMasteries; }
 
 		/**
 		 * Sets time required for stun to wear off.
 		 *
 		 * If greater than 0, the crew will become unresponsive while this
-		 * number decrements to 0. Additional stuns will probably add to it.
+		 * number decrements to 0.
 		 *
-		 * A weapon adds X*1000 ticks, where X is the value of the 'stun' tag
-		 * in its WeaponBlueprint xml.
+		 * A weapon sets X*1000 ticks, where X is the value of the 'stun' tag
+		 * in its WeaponBlueprint xml. Additional hits from a stun weapon will
+		 * reset this value, but only if it would be higher than the current
+		 * value.
 		 *
 		 * When not stunned, this will be 0.
 		 *
@@ -2981,13 +3191,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setStunTicks( int n ) { stunTicks = n; }
 		public int getStunTicks() { return stunTicks; }
 
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		/**
+		 * Sets temporary bonus health from a foreign Mind Control system.
+		 *
+		 * When the mind control effect expires, the boost amount will be
+		 * subtracted from health, and this value will reset to 0.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setHealthBoost( int n ) { healthBoost = n; }
+		public int getHealthBoost() { return healthBoost; }
 
-		public int getUnknownAlpha() { return unknownAlpha; }
-		public int getUnknownBeta() { return unknownBeta; }
-
-		public void setUnknownTheta( int n ) { unknownTheta = n; }
 		public void setUnknownIota( int n ) { unknownIota = n; }
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
 		public void setUnknownLambda( int n ) { unknownLambda = n; }
@@ -3002,7 +3216,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
 		public void setUnknownPhi( int n ) { unknownPhi = n; }
 
-		public int getUnknownTheta() { return unknownTheta; }
 		public int getUnknownIota() { return unknownIota; }
 		public int getUnknownKappa() { return unknownKappa; }
 		public int getUnknownLambda() { return unknownLambda; }
@@ -3038,101 +3251,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * @see #setLockdownRechargeTicks(int)
 		 */
-		public void setLockdownRechargeTicksGoal( int n ) { lockdownRechargeGoal = n; }
-		public int getLockdownRechargeTicksGoal() { return lockdownRechargeGoal; }
+		public void setLockdownRechargeTicksGoal( int n ) { lockdownRechargeTicksGoal = n; }
+		public int getLockdownRechargeTicksGoal() { return lockdownRechargeTicksGoal; }
 
 		public void setUnknownOmega( int n ) { unknownOmega = n; }
 		public int getUnknownOmega() { return unknownOmega; }
 
-		/**
-		 * Sets the position of the crew's image.
-		 *
-		 * Technically the roomId/square fields set the
-		 * crew's desired location. This field is where
-		 * the crew really is, possibly en route.
-		 *
-		 * It's the position of the crew image's center,
-		 * relative to the top-left square's corner, in
-		 * pixels, plus (the ShipLayout's offset times
-		 * the square-size, which is 35).
-		 *
-		 * For preserved dead crew, which have no body, this is (0,0).
-		 */
-		public void setSpriteX( int n ) { spriteX = n; };
-		public void setSpriteY( int n ) { spriteY = n; };
-		public int getSpriteX() { return spriteX; }
-		public int getSpriteY() { return spriteY; }
-
-		/**
-		 * Sets a list of tints to apply to the sprite.
-		 *
-		 * The tints themselves are defined in
-		 * blueprints.xml:crewBlueprint/colorList
-		 *
-		 * The first Integer in the list corresponds to the first 'layer' tag
-		 * in the xml, and the Integer's value is the nth 'color' tag to use.
-		 *
-		 * Note: Normal NPC crew have a hardcoded range of layer/color indeces
-		 * based on stock blueprints. When mods add layers to a race blueprint,
-		 * NPCs that spawn won't use them. When mods remove layers, NPCs that
-		 * reference the missing layer/colors display as a gray rectangle.
-		 *
-		 * Stock layers(colors): anaerobic=1(4), crystal=1(4), energy=1(5),
-		 * engi=0(0), human=2(2/4), mantis=1(9), rock=1(7) slug=1(8).
-		 *
-		 * TODO: Test if FTL honors non-standard tints of edited NPCs.
-		 *
-		 * This was introduced in FTL 1.5.4.
-		 */
-		public void setSpriteTintIndeces( List<Integer> indeces ) {
-			spriteTintIndeces = indeces;
-		}
-		public List<Integer> getSpriteTintIndeces() {
-			return spriteTintIndeces;
-		}
-
-		/**
-		 * Toggles sex.
-		 * Humans with this set to false have a
-		 * female image. Other races accept the
-		 * flag but use the same image as male.
-		 *
-		 * No Andorians in the game, so this is
-		 * only a two-state boolean.
-		 */
-		public void setMale( boolean b ) {
-			male = b;
-		}
-		public boolean isMale() { return male; }
-
-		/**
-		 * Sets whether this crew member is a hostile boarding drone.
-		 *
-		 * Upon loading after setting this on a crew member,
-		 * name will change to "Anti-Personnel Drone", race
-		 * will be "battle", and playerControlled will be
-		 * false on the player ship or true on a nearby ship.
-		 *
-		 * If after loading in-game, you re-edit this to false
-		 * and leave the "battle" race, the game will change
-		 * it to "human".
-		 *
-		 * Drones on nearby ships (which are playerControlled)
-		 * will not be preserved the next time the game saves,
-		 * even if you modify the player ship's drone list to
-		 * have an armed boarder.
-		 *
-		 * Presumably this is so intruders can persist without
-		 * a ship, which would normally have a drones section
-		 * to contain them.
-		 *
-		 * TODO: Jump away from Boss #2 to see what its
-		 * drone is (blueprints.xml mentions BOARDER_BOSS).
-		 */
-		public void setEnemyBoardingDrone( boolean b ) {
-			enemyBoardingDrone = b;
-		}
-		public boolean isEnemyBoardingDrone() { return enemyBoardingDrone; }
 
 		@Override
 		public String toString() {
@@ -3152,7 +3276,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Sex:               %s\n", (male ? "Male" : "Female") ));
 			result.append(String.format("Health:            %5d\n", health));
 			result.append(String.format("Sprite Position:    %3d,%3d\n", spriteX, spriteY));
-			result.append(String.format("RoomId:            %5d\n", blueprintRoomId));
+			result.append(String.format("RoomId:            %5d\n", roomId));
 			result.append(String.format("Room Square:       %5d\n", roomSquare));
 			result.append(String.format("Player Controlled: %5b\n", playerControlled));
 			result.append(String.format("Alpha?:            %5d\n", unknownAlpha));
@@ -3197,7 +3321,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Jumps Survived:    %5d\n", jumpsSurvived));
 			result.append(String.format("Skill Masteries:   %5d\n", skillMasteries));
 			result.append(String.format("Stun Ticks:       %6d (Decrements to 0)\n", stunTicks));
-			result.append(String.format("Theta?:           %6d\n", unknownTheta));
+			result.append(String.format("Health Boost:     %6d (Subtracted from health when Mind Ctrl expires)\n", healthBoost));
 			result.append(String.format("Iota?:            %6d\n", unknownIota));
 			result.append(String.format("Kappa?:           %6d\n", unknownKappa));
 			result.append(String.format("Lambda?:          %6d\n", unknownLambda));
@@ -3212,7 +3336,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Upsilon?:         %6d\n", unknownUpsilon));
 			result.append(String.format("Phi?:             %6d\n", unknownPhi));
 			result.append(String.format("Lockdown Ticks:   %6d (Crystal only, time spent recharging)\n", lockdownRechargeTicks));
-			result.append(String.format("Lockdown Goal:    %6d (Crystal only, ticks needed to recharge)\n", lockdownRechargeGoal));
+			result.append(String.format("Lockdown Goal:    %6d (Crystal only, ticks needed to recharge)\n", lockdownRechargeTicksGoal));
 			result.append(String.format("Omega?:           %6d (Crystal only)\n", unknownOmega));
 			return result.toString();
 		}
@@ -3269,13 +3393,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int deionizationTicks = Integer.MIN_VALUE;
 
 		private int batteryPower = 0;
-
+		private int hackLevel = 0;
+		private boolean hacked = false;
 		private int temporaryCapacityCap = 1000;
 		private int temporaryCapacityLoss = 0;
 		private int temporaryCapacityDivisor = 1;
-
-		private int hackLevel = 0;
-		private boolean hacked = false;
 
 
 		public SystemState( SystemType systemType ) {
@@ -3501,12 +3623,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 
+	public static enum StationDirection { DOWN, RIGHT, UP, LEFT, NONE }
+
 	public static class RoomState {
 		private int oxygen = 100;
 		private ArrayList<SquareState> squareList = new ArrayList<SquareState>();
 
 		private int stationSquare = -1;
-		private int stationDirection = 4;
+		private StationDirection stationDirection = StationDirection.NONE;
 
 
 		public RoomState() {
@@ -3527,6 +3651,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets a room square for a station, to man a system.
 		 *
+		 * When the system's capacity is 0, this is not set.
+		 *
 		 * The station's direction must be set as well.
 		 *
 		 * This was introduced in FTL 1.5.4.
@@ -3538,16 +3664,19 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets which edge of a room square a station should be placed at.
 		 *
+		 * When the system's capacity is 0, this is not set.
+		 *
 		 * The station's room square must be set as well.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 * @param n 0=D,1=R,2=U,3=L,4=None
 		 */
-		public void setStationDirection( int n ) { stationDirection = n; }
-		public int getStationDirection() { return stationDirection; }
+		public void setStationDirection( StationDirection d ) { stationDirection = d; }
+		public StationDirection getStationDirection() { return stationDirection; }
 
 		/**
 		 * Adds a floor square to the room.
+		 *
 		 * Squares are indexed horizontally, left-to-right, wrapping
 		 * into the next row down.
 		 *
@@ -3574,18 +3703,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			String dirDesc;
-			switch ( stationDirection ) {
-				case( 0 ): dirDesc = "Down"; break;
-				case( 1 ): dirDesc = "Right"; break;
-				case( 2 ): dirDesc = "Up"; break;
-				case( 3 ): dirDesc = "Left"; break;
-				case( 4 ): dirDesc = "N/A"; break;
-				default: dirDesc = "???"; break;
-			}
-
 			result.append(String.format("Oxygen: %3d%%\n", oxygen));
-			result.append(String.format("Station Square: %2d, Station Direction: %d (%s)\n", stationSquare, stationDirection, dirDesc));
+			result.append(String.format("Station Square: %2d, Station Direction: %s\n", stationSquare, stationDirection.toString()));
 
 			result.append("Squares...\n");
 			for (SquareState square : squareList) {
@@ -5386,6 +5505,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 
+	/**
+	 * Constants for projectile/damage ownership.
+	 *
+	 * OwnerId (-1, 0, 1)
+	 */
+	public static enum Affiliation {
+		NEUTRAL, PLAYER_SHIP, NEARBY_SHIP;
+	}
+
+
+
 	public static class ProjectileState {
 		private int projectileType = 0;
 		private int currentPosX = 0, currentPosY = 0;
@@ -5640,14 +5770,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setBreachChance( int n ) { breachChance = n; }
 		public void setIonDamage( int n ) { ionDamage = n; }
 		public void setSystemDamage( int n ) { systemDamage = n; }
-		public void setPersonnelDamage( int n ) { personnelDamage = n; }
-		public void setHullBuster( boolean b ) { hullBuster = b; }
-		public void setOwnerId( int n ) { ownerId = n; }
-		public void setSelfId( int n ) { selfId = n; }
-		public void setLockdown( boolean b ) { lockdown = b; }
-		public void setCrystalShard( boolean b ) { crystalShard = b; }
-		public void setStunChance( int n ) { stunChance = n; }
-		public void setStunAmount( int n ) { stunAmount = n; }
 
 		public int getHullDamage() { return hullDamage; }
 		public int getShieldPiercing() { return shieldPiercing; }
@@ -5655,8 +5777,32 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getBreachChance() { return breachChance; }
 		public int getIonDamage() { return ionDamage; }
 		public int getSystemDamage() { return systemDamage; }
+
+		/**
+		 * Sets damage to apply to personnel.
+		 *
+		 * This is dealt per-square to each crew in the room hit. A Beam weapon
+		 * can injure someone twice if it follows them into another room.
+		 */
+		public void setPersonnelDamage( int n ) { personnelDamage = n; }
 		public int getPersonnelDamage() { return personnelDamage; }
+
+		/**
+		 * Toggles whether this projectile deals double hull damage against
+		 * systemless rooms.
+		 *
+		 * This is based on the 'hullBust' tag (0/1) of a WeaponBlueprint's xml.
+		 */
+		public void setHullBuster( boolean b ) { hullBuster = b; }
 		public boolean isHullBuster() { return hullBuster; }
+
+		public void setOwnerId( int n ) { ownerId = n; }
+		public void setSelfId( int n ) { selfId = n; }
+		public void setLockdown( boolean b ) { lockdown = b; }
+		public void setCrystalShard( boolean b ) { crystalShard = b; }
+		public void setStunChance( int n ) { stunChance = n; }
+		public void setStunAmount( int n ) { stunAmount = n; }
+
 		public int getOwnerId() { return ownerId; }
 		public int getSelfId() { return selfId; }
 		public boolean isLockdown() { return lockdown; }
@@ -5675,7 +5821,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Ion Damage:        %7d\n", ionDamage));
 			result.append(String.format("System Damage:     %7d\n", systemDamage));
 			result.append(String.format("Personnel Damage:  %7d\n", personnelDamage));
-			result.append(String.format("Hull Buster:       %7b\n", hullBuster));
+			result.append(String.format("Hull Buster:       %7b (2x Hull damage vs systemless rooms)\n", hullBuster));
 			result.append(String.format("OwnerId?:          %7d\n", ownerId));
 			result.append(String.format("SelfId?:           %7d\n", selfId));
 			result.append(String.format("Lockdown:          %7b\n", lockdown));
@@ -6041,6 +6187,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * This is represented in-game as circles with dots.
 		 * Example: ION_CHARGEGUN.
+		 *
+		 * Note: Modded WeaponBlueprints with "chargeLevels" greater than 7
+		 * crash FTL.
+		 *
+		 * Note: Modded WeaponBlueprints with both the beam "type" and
+		 * "chargeLevels" crash FTL.
 		 */
 		public void setCharge( int n ) { charge = n; }
 		public int getCharge() { return charge; }
@@ -6084,8 +6236,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets a list of queued projectiles about to be fired.
 		 *
-		 * This is often seen with burst weapons mid-volley, but any weapon
-		 * will briefly queue at least one projectile an instant before firing.
+		 * This is often seen with laser burst weapons mid-volley, but any
+		 * weapon will momentarily queue at least one projectile an instant
+		 * before firing.
 		 */
 		public void setPendingProjectiles( List<ProjectileState> pendingProjectiles ) { this.pendingProjectiles = pendingProjectiles; }
 		public List<ProjectileState> getPendingProjectiles() { return pendingProjectiles; }
@@ -6327,7 +6480,7 @@ System.err.println(String.format("Hephaestus: @%d", in.getChannel().position()))
 			hackingInfo.setDisruptionTicks( readInt(in) );
 			hackingInfo.setDisruptionTicksGoal( readInt(in) );
 
-			hackingInfo.setUnknownTheta( readInt(in) );  // Bool, disruption active?
+			hackingInfo.setUnknownTheta( readInt(in) );  // TODO: Bool, disruption active?
 
 			UnknownAres ares = readAres( in, DroneType.HACKING );  // The hacking drone.
 			hackingInfo.setUnknownAres( ares );

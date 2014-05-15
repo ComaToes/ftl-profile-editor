@@ -278,6 +278,13 @@ public class FieldEditorPanel extends JPanel {
 		return comboMap.get( valueName );
 	}
 
+	/**
+	 * Parses an int field's text as an integer.
+	 */
+	public int parseInt( String valueName ) throws NumberFormatException {
+		return Integer.parseInt( getInt(valueName).getText() );
+	}
+
 	public void reset() {
 		for (JTextArea valueArea : wrappedLabelMap.values())
 			valueArea.setText("");
