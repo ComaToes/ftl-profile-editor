@@ -1222,15 +1222,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			crewState.setRoomId( crewSprite.getRoomId() );
 			crewState.setRoomSquare( crewSprite.getSquareId() );
-			if ( crewSprite.getRoomId() != -1 ) {
-				crewState.setSpriteX( crewSprite.getX()+crewSprite.getImageWidth()/2 - originX - tileEdge + shipLayout.getOffsetX()*squareSize );
-				crewState.setSpriteY( crewSprite.getY()+crewSprite.getImageHeight()/2 - originY - tileEdge + shipLayout.getOffsetY()*squareSize );
-			}
-			else {
-				crewState.setHealth( 0 );  // Dead.
-				crewState.setSpriteX( 0 );
-				crewState.setSpriteY( 0 );
-			}
+			crewState.setSpriteX( crewSprite.getSpriteX() );
+			crewState.setSpriteY( crewSprite.getSpriteY() );
 
 			crewList.add( crewState );
 		}
@@ -1544,6 +1537,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				placeSprite( center.x, center.y, mobileSprite );
 				mobileSprite.setRoomId( roomId );
 				mobileSprite.setSquareId( squareId );
+				mobileSprite.setSpriteX( center.x - originX - tileEdge + shipLayout.getOffsetX()*squareSize );
+				mobileSprite.setSpriteY( center.y - originY - tileEdge + shipLayout.getOffsetY()*squareSize );
 				return false;
 			}
 		});
