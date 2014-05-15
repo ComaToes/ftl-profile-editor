@@ -1602,7 +1602,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		writeInt( out, projectile.getPreviousPositionY() );
 		writeInt( out, projectile.getSpeed() );
 		writeInt( out, projectile.getGoalPositionX() );
-		writeInt( out, projectile.getGoalPositionX() );
+		writeInt( out, projectile.getGoalPositionY() );
 		writeInt( out, projectile.getHeading() );
 		writeInt( out, projectile.getOwnerId() );
 		writeInt( out, projectile.getSelfId() );
