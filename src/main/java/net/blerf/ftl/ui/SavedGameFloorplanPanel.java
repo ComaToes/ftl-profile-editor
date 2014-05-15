@@ -453,6 +453,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 						systemSprite.setRepairProgress(0);
 						systemSprite.setDamageProgress(0);
 						systemSprite.setDeionizationTicks(Integer.MIN_VALUE);
+						systemSprite.setTemporaryCapacityCap( 1000 );
+						systemSprite.setTemporaryCapacityLoss( 0 );
+						systemSprite.setTemporaryCapacityDivisor( 1 );
 						systemSprite.makeSane();
 					}
 					shipViewport.repaint();
@@ -510,7 +513,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		otherAugmentsBtn.addActionListener( ctrlListener );
 
 		resetOxygenBtn.addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
-		resetSystemsBtn.addMouseListener( new StatusbarMouseListener(frame, "Clear all system damage.") );
+		resetSystemsBtn.addMouseListener( new StatusbarMouseListener(frame, "Clear all system damage and temporary capacity limits.") );
 		resetIntrudersBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all NPC crew.") );
 		resetBreachesBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all breaches.") );
 		resetFiresBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all fires.") );
