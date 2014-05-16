@@ -16,6 +16,7 @@ import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.ShipAvailability;
 import net.blerf.ftl.model.Stats;
 import net.blerf.ftl.model.Stats.StatType;
+import net.blerf.ftl.xml.Achievement;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -144,7 +145,21 @@ public class ProfileParser extends Parser {
 	}
 
 	private void writeAchievements( OutputStream out, List<AchievementRecord> achievements, int headerAlpha ) throws IOException {
-		List<String> extendedAchIds = new ArrayList<String>();  // TODO: Magic strings.
+		List<String> shipBaseIds = new ArrayList<String>();  // TODO: Magic strings.
+		shipBaseIds.add( "PLAYER_SHIP_HARD" );
+		shipBaseIds.add( "PLAYER_SHIP_STEALTH" );
+		shipBaseIds.add( "PLAYER_SHIP_MANTIS" );
+		shipBaseIds.add( "PLAYER_SHIP_CIRCLE" );
+		shipBaseIds.add( "PLAYER_SHIP_FED" );
+		shipBaseIds.add( "PLAYER_SHIP_JELLY" );
+		shipBaseIds.add( "PLAYER_SHIP_ROCK" );
+		shipBaseIds.add( "PLAYER_SHIP_ENERGY" );
+		shipBaseIds.add( "PLAYER_SHIP_CRYSTAL" );
+		if ( headerAlpha == 9 ) {
+			shipBaseIds.add( "PLAYER_SHIP_ANAEROBIC" );
+		}
+
+		List<String> extendedAchIds = new ArrayList<String>();
 		extendedAchIds.add( "PLAYER_SHIP_HARD_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_STEALTH_VICTORY" );
 		extendedAchIds.add( "PLAYER_SHIP_MANTIS_VICTORY" );
@@ -165,6 +180,16 @@ public class ProfileParser extends Parser {
 				if ( extendedAchIds.contains( rec.getAchievementId() ) ) {
 					continue;
 				}
+			}
+
+			// Drop ship achievements for invalid ships.
+			Achievement ach = DataManager.get().getAchievement( rec.getAchievementId() );
+			if ( ach == null ) {
+				log.warn( "Omitting unsupported achievement id: "+ rec.getAchievementId() );
+				continue;
+			}
+			if ( ach.getShipId() != null && !shipBaseIds.contains( ach.getShipId() ) ) {
+				continue;
 			}
 
 			writableAchs.add( rec );
@@ -236,13 +261,13 @@ public class ProfileParser extends Parser {
 		unlockableShipIds.add( "PLAYER_SHIP_ROCK" );
 		unlockableShipIds.add( "PLAYER_SHIP_ENERGY" );
 		unlockableShipIds.add( "PLAYER_SHIP_CRYSTAL" );
-		if ( headerAlpha == 9 ) {
-			unlockableShipIds.add( "PLAYER_SHIP_ANAEROBIC" );
+		if ( headerAlpha == 4 ) {
+			unlockableShipIds.add( "UNKNOWN_ALPHA" );
 			unlockableShipIds.add( "UNKNOWN_BETA" );
 			unlockableShipIds.add( "UNKNOWN_GAMMA" );
 		}
-		else if ( headerAlpha == 4 ) {
-			unlockableShipIds.add( "UNKNOWN_ALPHA" );
+		else if ( headerAlpha == 9 ) {
+			unlockableShipIds.add( "PLAYER_SHIP_ANAEROBIC" );
 			unlockableShipIds.add( "UNKNOWN_BETA" );
 			unlockableShipIds.add( "UNKNOWN_GAMMA" );
 		}

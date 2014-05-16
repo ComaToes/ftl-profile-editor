@@ -504,12 +504,16 @@ public class FTLFrame extends JFrame {
 						// Parse file data.
 						ProfileParser ftl = new ProfileParser();
 						Profile p = ftl.readProfile(in);
-						FTLFrame.this.loadProfile(p);
+						log.trace( "Profile read successfully." );
+
+						Profile mockProfile = new Profile( p );
+						FTLFrame.this.loadProfile( mockProfile );
 
 						// Perform mock write.
+						// The update() incidentally triggers load() of the modified profile.
 						ByteArrayOutputStream mockOut = new ByteArrayOutputStream();
-						FTLFrame.this.updateProfile( profile );
-						ftl.writeProfile( mockOut, profile );
+						FTLFrame.this.updateProfile( mockProfile );
+						ftl.writeProfile( mockOut, mockProfile );
 						mockOut.close();
 
 						// Hash result.
@@ -519,11 +523,12 @@ public class FTLFrame extends JFrame {
 
 						// Compare hashes.
 						if ( !writeHash.equals( readHash ) ) {
-							log.error( "Hash fail on mock write - Unable to assure valid parsing." );
+							log.error( "Hashes did not match after a mock write. Unable to assure valid parsing." );
 							hashFailed = true;
 						}
 
-						log.trace( "Profile read successfully." );
+						// Reload the original unmodified profile.
+						FTLFrame.this.loadProfile(p);
 					}
 					catch( Exception f ) {
 						log.error( String.format("Error reading profile (\"%s\").", chosenFile.getName()), f );
@@ -539,14 +544,16 @@ public class FTLFrame extends JFrame {
 						if ( hexBuf.length() > 0 ) {
 							StringBuilder errBuf = new StringBuilder();
 
-							errBuf.append( "Your profile could not be interpreted correctly.<br/>" );
-
 							if ( hashFailed && exception == null ) {
-								errBuf.append( "Saving changes may result in corruption.<br/>" );
+								errBuf.append( "Your profile loaded, but re-saving will not create an identical file.<br/>");
+								errBuf.append( "You CAN technically proceed anyway, but there is risk of corruption.<br/>" );
+							}
+							else {
+								errBuf.append( "Your profile could not be interpreted correctly.<br/>" );
 							}
 
 							errBuf.append( "<br/>" );
-							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a> (Signup is free).<br/>");
+							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a> (Signup is free).<br/>" );
 							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free).<br/>" );
 							errBuf.append( "<br/>" );
 							errBuf.append( "On GitHub, set the issue title as \"Profile Parser Error\".<br/>" );
@@ -560,6 +567,11 @@ public class FTLFrame extends JFrame {
 							reportBuf.append( "[code]\n" );
 							reportBuf.append( "Profile Parser Error\n" );
 							reportBuf.append( "\n" );
+
+							if ( hashFailed ) {
+								reportBuf.append( "Hashes did not match after a mock write.\n" );
+								reportBuf.append( "\n" );
+							}
 
 							if ( exception != null ) {
 								reportBuf.append( String.format("Exception: %s\n", exception.toString()) );

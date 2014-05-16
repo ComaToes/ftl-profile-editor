@@ -23,6 +23,30 @@ public class Profile {
 	}
 
 	/**
+	 * Copy constructor.
+	 *
+	 * Each AchievementRecord, ShipAvailability, and Stats will be
+	 * copy-constructed as well.
+	 */
+	public Profile( Profile srcProfile ) {
+		unknownHeaderAlpha = srcProfile.getHeaderAlpha();
+
+		achievements = new ArrayList<AchievementRecord>();
+		for ( AchievementRecord rec : srcProfile.getAchievements() ) {
+			achievements.add( new AchievementRecord( rec ) );
+		}
+
+		shipUnlockMap = new LinkedHashMap<String, ShipAvailability>();
+		for ( Map.Entry<String, ShipAvailability> entry : srcProfile.getShipUnlockMap().entrySet() ) {
+			shipUnlockMap.put( entry.getKey(), new ShipAvailability( entry.getValue() ) );
+		}
+
+		stats = new Stats( srcProfile.getStats() );
+
+		unknownBeta = srcProfile.getUnknownBeta();
+	}
+
+	/**
 	 * Sets the magic number indicating file format, apparently.
 	 *
 	 * 4 = Profile, FTL 1.01-1.03.3

@@ -83,6 +83,10 @@ public abstract class DataManager implements Closeable {
 		throw new UnsupportedOperationException();
 	}
 
+	public Achievement getAchievement( String id ) {
+		throw new UnsupportedOperationException();
+	}
+
 	public List<Achievement> getAchievements() {
 		throw new UnsupportedOperationException();
 	}

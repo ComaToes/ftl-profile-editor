@@ -1,7 +1,9 @@
 package net.blerf.ftl.model;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,14 +43,37 @@ public class Stats {
 		public String toString() { return name; }
 	}
 
-	private List<Score> topScores;
-	private List<Score> shipBest;
+	private List<Score> topScores = new ArrayList<Score>();
+	private List<Score> shipBest = new ArrayList<Score>();
 
-	private EnumMap<StatType,CrewRecord> crewMap = new EnumMap<StatType,CrewRecord>( StatType.class );
-	private EnumMap<StatType,Integer> intMap = new EnumMap<StatType,Integer>( StatType.class );
+	private Map<StatType,CrewRecord> crewMap = new EnumMap<StatType,CrewRecord>( StatType.class );
+	private Map<StatType,Integer> intMap = new EnumMap<StatType,Integer>( StatType.class );
 
 
 	public Stats() {
+	}
+
+	/**
+	 * Copy constructor.
+	 *
+	 * Each Score and CrewRecord will be copy-constructed as well.
+	 */
+	public Stats( Stats srcStats ) {
+		for ( Score s : srcStats.getTopScores() ) {
+			topScores.add( new Score(s) );
+		}
+
+		for ( Score s : srcStats.getShipBest() ) {
+			shipBest.add( new Score(s) );
+		}
+
+		for ( Map.Entry<StatType, CrewRecord> entry : srcStats.getCrewRecordMap().entrySet() ) {
+			crewMap.put( entry.getKey(), new CrewRecord( entry.getValue() ) );
+		}
+
+		for ( Map.Entry<StatType, Integer> entry : srcStats.getIntRecordMap().entrySet() ) {
+			intMap.put( entry.getKey(), new Integer( entry.getValue() ) );
+		}
 	}
 
 	public void setTopScores( List<Score> topScores ) { this.topScores = topScores; }
@@ -56,6 +81,9 @@ public class Stats {
 
 	public List<Score> getTopScores() { return topScores; }
 	public List<Score> getShipBest() { return shipBest; }
+
+	public Map<StatType, CrewRecord> getCrewRecordMap() { return crewMap; }
+	public Map<StatType, Integer> getIntRecordMap() { return intMap; }
 
 	public void setCrewRecord( StatType type, CrewRecord r ) {
 		crewMap.put( type, r );

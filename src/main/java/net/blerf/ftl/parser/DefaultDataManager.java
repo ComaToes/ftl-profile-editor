@@ -56,6 +56,7 @@ public class DefaultDataManager extends DataManager {
 
 	private List<Achievement> achievements;
 	private List<Achievement> generalAchievements;
+
 	private Map<String, BackgroundImageList> backgroundImageLists;
 
 	private Map<String, Blueprints> allBlueprints;
@@ -94,8 +95,9 @@ public class DefaultDataManager extends DataManager {
 	private Map<String, ShipEvent> stdShipEventIdMap;
 	private Map<String, ShipEvent> dlcShipEventIdMap;
 
-	private Map<ShipBlueprint, List<Achievement>> stdShipAchievements;
-	private Map<ShipBlueprint, List<Achievement>> dlcShipAchievements;
+	private Map<String, Achievement> achievementIdMap;
+	private Map<ShipBlueprint, List<Achievement>> stdShipAchievementIdMap;
+	private Map<ShipBlueprint, List<Achievement>> dlcShipAchievementIdMap;
 
 	private Map<String, ShipLayout> shipLayouts;
 	private Map<String, ShipChassis> shipChassisMap;
@@ -220,9 +222,15 @@ public class DefaultDataManager extends DataManager {
 			log.info( "Finished reading FTL resources." );
 
 			generalAchievements = new ArrayList<Achievement>();
-			for( Achievement ach : achievements )
+			for( Achievement ach : achievements ) {
 				if ( ach.getShipId() == null )
 					generalAchievements.add(ach);
+			}
+
+			achievementIdMap = new LinkedHashMap<String, Achievement>();
+			for( Achievement ach : achievements ) {
+				achievementIdMap.put( ach.getId(), ach );
+			}
 
 			stdBlueprints = new LinkedHashMap<String, Blueprints>( stdBlueprintsFileNames.size() );
 			dlcBlueprints = new LinkedHashMap<String, Blueprints>( dlcBlueprintsFileNames.size() + stdBlueprintsFileNames.size() );
@@ -432,21 +440,21 @@ public class DefaultDataManager extends DataManager {
 			}
 
 			// Ship achievements are only tied to "Type A" variants.
-			stdShipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
+			stdShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>();
 			for ( Map.Entry<String, ShipBlueprint> entry : stdPlayerShipIdMap.entrySet() ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
 				for ( Achievement ach : achievements )
 					if ( entry.getKey().equals( ach.getShipId() ) )
 						shipAchs.add(ach);
-				stdShipAchievements.put( entry.getValue(), shipAchs );
+				stdShipAchievementIdMap.put( entry.getValue(), shipAchs );
 			}
-			dlcShipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
+			dlcShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>();
 			for ( Map.Entry<String, ShipBlueprint> entry : dlcPlayerShipIdMap.entrySet() ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
 				for ( Achievement ach : achievements )
 					if ( entry.getKey().equals( ach.getShipId() ) )
 						shipAchs.add(ach);
-				dlcShipAchievements.put( entry.getValue(), shipAchs );
+				dlcShipAchievementIdMap.put( entry.getValue(), shipAchs );
 			}
 
 			// These'll populate as files are requested.
@@ -587,6 +595,14 @@ public class DefaultDataManager extends DataManager {
 			try {if ( dstP != null ) dstP.close();}
 			catch ( IOException ex ) {}
 		}
+	}
+
+	@Override
+	public Achievement getAchievement( String id ) {
+		Achievement result = achievementIdMap.get( id );
+		if ( result == null )
+			log.error( "No Achievement found for id: "+ id );
+		return result;
 	}
 
 	@Override
@@ -809,9 +825,9 @@ public class DefaultDataManager extends DataManager {
 	public List<Achievement> getShipAchievements( ShipBlueprint ship, boolean dlcEnabled ) {
 		Map<ShipBlueprint, List<Achievement>> shipAchievements = null;
 		if ( dlcEnabled ) {
-			shipAchievements = dlcShipAchievements;
+			shipAchievements = dlcShipAchievementIdMap;
 		} else {
-			shipAchievements = stdShipAchievements;
+			shipAchievements = stdShipAchievementIdMap;
 		}
 
 		return shipAchievements.get( ship );
