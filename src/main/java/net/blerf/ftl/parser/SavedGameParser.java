@@ -2898,12 +2898,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownIota = 0;  // Death count? (-1 when not set, then counts from 1 onwards.)
 		private int unknownKappa = 0;
 		private int unknownLambda = 0;
-		private int unknownMu = 0;  // Everyone's Death count? (0 when not set, then counts from 1 onwards.)
-		private int unknownNu = 0;
+		private int unknownMu = 0;  // Total death count for ALL crew everywhere!? (0 when not set, then counts from 1 onwards.)
+		private int unknownNu = 0;  // Went from 0 to 1 while fresh clone materialized via the teleport anim.
 		private int unknownXi = 0;
 		private int unknownOmicron = 0;
 		private int teleportAnimFrame = 0;
-		private int unknownRho = 0;
+		private int unknownRho = 0;  // Possibly ticks for teleport anim?
 		private int unknownSigma = 0;
 		private int unknownTau = 0;
 		private int unknownUpsilon = 0;

@@ -3233,6 +3233,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(MU).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( NU, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(NU).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(NU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Related to teleport anim?") );
 		editorPanel.addRow( XI, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(XI).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( OMICRON, FieldEditorPanel.ContentType.INTEGER );
@@ -3241,6 +3242,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(TELEPORT_ANIM_FRAME).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( RHO, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(RHO).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(RHO).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Related to teleport anim?") );
 		editorPanel.addRow( SIGMA, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(SIGMA).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( TAU, FieldEditorPanel.ContentType.INTEGER );
