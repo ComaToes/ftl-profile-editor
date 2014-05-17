@@ -1210,7 +1210,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			crewState.setUnknownNu( crewSprite.getUnknownNu() );
 			crewState.setUnknownXi( crewSprite.getUnknownXi() );
 			crewState.setUnknownOmicron( crewSprite.getUnknownOmicron() );
-			crewState.setUnknownPi( crewSprite.getUnknownPi() );
+			crewState.setTeleportAnimFrame( crewSprite.getTeleportAnimFrame() );
 			crewState.setUnknownRho( crewSprite.getUnknownRho() );
 			crewState.setUnknownSigma( crewSprite.getUnknownSigma() );
 			crewState.setUnknownTau( crewSprite.getUnknownTau() );
@@ -3178,7 +3178,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String NU = "Nu?";
 		final String XI = "Xi?";
 		final String OMICRON = "Omicron?";
-		final String PI = "Pi?";
+		final String TELEPORT_ANIM_FRAME = "Teleport Anim Frame";
 		final String RHO = "Rho?";
 		final String SIGMA = "Sigma?";
 		final String TAU = "Tau?";
@@ -3237,8 +3237,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(XI).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( OMICRON, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(OMICRON).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.addRow( PI, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(PI).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.addRow( TELEPORT_ANIM_FRAME, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(TELEPORT_ANIM_FRAME).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( RHO, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(RHO).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( SIGMA, FieldEditorPanel.ContentType.INTEGER );
@@ -3326,7 +3326,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(NU).setText( ""+crewSprite.getUnknownNu() );
 		editorPanel.getInt(XI).setText( ""+crewSprite.getUnknownXi() );
 		editorPanel.getInt(OMICRON).setText( ""+crewSprite.getUnknownOmicron() );
-		editorPanel.getInt(PI).setText( ""+crewSprite.getUnknownPi() );
+		editorPanel.getInt(TELEPORT_ANIM_FRAME).setText( ""+crewSprite.getTeleportAnimFrame() );
 		editorPanel.getInt(RHO).setText( ""+crewSprite.getUnknownRho() );
 		editorPanel.getInt(SIGMA).setText( ""+crewSprite.getUnknownSigma() );
 		editorPanel.getInt(TAU).setText( ""+crewSprite.getUnknownTau() );
@@ -3406,7 +3406,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				try { crewSprite.setUnknownOmicron( editorPanel.parseInt(OMICRON) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewSprite.setUnknownPi( editorPanel.parseInt(PI) ); }
+				try { crewSprite.setTeleportAnimFrame( editorPanel.parseInt(TELEPORT_ANIM_FRAME) ); }
 				catch ( NumberFormatException e ) {}
 
 				try { crewSprite.setUnknownRho( editorPanel.parseInt(RHO) ); }
@@ -4103,7 +4103,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private int unknownNu;
 		private int unknownXi;
 		private int unknownOmicron;
-		private int unknownPi;
+		private int teleportAnimFrame;
 		private int unknownRho;
 		private int unknownSigma;
 		private int unknownTau;
@@ -4155,7 +4155,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			unknownNu = crewState.getUnknownNu();
 			unknownXi = crewState.getUnknownXi();
 			unknownOmicron = crewState.getUnknownOmicron();
-			unknownPi = crewState.getUnknownPi();
+			teleportAnimFrame = crewState.getTeleportAnimFrame();
 			unknownRho = crewState.getUnknownRho();
 			unknownSigma = crewState.getUnknownSigma();
 			unknownTau = crewState.getUnknownTau();
@@ -4240,7 +4240,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public void setUnknownNu( int n ) { unknownNu = n; }
 		public void setUnknownXi( int n ) { unknownXi = n; }
 		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
-		public void setUnknownPi( int n ) { unknownPi = n; }
+		public void setTeleportAnimFrame( int n ) { teleportAnimFrame = n; }
 		public void setUnknownRho( int n ) { unknownRho = n; }
 		public void setUnknownSigma( int n ) { unknownSigma = n; }
 		public void setUnknownTau( int n ) { unknownTau = n; }
@@ -4259,7 +4259,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public int getUnknownNu() { return unknownNu; }
 		public int getUnknownXi() { return unknownXi; }
 		public int getUnknownOmicron() { return unknownOmicron; }
-		public int getUnknownPi() { return unknownPi; }
+		public int getTeleportAnimFrame() { return teleportAnimFrame; }
 		public int getUnknownRho() { return unknownRho; }
 		public int getUnknownSigma() { return unknownSigma; }
 		public int getUnknownTau() { return unknownTau; }

@@ -547,7 +547,6 @@ public class SavedGameParser extends Parser {
 				cloakingInfo.setUnknownAlpha( readInt(in) );
 				cloakingInfo.setUnknownBeta( readInt(in) );
 				cloakingInfo.setCloakTicksGoal( readInt(in) );
-
 				cloakingInfo.setCloakTicks( readMinMaxedInt(in) );  // May be MIN_VALUE.
 
 				shipState.addExtendedSystemInfo( cloakingInfo );
@@ -867,7 +866,7 @@ public class SavedGameParser extends Parser {
 			crew.setUnknownNu( readInt(in) );
 			crew.setUnknownXi( readInt(in) );
 			crew.setUnknownOmicron( readInt(in) );
-			crew.setUnknownPi( readInt(in) );
+			crew.setTeleportAnimFrame( readInt(in) );
 			crew.setUnknownRho( readInt(in) );
 			crew.setUnknownSigma( readInt(in) );
 			crew.setUnknownTau( readInt(in) );
@@ -932,7 +931,7 @@ public class SavedGameParser extends Parser {
 			writeInt( out, crew.getUnknownNu() );
 			writeInt( out, crew.getUnknownXi() );
 			writeInt( out, crew.getUnknownOmicron() );
-			writeInt( out, crew.getUnknownPi() );
+			writeInt( out, crew.getTeleportAnimFrame() );
 			writeInt( out, crew.getUnknownRho() );
 			writeInt( out, crew.getUnknownSigma() );
 			writeInt( out, crew.getUnknownTau() );
@@ -2884,7 +2883,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int roomSquare = -1;
 		private boolean playerControlled = false;
 		private int unknownAlpha = 0;
-		private int unknownBeta = 0;
+		private int unknownBeta = 0;  // Death count? (-1 when not set, then counts from 1 onwards.)
 		private List<Integer> spriteTintIndeces = new ArrayList<Integer>();
 		private boolean mindControlled = false;
 		private int savedRoomId = 0;
@@ -2896,14 +2895,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int jumpsSurvived=0, skillMasteries=0;
 		private int stunTicks = 0;
 		private int healthBoost = 0;
-		private int unknownIota = 0;
+		private int unknownIota = 0;  // Death count? (-1 when not set, then counts from 1 onwards.)
 		private int unknownKappa = 0;
 		private int unknownLambda = 0;
-		private int unknownMu = 0;
+		private int unknownMu = 0;  // Everyone's Death count? (0 when not set, then counts from 1 onwards.)
 		private int unknownNu = 0;
 		private int unknownXi = 0;
 		private int unknownOmicron = 0;
-		private int unknownPi = 0;
+		private int teleportAnimFrame = 0;
 		private int unknownRho = 0;
 		private int unknownSigma = 0;
 		private int unknownTau = 0;
@@ -2961,7 +2960,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			unknownNu = srcCrew.getUnknownNu();
 			unknownXi = srcCrew.getUnknownXi();
 			unknownOmicron = srcCrew.getUnknownOmicron();
-			unknownPi = srcCrew.getUnknownPi();
+			teleportAnimFrame = srcCrew.getTeleportAnimFrame();
 			unknownRho = srcCrew.getUnknownRho();
 			unknownSigma = srcCrew.getUnknownSigma();
 			unknownTau = srcCrew.getUnknownTau();
@@ -3209,12 +3208,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setUnknownNu( int n ) { unknownNu = n; }
 		public void setUnknownXi( int n ) { unknownXi = n; }
 		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
-		public void setUnknownPi( int n ) { unknownPi = n; }
-		public void setUnknownRho( int n ) { unknownRho = n; }
-		public void setUnknownSigma( int n ) { unknownSigma = n; }
-		public void setUnknownTau( int n ) { unknownTau = n; }
-		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
-		public void setUnknownPhi( int n ) { unknownPhi = n; }
 
 		public int getUnknownIota() { return unknownIota; }
 		public int getUnknownKappa() { return unknownKappa; }
@@ -3223,7 +3216,21 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getUnknownNu() { return unknownNu; }
 		public int getUnknownXi() { return unknownXi; }
 		public int getUnknownOmicron() { return unknownOmicron; }
-		public int getUnknownPi() { return unknownPi; }
+
+		/**
+		 * Sets the current frame of this crew's 'teleport' anim (0-based).
+		 *
+		 * After cloning, this decrements to zero as the new body spawns.
+		 */
+		public void setTeleportAnimFrame( int n ) { teleportAnimFrame = n; }
+		public int getTeleportAnimFrame() { return teleportAnimFrame; }
+
+		public void setUnknownRho( int n ) { unknownRho = n; }
+		public void setUnknownSigma( int n ) { unknownSigma = n; }
+		public void setUnknownTau( int n ) { unknownTau = n; }
+		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
+		public void setUnknownPhi( int n ) { unknownPhi = n; }
+
 		public int getUnknownRho() { return unknownRho; }
 		public int getUnknownSigma() { return unknownSigma; }
 		public int getUnknownTau() { return unknownTau; }
@@ -3270,18 +3277,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				tintLayerList = crewBlueprint.getSpriteTintLayerList();
 			}
 
-			result.append(String.format("Name:              %s\n", name));
-			result.append(String.format("Race:              %s\n", race));
-			result.append(String.format("Enemy Drone:       %5b\n", enemyBoardingDrone));
-			result.append(String.format("Sex:               %s\n", (male ? "Male" : "Female") ));
-			result.append(String.format("Health:            %5d\n", health));
-			result.append(String.format("Sprite Position:    %3d,%3d\n", spriteX, spriteY));
-			result.append(String.format("RoomId:            %5d\n", roomId));
-			result.append(String.format("Room Square:       %5d\n", roomSquare));
-			result.append(String.format("Player Controlled: %5b\n", playerControlled));
-			result.append(String.format("Alpha?:            %5d\n", unknownAlpha));
-			result.append(String.format("Beta?:             %5d\n", unknownBeta));
-			result.append(String.format("Mind Controlled:   %5b\n", mindControlled));
+			result.append(String.format("Name:                 %s\n", name));
+			result.append(String.format("Race:                 %s\n", race));
+			result.append(String.format("Enemy Drone:          %5b\n", enemyBoardingDrone));
+			result.append(String.format("Sex:                  %s\n", (male ? "Male" : "Female") ));
+			result.append(String.format("Health:               %5d\n", health));
+			result.append(String.format("Sprite Position:       %3d,%3d\n", spriteX, spriteY));
+			result.append(String.format("RoomId:               %5d\n", roomId));
+			result.append(String.format("Room Square:          %5d\n", roomSquare));
+			result.append(String.format("Player Controlled:    %5b\n", playerControlled));
+			result.append(String.format("Alpha?:               %5d\n", unknownAlpha));
+			result.append(String.format("Beta?:                %5d\n", unknownBeta));
+			result.append(String.format("Mind Controlled:      %5b\n", mindControlled));
 
 			result.append("\nSprite Tints...\n");
 			for (int i=0; i < spriteTintIndeces.size(); i++) {
@@ -3307,37 +3314,37 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			FTLConstants origConstants = new OriginalFTLConstants();
 			FTLConstants advConstants = new AdvancedFTLConstants();
 
-			result.append(String.format("Saved RoomId:      %5d\n", savedRoomId));
-			result.append(String.format("Saved Room Square: %5d\n", savedRoomSquare));
-			result.append(String.format("Pilot Skill:       %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot(race), advConstants.getMasteryIntervalPilot(race)));
-			result.append(String.format("Engine Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine(race), advConstants.getMasteryIntervalEngine(race)));
-			result.append(String.format("Shield Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", shieldSkill, origConstants.getMasteryIntervalShield(race), advConstants.getMasteryIntervalShield(race)));
-			result.append(String.format("Weapon Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", weaponSkill, origConstants.getMasteryIntervalWeapon(race), advConstants.getMasteryIntervalWeapon(race)));
-			result.append(String.format("Repair Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", repairSkill, origConstants.getMasteryIntervalRepair(race), advConstants.getMasteryIntervalRepair(race)));
-			result.append(String.format("Combat Skill:      %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", combatSkill, origConstants.getMasteryIntervalCombat(race), advConstants.getMasteryIntervalCombat(race)));
-			result.append(String.format("Repairs:           %5d\n", repairs));
-			result.append(String.format("Combat Kills:      %5d\n", combatKills));
-			result.append(String.format("Piloted Evasions:  %5d\n", pilotedEvasions));
-			result.append(String.format("Jumps Survived:    %5d\n", jumpsSurvived));
-			result.append(String.format("Skill Masteries:   %5d\n", skillMasteries));
-			result.append(String.format("Stun Ticks:       %6d (Decrements to 0)\n", stunTicks));
-			result.append(String.format("Health Boost:     %6d (Subtracted from health when Mind Ctrl expires)\n", healthBoost));
-			result.append(String.format("Iota?:            %6d\n", unknownIota));
-			result.append(String.format("Kappa?:           %6d\n", unknownKappa));
-			result.append(String.format("Lambda?:          %6d\n", unknownLambda));
-			result.append(String.format("Mu?:              %6d\n", unknownMu));
-			result.append(String.format("Nu?:              %6d\n", unknownNu));
-			result.append(String.format("Xi?:              %6d\n", unknownXi));
-			result.append(String.format("Omicron?:         %6d\n", unknownOmicron));
-			result.append(String.format("Pi?:              %6d\n", unknownPi));
-			result.append(String.format("Rho?:             %6d\n", unknownRho));
-			result.append(String.format("Sigma?:           %6d\n", unknownSigma));
-			result.append(String.format("Tau?:             %6d\n", unknownTau));
-			result.append(String.format("Upsilon?:         %6d\n", unknownUpsilon));
-			result.append(String.format("Phi?:             %6d\n", unknownPhi));
-			result.append(String.format("Lockdown Ticks:   %6d (Crystal only, time spent recharging)\n", lockdownRechargeTicks));
-			result.append(String.format("Lockdown Goal:    %6d (Crystal only, ticks needed to recharge)\n", lockdownRechargeTicksGoal));
-			result.append(String.format("Omega?:           %6d (Crystal only)\n", unknownOmega));
+			result.append(String.format("Saved RoomId:         %5d\n", savedRoomId));
+			result.append(String.format("Saved Room Square:    %5d\n", savedRoomSquare));
+			result.append(String.format("Pilot Skill:          %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot(race), advConstants.getMasteryIntervalPilot(race)));
+			result.append(String.format("Engine Skill:         %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine(race), advConstants.getMasteryIntervalEngine(race)));
+			result.append(String.format("Shield Skill:         %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", shieldSkill, origConstants.getMasteryIntervalShield(race), advConstants.getMasteryIntervalShield(race)));
+			result.append(String.format("Weapon Skill:         %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", weaponSkill, origConstants.getMasteryIntervalWeapon(race), advConstants.getMasteryIntervalWeapon(race)));
+			result.append(String.format("Repair Skill:         %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", repairSkill, origConstants.getMasteryIntervalRepair(race), advConstants.getMasteryIntervalRepair(race)));
+			result.append(String.format("Combat Skill:         %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", combatSkill, origConstants.getMasteryIntervalCombat(race), advConstants.getMasteryIntervalCombat(race)));
+			result.append(String.format("Repairs:              %5d\n", repairs));
+			result.append(String.format("Combat Kills:         %5d\n", combatKills));
+			result.append(String.format("Piloted Evasions:     %5d\n", pilotedEvasions));
+			result.append(String.format("Jumps Survived:       %5d\n", jumpsSurvived));
+			result.append(String.format("Skill Masteries:      %5d\n", skillMasteries));
+			result.append(String.format("Stun Ticks:          %6d (Decrements to 0)\n", stunTicks));
+			result.append(String.format("Health Boost:        %6d (Subtracted from health when Mind Ctrl expires)\n", healthBoost));
+			result.append(String.format("Iota?:               %6d\n", unknownIota));
+			result.append(String.format("Kappa?:              %6d\n", unknownKappa));
+			result.append(String.format("Lambda?:             %6d\n", unknownLambda));
+			result.append(String.format("Mu?:                 %6d\n", unknownMu));
+			result.append(String.format("Nu?:                 %6d\n", unknownNu));
+			result.append(String.format("Xi?:                 %6d\n", unknownXi));
+			result.append(String.format("Omicron?:            %6d\n", unknownOmicron));
+			result.append(String.format("Teleport Anim Frame: %6d\n", teleportAnimFrame));
+			result.append(String.format("Rho?:                %6d\n", unknownRho));
+			result.append(String.format("Sigma?:              %6d\n", unknownSigma));
+			result.append(String.format("Tau?:                %6d\n", unknownTau));
+			result.append(String.format("Upsilon?:            %6d\n", unknownUpsilon));
+			result.append(String.format("Phi?:                %6d\n", unknownPhi));
+			result.append(String.format("Lockdown Ticks:      %6d (Crystal only, time spent recharging)\n", lockdownRechargeTicks));
+			result.append(String.format("Lockdown Ticks Goal: %6d (Crystal only, ticks needed to recharge)\n", lockdownRechargeTicksGoal));
+			result.append(String.format("Omega?:              %6d (Crystal only)\n", unknownOmega));
 			return result.toString();
 		}
 	}
@@ -3550,6 +3557,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * with the "limit=" attribute.
 		 *
 		 * Under normal circumstances, the cap is 1000.
+		 * At a beacon with a nebula, the Sensors system has cap of 0.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
@@ -5884,6 +5892,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		// Epsilon and Zeta vary with the droneBlueprint type.
 
+		// COMBAT's Epsilon[2] has been observed as 1000, 1000000000, and MIN.
+
 		private DroneType droneType = null;
 		private int[] unknownAlpha = new int[3];
 		private int currentPosX=0, currentPosY=0;
@@ -6128,12 +6138,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownLambda = 0;
 		private int unknownMu = 0;
 		private int unknownNu = 0;
-		private int unknownXi = 0;
-		private int unknownOmicron = 0;
+		private int weaponAnimFrame = 0;
+		private int weaponAnimTicks = 0;
 		private int unknownPi = 0;       // E803 0000 (1000)
 		private int unknownRho = 0;
 		private int unknownSigma = 0;
-		private int unknownTau = 0;      // E803 0000 (1000)
+		private int protractAnimTicks = 0;
 		private int unknownUpsilon = 0;
 		private int unknownPhi = 0;
 		private int unknownChi = 0;
@@ -6208,27 +6218,66 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setUnknownLambda( int n ) { unknownLambda = n; }
 		public void setUnknownMu( int n ) { unknownMu = n; }
 		public void setUnknownNu( int n ) { unknownNu = n; }
-		public void setUnknownXi( int n ) { unknownXi = n; }
-		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
-		public void setUnknownPi( int n ) { unknownPi = n; }
-		public void setUnknownRho( int n ) { unknownRho = n; }
-		public void setUnknownSigma( int n ) { unknownSigma = n; }
-		public void setUnknownTau( int n ) { unknownTau = n; }
-		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
-		public void setUnknownPhi( int n ) { unknownPhi = n; }
-		public void setUnknownChi( int n ) { unknownChi = n; }
 
 		public int getUnknownIota() { return unknownIota; }
 		public int getUnknownKappa() { return unknownKappa; }
 		public int getUnknownLambda() { return unknownLambda; }
 		public int getUnknownMu() { return unknownMu; }
 		public int getUnknownNu() { return unknownNu; }
-		public int getUnknownXi() { return unknownXi; }
-		public int getUnknownOmicron() { return unknownOmicron; }
+
+		/**
+		 * Sets the current frame of the weaponAnim (0-based).
+		 *
+		 * During cooldown, this increments from 0 to the weaponAnim's
+		 * 'chargedFrame' tag in animations.xml. It probably changes during
+		 * firing too.
+		 *
+		 * FTL seems to clobber this value upon loading, based on cooldown ticks,
+		 * so editing it is probably useless.
+		 */
+		public void setWeaponAnimFrame( int n ) { weaponAnimFrame = n; }
+		public int getWeaponAnimFrame() { return weaponAnimFrame; }
+
+		/**
+		 * Sets time elapsed while playing the weaponAnim.
+		 *
+		 * Technically this doesn't count, so much as remember how far into the
+		 * anim playback was when the current frame appeared.
+		 *
+		 * This value is 1000 / (animSheet's frame count) * (currentFrame).
+		 * Sometimes that's off by 1 due to rounding somewhere.
+		 *
+		 * FTL seems to clobber this value upon loading, based on cooldown ticks,
+		 * so editing it is probably useless.
+		 */
+		public void setWeaponAnimTicks( int n ) { weaponAnimTicks = n; }
+		public int getWeaponAnimTicks() { return weaponAnimTicks; }
+
+		public void setUnknownPi( int n ) { unknownPi = n; }
+		public void setUnknownRho( int n ) { unknownRho = n; }
+		public void setUnknownSigma( int n ) { unknownSigma = n; }
+
 		public int getUnknownPi() { return unknownPi; }
 		public int getUnknownRho() { return unknownRho; }
 		public int getUnknownSigma() { return unknownSigma; }
-		public int getUnknownTau() { return unknownTau; }
+
+		/**
+		 * Sets time elapsed while this weapon slides out from the hull.
+		 *
+		 * This counts from 0 (retracted) to 1000 (protracted) and back.
+		 * Upon pausing or saving, this will snap to whichever number it was
+		 * approaching at the time.
+		 *
+		 * TODO: Determine what happens when edited to a value somewhere in
+		 * between.
+		 */
+		public void setProtractAnimTicks( int n ) { protractAnimTicks = n; }
+		public int getProtractAnimTicks() { return protractAnimTicks; }
+
+		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
+		public void setUnknownPhi( int n ) { unknownPhi = n; }
+		public void setUnknownChi( int n ) { unknownChi = n; }
+
 		public int getUnknownUpsilon() { return unknownUpsilon; }
 		public int getUnknownPhi() { return unknownPhi; }
 		public int getUnknownChi() { return unknownChi; }
@@ -6248,12 +6297,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
 
-			result.append(String.format("Cooldown Ticks:    %3d\n", cooldownTicks));
-			result.append(String.format("Cooldown Goal:     %3d\n", cooldownTicksGoal));
-			result.append(String.format("Gamma?:            %3d\n", unknownGamma));
-			result.append(String.format("Delta?:            %3d\n", unknownDelta));
-			result.append(String.format("Boost:             %3d\n", boost));
-			result.append(String.format("Charge:            %3d\n", charge));
+			result.append(String.format("Cooldown Ticks:      %7d\n", cooldownTicks));
+			result.append(String.format("Cooldown Goal:       %7d\n", cooldownTicksGoal));
+			result.append(String.format("Gamma?:              %7d\n", unknownGamma));
+			result.append(String.format("Delta?:              %7d\n", unknownDelta));
+			result.append(String.format("Boost:               %7d\n", boost));
+			result.append(String.format("Charge:              %7d\n", charge));
 
 			result.append("\nEta?... (Reticle Coords?)\n");
 			first = true;
@@ -6273,20 +6322,20 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\n");
 
-			result.append(String.format("Iota?:             %3d (Autofire?)\n", unknownIota));
-			result.append(String.format("Kappa?:            %3d\n", unknownKappa));
-			result.append(String.format("Lambda?:           %3d\n", unknownLambda));
-			result.append(String.format("Mu?:               %3d\n", unknownMu));
-			result.append(String.format("Nu?:               %3d\n", unknownNu));
-			result.append(String.format("Xi?:               %3d\n", unknownXi));
-			result.append(String.format("Omicron?:          %3d\n", unknownOmicron));
-			result.append(String.format("Pi?:               %3d\n", unknownPi));
-			result.append(String.format("Rho?:              %3d\n", unknownRho));
-			result.append(String.format("Sigma?:            %3d\n", unknownSigma));
-			result.append(String.format("Tau?:              %3d\n", unknownTau));
-			result.append(String.format("Upsilon?:          %3d\n", unknownUpsilon));
-			result.append(String.format("Phi?:              %3d\n", unknownPhi));
-			result.append(String.format("Chi?:              %3d\n", unknownChi));
+			result.append(String.format("Iota?:               %7d (Autofire?)\n", unknownIota));
+			result.append(String.format("Kappa?:              %7d\n", unknownKappa));
+			result.append(String.format("Lambda?:             %7d\n", unknownLambda));
+			result.append(String.format("Mu?:                 %7d\n", unknownMu));
+			result.append(String.format("Nu?:                 %7d\n", unknownNu));
+			result.append(String.format("Weapon Anim Frame:   %7d (0-based frame of weapon animSheet)\n", weaponAnimFrame));
+			result.append(String.format("Weapon Anim Ticks:   %7d (1000/frameCount * currentFrame)\n", weaponAnimTicks));
+			result.append(String.format("Pi?:                 %7d\n", unknownPi));
+			result.append(String.format("Rho?:                %7d\n", unknownRho));
+			result.append(String.format("Sigma?:              %7d\n", unknownSigma));
+			result.append(String.format("Protract Anim Ticks: %7d (0=Retracted or 1000=Protracted)\n", protractAnimTicks));
+			result.append(String.format("Upsilon?:            %7d\n", unknownUpsilon));
+			result.append(String.format("Phi?:                %7d\n", unknownPhi));
+			result.append(String.format("Chi?:                %7d\n", unknownChi));
 
 			result.append("\nPending Projectiles... (Queued before firing)\n");
 			int projectileIndex = 0;
@@ -6776,12 +6825,12 @@ System.err.println(String.format("Athena: @%d", in.getChannel().position()));
 		athena.setUnknownLambda( readInt(in) );
 		athena.setUnknownMu( readInt(in) );
 		athena.setUnknownNu( readInt(in) );
-		athena.setUnknownXi( readInt(in) );
-		athena.setUnknownOmicron( readInt(in) );
+		athena.setWeaponAnimFrame( readInt(in) );
+		athena.setWeaponAnimTicks( readInt(in) );
 		athena.setUnknownPi( readInt(in) );
 		athena.setUnknownRho( readInt(in) );
 		athena.setUnknownSigma( readInt(in) );
-		athena.setUnknownTau( readInt(in) );
+		athena.setProtractAnimTicks( readInt(in) );
 		athena.setUnknownUpsilon( readInt(in) );
 		athena.setUnknownPhi( readInt(in) );
 		athena.setUnknownChi( readInt(in) );
@@ -6819,12 +6868,12 @@ System.err.println(String.format("Athena: @%d", in.getChannel().position()));
 		writeInt( out, athena.getUnknownLambda() );
 		writeInt( out, athena.getUnknownMu() );
 		writeInt( out, athena.getUnknownNu() );
-		writeInt( out, athena.getUnknownXi() );
-		writeInt( out, athena.getUnknownOmicron() );
+		writeInt( out, athena.getWeaponAnimFrame() );
+		writeInt( out, athena.getWeaponAnimTicks() );
 		writeInt( out, athena.getUnknownPi() );
 		writeInt( out, athena.getUnknownRho() );
 		writeInt( out, athena.getUnknownSigma() );
-		writeInt( out, athena.getUnknownTau() );
+		writeInt( out, athena.getProtractAnimTicks() );
 		writeInt( out, athena.getUnknownUpsilon() );
 		writeInt( out, athena.getUnknownPhi() );
 		writeInt( out, athena.getUnknownChi() );
