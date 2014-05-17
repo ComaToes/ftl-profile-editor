@@ -138,6 +138,8 @@ public class ProfileShipUnlockPanel extends JPanel {
 		List<Achievement> shipAchs = DataManager.get().getShipAchievements( variantAShip );		
 		if ( shipAchs != null ) {
 			for ( Achievement shipAch : shipAchs ) {
+				if ( shipAch.isVictory() || shipAch.isQuest() ) continue;
+
 				IconCycleButton box = frame.createCycleButton( "img/" + shipAch.getImagePath(), true );
 				box.setToolTipText( shipAch.getName() );
 
@@ -274,11 +276,13 @@ public class ProfileShipUnlockPanel extends JPanel {
 			shipAvail.setUnlockedA( unlockedA );
 			shipAvail.setUnlockedC( unlockedC );
 
-			// Remove ship achievements for locked ships
+			// Remove ship achievements for locked ships.
 			if ( !unlockedA ) {
 				List<Achievement> shipAchs = DataManager.get().getShipAchievements( DataManager.get().getPlayerShipVariant( baseId, 0 ) );
 				if ( shipAchs != null ) {
 					for ( Achievement shipAch : shipAchs ) {
+						if ( shipAch.isVictory() || shipAch.isQuest() ) continue;
+
 						// Search for records with the doomed id.
 						AchievementRecord.removeFromListById( newAchRecs, shipAch.getId() );
 					}

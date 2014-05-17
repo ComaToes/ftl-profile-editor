@@ -245,10 +245,10 @@ public class ScorePanel extends JPanel {
 				shipImage = cacheMap.get( shipId );
 			}
 
-			if ( shipImage == null ) {
+			ShipBlueprint ship = DataManager.get().getShip( shipId );
+			if ( shipImage == null && ship != null ) {
 				InputStream stream = null;
 				try {
-					ShipBlueprint ship = DataManager.get().getShip( shipId );
 					stream = DataManager.get().getResourceInputStream( "img/ship/"+ ship.getGraphicsBaseName() +"_base.png" );
 					shipImage = getScaledImage( stream );
 					shipImageLbl.setIcon( new ImageIcon(shipImage) );

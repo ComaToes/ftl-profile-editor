@@ -54,9 +54,6 @@ public class DefaultDataManager extends DataManager {
 	private List<String> stdPlayerShipIds;
 	private List<String> dlcPlayerShipIds;
 
-	private List<Achievement> achievements;
-	private List<Achievement> generalAchievements;
-
 	private Map<String, BackgroundImageList> backgroundImageLists;
 
 	private Map<String, Blueprints> allBlueprints;
@@ -98,6 +95,7 @@ public class DefaultDataManager extends DataManager {
 	private Map<String, Achievement> achievementIdMap;
 	private Map<ShipBlueprint, List<Achievement>> stdShipAchievementIdMap;
 	private Map<ShipBlueprint, List<Achievement>> dlcShipAchievementIdMap;
+	private List<Achievement> generalAchievements;
 
 	private Map<String, ShipLayout> shipLayouts;
 	private Map<String, ShipChassis> shipChassisMap;
@@ -132,7 +130,7 @@ public class DefaultDataManager extends DataManager {
 			log.debug( "Reading \"data/achievements.xml\"..." );
 			InputStream achStream = getDataInputStream( "data/achievements.xml" );
 			streams.add(achStream);
-			achievements = datParser.readAchievements( achStream, "achievements.xml" );
+			List<Achievement> achievements = datParser.readAchievements( achStream, "achievements.xml" );
 
 			log.info( "Reading Blueprints..." );
 			stdBlueprintsFileNames = new ArrayList<String>();
@@ -221,15 +219,69 @@ public class DefaultDataManager extends DataManager {
 
 			log.info( "Finished reading FTL resources." );
 
-			generalAchievements = new ArrayList<Achievement>();
-			for( Achievement ach : achievements ) {
-				if ( ach.getShipId() == null )
-					generalAchievements.add(ach);
-			}
-
 			achievementIdMap = new LinkedHashMap<String, Achievement>();
 			for( Achievement ach : achievements ) {
 				achievementIdMap.put( ach.getId(), ach );
+			}
+
+			// Add hardcoded ship Quest and Victory achievements. (FTL 1.5.4+)
+			// TODO: Magic strings.
+
+			Map<String, String> questAchIds = new LinkedHashMap<String, String>();
+			// No Kestrel quest.
+			questAchIds.put( "PLAYER_SHIP_STEALTH", "PLAYER_SHIP_STEALTH_QUEST" );
+			questAchIds.put( "PLAYER_SHIP_MANTIS", "PLAYER_SHIP_MANTIS_QUEST" );
+			// No Engi or Fed quest.
+			questAchIds.put( "PLAYER_SHIP_JELLY", "PLAYER_SHIP_JELLY_QUEST" );
+			questAchIds.put( "PLAYER_SHIP_ROCK", "PLAYER_SHIP_ROCK_QUEST" );
+			questAchIds.put( "PLAYER_SHIP_ENERGY", "PLAYER_SHIP_ENERGY_QUEST" );
+			questAchIds.put( "PLAYER_SHIP_CRYSTAL", "PLAYER_SHIP_CRYSTAL_QUEST" );
+
+			for ( Map.Entry<String, String> entry : questAchIds.entrySet() ) {
+				Achievement questAch = achievementIdMap.get( entry.getKey() );
+				if ( questAch == null ) {
+					questAch = new Achievement();
+					questAch.setId( entry.getValue() );
+					questAch.setName( entry.getValue() );
+					questAch.setDescription( "Dummy quest achievement." );
+					questAch.setImagePath( null );
+					questAch.setShipId( entry.getKey() );
+					achievementIdMap.put( questAch.getId(), questAch );
+				}
+				questAch.setQuest( true );
+			}
+
+			Map<String, String> victoryAchIds = new LinkedHashMap<String, String>();
+			victoryAchIds.put( "PLAYER_SHIP_HARD", "PLAYER_SHIP_HARD_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_STEALTH", "PLAYER_SHIP_STEALTH_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_MANTIS", "PLAYER_SHIP_MANTIS_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_CIRCLE", "PLAYER_SHIP_CIRCLE_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_FED", "PLAYER_SHIP_FED_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_JELLY", "PLAYER_SHIP_JELLY_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_ROCK", "PLAYER_SHIP_ROCK_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_ENERGY", "PLAYER_SHIP_ENERGY_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_CRYSTAL", "PLAYER_SHIP_CRYSTAL_VICTORY" );
+			victoryAchIds.put( "PLAYER_SHIP_ANAEROBIC", "PLAYER_SHIP_ANAEROBIC_VICTORY" );
+
+			for ( Map.Entry<String, String> entry : victoryAchIds.entrySet() ) {
+				Achievement victoryAch = achievementIdMap.get( entry.getKey() );
+				if ( victoryAch == null ) {
+					victoryAch = new Achievement();
+					victoryAch.setId( entry.getValue() );
+					victoryAch.setName( entry.getValue() );
+					victoryAch.setDescription( "Dummy victory achievement." );
+					victoryAch.setImagePath( null );
+					victoryAch.setShipId( entry.getKey() );
+					achievementIdMap.put( victoryAch.getId(), victoryAch );
+				}
+				victoryAch.setVictory( true );
+			}
+
+			generalAchievements = new ArrayList<Achievement>();
+			for( Achievement ach : achievementIdMap.values() ) {
+				if ( ach.getShipId() == null ) {
+					generalAchievements.add(ach);
+				}
 			}
 
 			stdBlueprints = new LinkedHashMap<String, Blueprints>( stdBlueprintsFileNames.size() );
@@ -443,7 +495,7 @@ public class DefaultDataManager extends DataManager {
 			stdShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>();
 			for ( Map.Entry<String, ShipBlueprint> entry : stdPlayerShipIdMap.entrySet() ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
-				for ( Achievement ach : achievements )
+				for ( Achievement ach : achievementIdMap.values() )
 					if ( entry.getKey().equals( ach.getShipId() ) )
 						shipAchs.add(ach);
 				stdShipAchievementIdMap.put( entry.getValue(), shipAchs );
@@ -451,7 +503,7 @@ public class DefaultDataManager extends DataManager {
 			dlcShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>();
 			for ( Map.Entry<String, ShipBlueprint> entry : dlcPlayerShipIdMap.entrySet() ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
-				for ( Achievement ach : achievements )
+				for ( Achievement ach : achievementIdMap.values() )
 					if ( entry.getKey().equals( ach.getShipId() ) )
 						shipAchs.add(ach);
 				dlcShipAchievementIdMap.put( entry.getValue(), shipAchs );
@@ -606,8 +658,8 @@ public class DefaultDataManager extends DataManager {
 	}
 
 	@Override
-	public List<Achievement> getAchievements() {
-		return achievements;
+	public Map<String, Achievement> getAchievements() {
+		return achievementIdMap;
 	}
 
 	@Override

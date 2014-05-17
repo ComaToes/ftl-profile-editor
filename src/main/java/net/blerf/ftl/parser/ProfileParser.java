@@ -68,24 +68,12 @@ public class ProfileParser extends Parser {
 	}
 
 	private List<AchievementRecord> readAchievements( InputStream in, int headerAlpha ) throws IOException {
-		List<String> extendedAchIds = new ArrayList<String>();  // TODO: Magic strings.
-		extendedAchIds.add( "PLAYER_SHIP_HARD_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_STEALTH_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_MANTIS_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_CIRCLE_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_FED_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_JELLY_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ENERGY_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_CRYSTAL_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );
-
 		int achievementCount = readInt(in);
 
 		List<AchievementRecord> achievements = new ArrayList<AchievementRecord>( achievementCount );
 
 		for (int i=0; i < achievementCount; i++) {
-			String achName = readString(in);
+			String achId = readString(in);
 
 			int diffFlag = readInt(in);
 			Difficulty diff;
@@ -99,13 +87,21 @@ public class ProfileParser extends Parser {
 				diff = Difficulty.HARD;
 			}
 			else {
-				throw new IOException( String.format("Unsupported difficulty flag for achievement %d (\"%s\"): %d", i, achName, diffFlag) );
+				throw new IOException( String.format("Unsupported difficulty flag for achievement %d (\"%s\"): %d", i, achId, diffFlag) );
 			}
 
-			AchievementRecord rec = new AchievementRecord( achName, diff );
+			Achievement ach = DataManager.get().getAchievement( achId );
+			if ( ach == null ) {
+				log.warn( "Skipping unsupported achievement id: "+ achId );
+				continue;
+			}
+
+			AchievementRecord rec = new AchievementRecord( achId, diff );
 
 			if ( headerAlpha == 9 ) {
-				if ( extendedAchIds.contains( achName ) ) {
+				boolean needsVariantFlags = ach.isVictory();
+
+				if ( needsVariantFlags ) {
 					// Set whether the Type-ABC layouts completed this achievement.
 					// Flag is difficulty for that run (0=EASY, 1=NORMAL, 2=HARD, -1=N/A)
 
@@ -128,7 +124,7 @@ public class ProfileParser extends Parser {
 							variantDiff = Difficulty.HARD;
 						}
 						else {
-							throw new IOException( String.format("Unsupported per-layout difficulty flag for achievement %d (\"%s\"): %d", i, achName, variantDiffFlag) );
+							throw new IOException( String.format("Unsupported per-layout difficulty flag for achievement %d (\"%s\"): %d", i, achId, variantDiffFlag) );
 						}
 						variantDiffs[j] = variantDiff;
 					}
@@ -159,35 +155,23 @@ public class ProfileParser extends Parser {
 			shipBaseIds.add( "PLAYER_SHIP_ANAEROBIC" );
 		}
 
-		List<String> extendedAchIds = new ArrayList<String>();
-		extendedAchIds.add( "PLAYER_SHIP_HARD_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_STEALTH_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_MANTIS_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_CIRCLE_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_FED_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_JELLY_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ROCK_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ENERGY_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_CRYSTAL_VICTORY" );
-		extendedAchIds.add( "PLAYER_SHIP_ANAEROBIC_VICTORY" );
-
 		List<AchievementRecord> writableAchs = new ArrayList<AchievementRecord>( achievements.size() );
 
 		for ( AchievementRecord rec : achievements ) {
 
-			// FTL 1.01-1.03.3 Profiles can't handle extended achievements. Drop them.
-			if ( headerAlpha == 4 ) {
-				if ( extendedAchIds.contains( rec.getAchievementId() ) ) {
-					continue;
-				}
-			}
-
-			// Drop ship achievements for invalid ships.
 			Achievement ach = DataManager.get().getAchievement( rec.getAchievementId() );
 			if ( ach == null ) {
 				log.warn( "Omitting unsupported achievement id: "+ rec.getAchievementId() );
 				continue;
 			}
+
+			// FTL 1.01-1.03.3 profiles have no quest or victory achievements.
+			if ( headerAlpha == 4 && ( ach.isVictory() || ach.isQuest() ) ) {
+				continue;
+			}
+
+			// Drop achievements for invalid ships (such as the Lanius Cruiser in
+			// old profiles).
 			if ( ach.getShipId() != null && !shipBaseIds.contains( ach.getShipId() ) ) {
 				continue;
 			}
@@ -218,7 +202,9 @@ public class ProfileParser extends Parser {
 			writeInt( out, diffFlag );
 
 			if ( headerAlpha == 9 ) {
-				if ( extendedAchIds.contains( rec.getAchievementId() ) ) {
+				boolean needsVariantFlags = DataManager.get().getAchievement( rec.getAchievementId() ).isVictory();
+
+				if ( needsVariantFlags ) {
 					Difficulty[] variantDiffs = new Difficulty[3];
 					variantDiffs[0] = rec.getCompletedWithTypeA();
 					variantDiffs[1] = rec.getCompletedWithTypeB();
