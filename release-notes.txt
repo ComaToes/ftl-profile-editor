@@ -1,3 +1,13 @@
+23
+Partial ship editing for 1.5.4 saved games (systems/drones/weapons excluded).
+Fixed an FTL crash caused by newly-created stores not starting with a shelf.
+Fixed first-run notice, to say saved games are partially editable.
+Fixed inaccurate skill mastery interval hints in saved game dumps.
+Fixed State Var "higho2" tooltip: FTL 1.5.4 incremented on arrival/loading.
+Fixed Lanius ship achievements leaking into old "prof.sav" files.
+Added lossy "ae_prof.sav" editing when using resources from FTL 1.01-1.03.3.
+Added a warning when attempting to save the blank default profile.
+
 22
 Partial editing for 1.5.4 saved games (ships themselves are not editable yet).
 Added "Ship Best" score editing in profiles.
