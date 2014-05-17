@@ -95,8 +95,9 @@ public class FTLFrame extends JFrame {
 
 	private static final Logger log = LogManager.getLogger(FTLFrame.class);
 
-	private Profile profile;
-	SavedGameParser.SavedGameState gameState = null;
+	private Profile stockProfile = null;
+	private Profile profile = null;
+	private SavedGameParser.SavedGameState gameState = null;
 
 	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource("open.gif") );
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource("save.gif") );
@@ -265,7 +266,8 @@ public class FTLFrame extends JFrame {
 		contentPane.add( statusPanel, BorderLayout.SOUTH );
 
 		// Load blank profile (sets Kestrel unlock).
-		loadProfile( Profile.createEmptyProfile() );
+		stockProfile = Profile.createEmptyProfile();
+		loadProfile( stockProfile );
 
 		loadGameState( null );
 
@@ -442,15 +444,17 @@ public class FTLFrame extends JFrame {
 			}
 		});
 
-		File candidateAEProfileFile = new File( FTLUtilities.findUserDataDir(), "ae_prof.sav" );
-		File candidateClassicProfileFile = new File( FTLUtilities.findUserDataDir(), "prof.sav" );
+		final File candidateAEProfileFile = new File( FTLUtilities.findUserDataDir(), "ae_prof.sav" );
+		final File candidateClassicProfileFile = new File( FTLUtilities.findUserDataDir(), "prof.sav" );
+		final File userDataDir = FTLUtilities.findUserDataDir();
 		if ( candidateAEProfileFile.exists() ) {
 			fc.setSelectedFile( candidateAEProfileFile );
 		}
 		else if ( candidateClassicProfileFile.exists() ) {
 			fc.setSelectedFile( candidateClassicProfileFile );
-		} else {
-			fc.setCurrentDirectory( FTLUtilities.findUserDataDir() );
+		}
+		else {
+			fc.setCurrentDirectory( userDataDir );
 		}
 
 		fc.setMultiSelectionEnabled(false);
@@ -528,7 +532,7 @@ public class FTLFrame extends JFrame {
 						}
 
 						// Reload the original unmodified profile.
-						FTLFrame.this.loadProfile(p);
+						FTLFrame.this.loadProfile( p );
 					}
 					catch( Exception f ) {
 						log.error( String.format("Error reading profile (\"%s\").", chosenFile.getName()), f );
@@ -614,6 +618,13 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				log.trace( "Save profile button clicked." );
+
+				if ( profile == stockProfile ) {
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting might be a mistake.\n\nThis is the blank default profile, which the editor uses for eye candy.\nNormally one would OPEN an existing profile first.\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) return;
+
+					fc.setSelectedFile( candidateClassicProfileFile );  // The stock profile is a "prof.sav".
+				}
 
 				fc.setDialogTitle( "Save Profile" );
 				int chooserResponse = fc.showSaveDialog(FTLFrame.this);
