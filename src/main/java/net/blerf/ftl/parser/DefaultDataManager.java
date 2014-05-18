@@ -231,11 +231,13 @@ public class DefaultDataManager extends DataManager {
 			// No Kestrel quest.
 			questAchIds.put( "PLAYER_SHIP_STEALTH", "PLAYER_SHIP_STEALTH_QUEST" );
 			questAchIds.put( "PLAYER_SHIP_MANTIS", "PLAYER_SHIP_MANTIS_QUEST" );
-			// No Engi or Fed quest.
+			// No Engi quest.
+			questAchIds.put( "PLAYER_SHIP_FED", "PLAYER_SHIP_FED_QUEST" );
 			questAchIds.put( "PLAYER_SHIP_JELLY", "PLAYER_SHIP_JELLY_QUEST" );
 			questAchIds.put( "PLAYER_SHIP_ROCK", "PLAYER_SHIP_ROCK_QUEST" );
 			questAchIds.put( "PLAYER_SHIP_ENERGY", "PLAYER_SHIP_ENERGY_QUEST" );
 			questAchIds.put( "PLAYER_SHIP_CRYSTAL", "PLAYER_SHIP_CRYSTAL_QUEST" );
+			// No Anaerobic quest.
 
 			for ( Map.Entry<String, String> entry : questAchIds.entrySet() ) {
 				Achievement questAch = achievementIdMap.get( entry.getKey() );
