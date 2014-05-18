@@ -554,6 +554,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sideScroll = new JScrollPane( sidePanel );
 		sideScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
 		sideScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		sideScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 		sideScroll.setVisible( false );
 		this.add( sideScroll, BorderLayout.EAST );
 	}
@@ -3252,9 +3253,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( PHI, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(PHI).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( LOCKDOWN_RECHARGE_TICKS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(LOCKDOWN_RECHARGE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while waiting for the lockdown ability to recharge (Crystal only).") );
 		editorPanel.addRow( LOCKDOWN_RECHARGE_GOAL, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(LOCKDOWN_RECHARGE_GOAL).addMouseListener( new StatusbarMouseListener(frame, "Time required for the lockdown ability to recharge (Crystal only).") );
 		editorPanel.addRow( OMEGA, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(OMEGA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(OMEGA).addMouseListener( new StatusbarMouseListener(frame, "Unknown (Crystal only).") );
 
 		ActionListener crewListener = new ActionListener() {
 			private JComboBox raceCombo = editorPanel.getCombo(RACE);

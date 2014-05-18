@@ -284,6 +284,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sideScroll = new JScrollPane( sidePanel );
 		sideScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
 		sideScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
+		sideScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 		sideScroll.setVisible( false );
 		this.add( sideScroll, BorderLayout.EAST );
 
