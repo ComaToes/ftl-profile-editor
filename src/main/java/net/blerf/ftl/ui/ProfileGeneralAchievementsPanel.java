@@ -17,6 +17,7 @@ import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.IconCycleButton;
+import net.blerf.ftl.ui.ImageUtilities;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 
@@ -62,7 +63,7 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 			Achievement ach = achievements.get( i+offset );
 			log.trace( "Setting icons for cycle button. Base image: " + "img/" + ach.getImagePath() );
 
-			IconCycleButton box = frame.createCycleButton( "img/" + ach.getImagePath(), true );
+			IconCycleButton box = ImageUtilities.createCycleButton( "img/" + ach.getImagePath(), true );
 			box.setToolTipText( ach.getName() );
 
 			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");

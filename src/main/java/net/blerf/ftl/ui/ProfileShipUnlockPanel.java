@@ -22,6 +22,7 @@ import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.IconCycleButton;
+import net.blerf.ftl.ui.ImageUtilities;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.ShipBlueprint;
@@ -43,9 +44,9 @@ public class ProfileShipUnlockPanel extends JPanel {
 
 	private FTLFrame frame;
 
-	private HashMap<String, IconCycleButton> shipABoxes = new HashMap<String, IconCycleButton>();
-	private HashMap<String, IconCycleButton> shipCBoxes = new HashMap<String, IconCycleButton>();
-	private HashMap<Achievement, IconCycleButton> shipAchBoxes = new HashMap<Achievement, IconCycleButton>();
+	private Map<String, IconCycleButton> shipABoxes = new HashMap<String, IconCycleButton>();
+	private Map<String, IconCycleButton> shipCBoxes = new HashMap<String, IconCycleButton>();
+	private Map<Achievement, IconCycleButton> shipAchBoxes = new HashMap<Achievement, IconCycleButton>();
 
 
 	public ProfileShipUnlockPanel( FTLFrame frame ) {
@@ -92,28 +93,28 @@ public class ProfileShipUnlockPanel extends JPanel {
 		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
 		panel.setBorder( BorderFactory.createTitledBorder( shipClass ) );
 
-		IconCycleButton shipABox = frame.createCycleButton( "img/ship/"+ variantAShip.getGraphicsBaseName() +"_base.png", false );
+		IconCycleButton shipABox = ImageUtilities.createCycleButton( "img/ship/"+ variantAShip.getGraphicsBaseName() +"_base.png", false );
 		shipABox.addMouseListener( new StatusbarMouseListener(frame, "Type-A: "+ variantAShip.getName()) );
 		shipABoxes.put( baseId, shipABox );
 		panel.add( shipABox );
 
 		if ( variantBShip != null ) {
-			IconCycleButton shipBBox = frame.createDummyCycleButton();
+			IconCycleButton shipBBox = ImageUtilities.createDummyCycleButton();
 			shipBBox.addMouseListener( new StatusbarMouseListener(frame, "Type-B: "+ variantBShip.getName() +" (To unlock, choose two ship achievements below.)") );
 			panel.add( shipBBox );
 		} else {
-			IconCycleButton shipBBox = frame.createDummyCycleButton();
+			IconCycleButton shipBBox = ImageUtilities.createDummyCycleButton();
 			shipBBox.addMouseListener( new StatusbarMouseListener(frame, "Type-B: N/A") );
 			panel.add( shipBBox );
 		}
 
 		if ( variantCShip != null ) {
-			IconCycleButton shipCBox = frame.createCycleButton( "img/ship/"+ variantCShip.getGraphicsBaseName() +"_base.png", false );
+			IconCycleButton shipCBox = ImageUtilities.createCycleButton( "img/ship/"+ variantCShip.getGraphicsBaseName() +"_base.png", false );
 			shipCBox.addMouseListener( new StatusbarMouseListener(frame, "Type-C: "+ variantCShip.getName()) );
 			shipCBoxes.put( baseId, shipCBox );
 			panel.add( shipCBox );
 		} else {
-			IconCycleButton shipCBox = frame.createDummyCycleButton();
+			IconCycleButton shipCBox = ImageUtilities.createDummyCycleButton();
 			shipCBox.addMouseListener( new StatusbarMouseListener(frame, "Type-C: N/A") );
 			shipCBoxes.put( baseId, shipCBox );
 			panel.add( shipCBox );
@@ -140,7 +141,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 			for ( Achievement shipAch : shipAchs ) {
 				if ( shipAch.isVictory() || shipAch.isQuest() ) continue;
 
-				IconCycleButton box = frame.createCycleButton( "img/" + shipAch.getImagePath(), true );
+				IconCycleButton box = ImageUtilities.createCycleButton( "img/" + shipAch.getImagePath(), true );
 				box.setToolTipText( shipAch.getName() );
 
 				String achDesc = shipAch.getDescription().replaceAll("(\r\n|\r|\n)+", " ");

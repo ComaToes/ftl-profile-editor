@@ -10,6 +10,7 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -55,6 +56,7 @@ import net.blerf.ftl.parser.SavedGameParser.CrewType;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
+import net.blerf.ftl.ui.ImageUtilities;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.SectorMapLayout;
 import net.blerf.ftl.ui.SectorMapLayout.SectorMapConstraints;
@@ -102,7 +104,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 	private ArrayList<QuestSprite> questSprites = new ArrayList<QuestSprite>();
 	private ArrayList<PlayerShipSprite> playerShipSprites = new ArrayList<PlayerShipSprite>();
 
-	private HashMap<String, BufferedImage> cachedImages = new HashMap<String, BufferedImage>();
+	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
 
 	private SectorMapLayout mapLayout = null;
 	private JPanel mapPanel = null;
@@ -746,30 +748,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 		miscSelector.setVisible(true);
-	}
-
-	/**
-	 * Gets an image, and caches the result.
-	 */
-	private BufferedImage getImage( String innerPath ) {
-		BufferedImage result = cachedImages.get(innerPath);
-		if (result != null) return result;
-		log.trace( "Image not in cache, loading and scaling...: "+ innerPath );
-
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream( innerPath );
-			result = ImageIO.read( in );
-
-		} catch (IOException e) {
-			log.error( "Error reading image: "+ innerPath, e );
-		}	finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
-		}
-		cachedImages.put( innerPath, result );
-
-		return result;
 	}
 
 	private void showSidePanel() {
@@ -1650,13 +1628,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 
 			if ( fleetPresence == SavedGameParser.FleetPresence.REBEL ) {
-				currentImage = getImage( "img/map/map_icon_warning.png" );
+				currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_warning.png", -1*32, -1*32, cachedImages );
 			}
 			else if ( visited > 0 ) {
-				currentImage = getImage( "img/map/map_icon_diamond_blue.png" );
+				currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_diamond_blue.png", -1*32, -1*32, cachedImages );
 			}
 			else {
-				currentImage = getImage( "img/map/map_icon_diamond_yellow.png" );
+				currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_diamond_yellow.png", -1*32, -1*32, cachedImages );
 			}
 			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
 		}
@@ -1699,7 +1677,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				}
 			}
 
-			currentImage = getImage( "img/map/map_box_store.png" );
+			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_store.png", -1*80, -1*40, cachedImages );
 			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
 		}
 
@@ -1731,7 +1709,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		public QuestSprite( String questId ) {
 			this.questId = questId;
-			currentImage = getImage( "img/map/map_box_quest.png" );
+			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_quest.png", -1*80, -1*40, cachedImages );
 			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
 		}
 
@@ -1753,7 +1731,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		private BufferedImage currentImage = null;
 
 		public PlayerShipSprite() {
-			currentImage = getImage( "img/map/map_icon_ship.png" );
+			currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_ship.png", -1*64, -1*64, cachedImages );
 			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
 		}
 

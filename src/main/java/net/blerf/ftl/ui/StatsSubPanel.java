@@ -163,7 +163,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	 * Gets a crew icon, cropped as small as possible.
 	 */
 	private ImageIcon getCrewIcon( String imgRace ) {
-		if (imgRace == null || imgRace.length() == 0) return null;
+		if ( imgRace == null || imgRace.length() == 0 ) return null;
 
 		ImageIcon result = null;
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
@@ -186,38 +186,19 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 		try {
 			in = DataManager.get().getResourceInputStream( innerPath );
 			BufferedImage bigImage = ImageIO.read( in );
-			BufferedImage croppedImage = bigImage.getSubimage(offsetX, offsetY, w, h);
+			BufferedImage croppedImage = bigImage.getSubimage( offsetX, offsetY, w, h );
 
-			// Shrink the crop area until non-transparent pixels are hit.
-			int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
-			int highX = -1, highY = -1;
-			for (int testY=0; testY < h; testY++) {
-				for (int testX=0; testX < w; testX++) {
-					int pixel = croppedImage.getRGB(testX, testY);
-					int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
-					if (alpha != 0) {
-						if (testX > highX) highX = testX;
-						if (testY > highY) highY = testY;
-						if (testX < lowX) lowX = testX;
-						if (testY < lowY) lowY = testY;
-					}
-				}
-			}
-			log.trace( "Crew Icon Trim Bounds: "+ lowX +","+ lowY +" "+ highX +"x"+ highY +" "+ imgRace );
-			if (lowX >= 0 && lowY >= 0 && highX < w && highY < h && lowX < highX && lowY < highY) {
-				croppedImage = croppedImage.getSubimage(lowX, lowY, highX-lowX+1, highY-lowY+1);
-			}
-			result = new ImageIcon(croppedImage);
+			result = new ImageIcon( ImageUtilities.getTrimmedImage( croppedImage, null ) );
 		}
 		catch ( RasterFormatException e ) {
-			log.error( String.format("Failed to load and crop crew icon (%s).", imgRace), e );
+			log.error( String.format("Failed to load and trim crew icon (%s).", imgRace), e );
 		}
 		catch ( IOException e ) {
-			log.error( String.format("Failed to load and crop crew icon (%s).", imgRace), e );
+			log.error( String.format("Failed to load and trim crew icon (%s).", imgRace), e );
 		}
 		finally {
-			try {if (in != null) in.close();}
-			catch (IOException f) {}
+			try {if ( in != null ) in.close();}
+			catch ( IOException e ) {}
     }
 		return result;
 	}

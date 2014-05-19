@@ -5,14 +5,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.font.LineMetrics;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -31,7 +27,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -56,7 +51,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
@@ -75,7 +69,6 @@ import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.ui.DumpPanel;
 import net.blerf.ftl.ui.ExtensionFileFilter;
 import net.blerf.ftl.ui.HTMLEditorTransferHandler;
-import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.ProfileGeneralAchievementsPanel;
 import net.blerf.ftl.ui.ProfileGeneralStatsPanel;
 import net.blerf.ftl.ui.ProfileShipStatsPanel;
@@ -114,12 +107,6 @@ public class FTLFrame extends JFrame {
 	private String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959";
-
-	// For cycle boxes.
-	private static final int maxIconWidth = 64;
-	private static final int maxIconHeight = 64;
-	private BufferedImage iconShadeImage = null;
-	private Icon dummyIcon = null;
 
 	private ArrayList<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
@@ -290,17 +277,10 @@ public class FTLFrame extends JFrame {
 	private void initCheckboxIcons() {
 		log.trace( "Initialising standard cycle box stuff." );
 
-		iconShadeImage = new BufferedImage(maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB);
-		Graphics g = iconShadeImage.createGraphics();
-		g.setColor( new Color(0, 0, 0, 150) );
-		g.fillRect(0, 0, maxIconWidth, maxIconHeight);
 		InputStream stream = null;
 		try {
 			stream = DataManager.get().getResourceInputStream( "img/customizeUI/box_lock_on.png" );
-			BufferedImage lock = ImageIO.read( stream );
-			int x = (maxIconWidth-lock.getWidth()) / 2;
-			int y = (maxIconHeight-lock.getHeight()) / 2;
-			g.drawImage(lock, x, y, null);
+			ImageUtilities.setLockImage( ImageIO.read( stream ) );
 		}
 		catch ( IOException e ) {
 			log.error( "Error reading lock image." , e );
@@ -309,118 +289,7 @@ public class FTLFrame extends JFrame {
 			try {if ( stream != null ) stream.close();}
 			catch ( IOException e ) {}
 		}
-		g.dispose();
-
-		dummyIcon = new Icon() {
-			@Override
-			public int getIconHeight() { return maxIconHeight; }
-
-			@Override
-			public int getIconWidth() { return maxIconWidth; }
-
-			@Override
-			public void paintIcon( Component c, Graphics g, int x, int y ) {}
-		};
 	}
-
-	public BufferedImage getScaledImage( InputStream in ) throws IOException {
-		BufferedImage origImage = ImageIO.read( in );
-		int width = origImage.getWidth();
-		int height = origImage.getHeight();
-
-		if ( width <= maxIconWidth && height < maxIconHeight )
-			return origImage;
-
-		if ( width > height ) {
-			height /= width / maxIconWidth;
-			width = maxIconWidth;
-		} else {
-			width /= height / maxIconHeight;
-			height = maxIconHeight;
-		}
-		BufferedImage scaledImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = scaledImage.createGraphics();
-		g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		g2d.drawImage(origImage, 0, 0, width, height, null);
-		g2d.dispose();
-
-		return scaledImage;
-	}
-
-	/**
-	 * Constructs a blank two-state button that ignores clicks.
-	 */
-	public IconCycleButton createDummyCycleButton() {
-		IconCycleButton result = new IconCycleButton( new Icon[] {dummyIcon, dummyIcon} );
-		result.setBorder( BorderFactory.createCompoundBorder( result.getBorder(), BorderFactory.createEtchedBorder() ) );
-		result.setEnabled( false );
-		return result;
-	}
-
-	/**
-	 * Constructs a multi-state button.
-	 *
-	 * The button can either toggle between locked and unlocked,
-	 * or cycle through locked/easy/normal/hard.
-	 *
-	 * @param baseImagePath
-	 * @param cycleDifficulty
-	 */
-	public IconCycleButton createCycleButton( String baseImagePath, boolean cycleDifficulty ) {
-		InputStream stream = null;
-		try {
-			stream = DataManager.get().getResourceInputStream( baseImagePath );
-			BufferedImage origImage = getScaledImage( stream );
-			int centeringOffsetX = (maxIconWidth-origImage.getWidth())/2;
-			int centeringOffsetY = (maxIconHeight-origImage.getHeight())/2;
-
-			BufferedImage lockedImage = new BufferedImage( maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB );
-			Graphics2D lockedG = lockedImage.createGraphics();
-			lockedG.drawImage( origImage, centeringOffsetX, centeringOffsetY, null );
-			lockedG.drawImage( iconShadeImage, 0, 0, null );
-			lockedG.dispose();
-
-			String[] labels = null;
-			if ( cycleDifficulty == true )
-				labels = new String[] { "EASY", "NORMAL", "HARD" };  // Locked / Easy / Normal / Hard.
-			else
-				labels = new String[] { null };              // Locked / Unlocked.
-
-			ImageIcon[] icons = new ImageIcon[ 1+labels.length ];
-			icons[0] = new ImageIcon( lockedImage );
-
-			for (int i=0; i < labels.length; i++) {  // Create icons, drawing any non-null labels.
-				String label = labels[i];
-				BufferedImage tempImage = new BufferedImage( maxIconWidth, maxIconHeight, BufferedImage.TYPE_INT_ARGB );
-				Graphics2D tempG = tempImage.createGraphics();
-				tempG.drawImage( origImage, centeringOffsetX, centeringOffsetY, null );
-				if ( label != null ) {
-					LineMetrics labelMetrics = tempG.getFontMetrics().getLineMetrics(label, tempG);
-					int labelWidth = tempG.getFontMetrics().stringWidth(label);
-					int labelHeight = (int)labelMetrics.getAscent() + (int)labelMetrics.getDescent();
-					int labelX = tempImage.getWidth()/2 - labelWidth/2;
-					int labelY = tempImage.getHeight() - (int)labelMetrics.getDescent();
-					tempG.setColor( Color.BLACK );
-					tempG.fillRect( labelX-4, tempImage.getHeight() - labelHeight, labelWidth+8, labelHeight );
-					tempG.setColor( Color.WHITE );
-					tempG.drawString( label, labelX, labelY );
-				}
-				tempG.dispose();
-				icons[1+i] = new ImageIcon( tempImage );
-			}
-
-			return new IconCycleButton( icons );
-		}
-		catch ( IOException e ) {
-			log.error( "Error reading cycle button image ("+ baseImagePath +").", e );
-		}
-		finally {
-			try {if ( stream != null ) stream.close();}
-			catch ( IOException e ) {}
-		}
-		return null;
-	}
-
 
 	private void setupProfileToolbar( JToolBar toolbar ) {
 		log.trace( "Initialising Profile toolbar." );
@@ -484,7 +353,7 @@ public class FTLFrame extends JFrame {
 					Exception exception = null;
 
 					try {
-						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
+						log.info( "Opening profile: "+ chosenFile.getAbsolutePath() );
 
 						in = new FileInputStream( chosenFile );
 
@@ -655,7 +524,7 @@ public class FTLFrame extends JFrame {
 				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
 					FileOutputStream out = null;
 					try {
-						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
+						log.info( "Saving profile: "+ chosenFile.getAbsolutePath() );
 
 						if ( chosenFile.exists() ) {
 							String bakName = chosenFile.getName() +".bak";
@@ -737,7 +606,7 @@ public class FTLFrame extends JFrame {
 				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
 					BufferedWriter out = null;
 					try {
-						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
+						log.info( "Dumping profile: "+ chosenFile.getAbsolutePath() );
 
 						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( chosenFile ) ) );
 						out.write( profile.toString() );
@@ -802,7 +671,7 @@ public class FTLFrame extends JFrame {
 				if ( extractChooser.showSaveDialog(FTLFrame.this) == JFileChooser.APPROVE_OPTION ) {
 					try {
 						File extractDir = extractChooser.getSelectedFile();
-						log.trace( "Dir selected: "+ extractDir.getAbsolutePath() );
+						log.trace( "Extracting resources into dir: "+ extractDir.getAbsolutePath() );
 
 						JOptionPane.showMessageDialog( FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE );
 
@@ -888,7 +757,7 @@ public class FTLFrame extends JFrame {
 					Exception exception = null;
 
 					try {
-						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
+						log.info( "Opening game state: "+ chosenFile.getAbsolutePath() );
 
 						in = new FileInputStream( chosenFile );
 
@@ -1017,7 +886,7 @@ public class FTLFrame extends JFrame {
 				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
 					FileOutputStream out = null;
 					try {
-						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
+						log.info( "Saving game state: "+ chosenFile.getAbsolutePath() );
 
 						if ( chosenFile.exists() ) {
 							String bakName = chosenFile.getName() +".bak";
@@ -1099,7 +968,7 @@ public class FTLFrame extends JFrame {
 				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
 					BufferedWriter out = null;
 					try {
-						log.trace( "File selected: "+ chosenFile.getAbsolutePath() );
+						log.info( "Dumping game state: "+ chosenFile.getAbsolutePath() );
 
 						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( chosenFile ) ) );
 						out.write( gameState.toString() );

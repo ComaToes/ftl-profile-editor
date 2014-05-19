@@ -4,6 +4,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ public class ProfileGeneralStatsPanel extends JPanel {
 
 	private FTLFrame frame;
 
-	private Map<String, BufferedImage> cacheMap = new HashMap<String, BufferedImage>();
+	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
 
 	private JPanel topScoresPanel;
 	private StatsSubPanel sessionRecordsPanel;
@@ -93,7 +94,7 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		int i = 0;
 		for ( Score s : stats.getTopScores() ) {
 			ScorePanel tsp = new ScorePanel( ++i, s );
-			tsp.setCacheMap( cacheMap );
+			tsp.setCacheMap( cachedImages );
 			topScoresPanel.add( tsp );
 			topScorePanels.add( tsp );
 		}

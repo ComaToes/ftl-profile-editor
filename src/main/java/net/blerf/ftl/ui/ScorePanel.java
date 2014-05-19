@@ -7,6 +7,7 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -45,12 +46,9 @@ public class ScorePanel extends JPanel {
 	private static final String DLC_ENABLED = "DLC Enabled";
 	private static final String REMOVE = "Remove";
 
-	private static final int maxIconWidth = 64;
-	private static final int maxIconHeight = 64;
-
 	private static final Logger log = LogManager.getLogger(ScorePanel.class);
 
-	private Map<String, BufferedImage> cacheMap = null;
+	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = null;
 	private boolean blank = true;
 	private boolean shipIdEditingEnabled = true;
 	private boolean blankable = false;
@@ -241,28 +239,25 @@ public class ScorePanel extends JPanel {
 		shipImageLbl.setIcon( null );
 
 		if ( !shipId.equals("") ) {
-			if ( cacheMap != null ) {
-				shipImage = cacheMap.get( shipId );
-			}
 
 			ShipBlueprint ship = DataManager.get().getShip( shipId );
-			if ( shipImage == null && ship != null ) {
-				InputStream stream = null;
-				try {
-					stream = DataManager.get().getResourceInputStream( "img/ship/"+ ship.getGraphicsBaseName() +"_base.png" );
-					shipImage = getScaledImage( stream );
-					shipImageLbl.setIcon( new ImageIcon(shipImage) );
+			if ( ship != null ) {
+				String shipGfxBaseName = ship.getGraphicsBaseName();
 
-					if ( cacheMap != null ) {
-						cacheMap.put( shipId, shipImage );
+				String innerPath = null;
+				String[] candidatePaths = new String[2];
+				candidatePaths[0] = "img/ship/"+ shipGfxBaseName +"_base.png";  // FTL 1.01-1.03.3 (All ships), 1.5.4 (Player ships)
+				candidatePaths[1] = "img/ships_glow/"+ shipGfxBaseName +"_base.png";  // FTL 1.5.4 (Enemy ships)
+				for ( String candidatePath : candidatePaths ) {
+					if ( DataManager.get().hasResourceInputStream( candidatePath ) ) {
+						innerPath = candidatePath;
 					}
 				}
-				catch ( IOException e ) {
-					log.error( "Error reading ship image for "+ shipId +".", e );
-				}
-				finally {
-					try {if ( stream != null ) stream.close();}
-					catch ( IOException f ) {}
+				if ( innerPath != null ) {
+					int maxW = ImageUtilities.getMaxIconWidth();
+					int maxH = ImageUtilities.getMaxIconHeight();
+					shipImage = ImageUtilities.getProportionallyScaledImage( innerPath, maxW, maxH, cachedImages );
+					shipImageLbl.setIcon( new ImageIcon( shipImage ) );
 				}
 			}
 		}
@@ -451,33 +446,11 @@ public class ScorePanel extends JPanel {
 	}
 
 	/**
-	 * Sets a shared cache to use, mapping shipId to scaled ship image.
+	 * Sets a shared cache to use.
+	 *
+	 * The cache maps innerPath to (0,0,maxW,0)/(0,0,0,maxH) rects to images.
 	 */
-	public void setCacheMap( Map<String, BufferedImage> cacheMap ) {
-		this.cacheMap = cacheMap;
-	}
-
-	private BufferedImage getScaledImage( InputStream in ) throws IOException {
-		BufferedImage origImage = ImageIO.read( in );
-		int width = origImage.getWidth();
-		int height = origImage.getHeight();
-		
-		if ( width <= maxIconWidth && height < maxIconHeight )
-			return origImage;
-		
-		if ( width > height ) {
-			height /= width / maxIconWidth;
-			width = maxIconWidth;
-		} else {
-			width /= height / maxIconHeight;
-			height = maxIconHeight;
-		}
-		BufferedImage scaledImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = scaledImage.createGraphics();
-		g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		g2d.drawImage(origImage, 0, 0, width, height, null);
-		g2d.dispose();
-
-		return scaledImage;
+	public void setCacheMap( Map<String, Map<Rectangle, BufferedImage>> cachedImages ) {
+		this.cachedImages = cachedImages;
 	}
 }

@@ -5,6 +5,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -43,7 +44,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
 	private FTLFrame frame;
 
-	private Map<String, BufferedImage> cacheMap = new HashMap<String, BufferedImage>();
+	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
 
 	private Map<String, List<Score>> allBestMap = new LinkedHashMap<String, List<Score>>();
 	private String currentShipId = null;
@@ -131,7 +132,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 				int i = 0;
 				for ( Score s : shipScoreList ) {
 					ScorePanel bsp = new ScorePanel( ++i, s );
-					bsp.setCacheMap( cacheMap );
+					bsp.setCacheMap( cachedImages );
 					bsp.setShipId( currentShipId );
 					bsp.setShipIdEditingEnabled( false );
 					bsp.setBlankable( true );
@@ -145,7 +146,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 		int panelsCount = bestScorePanels.size();
 		for ( int i=0; i < MAX_SCORE_PANELS - panelsCount; i++ ) {
 			ScorePanel bsp = new ScorePanel( panelsCount+i+1, null );
-			bsp.setCacheMap( cacheMap );
+			bsp.setCacheMap( cachedImages );
 			bsp.setShipId( currentShipId );
 			bsp.setShipIdEditingEnabled( false );
 			bsp.setBlankable( true );

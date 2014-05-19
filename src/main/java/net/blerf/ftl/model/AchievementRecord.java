@@ -69,7 +69,7 @@ public class AchievementRecord {
 
 		result.append(String.format("AchId: %-30s  Difficulty: %-6s\n", achievementId, difficulty.toString()));
 
-		result.append(String.format("With TypeA: %-6s  With TypeB: %-6s  With TypeC: %-6s\n", typeADiffString, typeBDiffString, typeBDiffString));
+		result.append(String.format("With Type-A: %-6s  With Type-B: %-6s  With Type-C: %-6s\n", typeADiffString, typeBDiffString, typeBDiffString));
 
 		return result.toString();
 	}

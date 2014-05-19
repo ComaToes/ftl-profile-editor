@@ -79,6 +79,8 @@ import net.blerf.ftl.parser.SavedGameParser.StationDirection;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
+import net.blerf.ftl.ui.ImageUtilities;
+import net.blerf.ftl.ui.ImageUtilities.Tint;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.ui.hud.SpriteSelector;
@@ -138,8 +140,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private List<String> shipAugmentIdList = new ArrayList<String>();
 
 	private int originX=0, originY=0;
-	private HashMap<Rectangle, Integer> roomRegions = new HashMap<Rectangle, Integer>();
-	private HashMap<Rectangle, Integer> squareRegions = new HashMap<Rectangle, Integer>();
+	private Map<Rectangle, Integer> roomRegions = new HashMap<Rectangle, Integer>();
+	private Map<Rectangle, Integer> squareRegions = new HashMap<Rectangle, Integer>();
 	private ArrayList<Rectangle> blockedRegions = new ArrayList<Rectangle>();
 	private ArrayList<JComponent> roomDecorations = new ArrayList<JComponent>();
 	private ArrayList<DroneSprite> droneSprites = new ArrayList<DroneSprite>();
@@ -151,10 +153,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private ArrayList<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
 	private ArrayList<CrewSprite> crewSprites = new ArrayList<CrewSprite>();
 
-	private HashMap<String, HashMap<Rectangle, BufferedImage>> cachedImages = new HashMap<String, HashMap<Rectangle, BufferedImage>>();
-	private HashMap<BufferedImage, HashMap<Tint, BufferedImage>> cachedTintedImages = new HashMap<BufferedImage, HashMap<Tint, BufferedImage>>();
-	private HashMap<String, BufferedImage> cachedPlayerBodyImages = new HashMap<String, BufferedImage>();
-	private HashMap<String, BufferedImage> cachedEnemyBodyImages = new HashMap<String, BufferedImage>();
+	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
+	private Map<BufferedImage, Map<Tint, BufferedImage>> cachedTintedImages = new HashMap<BufferedImage, Map<Tint, BufferedImage>>();
+	private Map<String, BufferedImage> cachedPlayerBodyImages = new HashMap<String, BufferedImage>();
+	private Map<String, BufferedImage> cachedEnemyBodyImages = new HashMap<String, BufferedImage>();
 
 	private JLayeredPane shipPanel = null;
 	private StatusViewport shipViewport = null;
@@ -782,7 +784,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				if ( roomImgPath != null ) {
 					// Gotta scale because Zoltan #2's got a tall Doors image for a wide room. :/
-					BufferedImage decorImage = getScaledImage( "img/ship/interior/"+ roomImgPath +".png", squaresH*squareSize, squaresV*squareSize );
+					BufferedImage decorImage = ImageUtilities.getScaledImage( "img/ship/interior/"+ roomImgPath +".png", squaresH*squareSize, squaresV*squareSize, cachedImages );
 					JLabel decorLbl = new JLabel( new ImageIcon(decorImage) );
 					decorLbl.setOpaque(false);
 					decorLbl.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
@@ -795,7 +797,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						int decorX = roomX + (s%squaresH)*squareSize + squareSize/2;
 						int decorY = roomY + (s/squaresH)*squareSize + squareSize/2;
 
-						BufferedImage decorImage = getScaledImage( "img/ship/interior/teleporter_off.png", 20, 20 );
+						BufferedImage decorImage = ImageUtilities.getScaledImage( "img/ship/interior/teleporter_off.png", 20, 20, cachedImages );
 						JLabel decorLbl = new JLabel( new ImageIcon(decorImage) );
 						decorLbl.setOpaque(false);
 						decorLbl.setSize( squaresH*squareSize, squaresV*squareSize );
@@ -1547,148 +1549,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible(true);
 	}
 
-	/**
-	 * Gets a cropped area of an image and caches the result.
-	 *
-	 * If something goes wrong, a dummy image will be created with
-	 * the expected dimensions.
-	 */
-	private BufferedImage getCroppedImage( String innerPath, int x, int y, int w, int h ) {
-		Rectangle keyRect = new Rectangle( x, y, w, h );
-		BufferedImage result = null;
-		HashMap<Rectangle, BufferedImage> cacheMap = cachedImages.get(innerPath);
-		if ( cacheMap != null ) result = cacheMap.get(keyRect);
-		if (result != null) return result;
-		log.trace( "Image not in cache, loading and cropping...: "+ innerPath );
-
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream( innerPath );
-			BufferedImage bigImage = ImageIO.read(in);
-			result = bigImage.getSubimage(x, y, w, h);
-
-		}
-		catch ( RasterFormatException e ) {
-			log.error( "Failed to load and crop image: "+ innerPath, e );
-		}
-		catch ( FileNotFoundException e ) {
-			log.error( String.format("Failed to load and crop image (\"%s\"). Its innerPath was not found.", innerPath) );
-		}
-		catch ( IOException e ) {
-			log.error( "Failed to load and crop image: "+ innerPath, e );
-		}
-		finally {
-			try {if (in != null) in.close();}
-			catch ( IOException e ) {}
-		}
-
-		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
-			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
-			Graphics2D g2d = (Graphics2D)result.createGraphics();
-			g2d.setColor( new Color(150, 150, 200) );
-			g2d.fillRect( 0, 0, w-1, h-1 );
-			g2d.dispose();
-		}
-
-		if ( cacheMap == null ) {
-			cacheMap = new HashMap<Rectangle, BufferedImage>();
-			cachedImages.put( innerPath, cacheMap );
-		}
-		cacheMap.put( keyRect, result );
-
-		return result;
-	}
-
-	/**
-	 * Gets an image, scaling if necessary, and caches the result.
-	 *
-	 * If something goes wrong, a dummy image will be created with
-	 * the expected dimensions.
-	 *
-	 * If the dimensions are negative, the original unscaled image
-	 * will be returned if possible, or the absolute values will be
-	 * used for the dummy image.
-	 */
-	private BufferedImage getScaledImage( String innerPath, int w, int h ) {
-		Rectangle keyRect = new Rectangle( 0, 0, w, h );
-		BufferedImage result = null;
-		HashMap<Rectangle, BufferedImage> cacheMap = cachedImages.get(innerPath);
-		if ( cacheMap != null ) result = cacheMap.get(keyRect);
-		if (result != null) return result;
-		log.trace( "Image not in cache, loading and scaling...: "+ innerPath );
-
-
-		InputStream in = null;
-		try {
-			in = DataManager.get().getResourceInputStream( innerPath );
-			BufferedImage origImage = ImageIO.read(in);
-
-			if ( w <= 0 || h <= 0 || (origImage.getWidth() == w && origImage.getHeight() == h) ) {
-				result = origImage;
-			} else {
-				BufferedImage scaledImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D g2d = scaledImage.createGraphics();
-				g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-				g2d.drawImage(origImage, 0, 0, w, h, null);
-				g2d.dispose();
-				result = scaledImage;
-			}
-		}
-		catch ( RasterFormatException e ) {
-			log.error( "Failed to load and scale image: "+ innerPath, e );
-		}
-		catch ( IOException e ) {
-			log.error( "Failed to load and scale image: "+ innerPath, e );
-		}
-		finally {
-			try {if (in != null) in.close();}
-			catch ( IOException e ) {}
-		}
-
-		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
-			w = Math.abs(w);
-			h = Math.abs(h);
-			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
-			Graphics2D g2d = (Graphics2D)result.createGraphics();
-			g2d.setColor( new Color(150, 150, 200) );
-			g2d.fillRect( 0, 0, w-1, h-1 );
-			g2d.dispose();
-		}
-
-		if ( cacheMap == null ) {
-			cacheMap = new HashMap<Rectangle, BufferedImage>();
-			cachedImages.put( innerPath, cacheMap );
-		}
-		cacheMap.put( keyRect, result );
-
-		return result;
-	}
-
-	/**
-	 * Applies a RescaleOp to the palette of an image, and caches the result.
-	 */
-	private BufferedImage getTintedImage( BufferedImage srcImage, Tint tint ) {
-		BufferedImage result = null;
-		HashMap<Tint, BufferedImage> cacheMap = cachedTintedImages.get( srcImage );
-		if ( cacheMap != null ) result = cacheMap.get( tint );
-		if ( result != null ) return result;
-
-		BufferedImage canvas = gc.createCompatibleImage(srcImage.getWidth(), srcImage.getHeight(), Transparency.TRANSLUCENT);
-		Graphics2D g2d = canvas.createGraphics();
-		g2d.drawImage(srcImage, 0, 0, null);
-		g2d.dispose();
-		RescaleOp op = new RescaleOp( tint.scaleFactors, tint.offsets, null);
-		result = op.filter(canvas, null);
-
-		if ( cacheMap == null ) {
-			cacheMap = new HashMap<Tint, BufferedImage>();
-			cachedTintedImages.put( srcImage, cacheMap );
-		}
-		cacheMap.put( tint, result );
-
-		return result;
-	}
-
 	private BufferedImage getBodyImage( String imgRace, boolean playerControlled ) {
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
 		String suffix = "";
@@ -1731,7 +1591,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		innerPath = "img/people/"+ imgRace + suffix +".png";
 		if ( DataManager.get().hasResourceInputStream( innerPath ) ) {
 			// FTL 1.01-1.03.3
-			result = getCroppedImage( innerPath, offsetX, offsetY, w, h );
+			result = ImageUtilities.getCroppedImage( innerPath, offsetX, offsetY, w, h, cachedImages );
 		}
 		else {
 			// FTL 1.5.4+
@@ -1740,23 +1600,23 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			String colorPath = "img/people/"+ imgRace +"_color.png";
 			if ( DataManager.get().hasResourceInputStream( colorPath ) ) {
-				colorImage = getCroppedImage( colorPath, offsetX, offsetY, w, h );
+				colorImage = ImageUtilities.getCroppedImage( colorPath, offsetX, offsetY, w, h, cachedImages );
 				float[] yellow = new float[] { 0.957f, 0.859f, 0.184f, 1f };
 				float[] red = new float[] { 1.0f, 0.286f, 0.145f, 1f };
 				Tint colorTint = new Tint( (playerControlled ? yellow: red), new float[] { 0, 0, 0, 0 } );
-				colorImage = getTintedImage( colorImage, colorTint );
+				colorImage = ImageUtilities.getTintedImage( colorImage, colorTint, cachedTintedImages );
 			}
 
 			String basePath = "img/people/"+ imgRace +"_base.png";
 			if ( DataManager.get().hasResourceInputStream( basePath ) ) {
-				baseImage = getCroppedImage( basePath, offsetX, offsetY, w, h );
+				baseImage = ImageUtilities.getCroppedImage( basePath, offsetX, offsetY, w, h, cachedImages );
 			}
 
 			if ( colorImage != null && baseImage != null ) {
-				result = gc.createCompatibleImage(w, h, Transparency.TRANSLUCENT);
+				result = gc.createCompatibleImage( w, h, Transparency.TRANSLUCENT );
 				Graphics2D g2d = result.createGraphics();
-				g2d.drawImage(colorImage, 0, 0, null);
-				g2d.drawImage(baseImage, 0, 0, null);
+				g2d.drawImage( colorImage, 0, 0, null );
+				g2d.drawImage( baseImage, 0, 0, null );
 				g2d.dispose();
 			}
 			else if ( baseImage != null ) {
@@ -1803,8 +1663,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		int offsetX = 0, offsetY = 0, w = 35, h = 35;
 		int levelCount = 3;
 
-		// Dom't scale the image, but pass negative size to define the fallback dummy image.
-		BufferedImage bigImage = getScaledImage( "img/effects/door_sheet.png", -1*((offsetX+4*w)+w), -1*((offsetY+(levelCount-1)*h)+h) );
+		// Don't scale the image, but pass negative size to define the fallback dummy image.
+		BufferedImage bigImage = ImageUtilities.getScaledImage( "img/effects/door_sheet.png", -1*((offsetX+4*w)+w), -1*((offsetY+(levelCount-1)*h)+h), cachedImages );
 
 		BufferedImage[] closedImages = new BufferedImage[levelCount];
 		BufferedImage[] openImages = new BufferedImage[levelCount];
@@ -1831,7 +1691,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Assuming these are interchangeable.
 		String overlayBaseName = systemState.getSystemType().getId();
-		BufferedImage overlayImage = getScaledImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", w, h );
+		BufferedImage overlayImage = ImageUtilities.getScaledImage( "img/icons/s_"+ overlayBaseName +"_overlay.png", w, h, cachedImages );
 
 		SystemSprite systemSprite = new SystemSprite( overlayImage, systemState );
 		systemSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
@@ -1842,7 +1702,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addBreachSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
 		int offsetX = 0, offsetY = 0, w = 19, h = 19;
 
-		BufferedImage breachImage = getCroppedImage( "img/effects/breach.png", offsetX+6*w, offsetY, w, h );
+		BufferedImage breachImage = ImageUtilities.getCroppedImage( "img/effects/breach.png", offsetX+6*w, offsetY, w, h, cachedImages );
 
 		BreachSprite breachSprite = new BreachSprite( breachImage, roomId, squareId, health );
 		breachSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
@@ -1853,7 +1713,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addFireSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
 		int offsetX = 0, offsetY = 0, w = 32, h = 32;
 
-		BufferedImage fireImage = getCroppedImage( "img/effects/fire_L1_strip8.png", offsetX, offsetY, w, h );
+		BufferedImage fireImage = ImageUtilities.getCroppedImage( "img/effects/fire_L1_strip8.png", offsetX, offsetY, w, h, cachedImages );
 
 		FireSprite fireSprite = new FireSprite( fireImage, roomId, squareId, health );
 		fireSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
@@ -3906,7 +3766,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			currentImage = overlayImage;
 			if ( tint != null )
-				currentImage = getTintedImage( currentImage, tint );
+				currentImage = ImageUtilities.getTintedImage( currentImage, tint, cachedTintedImages );
 		}
 
 		@Override
@@ -4334,7 +4194,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 			crewImage = getBodyImage( imgRace, isPlayerControlled() );
 			if ( tint != null )
-				crewImage = getTintedImage( crewImage, tint );
+				crewImage = ImageUtilities.getTintedImage( crewImage, tint, cachedTintedImages );
 		}
 
 		@Override
@@ -4362,15 +4222,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 	public class SquareSelector extends JComponent {
 		private SquareCriteria defaultCriteria = new SquareCriteria();
 
-		private HashMap<Rectangle, Integer> roomRegions;
-		private HashMap<Rectangle, Integer> squareRegions;
+		private Map<Rectangle, Integer> roomRegions;
+		private Map<Rectangle, Integer> squareRegions;
 		private SquareCriteria squareCriteria = defaultCriteria;
 		private SquareSelectionCallback callback = null;
 		private Point mousePoint = new Point( -1, -1 );
 		private Rectangle currentRect = null;
 		private boolean paintDescription = false;
 
-		public SquareSelector( HashMap<Rectangle, Integer> roomRegions, HashMap<Rectangle, Integer> squareRegions ) {
+		public SquareSelector( Map<Rectangle, Integer> roomRegions, Map<Rectangle, Integer> squareRegions ) {
 			this.roomRegions = roomRegions;
 			this.squareRegions = squareRegions;
 		}
@@ -4528,27 +4388,5 @@ public class SavedGameFloorplanPanel extends JPanel {
 	public interface SquareSelectionCallback {
 		/** Responds to a clicked square, returning true to continue selecting. */
 		public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId );
-	}
-
-
-
-	private class Tint {
-		public float[] scaleFactors;
-		public float[] offsets;
-
-		public Tint( float[] scaleFactors, float[] offsets ) {
-			this.scaleFactors = scaleFactors;
-			this.offsets = offsets;
-		}
-
-		public boolean equals( Object o ) {
-			if ( o == this ) return true;
-			if ( o instanceof Tint ) return this.hashCode() == o.hashCode();
-			return false;
-		}
-
-		public int hashCode() {
-			return ( java.util.Arrays.hashCode(scaleFactors) ^ java.util.Arrays.hashCode(offsets) );
-		}
 	}
 }
