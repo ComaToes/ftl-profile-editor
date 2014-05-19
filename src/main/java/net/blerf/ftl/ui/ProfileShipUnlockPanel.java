@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -34,9 +33,6 @@ import org.apache.logging.log4j.Logger;
 public class ProfileShipUnlockPanel extends JPanel {
 
 	private static final int ACH_LOCKED = 0;
-	private static final int ACH_EASY = 1;
-	private static final int ACH_NORMAL = 2;
-	private static final int ACH_HARD = 3;
 	private static final int SHIP_LOCKED = 0;
 	private static final int SHIP_UNLOCKED = 1;
 
@@ -158,6 +154,16 @@ public class ProfileShipUnlockPanel extends JPanel {
 		return panel;
 	}
 
+	private int getCycleStateForDifficulty( Difficulty d ) {
+		if ( d == null ) return ACH_LOCKED;
+		return ( 1 + d.ordinal() );                // LOCKED plus 0-based enum index.
+	}
+
+	private Difficulty getDifficultyForCycleState( int cycleState ) {
+		if ( cycleState == ACH_LOCKED ) return null;
+		return Difficulty.values()[cycleState-1];  // Adjust array index because of LOCKED.
+	}
+
 	public void unlockAllShips() {
 		for ( IconCycleButton box : shipABoxes.values() ) {
 			if ( box.getSelectedState() == SHIP_LOCKED )
@@ -172,7 +178,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 	public void unlockAllShipAchievements() {
 		for ( IconCycleButton box : shipAchBoxes.values() ) {
 			if ( box.getSelectedState() == ACH_LOCKED )
-				box.setSelectedState( ACH_EASY );
+				box.setSelectedState( getCycleStateForDifficulty( Difficulty.EASY ) );
 		}
 	}
 
@@ -198,22 +204,9 @@ public class ProfileShipUnlockPanel extends JPanel {
 
 			box.setSelectedState( ACH_LOCKED );
 
-			for ( AchievementRecord rec : p.getAchievements() ) {
-				if ( rec.getAchievementId().equals( achId ) ) {
-					if ( rec.getDifficulty() == Difficulty.EASY ) {
-						box.setSelectedState( ACH_EASY );
-					}
-					else if ( rec.getDifficulty() == Difficulty.NORMAL ) {
-						box.setSelectedState( ACH_NORMAL );
-					}
-					else if ( rec.getDifficulty() == Difficulty.HARD ) {
-						box.setSelectedState( ACH_HARD );
-					}
-					else {
-						log.warn( String.format("Unexpected difficulty for achievement (\"%s\"): %s. Changed to EASY.", achId, rec.getDifficulty().toString()) );
-						box.setSelectedState( ACH_EASY );
-					}
-				}
+			AchievementRecord rec = AchievementRecord.getFromListById( p.getAchievements(), achId );
+			if ( rec != null ) {
+				box.setSelectedState( getCycleStateForDifficulty( rec.getDifficulty() ) );
 			}
 		}
 		this.repaint();
@@ -228,34 +221,21 @@ public class ProfileShipUnlockPanel extends JPanel {
 			String achId = entry.getKey().getId();
 			IconCycleButton box = entry.getValue();
 
-			if ( box.getSelectedState() != ACH_LOCKED ) {
-				// Add selected achievement recs if not already present.
+			Difficulty diff = getDifficultyForCycleState( box.getSelectedState() );
 
-				Difficulty difficulty = null;
-				if ( box.getSelectedState() == ACH_EASY ) {
-					difficulty = Difficulty.EASY;
-				}
-				else if ( box.getSelectedState() == ACH_NORMAL ) {
-					difficulty = Difficulty.NORMAL;
-				}
-				else if ( box.getSelectedState() == ACH_HARD ) {
-					difficulty = Difficulty.HARD;
-				}
-				else {
-					log.warn( String.format("Unexpected difficulty for achievement (\"%s\"): %d. Changed to EASY.", achId, box.getSelectedState()) );
-					difficulty = Difficulty.EASY;
-				}
+			if ( diff != null ) {
+				// Add unlocked achievement recs if not already present.
 
-				AchievementRecord newAch = AchievementRecord.getFromListById( newAchRecs, achId );
-				if ( newAch != null ) {
-					newAch.setDifficulty( difficulty );
+				AchievementRecord rec = AchievementRecord.getFromListById( newAchRecs, achId );
+				if ( rec != null ) {
+					rec.setDifficulty( diff );
 				} else {
-					newAch = new AchievementRecord( achId, difficulty );
-					newAchRecs.add( newAch );
+					rec = new AchievementRecord( achId, diff );
+					newAchRecs.add( rec );
 				}
-
-			} else {
-				// Remove achievement recs that are not selected.
+			}
+			else {
+				// Remove achievement recs that are locked.
 				AchievementRecord.removeFromListById( newAchRecs, achId );
 			}
 		}

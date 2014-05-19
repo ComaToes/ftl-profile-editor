@@ -166,7 +166,30 @@ public class ImageUtilities {
 
 
 	/**
-	 * Gets an image, scaling if necessary, and caches the result.
+	 * Returns an image from a class loader's getResource(), or null.
+	 */
+	public static BufferedImage getBundledImage( String name, ClassLoader classLoader ) {
+		BufferedImage result = null;
+
+		java.net.URL imageUrl = classLoader.getResource( name );
+		if ( imageUrl != null ) {
+			try {
+				result = ImageIO.read( imageUrl );
+			}
+			catch ( IOException e ) {
+				log.error( "Error reading bundled image: "+ name );
+			}
+		}
+		else {
+			log.error( "Could not find bundled image: "+ name );
+		}
+
+		return result;
+	}
+
+
+	/**
+	 * Gets an image, stretching if necessary, and caches the result.
 	 *
 	 * If something goes wrong, a dummy image will be created with the
 	 * expected dimensions.
