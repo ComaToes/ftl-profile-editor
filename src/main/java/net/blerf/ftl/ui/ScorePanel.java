@@ -169,6 +169,16 @@ public class ScorePanel extends JPanel {
 		editBtn.setMargin( new Insets(0,0,0,0) );
 		this.add( editBtn, c );
 
+		// Force a minimum height with an invisible component.
+		c.anchor = GridBagConstraints.CENTER;
+		c.fill = GridBagConstraints.NONE;
+		c.weightx = 0.0;
+		c.gridwidth = 1;
+		c.gridheight = 4;
+		c.gridx = 7;
+		c.gridy = 0;
+		this.add( Box.createVerticalStrut( 80 ), c );
+
 		editBtn.addActionListener(new ActionListener() {
 			public void actionPerformed( ActionEvent e ) {
 				showEditPopup();
