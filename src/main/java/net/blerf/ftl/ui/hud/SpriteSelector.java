@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 
 /**
@@ -49,7 +50,7 @@ public class SpriteSelector extends JComponent {
 			if ( mousePoint.x > 0 && mousePoint.y > 0 ) {
 				for ( List<? extends JComponent> spriteList : spriteLists ) {
 					for ( JComponent sprite : spriteList ) {
-						if ( sprite.getBounds().contains( mousePoint ) ) {
+						if ( getConvertedSpriteBounds( sprite ).contains( mousePoint ) ) {
 							newSprite = sprite;
 							break;
 						}
@@ -58,11 +59,17 @@ public class SpriteSelector extends JComponent {
 				}
 			}
 			if ( newSprite != currentSprite ) {
-				if ( currentSprite != null ) this.repaint( currentSprite.getBounds() );
+				if ( currentSprite != null ) this.repaint( getConvertedSpriteBounds( currentSprite ) );
 				currentSprite = newSprite;
-				if ( currentSprite != null ) this.repaint( currentSprite.getBounds() );
+				if ( currentSprite != null ) this.repaint( getConvertedSpriteBounds( currentSprite ) );
 			}
 		}
+	}
+
+	private Rectangle getConvertedSpriteBounds( JComponent sprite ) {
+		Rectangle origRect = sprite.getBounds();
+		Rectangle convertedRect = SwingUtilities.convertRectangle( sprite.getParent(), origRect, this );
+		return convertedRect;
 	}
 
 	public JComponent getSprite() {
@@ -127,7 +134,7 @@ public class SpriteSelector extends JComponent {
 		if ( currentSprite != null ) {
 			Color spriteColor = spriteCriteria.getSpriteColor( this, currentSprite );
 			if ( spriteColor != null ) {
-				Rectangle currentRect = currentSprite.getBounds();
+				Rectangle currentRect = getConvertedSpriteBounds( currentSprite );
 				g2d.setColor( spriteColor );
 				g2d.drawRect( currentRect.x, currentRect.y, (currentRect.width-1), (currentRect.height-1) );
 				g2d.drawRect( currentRect.x+1, currentRect.y+1, (currentRect.width-1)-2, (currentRect.height-1)-2 );
@@ -160,7 +167,7 @@ public class SpriteSelector extends JComponent {
 
 		/** Returns true if a square can be selected, false otherwise. */
 		public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-			if ( sprite == null ) return false;
+			if ( sprite == null || !sprite.isVisible() ) return false;
 			return true;
 		}
 	}

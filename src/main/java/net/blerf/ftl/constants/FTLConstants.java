@@ -9,15 +9,23 @@ public interface FTLConstants {
 
 	// ShipState constants.
 
-	public int getMaxReservePower();
+	public int getMaxReservePoolCapacity();
 
 
 	// SystemState constants.
+
+	/**
+	 * Returns the bonus system bars produced by a Battery system.
+	 *
+	 * @param batterySystemCapacity the capacity of the system itself (its level)
+	 */
+	public int getBatteryPoolCapacity( int batterySystemCapacity );
 
 	public int getMaxIonizedBars();
 
 
 	// CrewState constants.
+
 	public List<CrewType> getCrewTypes();
 
 	public int getMasteryIntervalPilot( String race );

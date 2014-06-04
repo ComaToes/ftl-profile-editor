@@ -1306,7 +1306,7 @@ public class FTLFrame extends JFrame {
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), true );
 			gameStateSaveBtn.setEnabled( true );
 		}
-		else if ( gs != null && gs.getHeaderAlpha() == 7 ) {
+		else if ( gs != null && ( gs.getHeaderAlpha() == 7 || gs.getHeaderAlpha() == 8 || gs.getHeaderAlpha() == 9 ) ) {
 			// FTL 1.5.4 is only partially editable.
 
 			savedGameGeneralPanel.setGameState( gs );
@@ -1357,7 +1357,7 @@ public class FTLFrame extends JFrame {
 			gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
 			gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
 		}
-		else if ( gs != null && gs.getHeaderAlpha() == 7 ) {
+		else if ( gs != null && ( gs.getHeaderAlpha() == 7 | gs.getHeaderAlpha() == 8 || gs.getHeaderAlpha() == 9 ) ) {
 			// FTL 1.5.4 is only partially editable.
 
 			// savedGameDumpPanel doesn't modify anything.

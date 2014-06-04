@@ -32,6 +32,8 @@ import net.blerf.ftl.parser.SavedGameParser.StoreItem;
 import net.blerf.ftl.parser.SavedGameParser.StoreItemType;
 import net.blerf.ftl.parser.SavedGameParser.StoreShelf;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
+import net.blerf.ftl.ui.FTLFrame;
+import net.blerf.ftl.ui.StatusbarMouseListener;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,13 +46,19 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 	private static final String SHELF_TYPE = "Type";
 	private static final String ITEM_ZERO = "#0 Item";
 	private static final String AVAIL_ZERO = "#0 In Stock";
+	private static final String EXTRA_ZERO = "#0 Extra";
 	private static final String ITEM_ONE = "#1 Item";
 	private static final String AVAIL_ONE = "#1 In Stock";
+	private static final String EXTRA_ONE = "#1 Extra";
 	private static final String ITEM_TWO = "#2 Item";
 	private static final String AVAIL_TWO = "#2 In Stock";
+	private static final String EXTRA_TWO = "#2 Extra";
 
 	private static final String[] SLOTS = new String[] { ITEM_ZERO, ITEM_ONE, ITEM_TWO };
 	private static final String[] AVAIL = new String[] { AVAIL_ZERO, AVAIL_ONE, AVAIL_TWO };
+	private static final String[] EXTRA = new String[] { EXTRA_ZERO, EXTRA_ONE, EXTRA_TWO };
+
+	private FTLFrame frame;
 
 	private StoreItemType[] itemTypes = null;
 	private Map<StoreItemType, Map> itemLookups = null;
@@ -58,8 +66,9 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 	private FieldEditorPanel editorPanel = null;
 
 
-	public StoreShelfPanel() {
+	public StoreShelfPanel( FTLFrame frame ) {
 		super( new BorderLayout() );
+		this.frame = frame;
 
 		itemTypes = StoreItemType.values();
 
@@ -97,6 +106,10 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 		for (int i=0; i < SLOTS.length; i++) {
 			editorPanel.addRow( SLOTS[i], FieldEditorPanel.ContentType.COMBO );
 			editorPanel.addRow( AVAIL[i], FieldEditorPanel.ContentType.BOOLEAN );
+			editorPanel.addRow( EXTRA[i], FieldEditorPanel.ContentType.INTEGER );
+
+			editorPanel.getInt(AVAIL[i]).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether this item has already been bought.") );
+			editorPanel.getInt(EXTRA[i]).addMouseListener( new StatusbarMouseListener(frame, "Misc info (DroneCtrl system only, specifying bonus drone).") );
 
 			editorPanel.getCombo(SLOTS[i]).addItem( "" );
 		}
@@ -128,6 +141,7 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 				}
 
 				editorPanel.getBoolean(AVAIL[i]).setSelected( shelf.getItems().get(i).isAvailable() );
+				editorPanel.getInt(EXTRA[i]).setText( ""+shelf.getItems().get(i).getExtraData() );
 			}
 		}
 
@@ -160,7 +174,12 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 						boolean available = editorPanel.getBoolean(AVAIL[i]).isSelected();
 						String id = (String)((Map.Entry)entry).getKey();
 
-						StoreItem newItem = new StoreItem( available, id );
+						StoreItem newItem = new StoreItem( id );
+						newItem.setAvailable( available );
+
+						try { newItem.setExtraData( editorPanel.parseInt(EXTRA[i]) ); }
+						catch ( NumberFormatException e ) {}
+
 						result.add( newItem );
 					}
 				}

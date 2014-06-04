@@ -31,7 +31,13 @@ public class OriginalFTLConstants implements FTLConstants {
 	}
 
 	@Override
-	public int getMaxReservePower() { return 25; }
+	public int getMaxReservePoolCapacity() { return 25; }
+
+
+	@Override
+	public int getBatteryPoolCapacity( int batterySystemCapacity ) {
+		return 0;  // There was no battery in FTL 1.01-1.03.3. :P
+	}
 
 
 	@Override

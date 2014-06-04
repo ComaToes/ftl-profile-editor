@@ -116,6 +116,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 	private SpriteSelector miscSelector = null;
 	private ActionListener columnCtrlListener = null;
 
+
 	public SavedGameSectorMapPanel( FTLFrame frame ) {
 		super( new BorderLayout() );
 		this.frame = frame;
@@ -267,6 +268,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		JScrollPane mapScroll = new JScrollPane();
 		mapScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
 		mapScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS );
+		mapScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 		mapScroll.setViewport( mapViewport );
 		mapScroll.setViewportView( mapHolderPanel );
 		centerPanel.add( mapScroll, gridC );
@@ -492,7 +494,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	public void selectBeacon() {
 		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList(beaconSprites);
+		miscSelector.addSpriteList( beaconSprites );
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Beacon";
@@ -502,7 +504,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite == null ) return false;
+				if ( sprite == null || !sprite.isVisible() ) return false;
 				if ( sprite instanceof BeaconSprite ) {
 					return true;
 				}
@@ -523,7 +525,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	public void selectPlayerShip() {
 		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList(playerShipSprites);
+		miscSelector.addSpriteList( playerShipSprites );
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Player Ship";
 
@@ -532,7 +534,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite == null ) return false;
+				if ( sprite == null || !sprite.isVisible() ) return false;
 				if ( sprite instanceof PlayerShipSprite ) {
 					return true;
 				}
@@ -553,7 +555,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	public void selectStore() {
 		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList(storeSprites);
+		miscSelector.addSpriteList( storeSprites );
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Store";
@@ -563,7 +565,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite == null ) return false;
+				if ( sprite == null || !sprite.isVisible() ) return false;
 				if ( sprite instanceof StoreSprite ) {
 					return true;
 				}
@@ -584,7 +586,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	public void selectQuest() {
 		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList(questSprites);
+		miscSelector.addSpriteList( questSprites );
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Quest";
@@ -594,7 +596,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite == null ) return false;
+				if ( sprite == null || !sprite.isVisible() ) return false;
 				if ( sprite instanceof QuestSprite ) {
 					return true;
 				}
@@ -615,7 +617,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private void addStore() {
 		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList(beaconSprites);
+		miscSelector.addSpriteList( beaconSprites );
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Add: Store";
@@ -625,7 +627,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite == null ) return false;
+				if ( sprite == null || !sprite.isVisible() ) return false;
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
 
@@ -663,7 +665,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private void addQuest() {
 		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList(beaconSprites);
+		miscSelector.addSpriteList( beaconSprites );
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Add: Quest";
@@ -673,7 +675,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite == null ) return false;
+				if ( sprite == null || !sprite.isVisible() ) return false;
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
 
@@ -710,7 +712,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private void movePlayerShip( final PlayerShipSprite mobileSprite ) {
 		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList(beaconSprites);
+		miscSelector.addSpriteList( beaconSprites );
 		miscSelector.reset();
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Move: Player Ship";
@@ -720,7 +722,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			@Override
 			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
-				if ( sprite == null ) return false;
+				if ( sprite == null || !sprite.isVisible() ) return false;
 				if ( sprite instanceof BeaconSprite ) {
 					return true;
 				}
@@ -1307,7 +1309,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final List<StoreShelfPanel> shelfPanels = new ArrayList<StoreShelfPanel>();
 
 		for ( SavedGameParser.StoreShelf shelf : storeSprite.getShelfList() ) {
-			StoreShelfPanel shelfPanel = new StoreShelfPanel();
+			StoreShelfPanel shelfPanel = new StoreShelfPanel( frame );
 			shelfPanel.setShelf( shelf );
 			shelfPanels.add( shelfPanel );
 			shelfTabsPane.addTab( "Shelf #"+ (shelfPanels.size()-1), shelfPanel );
@@ -1389,7 +1391,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		shelfAddBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				StoreShelfPanel shelfPanel = new StoreShelfPanel();
+				StoreShelfPanel shelfPanel = new StoreShelfPanel( frame );
 				shelfPanels.add( shelfPanel );
 				shelfTabsPane.addTab( "Shelf #"+ (shelfPanels.size()-1), shelfPanel );
 				shelfTabsPane.setSelectedIndex( shelfPanels.size()-1 );

@@ -35,7 +35,13 @@ public class AdvancedFTLConstants implements FTLConstants {
 
 
 	@Override
-	public int getMaxReservePower() { return 25; }
+	public int getMaxReservePoolCapacity() { return 25; }
+
+
+	@Override
+	public int getBatteryPoolCapacity( int batterySystemCapacity ) {
+		return batterySystemCapacity * 2;
+	}
 
 
 	@Override
