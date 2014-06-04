@@ -3429,8 +3429,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String SEX = "Male";
 		final String ENEMY_DRONE = "Enemy Drone";
 		final String PLAYER_CONTROLLED = "Player Ctrl";
-		final String ALPHA = "Alpha?";
-		final String BETA = "Beta?";
+		final String CLONE_READY = "Clone Ready?";
 		final String MIND_CONTROLLED = "Mind Ctrl";
 		final String STUN_TICKS = "Stun Ticks";
 		final String HEALTH_BOOST = "Health Boost";
@@ -3478,10 +3477,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( SEX, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( ENEMY_DRONE, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( PLAYER_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.addRow( ALPHA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(ALPHA).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.addRow( BETA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(BETA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.addRow( CLONE_READY, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(CLONE_READY).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( MIND_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( STUN_TICKS, FieldEditorPanel.ContentType.INTEGER );
@@ -3597,8 +3594,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getBoolean(SEX).setSelected( crewRef.get().isMale() );
 		editorPanel.getBoolean(ENEMY_DRONE).setSelected( crewRef.get().isEnemyBoardingDrone() );
 		editorPanel.getBoolean(PLAYER_CONTROLLED).setSelected( crewRef.get().isPlayerControlled() );
-		editorPanel.getInt(ALPHA).setText( ""+crewRef.get().getUnknownAlpha() );
-		editorPanel.getInt(BETA).setText( ""+crewRef.get().getUnknownBeta() );
+		editorPanel.getInt(CLONE_READY).setText( ""+crewRef.get().getCloneReady() );
 		editorPanel.getBoolean(MIND_CONTROLLED).setSelected( crewRef.get().isMindControlled() );
 
 		editorPanel.getInt(STUN_TICKS).setText( ""+crewRef.get().getStunTicks() );
@@ -3664,10 +3660,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				crewRef.get().setEnemyBoardingDrone( editorPanel.getBoolean(ENEMY_DRONE).isSelected() );
 				crewRef.get().setPlayerControlled( editorPanel.getBoolean(PLAYER_CONTROLLED).isSelected() );
 
-				try { crewRef.get().setUnknownAlpha( editorPanel.parseInt(ALPHA) ); }
-				catch ( NumberFormatException e ) {}
-
-				try { crewRef.get().setUnknownBeta( editorPanel.parseInt(BETA) ); }
+				try { crewRef.get().setCloneReady( editorPanel.parseInt(CLONE_READY) ); }
 				catch ( NumberFormatException e ) {}
 
 				crewRef.get().setMindControlled( editorPanel.getBoolean(MIND_CONTROLLED).isSelected() );

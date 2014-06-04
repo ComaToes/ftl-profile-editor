@@ -313,8 +313,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		unknownsPanel.getInt(TOP_GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
 		unknownsPanel.addRow( TOP_DELTA, FieldEditorPanel.ContentType.INTEGER );
 		unknownsPanel.getInt(TOP_DELTA).setDocument( new RegexDocument("-?[0-9]*") );
-		unknownsPanel.addRow( TOP_EPSILON, FieldEditorPanel.ContentType.INTEGER );
-		unknownsPanel.getInt(TOP_EPSILON).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.addRow( TOP_EPSILON, FieldEditorPanel.ContentType.STRING );
 		unknownsPanel.addRow( TOP_KAPPA, FieldEditorPanel.ContentType.INTEGER );
 		unknownsPanel.getInt(TOP_KAPPA).setDocument( new RegexDocument("-?[0-9]*") );
 		unknownsPanel.addRow( TOP_MU, FieldEditorPanel.ContentType.INTEGER );
@@ -323,8 +322,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		unknownsPanel.addFillRow();
 
 		unknownsPanel.getInt(TOP_GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		unknownsPanel.getInt(TOP_DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Often -1. Sometimes thousands. Ticks for something?") );
-		unknownsPanel.getInt(TOP_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		unknownsPanel.getInt(TOP_DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Some kind of seed? (-1 when not set)") );
+		unknownsPanel.getString(TOP_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Rare eventId. Related to waiting?") );
 		unknownsPanel.getInt(TOP_KAPPA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Maybe flagship-related?") );
 		unknownsPanel.getInt(TOP_MU).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 
@@ -343,7 +342,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		zeusPanel.getInt(ZEUS_KAPPA).setDocument( new RegexDocument("-?[0-9]*") );
 
 		zeusPanel.getInt(ZEUS_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the player ship.") );
-		zeusPanel.getInt(ZEUS_ZETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Only set when a nearby ship is present.") );
+		zeusPanel.getInt(ZEUS_ZETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the nearby ship, when one is present.") );
 		zeusPanel.getBoolean(ZEUS_AUTOFIRE).addMouseListener( new StatusbarMouseListener(frame, "Toggle autofire.") );
 		zeusPanel.getInt(ZEUS_ETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 		zeusPanel.getInt(ZEUS_IOTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
@@ -542,7 +541,7 @@ public class SavedGameGeneralPanel extends JPanel {
 
 			unknownsPanel.setIntAndReminder( TOP_GAMMA, gameState.getUnknownGamma() );
 			unknownsPanel.setIntAndReminder( TOP_DELTA, gameState.getUnknownDelta() );
-			unknownsPanel.setIntAndReminder( TOP_EPSILON, gameState.getUnknownEpsilon() );
+			unknownsPanel.setStringAndReminder( TOP_EPSILON, gameState.getUnknownEpsilon() );
 			unknownsPanel.setIntAndReminder( TOP_KAPPA, gameState.getUnknownKappa() );
 			unknownsPanel.setIntAndReminder( TOP_MU, gameState.getUnknownMu() );
 
@@ -759,9 +758,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		try { gameState.setUnknownDelta(Integer.parseInt(newString)); }
 		catch ( NumberFormatException e ) {}
 
-		newString = unknownsPanel.getInt(TOP_EPSILON).getText();
-		try { gameState.setUnknownEpsilon(Integer.parseInt(newString)); }
-		catch ( NumberFormatException e ) {}
+		gameState.setUnknownEpsilon( unknownsPanel.getString(TOP_EPSILON).getText() );
 
 		newString = unknownsPanel.getInt(TOP_KAPPA).getText();
 		try { gameState.setUnknownKappa(Integer.parseInt(newString)); }

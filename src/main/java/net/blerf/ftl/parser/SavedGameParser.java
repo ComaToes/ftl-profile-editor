@@ -150,7 +150,7 @@ public class SavedGameParser extends Parser {
 
 				gameState.setUnknownGamma( readInt(in) );
 				gameState.setUnknownDelta( readInt(in) );
-				gameState.setUnknownEpsilon( readInt(in) );
+				gameState.setUnknownEpsilon( readString(in) );
 				gameState.setSectorHazardsVisible( readBool(in) );
 				gameState.setRebelFlagshipVisible( readBool(in) );
 				gameState.setRebelFlagshipHop( readInt(in) );
@@ -333,7 +333,7 @@ public class SavedGameParser extends Parser {
 
 			writeInt( out, gameState.getUnknownGamma() );
 			writeInt( out, gameState.getUnknownDelta() );
-			writeInt( out, gameState.getUnknownEpsilon() );
+			writeString( out, gameState.getUnknownEpsilon() );
 			writeBool( out, gameState.areSectorHazardsVisible() );
 			writeBool( out, gameState.isRebelFlagshipVisible() );
 			writeInt( out, gameState.getRebelFlagshipHop() );
@@ -854,8 +854,9 @@ public class SavedGameParser extends Parser {
 		crew.setPlayerControlled( readBool(in) );
 
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
-			crew.setUnknownAlpha( readInt(in) );
-			crew.setUnknownBeta( readInt(in) );
+			crew.setCloneReady( readInt(in) );
+
+			int deathOrder = readInt(in);  // Redundant. Exactly the same as Clonebay Priority.
 
 			int tintCount = readInt(in);
 			List<Integer> spriteTintIndeces = new ArrayList<Integer>();
@@ -933,8 +934,10 @@ public class SavedGameParser extends Parser {
 		writeBool( out, crew.isPlayerControlled() );
 
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
-			writeInt( out, crew.getUnknownAlpha() );
-			writeInt( out, crew.getUnknownBeta() );
+			writeInt( out, crew.getCloneReady() );
+
+			int deathOrder = crew.getClonebayPriority();  // Redundant.
+			writeInt( out, deathOrder );
 
 			writeInt( out, crew.getSpriteTintIndeces().size() );
 			for ( Integer tintInt : crew.getSpriteTintIndeces() ) {
@@ -1853,6 +1856,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private String playerShipName = "";
 		private String playerShipBlueprintId = "";
 		private int sectorNumber = 1;
+		private int unknownBeta = 0;
 		private LinkedHashMap<String, Integer> stateVars = new LinkedHashMap<String, Integer>();
 		private ShipState playerShipState = null;
 		private ArrayList<String> cargoIdList = new ArrayList<String>();
@@ -1861,33 +1865,29 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int rebelFleetOffset = -750;  // Arbitrary default.
 		private int rebelFleetFudge = 100;    // Arbitrary default.
 		private int rebelPursuitMod = 0;
+		private int currentBeaconId = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+		private String unknownEpsilon = "";
 		private boolean sectorHazardsVisible = false;
 		private boolean rebelFlagshipVisible = false;
 		private int rebelFlagshipHop = 0;
 		private boolean rebelFlagshipMoving = false;
+		private int unknownKappa = 0;
 		private int rebelFlagshipBaseTurns = 0;
 		private ArrayList<Boolean> sectorList = new ArrayList<Boolean>();
 		private boolean sectorIsHiddenCrystalWorlds = false;
 		private ArrayList<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private LinkedHashMap<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
 		private ArrayList<String> distantQuestEventList = new ArrayList<String>();
+		private int unknownMu = 0;
 		private EncounterState encounter = null;
 		private boolean rebelFlagshipNearby = false;
 		private ShipState nearbyShipState = null;
 		private NearbyShipAIState nearbyShipAI = null;
 		private EnvironmentState environment = null;
-		private int currentBeaconId = 0;
 		private RebelFlagshipState rebelFlagshipState = null;
 		private ArrayList<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
-
-		private int unknownBeta = 0;
-		private int unknownGamma = 0;
-		private int unknownDelta = 0;
-		private int unknownEpsilon = 0;
-		private int unknownKappa = 0;
-
-		private int unknownMu = 0;
-
 
 		private UnknownZeus unknownZeus = null;
 
@@ -1983,6 +1983,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public boolean isDLCEnabled() { return dlcEnabled; }
 
 		/**
+		 * Unknown.
+		 *
+		 * Always 0?
+		 */
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public int getUnknownBeta() { return unknownBeta; }
+
+		/**
 		 * Sets a state var.
 		 *
 		 * State vars are mostly used to test candidacy for achievements.
@@ -1990,17 +1998,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * See StateVar enums for known vars and descriptions.
 		 */
 		public void setStateVar( String stateVarId, int stateVarValue ) {
-			stateVars.put(stateVarId, new Integer(stateVarValue));
+			stateVars.put( stateVarId, new Integer(stateVarValue) );
 		}
 
 		public boolean hasStateVar( String stateVarId ) {
-			return stateVars.containsKey(stateVarId);
+			return stateVars.containsKey( stateVarId );
 		}
 
 		public int getStateVar( String stateVarId ) {
 			// Don't ask for vars that aren't present!
 
-			Integer result = stateVars.get(stateVarId);
+			Integer result = stateVars.get( stateVarId );
 			return result.intValue();
 		}
 
@@ -2084,6 +2092,39 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getRebelPursuitMod() { return rebelPursuitMod; }
 
 		/**
+		 * Unknown.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public int getUnknownGamma() { return unknownGamma; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Some kind of seed?
+		 *
+		 * When not set, this is -1.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public int getUnknownDelta() { return unknownDelta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * This has been observed to be an eventId of some sort
+		 * ("FUEL_ESCAPE_ASTEROIDS").
+		 *
+		 * When not set, this is "".
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownEpsilon( String s ) { unknownEpsilon = s; }
+		public String getUnknownEpsilon() { return unknownEpsilon; }
+
+		/**
 		 * Toggles visibility of beacon hazards for this sector.
 		 */
 		public void setSectorHazardsVisible( boolean b ) { sectorHazardsVisible = b; }
@@ -2119,6 +2160,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 */
 		public void setRebelFlagshipMoving( boolean b ) { rebelFlagshipMoving = b; }
 		public boolean isRebelFlagshipMoving() { return rebelFlagshipMoving; }
+
+		/**
+		 * Unknown.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
+		public int getUnknownKappa() { return unknownKappa; }
 
 		/**
 		 * Sets the number of turns the rebel flagship has started at the
@@ -2207,9 +2256,21 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			return distantQuestEventList;
 		}
 
-		/** Sets where the player is. */
+		/**
+		 * Sets which beacon the the player ship is at.
+		 *
+		 * @see #getBeaconList()
+		 */
 		public void setCurrentBeaconId( int n ) { currentBeaconId = n; }
 		public int getCurrentBeaconId() { return currentBeaconId; }
+
+		/**
+		 * Unknown
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownMu( int n ) { unknownMu = n; }
+		public int getUnknownMu() { return unknownMu; }
 
 		/**
 		 * Sets the currently active encounter.
@@ -2223,15 +2284,26 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 		public EncounterState getEncounter() { return encounter; }
 
+		/**
+		 * Sets a nearby ship, or null.
+		 *
+		 * Since FTL 1.5.4, when this is non-null, a NearbyShipAI must be set.
+		 *
+		 * @see #setNearbyShipAI(NearbyShipAIState)
+		 */
 		public void setNearbyShipState( ShipState shipState ) {
 			this.nearbyShipState = shipState;
 		}
 		public ShipState getNearbyShipState() { return nearbyShipState; }
 
 		/**
-		 * Sets fields related to AI that controls the nearby ship.
+		 * Sets fields related to AI that controls the nearby ship, or null.
+		 *
+		 * To set this, the nearby ship must be non-null.
 		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setNearbyShipState( ShipState )
 		 */
 		public void setNearbyShipAI( NearbyShipAIState ai ) { nearbyShipAI = ai; }
 		public NearbyShipAIState getNearbyShipAI() { return nearbyShipAI; }
@@ -2253,22 +2325,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public RebelFlagshipState getRebelFlagshipState() {
 			return rebelFlagshipState;
 		}
-
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public int getUnknownBeta() { return unknownBeta; }
-
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public void setUnknownDelta( int n ) { unknownDelta = n; }
-		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
-		public void setUnknownKappa( int n ) { unknownKappa = n; }
-
-		public int getUnknownGamma() { return unknownGamma; }
-		public int getUnknownDelta() { return unknownDelta; }
-		public int getUnknownEpsilon() { return unknownEpsilon; }
-		public int getUnknownKappa() { return unknownKappa; }
-
-		public void setUnknownMu( int n ) { unknownMu = n; }
-		public int getUnknownMu() { return unknownMu; }
 
 		/**
 		 * Toggles whether the nearby ship is the rebel flagship.
@@ -2339,19 +2395,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Rebel Fleet Offset: %5d\n", rebelFleetOffset));
 			result.append(String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge));
 			result.append(String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod));
-			result.append(String.format("Sector Hazards Map: %5b\n", sectorHazardsVisible));
-			result.append("\n");
-			result.append(String.format("In Hidden Sector:   %5b\n", sectorIsHiddenCrystalWorlds));
-			result.append(String.format("Rebel Flagship On:  %5b\n", rebelFlagshipVisible));
-			result.append(String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop));
-			result.append(String.format("Flagship Moving:    %5b\n", rebelFlagshipMoving));
-			result.append(String.format("Flagship Base Turns:%5d\n", rebelFlagshipBaseTurns));
-			result.append("\n");
 			result.append(String.format("Player BeaconId:    %5d\n", currentBeaconId));
 			result.append(String.format("Gamma?:             %5d\n", unknownGamma));
 			result.append(String.format("Delta?:             %5d\n", unknownDelta));
-			result.append(String.format("Epsilon?:           %5d\n", unknownEpsilon));
+			result.append(String.format("Epsilon?:           %s\n", unknownEpsilon));
+			result.append(String.format("Sector Hazards Map: %5b\n", sectorHazardsVisible));
+			result.append(String.format("In Hidden Sector:   %5b\n", sectorIsHiddenCrystalWorlds));
+			result.append("\n");
+			result.append(String.format("Rebel Flagship On:  %5b\n", rebelFlagshipVisible));
+			result.append(String.format("Flagship Nth Hop:   %5d\n", rebelFlagshipHop));
+			result.append(String.format("Flagship Moving:    %5b\n", rebelFlagshipMoving));
 			result.append(String.format("Kappa?:             %5d\n", unknownKappa));
+			result.append(String.format("Flagship Base Turns:%5d\n", rebelFlagshipBaseTurns));
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
@@ -3035,7 +3090,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 	public static class CrewState {
 
-		// Crystal crews' lockdown wall-coating is not stored, but ability recharge is.
 		// Zoltan-produced power is not stored in SystemState.
 
 		private String name = "Frank";
@@ -3046,8 +3100,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int roomId = -1;
 		private int roomSquare = -1;
 		private boolean playerControlled = false;
-		private int unknownAlpha = 0;
-		private int unknownBeta = 0;  // Death count? (-1 when not set, then counts from 1 onwards.)
+		private int cloneReady = 0;
 		private List<Integer> spriteTintIndeces = new ArrayList<Integer>();
 		private boolean mindControlled = false;
 		private int savedRoomId = 0;
@@ -3093,8 +3146,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			roomId = srcCrew.getRoomId();
 			roomSquare = srcCrew.getRoomSquare();
 			playerControlled = srcCrew.isPlayerControlled();
-			unknownAlpha = srcCrew.getUnknownAlpha();
-			unknownBeta = srcCrew.getUnknownBeta();
+			cloneReady = srcCrew.getCloneReady();
 
 			for ( Integer colorIndex : srcCrew.getSpriteTintIndeces() ) {
 				spriteTintIndeces.add( new Integer( colorIndex ) );
@@ -3237,24 +3289,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * This was introduced in FTL 1.5.4.
-		 */
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public int getUnknownAlpha() { return unknownAlpha; }
-
-		/**
-		 * Unknown.
-		 *
-		 * TODO: Same as Clonebay Priority!?
-		 *
-		 * When not set, this is -1.
+		 * Matthew's hint: He says it's an int.
 		 *
 		 * This was introduced in FTL 1.5.4.
-		 *
-		 * @see #setClonebayPriority(int)
 		 */
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public int getUnknownBeta() { return unknownBeta; }
+		public void setCloneReady( int n ) { cloneReady = n; }
+		public int getCloneReady() { return cloneReady; }
 
 		/**
 		 * Sets a list of tints to apply to the sprite.
@@ -3400,12 +3440,16 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * died, this is -1.
 		 *
 		 * @see #setUniversalDeathCount(int)
+		 *
+		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setClonebayPriority( int n ) { clonebayPriority = n; }
 		public int getClonebayPriority() { return clonebayPriority; }
 
 		/**
 		 * Unknown.
+		 *
+		 * This was introduced in FTL 1.5.4.
 		 *
 		 * @param a pseudo-float (1000 is 1.0)
 		 */
@@ -3416,6 +3460,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Unknown.
 		 *
 		 * Matthew's hint: dyingTimer.
+		 *
+		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setUnknownLambda( int n ) { unknownLambda = n; }
 		public int getUnknownLambda() { return unknownLambda; }
@@ -3433,6 +3479,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Note: Any time this is is set, the same value should be set on all
 		 * CrewStates.
+		 *
+		 * This was introduced in FTL 1.5.4.
 		 *
 		 * @see #setClonebayPriority(int)
 		 */
@@ -3475,6 +3523,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getCombatMasteryOne() { return combatMasteryOne; }
 		public int getCombatMasteryTwo() { return combatMasteryTwo; }
 
+		/**
+		 * Unknown.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
 		public void setUnknownNu( int n ) { unknownNu = n; }
 		public int getUnknownNu() { return unknownNu; }
 
@@ -3482,10 +3535,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Sets the crew's teleport anim state.
 		 *
 		 * After cloning, this plays as the new body spawns.
+		 *
+		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setTeleportAnim( AnimState anim ) { teleportAnim = anim; }
 		public AnimState getTeleportAnim() { return teleportAnim; }
 
+		/**
+		 * Unknown.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
 		public void setUnknownPhi( int n ) { unknownPhi = n; }
 		public int getUnknownPhi() { return unknownPhi; }
 
@@ -3513,6 +3573,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setLockdownRechargeTicksGoal( int n ) { lockdownRechargeTicksGoal = n; }
 		public int getLockdownRechargeTicksGoal() { return lockdownRechargeTicksGoal; }
 
+		/**
+		 * Unknown.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
 		public void setUnknownOmega( int n ) { unknownOmega = n; }
 		public int getUnknownOmega() { return unknownOmega; }
 
@@ -3538,8 +3603,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("RoomId:                %5d\n", roomId));
 			result.append(String.format("Room Square:           %5d\n", roomSquare));
 			result.append(String.format("Player Controlled:     %5b\n", playerControlled));
-			result.append(String.format("Alpha?:                %5d\n", unknownAlpha));
-			result.append(String.format("Beta?:                 %5d (Same as Clonebay Priority?)\n", unknownBeta));
+			result.append(String.format("Clone Ready?:          %5d\n", cloneReady));
 			result.append(String.format("Mind Controlled:       %5b\n", mindControlled));
 
 			result.append("\nSprite Tints...\n");
