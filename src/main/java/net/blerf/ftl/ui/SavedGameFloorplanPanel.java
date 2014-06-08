@@ -36,8 +36,6 @@ import java.awt.image.RescaleOp;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -157,11 +155,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private int shipDroneParts = 0;
 	private int shipMissiles = 0;
 	private int shipScrap = 0;
+	private int shipAlpha = 0;
+	private int shipJumpTicks = 0;
+	private int shipGamma = 0;
+	private int shipDelta = 0;
+	private int shipCloakAnimTicks = 0;
 	private boolean shipPlayerControlled = false;
 	private List<String> shipAugmentIdList = new ArrayList<String>();
 	private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
 
-	private int originX=0, originY=0;
+	private int originX = 0, originY = 0;
 	private Map<Rectangle, Integer> roomRegionRoomIdMap = new HashMap<Rectangle, Integer>();
 	private Map<Rectangle, Integer> squareRegionRoomIdMap = new HashMap<Rectangle, Integer>();
 	private Map<Rectangle, Integer> squareRegionSquareIdMap = new HashMap<Rectangle, Integer>();
@@ -712,6 +715,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 			shipDroneParts = 0;
 			shipMissiles = 0;
 			shipScrap = 0;
+			shipAlpha = 0;
+			shipJumpTicks = 0;
+			shipGamma = 0;
+			shipDelta = 0;
+			shipCloakAnimTicks = 0;
 			shipPlayerControlled = false;
 			roomRegionRoomIdMap.clear();
 			squareRegionRoomIdMap.clear();
@@ -745,6 +753,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipDroneParts = shipState.getDronePartsAmt();
 		shipMissiles = shipState.getMissilesAmt();
 		shipScrap = shipState.getScrapAmt();
+		shipAlpha = shipState.getUnknownAlpha();
+		shipJumpTicks = shipState.getJumpTicks();
+		shipGamma = shipState.getUnknownGamma();
+		shipDelta = shipState.getUnknownDelta();
+		shipCloakAnimTicks = shipState.getCloakAnimTicks();
 		shipPlayerControlled = ( shipState == gameState.getPlayerShipState() );
 		shipAugmentIdList.addAll( shipState.getAugmentIdList() );
 		originX = shipChassis.getImageBounds().x * -1;
@@ -1043,8 +1056,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add Extended System Info.
 		for ( ExtendedSystemInfo info : shipState.getExtendedSystemInfoList() ) {
-			// Assume every info has a copy constructor...
-			extendedSystemInfoList.add( copyConstruct( info, ExtendedSystemInfo.class ) );
+			extendedSystemInfoList.add( info.copy() );
 		}
 
 		// Add breaches.
@@ -1116,7 +1128,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			SpriteReference<CrewState> crewRef = new SpriteReference<CrewState>( new CrewState( crewState ) );
 			crewRefs.add( crewRef );
 
-			int crewX=0, crewY=0;
+			int crewX = 0, crewY = 0;
 
 			if ( crewState.getRoomId() != -1 ) {
 				// TODO: Place living crew at their real spriteX/spriteY.
@@ -1180,6 +1192,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipState.setDronePartsAmt( shipDroneParts );
 		shipState.setMissilesAmt( shipMissiles );
 		shipState.setScrapAmt( shipScrap );
+		shipState.setUnknownAlpha( shipAlpha );
+		shipState.setJumpTicks( shipJumpTicks );
+		shipState.setUnknownGamma( shipGamma );
+		shipState.setUnknownDelta( shipDelta );
+		shipState.setCloakAnimTicks( shipCloakAnimTicks );
 
 		// Augments.
 		shipState.getAugmentIdList().clear();
@@ -1244,7 +1261,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		List<ExtendedSystemInfo> infoList = shipState.getExtendedSystemInfoList();
 		infoList.clear();
 		for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-			infoList.add( copyConstruct( info, ExtendedSystemInfo.class ) );
+			infoList.add( info.copy() );
 		}
 
 		// Breaches.
@@ -1904,35 +1921,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	/**
-	 * Returns a copy-constructed instance of an arbitrary class.
-	 *
-	 * @param srcObj an object to copy
-	 * @param castClass a class to cast the result as afterward
-	 */
-	private <T> T copyConstruct( Object srcObj, Class<T> castClass ) {
-		T result = null;
-		try {
-			Class srcClass = srcObj.getClass();
-			Constructor copyCon = srcClass.getDeclaredConstructor( srcClass );
-			Object newObj = copyCon.newInstance( srcObj );
-			result = castClass.cast( newObj );
-		}
-		catch ( NoSuchMethodException e ) {
-			log.error( "Failed to blindly copy-construct class: "+ srcObj.getClass().getSimpleName(), e );
-		}
-		catch ( InstantiationException e ) {
-			log.error( "Failed to blindly copy-construct class: "+ srcObj.getClass().getSimpleName(), e );
-		}
-		catch ( IllegalAccessException e ) {
-			log.error( "Failed to blindly copy-construct class: "+ srcObj.getClass().getSimpleName(), e );
-		}
-		catch ( InvocationTargetException e ) {
-			log.error( "Failed to blindly copy-construct class: "+ srcObj.getClass().getSimpleName(), e );
-		}
-		return result;
-	}
-
-	/**
 	 * Returns the first extended system info of a given class, or null.
 	 */
 	private <T extends ExtendedSystemInfo> T getExtendedSystemInfo( Class<T> infoClass ) {
@@ -2227,29 +2215,57 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void showGeneralEditor() {
-		final String SHIP_NAME="Ship Name";
-		final String HULL="Hull";
-		final String FUEL="Fuel";
-		final String DRONE_PARTS="Drone Parts";
-		final String MISSILES="Missiles";
-		final String SCRAP="Scrap";
+		final String SHIP_NAME = "Ship Name";
+		final String HULL = "Hull";
+		final String FUEL = "Fuel";
+		final String DRONE_PARTS = "Drone Parts";
+		final String MISSILES = "Missiles";
+		final String SCRAP = "Scrap";
+		final String ALPHA = "Alpha?";
+		final String JUMP_TICKS = "Jump Ticks";
+		final String GAMMA = "Gamma?";
+		final String DELTA = "Delta?";
+		final String CLOAK_ANIM_TICKS = "Cloak Anim Ticks";
 
 		String title = "General";
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
-		editorPanel.getString(SHIP_NAME).setText( shipName );
 		editorPanel.addRow( HULL, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(HULL).setMaximum( shipBlueprint.getHealth().amount );
-		editorPanel.getSlider(HULL).setValue( shipHull );
 		editorPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(FUEL).setText( ""+shipFuel );
 		editorPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(DRONE_PARTS).setText( ""+shipDroneParts );
 		editorPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(MISSILES).setText( ""+shipMissiles );
 		editorPanel.addRow( SCRAP, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( ALPHA, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(ALPHA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.addRow( JUMP_TICKS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.addRow( GAMMA, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.addRow( DELTA, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(DELTA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( CLOAK_ANIM_TICKS, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(CLOAK_ANIM_TICKS).setMaximum( 500 );  // TODO: Magic number.
+
+		editorPanel.getString(SHIP_NAME).setText( shipName );
+		editorPanel.getSlider(HULL).setValue( shipHull );
+		editorPanel.getInt(FUEL).setText( ""+shipFuel );
+		editorPanel.getInt(DRONE_PARTS).setText( ""+shipDroneParts );
+		editorPanel.getInt(MISSILES).setText( ""+shipMissiles );
 		editorPanel.getInt(SCRAP).setText( ""+shipScrap );
+		editorPanel.getInt(ALPHA).setText( ""+shipAlpha );
+		editorPanel.getInt(JUMP_TICKS).setText( ""+shipJumpTicks );
+		editorPanel.getInt(GAMMA).setText( ""+shipGamma );
+		editorPanel.getInt(DELTA).setText( ""+shipDelta );
+		editorPanel.getSlider(CLOAK_ANIM_TICKS).setValue( shipCloakAnimTicks );
+
+		editorPanel.getInt(ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		editorPanel.getInt(JUMP_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed waiting for the FTL to charge (Counts to 85000).") );
+		editorPanel.getInt(GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		editorPanel.getInt(DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		editorPanel.getSlider(CLOAK_ANIM_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Cloak image visibility (0=Uncloaked to 500=Cloaked).") );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
@@ -2260,21 +2276,31 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				shipHull = editorPanel.getSlider(HULL).getValue();
 
-				newString = editorPanel.getInt(FUEL).getText();
-				try { shipFuel = Integer.parseInt(newString); }
+				try { shipFuel = editorPanel.parseInt(FUEL); }
 				catch ( NumberFormatException e ) {}
 
-				newString = editorPanel.getInt(DRONE_PARTS).getText();
-				try { shipDroneParts = Integer.parseInt(newString); }
+				try { shipDroneParts = editorPanel.parseInt(DRONE_PARTS); }
 				catch ( NumberFormatException e ) {}
 
-				newString = editorPanel.getInt(MISSILES).getText();
-				try { shipMissiles = Integer.parseInt(newString); }
+				try { shipMissiles = editorPanel.parseInt(MISSILES); }
 				catch ( NumberFormatException e ) {}
 
-				newString = editorPanel.getInt(SCRAP).getText();
-				try { shipScrap = Integer.parseInt(newString); }
+				try { shipScrap = editorPanel.parseInt(SCRAP); }
 				catch ( NumberFormatException e ) {}
+
+				try { shipAlpha = editorPanel.parseInt(ALPHA); }
+				catch ( NumberFormatException e ) {}
+
+				try { shipJumpTicks = editorPanel.parseInt(JUMP_TICKS); }
+				catch ( NumberFormatException e ) {}
+
+				try { shipGamma = editorPanel.parseInt(GAMMA); }
+				catch ( NumberFormatException e ) {}
+
+				try { shipDelta = editorPanel.parseInt(DELTA); }
+				catch ( NumberFormatException e ) {}
+
+				shipCloakAnimTicks = editorPanel.getSlider(CLOAK_ANIM_TICKS).getValue();
 
 				clearSidePanel();
 			}

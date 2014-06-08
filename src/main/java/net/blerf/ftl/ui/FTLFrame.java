@@ -375,8 +375,8 @@ public class FTLFrame extends JFrame {
 						in.getChannel().position( 0 );
 
 						// Parse file data.
-						ProfileParser ftl = new ProfileParser();
-						Profile p = ftl.readProfile(in);
+						ProfileParser parser = new ProfileParser();
+						Profile p = parser.readProfile(in);
 						log.trace( "Profile read successfully." );
 
 						Profile mockProfile = new Profile( p );
@@ -386,7 +386,7 @@ public class FTLFrame extends JFrame {
 						// The update() incidentally triggers load() of the modified profile.
 						ByteArrayOutputStream mockOut = new ByteArrayOutputStream();
 						FTLFrame.this.updateProfile( mockProfile );
-						ftl.writeProfile( mockOut, mockProfile );
+						parser.writeProfile( mockOut, mockProfile );
 						mockOut.close();
 
 						// Hash result.
@@ -547,9 +547,9 @@ public class FTLFrame extends JFrame {
 
 						out = new FileOutputStream( chosenFile );
 
-						ProfileParser ftl = new ProfileParser();
+						ProfileParser parser = new ProfileParser();
 						FTLFrame.this.updateProfile( profile );
-						ftl.writeProfile( out, profile );
+						parser.writeProfile( out, profile );
 					}
 					catch( IOException f ) {
 						log.error( String.format("Error saving profile (\"%s\").", chosenFile.getName()), f );

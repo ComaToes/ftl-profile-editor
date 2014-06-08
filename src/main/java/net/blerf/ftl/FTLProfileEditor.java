@@ -89,11 +89,12 @@ public class FTLProfileEditor {
 				log.trace( "Using system Look and Feel" );
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			}
-			catch (Exception e) {
+			catch ( Exception e ) {
 				log.error( "Error setting system Look and Feel.", e );
 				log.info( "Setting 'useDefaultUI=true' in the config file will prevent this error." );
 			}
-		} else {
+		}
+		else {
 			log.debug( "Using default Look and Feel." );
 		}
 
@@ -107,7 +108,8 @@ public class FTLProfileEditor {
 				log.error( "The config's ftlDatsPath does not exist, or it lacks data.dat." );
 				datsDir = null;
 			}
-		} else {
+		}
+		else {
 			log.trace( "No FTL dats path previously set." );
 		}
 

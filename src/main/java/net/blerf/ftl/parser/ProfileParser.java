@@ -1,5 +1,7 @@
 package net.blerf.ftl.parser;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +28,25 @@ public class ProfileParser extends Parser {
 
 	private static final Logger log = LogManager.getLogger(ProfileParser.class);
 
+
+	public ProfileParser() {
+	}
+
+	public Profile readProfile( File savFile ) throws IOException {
+		Profile p = null;
+
+		FileInputStream in = null;
+		try {
+			in = new FileInputStream( savFile );
+			p = readProfile(in);
+		}
+		finally {
+			try {if ( in != null ) in.close();}
+			catch ( IOException e ) {}
+		}
+
+		return p;
+	}
 
 	public Profile readProfile( InputStream in ) throws IOException {
 		Profile p = new Profile();
