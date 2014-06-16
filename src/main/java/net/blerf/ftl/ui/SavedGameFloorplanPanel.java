@@ -1209,13 +1209,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			if ( droneRef.get() != null ) {
 				DroneState droneState = new DroneState( droneRef.get() );
 
-				if ( droneRef.get().getSpriteX() >= 0 && droneRef.get().getSpriteY() >= 0 ) {
+				if ( droneRef.get().getBodyX() >= 0 && droneRef.get().getBodyY() >= 0 ) {
 					DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
 
 					for ( Map.Entry<Rectangle, Integer> regionEntry : squareRegionSquareIdMap.entrySet() ) {
 						if ( regionEntry.getKey().contains( droneBodySprite.getLocation() ) ) {
-							droneState.setRoomSquare( regionEntry.getValue().intValue() );
-							droneState.setRoomId( squareRegionRoomIdMap.get(regionEntry.getKey()).intValue() );
+							droneState.setBodyRoomSquare( regionEntry.getValue().intValue() );
+							droneState.setBodyRoomId( squareRegionRoomIdMap.get(regionEntry.getKey()).intValue() );
 							break;
 						}
 					}
@@ -3515,10 +3515,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( COMBAT_MASTERY_ONE, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( COMBAT_MASTERY_TWO, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addBlankRow();
-		editorPanel.addRow( NU, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(NU).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.addRow( PHI, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(PHI).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.addRow( NU, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( PHI, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( LOCKDOWN_RECHARGE_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( LOCKDOWN_RECHARGE_GOAL, FieldEditorPanel.ContentType.INTEGER );
@@ -3540,7 +3538,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(REPAIR_MASTERY_TWO).addMouseListener( new StatusbarMouseListener(frame, "Total times the second skill mastery was earned.") );
 		editorPanel.getInt(COMBAT_MASTERY_ONE).addMouseListener( new StatusbarMouseListener(frame, "Total times the first skill mastery was earned.") );
 		editorPanel.getInt(COMBAT_MASTERY_TWO).addMouseListener( new StatusbarMouseListener(frame, "Total times the second skill mastery was earned.") );
-		editorPanel.getInt(NU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Related to teleport anim?") );
+		editorPanel.getBoolean(NU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Related to cloning?") );
+		editorPanel.getBoolean(PHI).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Related to walking?") );
 		editorPanel.getInt(LOCKDOWN_RECHARGE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while waiting for the lockdown ability to recharge (Crystal only).") );
 		editorPanel.getInt(LOCKDOWN_RECHARGE_GOAL).addMouseListener( new StatusbarMouseListener(frame, "Time required for the lockdown ability to recharge (Crystal only).") );
 		editorPanel.getInt(OMEGA).addMouseListener( new StatusbarMouseListener(frame, "Unknown (Crystal only).") );
@@ -3627,8 +3626,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(COMBAT_MASTERY_ONE).setText( ""+crewRef.get().getCombatMasteryOne() );
 		editorPanel.getInt(COMBAT_MASTERY_TWO).setText( ""+crewRef.get().getCombatMasteryTwo() );
 
-		editorPanel.getInt(NU).setText( ""+crewRef.get().getUnknownNu() );
-		editorPanel.getInt(PHI).setText( ""+crewRef.get().getUnknownPhi() );
+		editorPanel.getBoolean(NU).setSelected( crewRef.get().getUnknownNu() );
+		editorPanel.getBoolean(PHI).setSelected( crewRef.get().getUnknownPhi() );
 		editorPanel.getInt(LOCKDOWN_RECHARGE_TICKS).setText( ""+crewRef.get().getLockdownRechargeTicks() );
 		editorPanel.getInt(LOCKDOWN_RECHARGE_GOAL).setText( ""+crewRef.get().getLockdownRechargeTicksGoal() );
 		editorPanel.getInt(OMEGA).setText( ""+crewRef.get().getUnknownOmega() );
@@ -3719,11 +3718,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				try { crewRef.get().setCombatMasteryTwo( editorPanel.parseInt(COMBAT_MASTERY_TWO) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setUnknownNu( editorPanel.parseInt(NU) ); }
-				catch ( NumberFormatException e ) {}
-
-				try { crewRef.get().setUnknownPhi( editorPanel.parseInt(PHI) ); }
-				catch ( NumberFormatException e ) {}
+				crewRef.get().setUnknownNu( editorPanel.getBoolean(NU).isSelected() );
+				crewRef.get().setUnknownPhi( editorPanel.getBoolean(PHI).isSelected() );
 
 				try { crewRef.get().setLockdownRechargeTicks( editorPanel.parseInt(LOCKDOWN_RECHARGE_TICKS) ); }
 				catch ( NumberFormatException e ) {}
@@ -3894,11 +3890,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 					// TODO: Move this into the showDroneEditor() method.
 
 					// No body. And boarder bodies are crew on nearby ships.
-					droneRef.get().setSpriteX( -1 );
-					droneRef.get().setSpriteY( -1 );
+					droneRef.get().setBodyX( -1 );
+					droneRef.get().setBodyY( -1 );
 				}
-				bodyX = droneRef.get().getSpriteX();
-				bodyY = droneRef.get().getSpriteY();
+				bodyX = droneRef.get().getBodyX();
+				bodyY = droneRef.get().getBodyY();
 
 				if ( droneRef.get().isArmed() && needsBody && (bodyX < 0 || bodyY < 0) ) {
 					// Search for an empty square in DroneCtrl.
@@ -3944,10 +3940,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 					// TODO: Check extended info class in case drone is unarmed but deployed (show body).
 					// TODO: Do away with setter calls here.
 
-					droneRef.get().setSpriteX( -1 );
-					droneRef.get().setSpriteY( -1 );
-					bodyX = droneRef.get().getSpriteX();
-					bodyY = droneRef.get().getSpriteY();
+					droneRef.get().setBodyX( -1 );
+					droneRef.get().setBodyY( -1 );
+					bodyX = droneRef.get().getBodyX();
+					bodyY = droneRef.get().getBodyY();
 				}
 
 				if ( needsBody && imgRace != null ) {

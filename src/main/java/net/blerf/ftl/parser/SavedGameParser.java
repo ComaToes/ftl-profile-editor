@@ -906,11 +906,11 @@ public class SavedGameParser extends Parser {
 				crew.setCombatMasteryTwo( readInt(in) );
 			}
 
-			crew.setUnknownNu( readInt(in) );
+			crew.setUnknownNu( readBool(in) );
 
 			crew.setTeleportAnim( readAnim(in) );
 
-			crew.setUnknownPhi( readInt(in) );
+			crew.setUnknownPhi( readBool(in) );
 
 			if ( "crystal".equals(crew.getRace()) ) {
 				crew.setLockdownRechargeTicks( readInt(in) );
@@ -985,11 +985,11 @@ public class SavedGameParser extends Parser {
 				writeInt( out, crew.getCombatMasteryTwo() );
 			}
 
-			writeInt( out, crew.getUnknownNu() );
+			writeBool( out, crew.getUnknownNu() );
 
 			writeAnim( out, crew.getTeleportAnim() );
 
-			writeInt( out, crew.getUnknownPhi() );
+			writeBool( out, crew.getUnknownPhi() );
 
 			if ( "crystal".equals(crew.getRace()) ) {
 				writeInt( out, crew.getLockdownRechargeTicks() );
@@ -1205,10 +1205,10 @@ public class SavedGameParser extends Parser {
 		DroneState drone = new DroneState( readString(in) );
 		drone.setArmed( readBool(in) );
 		drone.setPlayerControlled( readBool(in) );
-		drone.setSpriteX( readInt(in) );
-		drone.setSpriteY( readInt(in) );
-		drone.setRoomId( readInt(in) );
-		drone.setRoomSquare( readInt(in) );
+		drone.setBodyX( readInt(in) );
+		drone.setBodyY( readInt(in) );
+		drone.setBodyRoomId( readInt(in) );
+		drone.setBodyRoomSquare( readInt(in) );
 		drone.setHealth( readInt(in) );
 		return drone;
 	}
@@ -1217,10 +1217,10 @@ public class SavedGameParser extends Parser {
 		writeString( out, drone.getDroneId() );
 		writeBool( out, drone.isArmed() );
 		writeBool( out, drone.isPlayerControlled() );
-		writeInt( out, drone.getSpriteX() );
-		writeInt( out, drone.getSpriteY() );
-		writeInt( out, drone.getRoomId() );
-		writeInt( out, drone.getRoomSquare() );
+		writeInt( out, drone.getBodyX() );
+		writeInt( out, drone.getBodyY() );
+		writeInt( out, drone.getBodyRoomId() );
+		writeInt( out, drone.getBodyRoomSquare() );
 		writeInt( out, drone.getHealth() );
 	}
 
@@ -1904,25 +1904,25 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 	public static enum StateVar {
 		// TODO: Magic strings.
-		BLUE_ALIEN     ("blue_alien",      "Blue event choices clicked. (only ones that require a race)"),
-		DEAD_CREW      ("dead_crew",       "???, plus boarding drone bodies? (see also: lost_crew)"),
-		DESTROYED_ROCK ("destroyed_rock",  "Rock ships destroyed. (including pirates)"),
+		BLUE_ALIEN     ("blue_alien",      "Blue event choices clicked. (Only ones that require a race.)"),
+		DEAD_CREW      ("dead_crew",       "Ships defeated by killing all enemy crew."),
+		DESTROYED_ROCK ("destroyed_rock",  "Rock ships destroyed, including pirates."),
 		ENV_DANGER     ("env_danger",      "Jumps into beacons with environmental dangers."),
-		FIRED_SHOT     ("fired_shot",      "Individual beams/blasts/projectiles fired. (see also: used_missile)"),
-		HIGH_O2        ("higho2",          "Times oxygen exceeded 20%, incremented when arriving at a beacon (Bug: Or loading in FTL 1.5.4-1.5.10)."),
-		KILLED_CREW    ("killed_crew",     "Enemy crew killed. (and possibly beam friendly fire?)"),
-		LOST_CREW      ("lost_crew",       "Crew you've lost: killed, abandoned on nearby ships, taken by events?, but not dismissed. (see also: dead_crew)"),
+		FIRED_SHOT     ("fired_shot",      "Individual beams/blasts/projectiles fired. (See also: used_missile)"),
+		HIGH_O2        ("higho2",          "Times oxygen exceeded 20%, incremented when arriving at a beacon. (Bug: Or loading in FTL 1.5.4-1.5.10)"),
+		KILLED_CREW    ("killed_crew",     "Enemy crew killed. (And possibly friendly fire?)"),
+		LOST_CREW      ("lost_crew",       "Crew you've lost: killed, abandoned on nearby ships, taken by events?, but not dismissed. Even if cloned later. (See also: dead_crew)"),
 		NEBULA         ("nebula",          "Jumps into nebula beacons."),
 		OFFENSIVE_DRONE("offensive_drone", "The number of times drones capable of damaging an enemy ship powered up."),
 		REACTOR_UPGRADE("reactor_upgrade", "Reactor (power bar) upgrades beyond the ship's default levels."),
-		STORE_PURCHASE ("store_purchase",  "Non-repair crew/items purchased. (selling isn't counted)"),
+		STORE_PURCHASE ("store_purchase",  "Non-repair purchases, such as crew/items. (Selling isn't counted.)"),
 		STORE_REPAIR   ("store_repair",    "Store repair button clicks."),
 		SUFFOCATED_CREW("suffocated_crew", "???"),
 		SYSTEM_UPGRADE ("system_upgrade",  "System (and subsystem; not reactor) upgrades beyond the ship's default levels."),
 		TELEPORTED     ("teleported",      "Teleporter activations, in either direction."),
 		USED_DRONE     ("used_drone",      "The number of times drone parts were consumed."),
-		USED_MISSILE   ("used_missile",    "Missile/bomb weapon discharges. (see also: fired_shot)"),
-		WEAPON_UPGRADE ("weapon_upgrade",  "Weapons system upgrades beyond the ship's default levels. (see also: system_upgrade)");
+		USED_MISSILE   ("used_missile",    "Missile/bomb weapon discharges. (See also: fired_shot)"),
+		WEAPON_UPGRADE ("weapon_upgrade",  "Weapons system upgrades beyond the ship's default levels. (See also: system_upgrade)");
 
 		// The following were introduced in FTL 1.5.4.
 		// HIGH_O2, SUFFOCATED_CREW
@@ -2200,6 +2200,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
+		 * Observed values: 0 (normal), 1 (distress beacon active, or at least
+		 * after waiting... until the wait-related events finish, then 0 again).
+		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setUnknownGamma( int n ) { unknownGamma = n; }
@@ -2208,9 +2211,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * Some kind of seed?
+		 * Observed values: 5592, 4223, 4822.
+		 * Some kind of seed? (Was set after waiting with the distress beacon.)
 		 *
 		 * When not set, this is -1.
+		 *
+		 * This value lingers.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
@@ -2760,7 +2766,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * Observed values: 1.
+		 * Observed values: 1, 0.
+		 *
+		 * A nearby ship went from 1 to 0, when all enemies were killed and a
+		 * player-controlled crew member was still aboard). Also 0 for neutral
+		 * traders.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
@@ -3259,9 +3269,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int weaponMasteryOne = 0, weaponMasteryTwo = 0;
 		private int repairMasteryOne = 0, repairMasteryTwo = 0;
 		private int combatMasteryOne = 0, combatMasteryTwo = 0;
-		private int unknownNu = 0;  // Went from 0 to 1 while fresh clone materialized via the teleport anim.
+		private boolean unknownNu = false;
 		private AnimState teleportAnim = new AnimState();
-		private int unknownPhi = 0;
+		private boolean unknownPhi = false;
 		private int lockdownRechargeTicks = 0;
 		private int lockdownRechargeTicksGoal = 0;
 		private int unknownOmega = 0;
@@ -3385,12 +3395,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the position of the crew's image.
 		 *
-		 * Technically the roomId/square fields set the crew's desired location.
-		 * This field is where the crew really is, possibly en route.
+		 * Technically the roomId/square fields set the crew's goal location.
+		 * This field is where the body really is, possibly en route.
 		 *
-		 * It's the position of the crew image's center, relative to the
-		 * top-left square's corner, in pixels, plus (the ShipLayout's offset
-		 * times the square-size, which is 35).
+		 * It's the position of the body image's center, relative to the
+		 * top-left corner of the floor layout of the ship it's on.
 		 *
 		 * For preserved dead crew, which have no body, this lingers, or may be
 		 * (0,0).
@@ -3564,6 +3573,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets temporary bonus health from a foreign Mind Control system.
 		 *
+		 * Values:
+		 *   15 = Mind Ctrl Level 2.
+		 *   30 = Mind Ctrl Level 3.
+		 *
 		 * When the mind control effect expires, the boost amount will be
 		 * subtracted from health, and this value will reset to 0.
 		 *
@@ -3573,7 +3586,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getHealthBoost() { return healthBoost; }
 
 		/**
-		 * Sets the Clonebay's queue priority for this crew.
+		 * Sets the Clonebay's queue priority for this crew (lowest is first).
 		 *
 		 * When this crew dies, this is set to the newly incremented universal
 		 * death count. Then this value lingers. When this crew has not yet
@@ -3587,7 +3600,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getClonebayPriority() { return clonebayPriority; }
 
 		/**
-		 * Unknown.
+		 * Sets a multiplier to apply to damage dealt by this crew.
+		 *
+		 * Values:
+		 *   1250 (1.25) = Mind Ctrl Level 2.
+		 *   2000 (2.00) = Mind Ctrl Level 3.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
@@ -3610,10 +3627,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Sets the total deaths of all crew everywhere.
 		 *
 		 * All crew, friend and foe, have an identical field, which increments
-		 * whenever someone dies.
+		 * whenever someone dies. When nobody has died yet, this is 0.
 		 *
 		 * According to Matthew, FTL made this a static variable on the crew
-		 * class. It's purpose was to serve as an ever increasing number to mark
+		 * class. It's purpose was to serve as an ever-increasing number to mark
 		 * the deceased with a unique Clonebay queue priority to sort by.
 		 * There's a comment in FTL's source that says "This is stupid."
 		 *
@@ -3666,10 +3683,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
+		 * Went from 0 to 1 while fresh clone materialized via the teleport
+		 * anim.
+		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setUnknownNu( int n ) { unknownNu = n; }
-		public int getUnknownNu() { return unknownNu; }
+		public void setUnknownNu( boolean b ) { unknownNu = b; }
+		public boolean getUnknownNu() { return unknownNu; }
 
 		/**
 		 * Sets the crew's teleport anim state.
@@ -3684,10 +3704,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
+		 * Related to walking/fighting?
+		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setUnknownPhi( int n ) { unknownPhi = n; }
-		public int getUnknownPhi() { return unknownPhi; }
+		public void setUnknownPhi( boolean b ) { unknownPhi = b; }
+		public boolean getUnknownPhi() { return unknownPhi; }
 
 		/**
 		 * Sets time elapsed waiting for the lockdown ability to recharge.
@@ -3795,7 +3817,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Weapon Mastery:            %1d, %1d\n", weaponMasteryOne, weaponMasteryTwo));
 			result.append(String.format("Repair Mastery:            %1d, %1d\n", repairMasteryOne, repairMasteryTwo));
 			result.append(String.format("Combat Mastery:            %1d, %1d\n", combatMasteryOne, combatMasteryTwo));
-			result.append(String.format("Nu?:                  %6d\n", unknownNu));
+			result.append(String.format("Nu?:                  %6b\n", unknownNu));
 
 			result.append("\nTeleport Anim...\n");
 			if ( teleportAnim != null) {
@@ -3804,7 +3826,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\n");
 
-			result.append(String.format("Phi?:                 %6d\n", unknownPhi));
+			result.append(String.format("Phi?:                 %6b\n", unknownPhi));
 			result.append(String.format("Lockdown Ticks:       %6d (Crystal only, time elapsed recharging ability)\n", lockdownRechargeTicks));
 			result.append(String.format("Lockdown Ticks Goal:  %6d (Crystal only, time needed to recharge)\n", lockdownRechargeTicksGoal));
 			result.append(String.format("Omega?:               %6d (Crystal only)\n", unknownOmega));
@@ -3942,12 +3964,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * a warning graphic will appear.
 		 *
 		 * When a system disables itself (white lock), this will be -1. For
-		 * the Cloaking system, setting this to -1 will engage the cloak.
-		 * Teleporter has not been tested. AE systems have not been tested.
-		 * Systems which do not normally disable themselves will remain locked
-		 * until they get hit with a weapon that produces ion damage. See
-		 * ExtendedSystemInfo classes for timer fields that might used to unlock
-		 * systems on their own.
+		 * the Cloaking system in FTL 1.01-1.03.3, setting this to -1 would
+		 * engage the cloak. Teleporter has not been tested. AE systems have not
+		 * been tested. Systems which do not normally disable themselves will
+		 * remain locked until they get hit with a weapon that produces ion
+		 * damage. See ExtendedSystemInfo classes for timer fields that might
+		 * used to unlock systems on their own.
 		 *
 		 * @see net.blerf.ftl.constants.FTLConstants#getMaxIonizedBars()
 		 */
@@ -3958,6 +3980,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Sets progress toward repairing one damaged power bar.
 		 *
 		 * A growing portion of the bottommost damaged bar will turn yellow.
+		 *
+		 * Note: Repair progress and damage progress can both be non-zero at the
+		 * same time. They affect different bars.
 		 *
 		 * @param n 0-100 (0 when not repairing)
 		 */
@@ -3972,6 +3997,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * This is typically caused by fire or boarders attempting sabotage.
 		 *
+		 * Note: Repair progress and damage progress can both be non-zero at the
+		 * same time. They affect different bars.
+		 *
 		 * @param n 0-100 (0 when not damaging)
 		 */
 		public void setDamageProgress( int n ) { damageProgress = n; }
@@ -3983,13 +4011,15 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * The system is inoperative while any ionized bars remain, and any
 		 * power assigned will be unavailable. If this system is using battery
 		 * power, and the battery deactivates, a lock countdown will complete
-		 * immediately (but not plain ion countdown).
+		 * immediately (but not a plain ion countdown).
 		 *
 		 * The game's interface responds as this increments, including
 		 * resetting after intervals. If not needed, it may be 0, or
 		 * more often, MIN_INT.
 		 *
-		 * Deionization of each bar counts to 5000.
+		 * It was thought that in FTL 1.01-1.03.3, deionization of each bar
+		 * counted to 5000. In FTL 1.5.13, it was observed at 14407 (with half
+		 * the circle remaining).
 		 *
 		 * TODO:
 		 * Nearly every system has been observed with non-zero values,
@@ -4029,16 +4059,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getBatteryPower() { return batteryPower; }
 
 		/**
-		 * Sets the level-based effect that a hacking drone's disruption will
-		 * have when it activates?
+		 * Unknown.
+		 *
+		 * Observed values: 0 (no hacking drone pod), 1 (pod passively
+		 * attached, set on contact), 2 (disrupting).
+		 *
+		 * If the hacking system of the other ship is inoperative, this will be
+		 * set to 0, even though there is still a pod attached.
 		 *
 		 * TODO: Revise this description.
-		 * While disrupting, this was observed to be 2; while the hacking drone
-		 * was passively attached, this was 1.
 		 *
 		 * This was introduced in FTL 1.5.4.
-		 *
-		 * @param n the 1-based level of the hacker's system, or 0 for none
 		 *
 		 * @see #setHacked(int)
 		 */
@@ -4046,11 +4077,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getHackLevel() { return hackLevel; }
 
 		/**
-		 * Toggles whether this system has a hacking drone attached.
+		 * Toggles whether this system has a hacking drone pod attached.
 		 *
-		 * This only describes attachment, not disruption.
+		 * This only describes attachment (set the moment the pod makes
+		 * contact), not disruption.
 		 *
-		 * TODO: Revise this description.
+		 * If the hacking system of the other ship is inoperative, this will be
+		 * set to false, even though there is still a pod attached.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
@@ -4222,6 +4255,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Set's the oxygen percentage in the room.
+		 *
+		 * When this is below 5, a warning appears.
 		 *
 		 * At 0, the game changes the room's appearance.
 		 *   Since 1.03.1, it paints red stripes on the floor.
@@ -4426,13 +4461,22 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Values:
 		 *   04 = Level 0 (un-upgraded or damaged Doors system).
-		 *   08 = Level 1
-		 *   12 = Level 2
-		 *   18 = Level 3 (max, plus manned)
+		 *   08 = Level 1 (???)
+		 *   12 = Level 2 (confirmed)
+		 *   16 = Level 3 (confirmed)
+		 *   20 = Level 4 (Level 3, plus manned; confirmed)
+		 *   18 = Level 3 (max, plus manned) (or is it 15, 10 while unmanned?)
 		 *   50 = Lockdown.
 		 *
-		 * TODO: Investigate why an attached hacking drone adds 6 to ALL THREE
-		 * healths.
+		 * TODO: The Mantis Basilisk ship's doors went from 4 to 12 when the
+		 * 1-capacity Doors system was manned. Doors that were already hacked at
+		 * the time stayed at 16.
+		 *
+		 * TODO: Check what the Rock B Ship's doors have (it lacks a Doors
+		 * system). Damaged system is 4 (hacked doors were still 16).
+		 *
+		 * TODO: Investigate why an attached hacking drone adds to ALL THREE
+		 * healths (set on contact). Observed diffs: 4 to 16.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
@@ -4440,7 +4484,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getNominalHealth() { return nominalHealth; }
 
 		/**
-		 * ???
+		 * Unknown.
+		 *
+		 * Observed values: 0 (normal), 1 (while level 2 Doors system is
+		 * unmanned), 1 (while level 1 Doors system is manned), 2 (while level 3
+		 * Doors system is unmanned), 3  (while level 3 Doors system is manned),
+		 * 2 (hacking pod passively attached, set on
+		 * contact). Still 2 while hack-disrupting.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
@@ -4452,14 +4502,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Values:
 		 *   0 = N/A
-		 *   1 = Hacking drone attached, but not active.
-		 *   2 = Hacking drone attached and active.
+		 *   1 = Hacking drone pod passively attached.
+		 *   2 = Hacking drone pod attached and disrupting.
 		 *
-		 * A hacking system launches a drone that will latch onto a target
-		 * system room, granting visibility. While the hacking drone is active
-		 * and there is power to the hacking system, the doors of the room turn
-		 * purple, locked to the crew of the targeted ship, but passable to the
-		 * hacker's crew.
+		 * A hacking system launches a drone pod that will latch onto a target
+		 * system room, granting visibility. While the pod is attached and there
+		 * is power to the hacking system, the doors of the room turn purple,
+		 * locked to the crew of the targeted ship, but passable to the hacker's
+		 * crew.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
@@ -4650,10 +4700,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	public static class DroneState {
 		private String droneId = null;
 		private boolean armed = false;
-		private boolean playerControlled = true;  // False when not armed.
-		private int spriteX = -1, spriteY = -1;   // -1 when body not present.
-		private int roomId = -1;                  // -1 when body not present.
-		private int roomSquare = -1;              // -1 when body not present.
+		private boolean playerControlled = true;
+		private int bodyX = -1, bodyY = -1;
+		private int bodyRoomId = -1;
+		private int bodyRoomSquare = -1;
 		private int health = 1;
 
 
@@ -4676,29 +4726,61 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			droneId = srcDrone.getDroneId();
 			armed = srcDrone.isArmed();
 			playerControlled = srcDrone.isPlayerControlled();
-			spriteX = srcDrone.getSpriteX();
-			spriteY = srcDrone.getSpriteY();
-			roomId = srcDrone.getRoomId();
-			roomSquare = srcDrone.getRoomSquare();
+			bodyX = srcDrone.getBodyX();
+			bodyY = srcDrone.getBodyY();
+			bodyRoomId = srcDrone.getBodyRoomId();
+			bodyRoomSquare = srcDrone.getBodyRoomSquare();
 			health = srcDrone.getHealth();
 		}
 
 		public void setDroneId( String s ) { droneId = s; }
-		public void setArmed( boolean b ) { armed = b; }
-		public void setPlayerControlled( boolean b ) { playerControlled = b; }
-		public void setSpriteX( int n ) { spriteX = n; }
-		public void setSpriteY( int n ) { spriteY = n; }
-		public void setRoomId( int n ) { roomId = n; }
-		public void setRoomSquare( int n ) { roomSquare = n; }
-		public void setHealth( int n ) { health = n; }
-
 		public String getDroneId() { return droneId; }
+
+		public void setArmed( boolean b ) { armed = b; }
 		public boolean isArmed() { return armed; }
+
+		/**
+		 * Sets whether this drone is controlled by the player.
+		 *
+		 * When the drone is not armed, this should be set to false.
+		 */
+		public void setPlayerControlled( boolean b ) { playerControlled = b; }
 		public boolean isPlayerControlled() { return playerControlled; }
-		public int getSpriteX() { return spriteX; }
-		public int getSpriteY() { return spriteY; }
-		public int getRoomId() { return roomId; }
-		public int getRoomSquare() { return roomSquare; }
+
+		/**
+		 * Sets the position of the drone's body image.
+		 *
+		 * Technically the roomId/square fields set the goal location.
+		 * This field is where the body really is, possibly en route.
+		 *
+		 * It's the position of the body image's center, relative to the
+		 * top-left corner of the floor layout of the ship it's on.
+		 *
+		 * This value lingers, even after the body is gone.
+		 *
+		 * Note: This is only set by drones which have a body on their own ship.
+		 */
+		public void setBodyX( int n ) { bodyX = n; }
+		public void setBodyY( int n ) { bodyY = n; }
+		public int getBodyX() { return bodyX; }
+		public int getBodyY() { return bodyY; }
+
+		/**
+		 * Sets the room this drone's body is in (or at least trying to move
+		 * toward).
+		 *
+		 * When no body is present, this is -1.
+		 *
+		 * roomId and roomSquare need to be specified together.
+		 *
+		 * Note: This is only set by drones which have a body on their own ship.
+		 */
+		public void setBodyRoomId( int n ) { bodyRoomId = n; }
+		public void setBodyRoomSquare( int n ) { bodyRoomSquare = n; }
+		public int getBodyRoomId() { return bodyRoomId; }
+		public int getBodyRoomSquare() { return bodyRoomSquare; }
+
+		public void setHealth( int n ) { health = n; }
 		public int getHealth() { return health; }
 
 		@Override
@@ -4708,9 +4790,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("DroneId:           %s\n", droneId));
 			result.append(String.format("Armed:             %5b\n", armed));
 			result.append(String.format("Health:            %5d\n", health));
-			result.append(String.format("Sprite Position:     %3d,%3d\n", spriteX, spriteY));
-			result.append(String.format("RoomId:            %5d\n", roomId));
-			result.append(String.format("Room Square:       %5d\n", roomSquare));
+			result.append(String.format("Body Position:     %3d,%3d\n", bodyX, bodyY));
+			result.append(String.format("Body RoomId:       %5d\n", bodyRoomId));
+			result.append(String.format("Body Room Square:  %5d\n", bodyRoomSquare));
 			result.append(String.format("Player Controlled: %5b\n", playerControlled));
 
 			return result.toString();
@@ -5145,7 +5227,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the last situation-describing text shown in an event window.
 		 *
-		 * This value lingers. It may have no relation to the last event id.
+		 * Any event - 'static', secondary, or wait - may set this value. It may
+		 * have no relation to the last event id.
+		 *
+		 * After the event popup is dismissed, this value lingers.
 		 */
 		public void setText( String s ) { text = s; }
 		public String getText() { return text; }
@@ -5165,6 +5250,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Each integer in the list corresponds to a prompt, and the Integer's
 		 * value is the Nth choice that was clicked. (0-based)
+		 *
+		 * TODO: 52 was observed in the list once!?
 		 *
 		 * The event will still be in-progress if there aren't enough
 		 * breadcrumbs to renavigate to the end of the event.
@@ -5256,7 +5343,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the hull amount that will cause the ship will surrender.
 		 *
-		 * For the rebel flagship, this is negative.
+		 * For the rebel flagship, this is -100.
 		 */
 		public void setSurrenderThreshold( int n ) { surrenderThreshold = n; }
 		public int getSurrenderThreshold() { return surrenderThreshold; }
@@ -5264,7 +5351,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the hull amount that will cause the ship to flee.
 		 *
-		 * For the rebel flagship, this is negative.
+		 * For the rebel flagship, this is -101.
 		 */
 		public void setEscapeThreshold( int n ) { escapeThreshold = n; }
 		public int getEscapeThreshold() { return escapeThreshold; }
@@ -5444,6 +5531,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setBgDriftTicks( int n ) { bgDriftTicks = n; }
 		public int getBgDriftTicks() { return bgDriftTicks; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 1, 8, 13.
+		 */
 		public void setCurrentTarget( int n ) { currentTarget = n; }
 		public int getCurrentTarget() { return currentTarget; }
 
@@ -6322,22 +6414,52 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setNearbyExtendedShipInfo( ExtendedShipInfo shipInfo ) { nearbyShipInfo = shipInfo; }
 		public ExtendedShipInfo getNearbyExtendedShipInfo() { return nearbyShipInfo; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Erratic values, large and small. Even changes mid-combat!?
+		 */
 		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
 		public void setUnknownZeta( Integer zeta ) { unknownZeta = zeta; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Erratic values, large and small.
+		 *
+		 * This is only set when a nearby ship is present.
+		 */
 		public int getUnknownEpsilon() { return unknownEpsilon; }
 		public Integer getUnknownZeta() { return unknownZeta; }
 
 		public void setAutofire( boolean b ) { autofire = b; }
 		public boolean getAutofire() { return autofire; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0 (normal), 1 (after encountering
+		 * first-stage boss).
+		 */
 		public void setUnknownEta( int n ) { unknownEta = n; }
 		public int getUnknownEta() { return unknownEta; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 30000 (normal), 21326 (after encountering
+		 * first-stage boss).
+		 */
 		public void setUnknownIota( int n ) { unknownIota = n; }
-		public void setUnknownKappa( int n ) { unknownKappa = n; }
-
 		public int getUnknownIota() { return unknownIota; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0 (normal), 240 (after encountering
+		 * first-stage boss).
+		 */
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
 		public int getUnknownKappa() { return unknownKappa; }
 
 
@@ -8293,6 +8415,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * When not set, this is -1.
 		 *
+		 * TODO: Boost weapons set this too!?
+		 *
 		 * This was introduced in FTL 1.5.13.
 		 *
 		 * @see #setChargeAnim(AnimState)
@@ -8307,7 +8431,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * It's current frame depends on the cached charge.
 		 *
 		 * In "dlcAnimations.xml", if the weaponAnim's name is "X", the
-		 * chargeAnim's name will be "X_charge".
+		 * boostAnim's name will be "X_charge". (Yes, really.)
+		 *
+		 * TODO: Sort out charge vs boost.
 		 *
 		 * This was introduced in FTL 1.5.13.
 		 *
