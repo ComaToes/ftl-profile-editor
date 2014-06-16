@@ -301,7 +301,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		aiPanel.getBoolean(AI_DESTROYED).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether the nearby ship was destroyed.") );
 		aiPanel.getInt(AI_SURRENDER_THRESHOLD).addMouseListener( new StatusbarMouseListener(frame, "Hull amount that will cause the ship to surrender (may be negative).") );
 		aiPanel.getInt(AI_ESCAPE_THRESHOLD).addMouseListener( new StatusbarMouseListener(frame, "Hull amount that will cause the ship to flee (may be negative).") );
-		aiPanel.getInt(AI_ESCAPE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while waiting for the nearby ship's FTL to charge (Decrements from 15000).") );
+		aiPanel.getInt(AI_ESCAPE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while waiting for the nearby ship's FTL to charge (Decrements to 0).") );
 		aiPanel.getBoolean(AI_STALEMATE).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 		aiPanel.getInt(AI_STALEMATE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 		aiPanel.getInt(AI_BOARDING_ATTEMPTS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );

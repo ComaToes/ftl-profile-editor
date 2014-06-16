@@ -3017,7 +3017,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				Object source = e.getSource();
 
-				syncProgress( source );
 				syncBars( source );
 
 				// After all the secondary slider events, resume monitoring.
@@ -3026,21 +3025,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 						ignoreChanges = false;
 					}
 				});
-			}
-
-			private void syncProgress( Object source ) {
-				if ( source == repairProgressSlider ) {
-					// Fight DamageProgess.
-
-					if ( repairProgressSlider.getValue() > 0 )
-						damageProgressSlider.setValue( 0 );   // Mutually exclusive.
-				}
-				else if ( source == damageProgressSlider ) {
-					// Fight RepairProgress.
-
-					if ( damageProgressSlider.getValue() > 0 )
-						repairProgressSlider.setValue( 0 );   // Mutually exclusive.
-				}
 			}
 
 			private void syncBars( Object source ) {
@@ -3460,7 +3444,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String STUN_TICKS = "Stun Ticks";
 		final String HEALTH_BOOST = "Health Boost";
 		final String CLONEBAY_PRIORITY = "Clonebay Priority";
-		final String DAMAGE_BOOST = "Damage Boost?";
+		final String DAMAGE_BOOST = "Damage Boost";
 		final String LAMBDA = "Lambda?";
 		final String UNIV_DEATH_COUNT = "Universal Death Count";
 		final String PILOT_MASTERY_ONE = "Pilot Mastery 1";
