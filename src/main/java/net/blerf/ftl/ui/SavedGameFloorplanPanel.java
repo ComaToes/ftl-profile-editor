@@ -2826,7 +2826,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String STATION_HERE = "Station Here";
 		final String STATION_DIR = "Station Direction";
 		final String IGNITION = "Ignition Progress";
-		final String GAMMA = "Gamma?";
+		final String EXTINGUISHMENT = "Extinguishment Progress";
 
 		RoomSprite roomSprite = roomRef.getSprite( RoomSprite.class );
 		String title = String.format("Room %2d (Square %d)", roomSprite.getRoomId(), squareId);
@@ -2844,9 +2844,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( IGNITION, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(IGNITION).setMaximum( 100 );
 		editorPanel.getSlider(IGNITION).addMouseListener( new StatusbarMouseListener(frame, "A new fire spawns in this square at 100.") );
-		editorPanel.addRow( GAMMA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.getInt(GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Extinguishment Progress? (Bug: FTL 1.01-1.5.10 always had -1.)") );
+		editorPanel.addRow( EXTINGUISHMENT, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt(EXTINGUISHMENT).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(EXTINGUISHMENT).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Usually -1. When fire disappears in a puff of smoke, it's 9,8...,1,0.") );
 
 		editorPanel.getCombo(STATION_DIR).addItem( StationDirection.DOWN );
 		editorPanel.getCombo(STATION_DIR).addItem( StationDirection.RIGHT );
@@ -2862,7 +2862,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		editorPanel.getSlider(IGNITION).setValue( roomRef.get().getSquare( squareId ).getIgnitionProgress() );
-		editorPanel.getInt(GAMMA).setText( ""+roomRef.get().getSquare( squareId ).getUnknownGamma() );
+		editorPanel.getInt(EXTINGUISHMENT).setText( ""+roomRef.get().getSquare( squareId ).getExtinguishmentProgress() );
 
 		editorPanel.getBoolean(STATION_HERE).addItemListener(new ItemListener() {
 			@Override
@@ -2890,7 +2890,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				roomRef.get().getSquare( squareId ).setIgnitionProgress( editorPanel.getSlider(IGNITION).getValue() );
 
-				try { roomRef.get().getSquare( squareId ).setUnknownGamma( editorPanel.parseInt(GAMMA) ); }
+				try { roomRef.get().getSquare( squareId ).setExtinguishmentProgress( editorPanel.parseInt(EXTINGUISHMENT) ); }
 				catch ( NumberFormatException e ) {}
 
 				roomRef.fireReferenceChange();

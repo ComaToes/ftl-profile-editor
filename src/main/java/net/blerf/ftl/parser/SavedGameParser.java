@@ -1057,12 +1057,17 @@ public class SavedGameParser extends Parser {
 		RoomState room = new RoomState();
 		room.setOxygen( readInt(in) );
 
+		// Squares are written to disk top-to-bottom, left-to-right. (Index != ID!)
+		SquareState[][] tmpSquares = new SquareState[squaresH][squaresV];
 		for (int h=0; h < squaresH; h++) {
 			for (int v=0; v < squaresV; v++) {
-				// Fire HP (0-100), Ignition Progress (0-100), Extinguishment Progress (-1).
-				// Matthew says the perpetual -1 is a bug in FTL 1.01-1.5.10.
-				// TODO: Watch for that to be fixed.
-				room.addSquare( new SquareState( readInt(in), readInt(in), readInt(in) ) );
+				tmpSquares[h][v] = new SquareState( readInt(in), readInt(in), readInt(in) );
+			}
+		}
+		// Add them to the room left-to-right, top-to-bottom. (Index == ID)
+		for (int v=0; v < squaresV; v++) {
+			for (int h=0; h < squaresH; h++) {
+				room.addSquare( tmpSquares[h][v] );
 			}
 		}
 
@@ -1102,7 +1107,7 @@ public class SavedGameParser extends Parser {
 		for ( SquareState square : room.getSquareList() ) {
 			writeInt( out, square.getFireHealth() );
 			writeInt( out, square.getIgnitionProgress() );
-			writeInt( out, square.getUnknownGamma() );
+			writeInt( out, square.getExtinguishmentProgress() );
 		}
 
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
@@ -4329,7 +4334,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	public static class SquareState {
 		private int fireHealth = 0;
 		private int ignitionProgress = 0;
-		private int unknownGamma = -1;
+		private int extinguishmentProgress = -1;
 
 
 		public SquareState() {
@@ -4338,7 +4343,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public SquareState( int fireHealth, int ignitionProgress, int gamma ) {
 			this.fireHealth = fireHealth;
 			this.ignitionProgress = ignitionProgress;
-			this.unknownGamma = gamma;
+			this.extinguishmentProgress = extinguishmentProgress;
 		}
 
 		/**
@@ -4347,7 +4352,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public SquareState( SquareState srcSquare ) {
 			this.fireHealth = srcSquare.getFireHealth();
 			this.ignitionProgress = srcSquare.getIgnitionProgress();
-			this.unknownGamma = srcSquare.getUnknownGamma();
+			this.extinguishmentProgress = srcSquare.getExtinguishmentProgress();
 		}
 
 		/**
@@ -4372,19 +4377,24 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * Matthew's hint: This third square attribute always being -1 is a bug,
-		 * seen in FTL 1.01-1.5.10. It should be extinguishmentProgress.
+		 * This is a rapidly decrementing number, as a fire disappears in a puff
+		 * of smoke. When not set, this is -1.
 		 *
-		 * @param n always -1?
+		 * Starving a fire of oxygen does not affect its health.
+		 *
+		 * In FTL 1.01-1.5.10 this always seemed to be -1. In FTL 1.5.13, other
+		 * values were finally observed.
+		 *
+		 * Observed values: -1 (almost always), 9,8,7,6,5,2,1,0.
 		 */
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public int getUnknownGamma() { return unknownGamma; }
+		public void setExtinguishmentProgress( int n ) { extinguishmentProgress = n; }
+		public int getExtinguishmentProgress() { return extinguishmentProgress; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Fire HP: %3d, Ignition: %3d%%, Extinguishment: %2d\n", fireHealth, ignitionProgress, unknownGamma));
+			result.append(String.format("Fire HP: %3d, Ignition: %3d%%, Extinguishment: %2d\n", fireHealth, ignitionProgress, extinguishmentProgress));
 
 			return result.toString();
 		}
