@@ -3719,6 +3719,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets time elapsed waiting for the lockdown ability to recharge.
 		 *
+		 * In 1.5.13, this was observed at 50000 when the game started.
+		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
 		 * @param n a positive int less than, or equal to, the goal (0 when not charging)
@@ -3732,6 +3734,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Sets the ticks needed to recharge the lockdown ability.
 		 *
 		 * This is normally 50000 while charging, 0 otherwise.
+		 *
+		 * In 1.5.13, this was observed at 50000 when the game started.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
@@ -3897,6 +3901,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int temporaryCapacityDivisor = 1;
 
 
+		/**
+		 * Constructor.
+		 */
 		public SystemState( SystemType systemType ) {
 			this.systemType = systemType;
 		}
@@ -4660,7 +4667,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("WeaponId:       %s\n", weaponId));
 			result.append(String.format("Armed:          %b\n", armed));
-			result.append(String.format("Cooldown Ticks: %2d (max: %-2s) (Not used as of FTL 1.5.4.)\n", cooldownTicks, cooldownString));
+			result.append(String.format("Cooldown Ticks: %2d (max: %2s) (Not used as of FTL 1.5.4)\n", cooldownTicks, cooldownString));
 
 			return result.toString();
 		}
@@ -4839,8 +4846,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		private StoreState store = null;
 
-		// TODO: Make 'visited' an enum.
-
 		// Randomly generated events at unvisited beacons are not
 		// stored in the beacons themselves. They're tentatively
 		// placed on the sector map in-game, and any that would
@@ -4903,17 +4908,15 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 */
 		public void setBgSpritePosX( int n ) { bgSpritePosX = n; }
 		public void setBgSpritePosY( int n ) { bgSpritePosY = n; }
-
 		public int getBgSpritePosX() { return bgSpritePosX; }
 		public int getBgSpritePosY() { return bgSpritePosY; }
 
 		/**
 		 * Sets the rotation of the background sprite image.
 		 *
-		 * When the sprite's inner path is "NONE",
-		 * this should be 0.
+		 * When the sprite's inner path is "NONE", this should be 0.
 		 *
-		 * @param n positive degrees clockwise
+		 * @param n degrees clockwise (may be negative)
 		 */
 		public void setBgSpriteRotation( int n ) { bgSpriteRotation = n; }
 		public int getBgSpriteRotation() { return bgSpriteRotation; }
@@ -4984,6 +4987,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setStore( StoreState storeState ) { store = storeState; }
 		public StoreState getStore() { return store; }
 
+
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
@@ -5010,6 +5014,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Under Attack:          %5b\n", underAttack));
 
 			if ( store != null ) {
+				result.append("\nStore...\n");
 				result.append( store.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
 			}
 
@@ -5035,6 +5040,21 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * crashes the game. So writeBeacon() will add a dummy shelf.
 		 */
 		public StoreState() {
+		}
+
+		/**
+		 * Copy constructor.
+		 *
+		 * Each StoreShelf will be copy-constructed as well.
+		 */
+		public StoreState( StoreState srcStore ) {
+			fuel = srcStore.getFuel();
+			missiles = srcStore.getMissiles();
+			droneParts = srcStore.getDroneParts();
+
+			for ( StoreShelf srcShelf : srcStore.getShelfList() ) {
+				addShelf( new StoreShelf( srcShelf ) );
+			}
 		}
 
 		public void setFuel( int n ) { fuel = n; }
@@ -7435,7 +7455,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * This is a constant, at least for a given WeaponBlueprint.
+		 * This is always 1000.
 		 */
 		public void setUnknownGamma( int n ) { unknownGamma = n; }
 		public int getUnknownGamma() { return unknownGamma; }
@@ -7499,20 +7519,40 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Unknown.
-		 *
-		 * These booleans are constant, at least for a given WeaponBlueprint.
 		 */
 		public void setUnknownIota( boolean b ) { unknownIota = b; }
-		public void setUnknownKappa( boolean b ) { unknownKappa = b; }
-		public void setUnknownLambda( boolean b ) { unknownLambda = b; }
-		public void setUnknownMu( boolean b ) { unknownMu = b; }
-		public void setUnknownNu( boolean b ) { unknownNu = b; }
-
 		public boolean getUnknownIota() { return unknownIota; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Seems to be true only when the target ship's shields are down, and
+		 * the line will reach the swath without being blocked (even set while
+		 * pending).
+		 */
+		public void setUnknownKappa( boolean b ) { unknownKappa = b; }
 		public boolean getUnknownKappa() { return unknownKappa; }
+
+		/**
+		 * Unknown.
+		 */
+		public void setUnknownLambda( boolean b ) { unknownLambda = b; }
 		public boolean getUnknownLambda() { return unknownLambda; }
+
+		/**
+		 * Unknown.
+		 */
+		public void setUnknownMu( boolean b ) { unknownMu = b; }
 		public boolean getUnknownMu() { return unknownMu; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Might have to do with the line having hit crew?
+		 */
+		public void setUnknownNu( boolean b ) { unknownNu = b; }
 		public boolean getUnknownNu() { return unknownNu; }
+
 
 		@Override
 		public String toString() {
