@@ -40,6 +40,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSlider;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -52,7 +53,9 @@ import javax.swing.plaf.basic.BasicArrowButton;
 
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.parser.SavedGameParser.BeaconState;
 import net.blerf.ftl.parser.SavedGameParser.CrewType;
+import net.blerf.ftl.parser.SavedGameParser.FleetPresence;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
@@ -60,6 +63,7 @@ import net.blerf.ftl.ui.ImageUtilities;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.SectorMapLayout;
 import net.blerf.ftl.ui.SectorMapLayout.SectorMapConstraints;
+import net.blerf.ftl.ui.SpriteReference;
 import net.blerf.ftl.ui.StoreShelfPanel;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.ui.hud.SpriteSelector;
@@ -99,10 +103,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private FTLFrame frame;
 
-	private ArrayList<BeaconSprite> beaconSprites = new ArrayList<BeaconSprite>();
-	private ArrayList<StoreSprite> storeSprites = new ArrayList<StoreSprite>();
-	private ArrayList<QuestSprite> questSprites = new ArrayList<QuestSprite>();
-	private ArrayList<PlayerShipSprite> playerShipSprites = new ArrayList<PlayerShipSprite>();
+	private List<SpriteReference<BeaconState>> beaconRefs = new ArrayList<SpriteReference<BeaconState>>();
+
+	private List<BeaconSprite> beaconSprites = new ArrayList<BeaconSprite>();
+	private List<StoreSprite> storeSprites = new ArrayList<StoreSprite>();
+	private List<QuestSprite> questSprites = new ArrayList<QuestSprite>();
+	private List<PlayerShipSprite> playerShipSprites = new ArrayList<PlayerShipSprite>();
 
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
 
@@ -345,6 +351,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 			mapPanel.remove( playerShipSprite );
 		playerShipSprites.clear();
 
+		beaconRefs.clear();
+
 		if ( gameState == null ) {
 			mapPanel.revalidate();
 			mapViewport.repaint();
@@ -352,11 +360,14 @@ public class SavedGameSectorMapPanel extends JPanel {
 		}
 
 		int beaconId;
-		List<SavedGameParser.BeaconState> beaconStateList = gameState.getBeaconList();
+		List<BeaconState> beaconStateList = gameState.getBeaconList();
 
 		// Beacons.
-		for ( SavedGameParser.BeaconState beaconState : beaconStateList ) {
-			BeaconSprite beaconSprite = new BeaconSprite( beaconState );
+		for ( BeaconState beaconState : beaconStateList ) {
+			SpriteReference<BeaconState> beaconRef = new SpriteReference<BeaconState>( new BeaconState( beaconState ) );
+			beaconRefs.add( beaconRef );
+
+			BeaconSprite beaconSprite = new BeaconSprite( beaconRef );
 			SectorMapConstraints beaconC = new SectorMapConstraints( SectorMapConstraints.BEACON );
 			beaconSprites.add( beaconSprite );
 			mapPanel.add( beaconSprite, beaconC );
@@ -364,9 +375,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		// Stores.
 		beaconId = 0;
-		for ( SavedGameParser.BeaconState beaconState : beaconStateList ) {
-			if ( beaconState.getStore() != null ) {
-				StoreSprite storeSprite = new StoreSprite( beaconState.getStore() );
+		for ( SpriteReference<BeaconState> beaconRef : beaconRefs ) {
+			if ( beaconRef.get().getStore() != null ) {
+				StoreSprite storeSprite = new StoreSprite( beaconRef.get().getStore() );
 				SectorMapConstraints storeC = new SectorMapConstraints( SectorMapConstraints.MISC_BOX );
 				storeC.setBeaconId( beaconId );
 				storeSprites.add( storeSprite );
@@ -414,7 +425,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
 		if ( gameState == null ) return;
 
-		List<SavedGameParser.BeaconState> beaconStateList = gameState.getBeaconList();
+		List<BeaconState> beaconStateList = gameState.getBeaconList();
+		beaconStateList.clear();
 
 		// Player ship.
 		for ( PlayerShipSprite playerShipSprite : playerShipSprites ) {
@@ -424,42 +436,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		}
 
-		// Add N vanilla beacons all at once, to modify in any order.
-		beaconStateList.clear();
-		for (int i=0; i < beaconSprites.size(); i++) {
-			beaconStateList.add( new SavedGameParser.BeaconState() );
-		}
-
 		// Beacons.
-		for ( BeaconSprite beaconSprite : beaconSprites ) {
-			int beaconId = mapLayout.getBeaconId( beaconSprite );
-			if ( beaconId != -1 && beaconId < beaconStateList.size() ) {
-				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
-
-				if ( beaconSprite.getVisited() > 0 ) {
-					beaconState.setVisited( beaconSprite.getVisited() );
-					beaconState.setBgStarscapeImageInnerPath( beaconSprite.getBgStarscapeImageInnerPath() );
-					beaconState.setBgSpriteImageInnerPath( beaconSprite.getBgSpriteImageInnerPath() );
-					beaconState.setBgSpritePosX( beaconSprite.getBgSpritePosX() );
-					beaconState.setBgSpritePosY( beaconSprite.getBgSpritePosY() );
-					beaconState.setBgSpriteRotation( beaconSprite.getBgSpriteRotation() );
-				}
-
-				beaconState.setSeen( beaconSprite.isSeen() );
-
-				if ( beaconSprite.isEnemyPresent() ) {
-					beaconState.setEnemyPresent( true );
-					beaconState.setShipEventId( beaconSprite.getShipEventId() );
-					beaconState.setAutoBlueprintId( beaconSprite.getAutoBlueprintId() );
-					beaconState.setShipEventSeed( beaconSprite.getShipEventSeed() );
-				}
-
-				beaconState.setFleetPresence( beaconSprite.getFleetPresence() );
-				beaconState.setUnderAttack( beaconSprite.isUnderAttack() );
-			}
-			else {
-				log.error( "SectorMapPanel scrambled the beacon list!" );
-			}
+		for ( SpriteReference<BeaconState> beaconRef : beaconRefs ) {
+			beaconStateList.add( new BeaconState( beaconRef.get() ) );
 		}
 
 		// Stores.
@@ -476,7 +455,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 					storeState.addShelf( new SavedGameParser.StoreShelf( shelf ) );
 				}
 
-				SavedGameParser.BeaconState beaconState = beaconStateList.get( beaconId );
+				BeaconState beaconState = beaconStateList.get( beaconId );
 				beaconState.setStore( storeState );
 			}
 		}
@@ -515,7 +494,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof BeaconSprite ) {
-					showBeaconEditor( (BeaconSprite)sprite );
+					SpriteReference<BeaconState> beaconRef = ((BeaconSprite)sprite).getReference();
+					showBeaconEditor( beaconRef );
 				}
 				return true;
 			}
@@ -870,8 +850,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sidePanel.add( labelArea );
 	}
 
-	private void showBeaconEditor( final BeaconSprite beaconSprite ) {
-		final String VISITED = "Visited";
+	private void showBeaconEditor( final SpriteReference<BeaconState> beaconRef ) {
+		final String VISIT_COUNT = "Visit Count";
 		final String STARS_LIST = "Bkg List";
 		final String STARS_IMAGE = "Bkg Image";
 		final String SPRITE_LIST = "Sprite List";
@@ -890,11 +870,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final Map<String, BackgroundImageList> allImageListsMap = DataManager.get().getBackgroundImageLists();
 		final Map<String, ShipEvent> allShipEventsMap = DataManager.get().getShipEvents();
 
-		String title = String.format( "Beacon %02d", mapLayout.getBeaconId(beaconSprite) );
+		int beaconId = mapLayout.getBeaconId( beaconRef.getSprite( BeaconSprite.class ) );
+		String title = String.format( "Beacon %02d", beaconId );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
-		editorPanel.addRow( VISITED, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(VISITED).addMouseListener( new StatusbarMouseListener(frame, "The player has been here. Random events won't occur. (All nearby fields need values.)") );
+		editorPanel.addRow( VISIT_COUNT, FieldEditorPanel.ContentType.SPINNER );
+		editorPanel.getSpinnerField(VISIT_COUNT).addMouseListener( new StatusbarMouseListener(frame, "Number of times the player has been here. If visited, random events won't occur. (All nearby fields need values) Hit enter after typing.") );
 		editorPanel.addRow( STARS_LIST, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(STARS_LIST).setEnabled( false );
 		editorPanel.getCombo(STARS_LIST).addMouseListener( new StatusbarMouseListener(frame, "An image list from which to choose a background starscape. (BG_*)") );
@@ -920,11 +901,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getInt(SPRITE_ROT).addMouseListener( new StatusbarMouseListener(frame, "Background sprite rotation. (degrees, positive = clockwise)") );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( SEEN, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(SEEN).setSelected( beaconSprite.isSeen() );
 		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener(frame, "The player has been within one hop of this beacon.") );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( ENEMY_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(ENEMY_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "A ship is waiting at this beacon. (All nearby fields need values.)") );
+		editorPanel.getBoolean(ENEMY_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "A ship is waiting at this beacon. (All nearby fields need values)") );
 		editorPanel.addRow( SHIP_EVENT, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(SHIP_EVENT).setEnabled( false );
 		editorPanel.getCombo(SHIP_EVENT).addMouseListener( new StatusbarMouseListener(frame, "A ship event to trigger and forget upon arrival (spawning a new nearby ship).") );
@@ -941,13 +921,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.addRow( FLEET, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(FLEET).addMouseListener( new StatusbarMouseListener(frame, "Fleet background sprites.") );
 		editorPanel.addRow( UNDER_ATTACK, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconSprite.isUnderAttack() );
 		editorPanel.getBoolean(UNDER_ATTACK).addMouseListener( new StatusbarMouseListener(frame, "The beacon is under attack by rebels (flashing red).") );
-
-		editorPanel.getCombo(VISITED).addItem( "0 (Unvisited)" );
-		editorPanel.getCombo(VISITED).addItem( "1 (Visited)" );
-		editorPanel.getCombo(VISITED).addItem( "2 (???)" );
-		editorPanel.getCombo(VISITED).setSelectedIndex( 0 );
 
 		editorPanel.getCombo(STARS_LIST).addItem( "" );
 		editorPanel.getCombo(SPRITE_LIST).addItem( "" );
@@ -963,7 +937,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			editorPanel.getCombo(SHIP_EVENT).addItem( shipEvent );
 		}
 
-		if ( beaconSprite.getVisited() > 0 ) {
+		if ( beaconRef.get().getVisitCount() > 0 ) {
 			editorPanel.getCombo(STARS_LIST).setEnabled( true );
 			editorPanel.getCombo(STARS_IMAGE).setEnabled( true );
 			editorPanel.getCombo(SPRITE_LIST).setEnabled( true );
@@ -972,53 +946,55 @@ public class SavedGameSectorMapPanel extends JPanel {
 			editorPanel.getInt(SPRITE_Y).setEnabled( true );
 			editorPanel.getInt(SPRITE_ROT).setEnabled( true );
 
-			editorPanel.getCombo(VISITED).setSelectedIndex( beaconSprite.getVisited() );
+			editorPanel.getSpinner(VISIT_COUNT).setValue( new Integer( beaconRef.get().getVisitCount() ) );
 
-			editorPanel.getCombo(STARS_IMAGE).addItem( beaconSprite.getBgStarscapeImageInnerPath() );
-			editorPanel.getCombo(STARS_IMAGE).setSelectedItem( beaconSprite.getBgStarscapeImageInnerPath() );
+			editorPanel.getCombo(STARS_IMAGE).addItem( beaconRef.get().getBgStarscapeImageInnerPath() );
+			editorPanel.getCombo(STARS_IMAGE).setSelectedItem( beaconRef.get().getBgStarscapeImageInnerPath() );
 
-			editorPanel.getCombo(SPRITE_IMAGE).addItem( beaconSprite.getBgSpriteImageInnerPath() );
-			editorPanel.getCombo(SPRITE_IMAGE).setSelectedItem( beaconSprite.getBgSpriteImageInnerPath() );
+			editorPanel.getCombo(SPRITE_IMAGE).addItem( beaconRef.get().getBgSpriteImageInnerPath() );
+			editorPanel.getCombo(SPRITE_IMAGE).setSelectedItem( beaconRef.get().getBgSpriteImageInnerPath() );
 
-			editorPanel.getInt(SPRITE_X).setText( ""+ beaconSprite.getBgSpritePosX() );
-			editorPanel.getInt(SPRITE_Y).setText( ""+ beaconSprite.getBgSpritePosY() );
-			editorPanel.getInt(SPRITE_ROT).setText( ""+ beaconSprite.getBgSpriteRotation() );
+			editorPanel.getInt(SPRITE_X).setText( ""+ beaconRef.get().getBgSpritePosX() );
+			editorPanel.getInt(SPRITE_Y).setText( ""+ beaconRef.get().getBgSpritePosY() );
+			editorPanel.getInt(SPRITE_ROT).setText( ""+ beaconRef.get().getBgSpriteRotation() );
 		}
 
-		if ( beaconSprite.isEnemyPresent() ) {
+		editorPanel.getBoolean(SEEN).setSelected( beaconRef.get().isSeen() );
+
+		if ( beaconRef.get().isEnemyPresent() ) {
 			editorPanel.getCombo(SHIP_EVENT).setEnabled( true );
 			editorPanel.getString(AUTO_SHIP).setEnabled( true );
 			editorPanel.getInt(SHIP_EVENT_SEED).setEnabled( true );
 
 			editorPanel.getBoolean(ENEMY_PRESENT).setSelected( true );
 
-			ShipEvent currentShipEvent = allShipEventsMap.get( beaconSprite.getShipEventId() );
+			ShipEvent currentShipEvent = allShipEventsMap.get( beaconRef.get().getShipEventId() );
 			if ( currentShipEvent != null )
 				editorPanel.getCombo(SHIP_EVENT).setSelectedItem( currentShipEvent );
 
-			editorPanel.getString(AUTO_SHIP).setText( beaconSprite.getAutoBlueprintId() );
+			editorPanel.getString(AUTO_SHIP).setText( beaconRef.get().getAutoBlueprintId() );
 
-			editorPanel.getInt(SHIP_EVENT_SEED).setText( ""+ beaconSprite.getShipEventSeed() );
+			editorPanel.getInt(SHIP_EVENT_SEED).setText( ""+ beaconRef.get().getShipEventSeed() );
 		}
 
-		for ( SavedGameParser.FleetPresence fleetPresence : SavedGameParser.FleetPresence.values() ) {
+		for ( FleetPresence fleetPresence : FleetPresence.values() ) {
 			editorPanel.getCombo(FLEET).addItem( fleetPresence );
 		}
-		editorPanel.getCombo(FLEET).setSelectedItem( beaconSprite.getFleetPresence() );
+		editorPanel.getCombo(FLEET).setSelectedItem( beaconRef.get().getFleetPresence() );
 
-		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconSprite.isUnderAttack() );
+		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconRef.get().isUnderAttack() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
 				String newString;
 
+				int visitCount = 0;
 				String bgStarscapeImageInnerPath = null;
 				String bgSpriteImageInnerPath = null;
 				int bgSpritePosX = 0;
 				int bgSpritePosY = 0;
 				int bgSpriteRotation = 0;
-				int visited = editorPanel.getCombo(VISITED).getSelectedIndex();
 
 				Object bgStarscapeImageInnerPathObj = editorPanel.getCombo(STARS_IMAGE).getSelectedItem();
 				if ( bgStarscapeImageInnerPathObj instanceof BackgroundImage ) {
@@ -1038,17 +1014,16 @@ public class SavedGameSectorMapPanel extends JPanel {
 						bgSpriteImageInnerPath = (String)bgSpriteImageInnerPathObj;
 				}
 
-				newString = editorPanel.getInt(SPRITE_X).getText();
-				try { bgSpritePosX = Integer.parseInt(newString); }
-				catch (NumberFormatException e) {}
+				visitCount = editorPanel.parseSpinnerInt(VISIT_COUNT);
 
-				newString = editorPanel.getInt(SPRITE_Y).getText();
-				try { bgSpritePosY = Integer.parseInt(newString); }
-				catch (NumberFormatException e) {}
+				try { bgSpritePosX = editorPanel.parseInt(SPRITE_X); }
+				catch ( NumberFormatException e ) {}
 
-				newString = editorPanel.getInt(SPRITE_ROT).getText();
-				try { bgSpriteRotation = Integer.parseInt(newString); }
-				catch (NumberFormatException e) {}
+				try { bgSpritePosY = editorPanel.parseInt(SPRITE_Y); }
+				catch ( NumberFormatException e ) {}
+
+				try { bgSpriteRotation = editorPanel.parseInt(SPRITE_ROT); }
+				catch ( NumberFormatException e ) {}
 
 				if ( "NONE".equals(bgSpriteImageInnerPath) ) {
 					bgSpritePosX = 0;
@@ -1056,23 +1031,23 @@ public class SavedGameSectorMapPanel extends JPanel {
 					bgSpriteRotation = 0;
 				}
 
-				if ( visited > 0 && bgStarscapeImageInnerPath != null && bgSpriteImageInnerPath != null ) {
-					beaconSprite.setVisited( visited );
-					beaconSprite.setBgStarscapeImageInnerPath( bgStarscapeImageInnerPath );
-					beaconSprite.setBgSpriteImageInnerPath( bgSpriteImageInnerPath );
-					beaconSprite.setBgSpritePosX( bgSpritePosX );
-					beaconSprite.setBgSpritePosY( bgSpritePosY );
-					beaconSprite.setBgSpriteRotation( bgSpriteRotation );
+				if ( visitCount > 0 && bgStarscapeImageInnerPath != null && bgSpriteImageInnerPath != null ) {
+					beaconRef.get().setVisitCount( visitCount );
+					beaconRef.get().setBgStarscapeImageInnerPath( bgStarscapeImageInnerPath );
+					beaconRef.get().setBgSpriteImageInnerPath( bgSpriteImageInnerPath );
+					beaconRef.get().setBgSpritePosX( bgSpritePosX );
+					beaconRef.get().setBgSpritePosY( bgSpritePosY );
+					beaconRef.get().setBgSpriteRotation( bgSpriteRotation );
 				} else {
-					beaconSprite.setVisited( visited );
-					beaconSprite.setBgStarscapeImageInnerPath( null );
-					beaconSprite.setBgSpriteImageInnerPath( null );
-					beaconSprite.setBgSpritePosX( -1 );
-					beaconSprite.setBgSpritePosY( -1 );
-					beaconSprite.setBgSpriteRotation( 0 );
+					beaconRef.get().setVisitCount( visitCount );
+					beaconRef.get().setBgStarscapeImageInnerPath( null );
+					beaconRef.get().setBgSpriteImageInnerPath( null );
+					beaconRef.get().setBgSpritePosX( -1 );
+					beaconRef.get().setBgSpritePosY( -1 );
+					beaconRef.get().setBgSpriteRotation( 0 );
 				}
 
-				beaconSprite.setSeen( editorPanel.getBoolean(SEEN).isSelected() );
+				beaconRef.get().setSeen( editorPanel.getBoolean(SEEN).isSelected() );
 
 				String shipEventId = null;
 				String autoBlueprintId = null;
@@ -1090,21 +1065,21 @@ public class SavedGameSectorMapPanel extends JPanel {
 				catch (NumberFormatException e) {}
 
 				if ( enemyPresent && shipEventId != null && autoBlueprintId.length() > 0 && !"null".equals(autoBlueprintId) ) {
-					beaconSprite.setEnemyPresent( true );
-					beaconSprite.setShipEventId( shipEventId );
-					beaconSprite.setAutoBlueprintId( autoBlueprintId );
-					beaconSprite.setShipEventSeed( shipEventSeed );
+					beaconRef.get().setEnemyPresent( true );
+					beaconRef.get().setShipEventId( shipEventId );
+					beaconRef.get().setAutoBlueprintId( autoBlueprintId );
+					beaconRef.get().setShipEventSeed( shipEventSeed );
 				} else {
-					beaconSprite.setEnemyPresent( false );
-					beaconSprite.setShipEventId( null );
-					beaconSprite.setAutoBlueprintId( null );
-					beaconSprite.setShipEventSeed( 0 );
+					beaconRef.get().setEnemyPresent( false );
+					beaconRef.get().setShipEventId( null );
+					beaconRef.get().setAutoBlueprintId( null );
+					beaconRef.get().setShipEventSeed( 0 );
 				}
 
-				beaconSprite.setFleetPresence( (SavedGameParser.FleetPresence)editorPanel.getCombo(FLEET).getSelectedItem() );
-				beaconSprite.setUnderAttack( editorPanel.getBoolean(UNDER_ATTACK).isSelected() );
+				beaconRef.get().setFleetPresence( (FleetPresence)editorPanel.getCombo(FLEET).getSelectedItem() );
+				beaconRef.get().setUnderAttack( editorPanel.getBoolean(UNDER_ATTACK).isSelected() );
 
-				beaconSprite.makeSane();
+				beaconRef.fireReferenceChange();
 
 				clearSidePanel();
 			}
@@ -1112,7 +1087,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 		createSidePanel( title, editorPanel, null, applyCallback );
 
 		ActionListener beaconListener = new ActionListener() {
-			private JComboBox visitedCombo = editorPanel.getCombo(VISITED);
 			private JComboBox starsListCombo = editorPanel.getCombo(STARS_LIST);
 			private JComboBox starsImageCombo = editorPanel.getCombo(STARS_IMAGE);
 			private JComboBox spriteListCombo = editorPanel.getCombo(SPRITE_LIST);
@@ -1130,27 +1104,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				boolean resize = false;
-				if ( source == visitedCombo ) {
-					int visited = visitedCombo.getSelectedIndex();
-					if ( visited == 0 ) {
-						starsListCombo.setSelectedItem( "" );
-						spriteListCombo.setSelectedItem( "" );
-						starsImageCombo.setSelectedItem( "" );
-						spriteImageCombo.setSelectedItem( "" );
-						spriteXField.setText( "" );
-						spriteYField.setText( "" );
-						spriteRotField.setText( "0" );
-					}
 
-					starsListCombo.setEnabled( (visited > 0) );
-					starsImageCombo.setEnabled( (visited > 0) );
-					spriteListCombo.setEnabled( (visited > 0) );
-					spriteImageCombo.setEnabled( (visited > 0) );
-					spriteXField.setEnabled( (visited > 0) );
-					spriteYField.setEnabled( (visited > 0) );
-					spriteRotField.setEnabled( (visited > 0) );
-				}
-				else if ( source == starsListCombo ) {
+				if ( source == starsListCombo ) {
 					Object imageListObj = starsListCombo.getSelectedItem();
 					starsImageCombo.removeAllItems();
 					starsImageCombo.addItem( "" );
@@ -1198,15 +1153,52 @@ public class SavedGameSectorMapPanel extends JPanel {
 				}
 			}
 		};
-		editorPanel.getCombo(VISITED).addActionListener( beaconListener );
 		editorPanel.getCombo(STARS_LIST).addActionListener( beaconListener );
 		editorPanel.getCombo(SPRITE_LIST).addActionListener( beaconListener );
 		editorPanel.getBoolean(ENEMY_PRESENT).addActionListener( beaconListener );
 		editorPanel.getCombo(SHIP_EVENT).addActionListener( beaconListener );
 
+		ChangeListener visitListener = new ChangeListener() {
+			private JSpinner visitCountSpinner = editorPanel.getSpinner(VISIT_COUNT);
+			private JComboBox starsListCombo = editorPanel.getCombo(STARS_LIST);
+			private JComboBox starsImageCombo = editorPanel.getCombo(STARS_IMAGE);
+			private JComboBox spriteListCombo = editorPanel.getCombo(SPRITE_LIST);
+			private JComboBox spriteImageCombo = editorPanel.getCombo(SPRITE_IMAGE);
+			private JTextField spriteXField = editorPanel.getInt(SPRITE_X);
+			private JTextField spriteYField = editorPanel.getInt(SPRITE_Y);
+			private JTextField spriteRotField = editorPanel.getInt(SPRITE_ROT);
+
+			@Override
+			public void stateChanged( ChangeEvent e ) {
+				Object source = e.getSource();
+				boolean resize = false;
+
+				if ( source == visitCountSpinner ) {
+					int visitCount = editorPanel.parseSpinnerInt(VISIT_COUNT);
+					if ( visitCount == 0 ) {
+						starsListCombo.setSelectedItem( "" );
+						spriteListCombo.setSelectedItem( "" );
+						starsImageCombo.setSelectedItem( "" );
+						spriteImageCombo.setSelectedItem( "" );
+						spriteXField.setText( "" );
+						spriteYField.setText( "" );
+						spriteRotField.setText( "0" );
+					}
+					starsListCombo.setEnabled( (visitCount > 0) );
+					starsImageCombo.setEnabled( (visitCount > 0) );
+					spriteListCombo.setEnabled( (visitCount > 0) );
+					spriteImageCombo.setEnabled( (visitCount > 0) );
+					spriteXField.setEnabled( (visitCount > 0) );
+					spriteYField.setEnabled( (visitCount > 0) );
+					spriteRotField.setEnabled( (visitCount > 0) );
+				}
+			}
+		};
+		editorPanel.getSpinner(VISIT_COUNT).addChangeListener( visitListener );
+
 		addSidePanelSeparator(6);
 
-		JButton visitBtn = new JButton("Visit");
+		JButton visitBtn = new JButton( "Visit" );
 		visitBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
 		visitBtn.addMouseListener( new StatusbarMouseListener(frame, "Mark this beacon as visited, using random images.") );
 		sidePanel.add(visitBtn);
@@ -1229,8 +1221,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 					randomImages[i] = defaultLists[i].getImages().get( (int)(Math.random()*defaultLists[i].getImages().size()) );
 				}
 
-				if ( editorPanel.getCombo(VISITED).getSelectedIndex() == 0 )
-					editorPanel.getCombo(VISITED).setSelectedIndex( 1 );
+				if ( editorPanel.parseSpinnerInt(VISIT_COUNT) == 0 ) {
+					editorPanel.getSpinner(VISIT_COUNT).setValue( new Integer( 1 ) );
+				}
 
 				for ( int i=0; i < listCombos.length; i++ ) {
 					editorPanel.getCombo(listCombos[i]).setSelectedItem( defaultLists[i] );
@@ -1321,11 +1314,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 		JPanel shelfCtrlPanel = new JPanel();
 		shelfCtrlPanel.setLayout( new BoxLayout(shelfCtrlPanel, BoxLayout.X_AXIS) );
 		JButton shelfRemBtn = new JButton( "-1 Shelf" );
-		shelfRemBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove a shelf. (FTL 1.01-1.03.3 is limited to two shelves.)") );
+		shelfRemBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove a shelf. (FTL 1.01-1.03.3 is limited to two shelves)") );
 		shelfCtrlPanel.add( shelfRemBtn );
 		shelfCtrlPanel.add( Box.createRigidArea( new Dimension(15, 1)) );
 		JButton shelfAddBtn = new JButton( "+1 Shelf" );
-		shelfAddBtn.addMouseListener( new StatusbarMouseListener(frame, "Add a shelf. (FTL 1.01-1.03.3 is limited to two shelves.)") );
+		shelfAddBtn.addMouseListener( new StatusbarMouseListener(frame, "Add a shelf. (FTL 1.01-1.03.3 is limited to two shelves)") );
 		shelfCtrlPanel.add( shelfAddBtn );
 		extraPanel.add( shelfCtrlPanel );
 
@@ -1533,112 +1526,36 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 
 
-	public class BeaconSprite extends JComponent {
-		private int visited = 0;
-		private String bgStarscapeImageInnerPath = null;
-		private String bgSpriteImageInnerPath = null;
-		private int bgSpritePosX = -1;
-		private int bgSpritePosY = -1;
-		private int bgSpriteRotation = 0;
-
-		private boolean seen = false;
-
-		private boolean enemyPresent = false;
-		private String shipEventId = null;
-		private String autoBlueprintId = null;
-		private int shipEventSeed = 0;
-
-		private SavedGameParser.FleetPresence fleetPresence = SavedGameParser.FleetPresence.NONE;
-		private boolean underAttack = false;
+	public class BeaconSprite extends JComponent implements ReferenceSprite<BeaconState> {
 		private BufferedImage currentImage = null;
 
-		public BeaconSprite( SavedGameParser.BeaconState beaconState ) {
-			if ( beaconState != null ) {
-				visited = beaconState.getVisited();
-				bgStarscapeImageInnerPath = beaconState.getBgStarscapeImageInnerPath();
-				bgSpriteImageInnerPath = beaconState.getBgSpriteImageInnerPath();
-				bgSpritePosX = beaconState.getBgSpritePosX();
-				bgSpritePosY = beaconState.getBgSpritePosY();
-				bgSpriteRotation = beaconState.getBgSpriteRotation();
+		private SpriteReference<BeaconState> beaconRef;
 
-				seen = beaconState.isSeen();
 
-				enemyPresent = beaconState.isEnemyPresent();
-				shipEventId = beaconState.getShipEventId();
-				autoBlueprintId = beaconState.getAutoBlueprintId();
-				shipEventSeed = beaconState.getShipEventSeed();
+		public BeaconSprite( SpriteReference<BeaconState> beaconRef ) {
+			this.beaconRef = beaconRef;
 
-				fleetPresence = beaconState.getFleetPresence();
-				underAttack = beaconState.isUnderAttack();
-			}
-			makeSane();
+			beaconRef.addSprite( this );
+			referenceChanged();
 		}
 
-		public int getVisited() { return visited; }
-		public String getBgStarscapeImageInnerPath() { return bgStarscapeImageInnerPath; }
-		public String getBgSpriteImageInnerPath() { return bgSpriteImageInnerPath; }
-		public int getBgSpritePosX() { return bgSpritePosX; }
-		public int getBgSpritePosY() { return bgSpritePosY; }
-		public int getBgSpriteRotation() { return bgSpriteRotation; }
-		public boolean isSeen() { return seen; }
-		public boolean isEnemyPresent() { return enemyPresent; }
-		public String getShipEventId() { return shipEventId; }
-		public String getAutoBlueprintId() { return autoBlueprintId; }
-		public int getShipEventSeed() { return shipEventSeed; }
-		public SavedGameParser.FleetPresence getFleetPresence() { return fleetPresence; }
-		public boolean isUnderAttack() { return underAttack; }
+		@Override
+		public SpriteReference<BeaconState> getReference() {
+			return beaconRef;
+		}
 
-		public void setVisited( int n ) { visited = n; }
-		public void setBgStarscapeImageInnerPath( String s ) { bgStarscapeImageInnerPath = s; }
-		public void setBgSpriteImageInnerPath( String s ) { bgSpriteImageInnerPath = s; }
-		public void setBgSpritePosX( int n ) { bgSpritePosX = n; }
-		public void setBgSpritePosY( int n ) { bgSpritePosY = n; }
-		public void setBgSpriteRotation( int n ) { bgSpriteRotation = n; }
-		public void setSeen( boolean b ) { seen = b; }
-		public void setEnemyPresent( boolean b ) { enemyPresent = b; }
-		public void setShipEventId( String s ) { shipEventId = s; }
-		public void setAutoBlueprintId( String s ) { autoBlueprintId = s; }
-		public void setShipEventSeed( int n ) { shipEventSeed = n; }
-		public void setFleetPresence( SavedGameParser.FleetPresence fp ) { fleetPresence = fp; }
-		public void setUnderAttack( boolean b ) { underAttack = b; }
-
-		public void makeSane() {
-			if ( visited > 0 && (bgStarscapeImageInnerPath == null || bgSpriteImageInnerPath == null) ) {
-				visited = 0;
-			}
-			if ( visited == 0 ) {
-				bgStarscapeImageInnerPath = null;
-				bgSpriteImageInnerPath = null;
-				bgSpritePosX = -1;
-				bgSpritePosY = -1;
-				bgSpriteRotation = 0;
-			}
-			if ( "NONE".equals(bgSpriteImageInnerPath) ) {
-				bgSpritePosX = 0;
-				bgSpritePosY = 0;
-				bgSpriteRotation = 0;
-			}
-
-			if ( enemyPresent && (shipEventId == null || autoBlueprintId == null) ) {
-				enemyPresent = false;
-			}
-			if ( enemyPresent == false ) {
-				enemyPresent = false;
-				shipEventId = null;
-				autoBlueprintId = null;
-				shipEventSeed = 0;
-			}
-
-			if ( fleetPresence == SavedGameParser.FleetPresence.REBEL ) {
+		@Override
+		public void referenceChanged() {
+			if ( FleetPresence.REBEL.equals( beaconRef.get().getFleetPresence() ) ) {
 				currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_warning.png", -1*32, -1*32, cachedImages );
 			}
-			else if ( visited > 0 ) {
+			else if ( beaconRef.get().getVisitCount() > 0 ) {
 				currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_diamond_blue.png", -1*32, -1*32, cachedImages );
 			}
 			else {
 				currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_diamond_yellow.png", -1*32, -1*32, cachedImages );
 			}
-			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
+			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
 		}
 
 		@Override
@@ -1648,7 +1565,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			Graphics2D g2d = (Graphics2D)g;
 
 			// If under attack, paint a 24x24 red (#AA2D1F) circle.
-			if ( underAttack ) {
+			if ( beaconRef.get().isUnderAttack() ) {
 				g2d.setColor( new Color(170, 45, 31) );
 				int diameter = 24;
 				g2d.fill( new Ellipse2D.Double(this.getWidth()/2-diameter/2, this.getHeight()/2-diameter/2, diameter, diameter) );

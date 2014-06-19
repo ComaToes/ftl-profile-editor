@@ -1232,10 +1232,8 @@ public class SavedGameParser extends Parser {
 	private BeaconState readBeacon( InputStream in, int headerAlpha ) throws IOException {
 		BeaconState beacon = new BeaconState();
 
-		// TODO: Visited looked like a bool until 1.5.4; the base beacon has "2" when visited.
-		int visited = readInt(in);
-		beacon.setVisited( visited );
-		if ( visited > 0 ) {
+		beacon.setVisitCount( readInt(in) );
+		if ( beacon.getVisitCount() > 0 ) {
 			beacon.setBgStarscapeImageInnerPath( readString(in) );
 			beacon.setBgSpriteImageInnerPath( readString(in) );
 			beacon.setBgSpritePosX( readInt(in) );
@@ -1290,9 +1288,8 @@ public class SavedGameParser extends Parser {
 	}
 
 	public void writeBeacon( OutputStream out, BeaconState beacon, int headerAlpha ) throws IOException {
-		// FTL 1.01-1.03.3 might only allow visited to be 0 or 1.
-		writeInt( out, beacon.getVisited() );
-		if ( beacon.getVisited() > 0 ) {
+		writeInt( out, beacon.getVisitCount() );
+		if ( beacon.getVisitCount() > 0 ) {
 			writeString( out, beacon.getBgStarscapeImageInnerPath() );
 			writeString( out, beacon.getBgSpriteImageInnerPath() );
 			writeInt( out, beacon.getBgSpritePosX() );
@@ -4209,23 +4206,27 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("SystemId:              %s\n", systemType.getId()));
 			if (capacity > 0) {
-				result.append(String.format("SystemId:              %s\n", systemType.getId()));
-				result.append(String.format("Power:                  %d/%d\n", power, capacity));
-				result.append(String.format("Damaged Bars:          %3d\n", damagedBars));
-				result.append(String.format("Ionized Bars:          %3d\n", ionizedBars));
-				result.append(String.format("Repair Progress:       %3d%%\n", repairProgress));
-				result.append(String.format("Damage Progress:       %3d%%\n", damageProgress));
-				result.append(String.format("Deionization Ticks:    %s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ));
-				result.append(String.format("Battery Power:         %3d\n", batteryPower));
-				result.append(String.format("Hack Level:            %3d\n", hackLevel));
+				result.append(String.format("Capacity:                %3d\n", capacity));
+				result.append(String.format("Power:                   %3d\n", power));
+				result.append(String.format("Damaged Bars:            %3d\n", damagedBars));
+				result.append(String.format("Ionized Bars:            %3d\n", ionizedBars));
+				result.append(String.format("Repair Progress:         %3d%%\n", repairProgress));
+				result.append(String.format("Damage Progress:         %3d%%\n", damageProgress));
+				result.append(String.format("Deionization Ticks:    %5s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ));
+				result.append(String.format("Battery Power:           %3d\n", batteryPower));
+				result.append(String.format("Hack Level:              %3d\n", hackLevel));
 				result.append(String.format("Hacked:                %5b\n", hacked));
-				result.append(String.format("Temp Capacity Cap:     %3d\n", temporaryCapacityCap));
-				result.append(String.format("Temp Capacity Loss:    %3d\n", temporaryCapacityLoss));
-				result.append(String.format("Temp Capacity Divisor: %3d\n", temporaryCapacityDivisor));
-			} else {
-				result.append(String.format("%s: N/A\n", systemType.getId()));
+				result.append(String.format("Temp Capacity Cap:     %5d\n", temporaryCapacityCap));
+				result.append(String.format("Temp Capacity Loss:      %3d\n", temporaryCapacityLoss));
+				result.append(String.format("Temp Capacity Divisor:   %3d\n", temporaryCapacityDivisor));
 			}
+			else {
+				result.append(String.format("(Not installed)\n"));
+			}
+
 			return result.toString();
 		}
 	}
@@ -4827,7 +4828,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	}
 
 	public static class BeaconState {
-		private int visited = 0;
+		private int visitCount = 0;
 		private String bgStarscapeImageInnerPath = null;
 		private String bgSpriteImageInnerPath = null;
 		private int bgSpritePosX = -1, bgSpritePosY = -1;
@@ -4855,25 +4856,48 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		// sector layout seed.
 
 
+		/**
+		 * Constructor.
+		 */
 		public BeaconState() {
 		}
 
 		/**
-		 * Sets whether the player has been to this beacon.
+		 * Copy constructor.
+		 *
+		 * Any store will be copy-constructed as well.
+		 */
+		public BeaconState( BeaconState srcBeacon ) {
+			visitCount = srcBeacon.getVisitCount();
+			bgStarscapeImageInnerPath = srcBeacon.getBgStarscapeImageInnerPath();
+			bgSpriteImageInnerPath = srcBeacon.getBgStarscapeImageInnerPath();
+			bgSpritePosX = srcBeacon.getBgSpritePosX();
+			bgSpritePosY = srcBeacon.getBgSpritePosY();
+			bgSpriteRotation = srcBeacon.getBgSpriteRotation();
+			seen = srcBeacon.isSeen();
+			enemyPresent = srcBeacon.isEnemyPresent();
+			shipEventId = srcBeacon.getShipEventId();
+			autoBlueprintId = srcBeacon.getAutoBlueprintId();
+			shipEventSeed = srcBeacon.getShipEventSeed();
+			fleetPresence = srcBeacon.getFleetPresence();
+			underAttack = srcBeacon.isUnderAttack();
+
+			if ( srcBeacon.getStore() != null ) {
+				store = new StoreState( srcBeacon.getStore() );
+			}
+		}
+
+		/**
+		 * Sets the number of times the player has arrived at this beacon.
 		 *
 		 * If non-zero, starscape and sprite paths must be set,
 		 * as well as the sprite's X, Y, and rotation.
 		 *
 		 * When non-zero, this prevents randomly generated events
 		 * from triggering. The sector exit will still exist.
-		 *
-		 * Values:
-		 *   0 = Unvisited
-		 *   1 = Visited
-		 *   2 = ??? (Seen on the base beacon in sector 8 in FTL 1.5.4)
 		 */
-		public void setVisited( int n ) { visited = n; }
-		public int getVisited() { return visited; }
+		public void setVisitCount( int n ) { visitCount = n; }
+		public int getVisitCount() { return visitCount; }
 
 		/**
 		 * Sets a fullscreen starscape image for the background.
@@ -4992,8 +5016,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Visited:               %5d\n", visited));
-			if ( visited > 0 ) {
+			result.append(String.format("Visit Count:           %5d\n", visitCount));
+			if ( visitCount > 0 ) {
 				result.append(String.format("  Bkg Starscape:       %s\n", bgStarscapeImageInnerPath));
 				result.append(String.format("  Bkg Sprite:          %s\n", bgSpriteImageInnerPath));
 				result.append(String.format("  Bkg Sprite Position:   %3d,%3d\n", bgSpritePosX, bgSpritePosY));
