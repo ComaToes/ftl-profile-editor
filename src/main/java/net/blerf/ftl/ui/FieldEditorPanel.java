@@ -6,6 +6,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -13,11 +14,15 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SpinnerModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -29,25 +34,27 @@ import org.apache.logging.log4j.Logger;
 
 
 public class FieldEditorPanel extends JPanel {
-	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO };
+	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO, SPINNER };
 
 	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
 
-	private HashMap<String, JTextArea> wrappedLabelMap = new HashMap<String, JTextArea>();
-	private HashMap<String, JLabel> labelMap = new HashMap<String, JLabel>();
-	private HashMap<String, JTextField> stringMap = new HashMap<String, JTextField>();
-	private HashMap<String, JTextField> intMap = new HashMap<String, JTextField>();
-	private HashMap<String, JCheckBox> boolMap = new HashMap<String, JCheckBox>();
-	private HashMap<String, JSlider> sliderMap = new HashMap<String, JSlider>();
-	private HashMap<String, JComboBox> comboMap = new HashMap<String, JComboBox>();
-	private HashMap<String, JLabel> reminderMap = new HashMap<String, JLabel>();
+	private Map<String, JTextArea> wrappedLabelMap = new HashMap<String, JTextArea>();
+	private Map<String, JLabel> labelMap = new HashMap<String, JLabel>();
+	private Map<String, JTextField> stringMap = new HashMap<String, JTextField>();
+	private Map<String, JTextField> intMap = new HashMap<String, JTextField>();
+	private Map<String, JCheckBox> boolMap = new HashMap<String, JCheckBox>();
+	private Map<String, JSlider> sliderMap = new HashMap<String, JSlider>();
+	private Map<String, JComboBox> comboMap = new HashMap<String, JComboBox>();
+	private Map<String, JSpinner> spinnerMap = new HashMap<String, JSpinner>();
+	private Map<String, JLabel> reminderMap = new HashMap<String, JLabel>();
 
 	private GridBagConstraints gridC = new GridBagConstraints();
 
-	private Component valueStrut = Box.createHorizontalStrut(120);
-	private Component reminderStrut = Box.createHorizontalStrut(90);
+	private Component valueStrut = Box.createHorizontalStrut( 120 );
+	private Component reminderStrut = Box.createHorizontalStrut( 90 );
 
 	private boolean remindersVisible;
+
 
 	public FieldEditorPanel( boolean remindersVisible ) {
 		super( new GridBagLayout() );
@@ -72,7 +79,7 @@ public class FieldEditorPanel extends JPanel {
 			gridC.gridy++;
 		}
 
-		gridC.insets = new Insets(2, 4, 2, 4);
+		gridC.insets = new Insets( 2, 4, 2, 4 );
 	}
 
 	public void setValueWidth( int width ) {
@@ -171,6 +178,15 @@ public class FieldEditorPanel extends JPanel {
 			comboMap.put( valueName, valueCombo );
 			this.add( valueCombo, gridC );
 		}
+		else if ( contentType == ContentType.SPINNER ) {
+			gridC.anchor = GridBagConstraints.WEST;
+			SpinnerNumberModel spinnerModel = new SpinnerNumberModel( 0, 0, null, 1 );
+			JSpinner valueSpinner = new JSpinner( spinnerModel );
+			JSpinner.NumberEditor spinnerEditor = new JSpinner.NumberEditor( valueSpinner, "#" );
+			valueSpinner.setEditor( spinnerEditor );
+			spinnerMap.put( valueName, valueSpinner );
+			this.add( valueSpinner, gridC );
+		}
 		gridC.gridx++;
 
 		if ( remindersVisible ) {
@@ -245,6 +261,15 @@ public class FieldEditorPanel extends JPanel {
 		if ( remindersVisible ) setReminder( valueName, s );
 	}
 
+	public void setSpinnerAndReminder( String valueName, Object o ) {
+		setSpinnerAndReminder( valueName, o, o.toString() );
+	}
+	public void setSpinnerAndReminder( String valueName, Object o, String s ) {
+		JSpinner valueSpinner = spinnerMap.get( valueName );
+		if ( valueSpinner != null ) valueSpinner.setValue(o);
+		if ( remindersVisible ) setReminder( valueName, s );
+	}
+
 	public void setReminder( String valueName, String s ) {
 		JLabel valueReminder = reminderMap.get( valueName );
 		if ( valueReminder != null ) valueReminder.setText( "( "+ s +" )" );
@@ -278,6 +303,22 @@ public class FieldEditorPanel extends JPanel {
 		return comboMap.get( valueName );
 	}
 
+	public JSpinner getSpinner( String valueName ) {
+		return spinnerMap.get( valueName );
+	}
+
+	/**
+	 * Returns the text field of a spinner.
+	 *
+	 * Use this only for spinners with an editor that is a subclass of
+	 * JSpinner.DefaultEditor.
+	 */
+	public JFormattedTextField getSpinnerField( String valueName ) {
+		JSpinner valueSpinner = getSpinner( valueName );
+		JSpinner.DefaultEditor editor = (JSpinner.NumberEditor)valueSpinner.getEditor();
+		return editor.getTextField();
+	}
+
 	/**
 	 * Parses an int field's text as an integer.
 	 */
@@ -285,29 +326,54 @@ public class FieldEditorPanel extends JPanel {
 		return Integer.parseInt( getInt(valueName).getText() );
 	}
 
+	/**
+	 * Returns the last committed int value of a spinner.
+	 *
+	 * Use this only for spinners with a SpinnerNumberModel.
+	 */
+	public int parseSpinnerInt( String valueName ) {
+		JSpinner valueSpinner = getSpinner( valueName );
+		SpinnerNumberModel spinnerModel = (SpinnerNumberModel)valueSpinner.getModel();
+		return spinnerModel.getNumber().intValue();
+	}
+
 	public void reset() {
-		for (JTextArea valueArea : wrappedLabelMap.values())
+		for ( JTextArea valueArea : wrappedLabelMap.values() )
 			valueArea.setText("");
 
-		for (JLabel valueLbl : labelMap.values())
+		for ( JLabel valueLbl : labelMap.values() )
 			valueLbl.setText("");
 
-		for (JTextField valueField : stringMap.values())
+		for ( JTextField valueField : stringMap.values() )
 			valueField.setText("");
 
-		for (JTextField valueField : intMap.values())
+		for ( JTextField valueField : intMap.values() )
 			valueField.setText("");
 
-		for (JCheckBox valueCheck : boolMap.values())
+		for ( JCheckBox valueCheck : boolMap.values() )
 			valueCheck.setSelected(false);
 
-		for (JSlider valueSlider : sliderMap.values())
+		for ( JSlider valueSlider : sliderMap.values() )
 			valueSlider.setValue(0);
 
-		for (JComboBox valueCombo : comboMap.values())
+		for ( JComboBox valueCombo : comboMap.values() )
 			valueCombo.removeAllItems();
 
-		for (JLabel valueReminder : reminderMap.values())
+		for ( JSpinner valueSpinner : spinnerMap.values() ) {
+			// Set number spinners to zero (There may be other kinds of spinners).
+			Integer defaultInt = new Integer( 0 );
+			SpinnerModel spinnerModel = valueSpinner.getModel();
+			if ( spinnerModel instanceof SpinnerNumberModel ) {
+				SpinnerNumberModel numberModel = ((SpinnerNumberModel)spinnerModel);
+				Comparable minInt = numberModel.getMinimum();
+				Comparable maxInt = numberModel.getMaximum();
+				if ( ( minInt == null || minInt.compareTo( defaultInt ) != 1 ) && ( maxInt == null || maxInt.compareTo( defaultInt ) != -1 ) ) {
+					valueSpinner.setValue( defaultInt );
+				}
+			}
+		}
+
+		for ( JLabel valueReminder : reminderMap.values() )
 			valueReminder.setText("");
 	}
 
@@ -318,6 +384,7 @@ public class FieldEditorPanel extends JPanel {
 		boolMap.clear();
 		sliderMap.clear();
 		comboMap.clear();
+		spinnerMap.clear();
 		reminderMap.clear();
 		super.removeAll();
 		gridC = new GridBagConstraints();
