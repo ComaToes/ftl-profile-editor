@@ -2898,7 +2898,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			extendedSystemInfoList.add( info );
 		}
 
-		public void setExtendedSystemInfoList( List<ExtendedSystemInfo> iotaList ) { this.extendedSystemInfoList = extendedSystemInfoList; }
+		public void setExtendedSystemInfoList( List<ExtendedSystemInfo> iotaList ) { this.extendedSystemInfoList = iotaList; }
 		public List<ExtendedSystemInfo> getExtendedSystemInfoList() { return extendedSystemInfoList; }
 
 		public <T extends ExtendedSystemInfo> List<T> getExtendedSystemInfoList( Class<T> infoClass ) {
