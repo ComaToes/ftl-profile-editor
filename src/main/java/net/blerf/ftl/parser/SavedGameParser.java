@@ -2288,6 +2288,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * federation base.
 		 *
 		 * At the 4th turn, the game will end. (TODO: Confirm.)
+		 * This resets to 0 when the flagship flees to another beacon after
+		 * defeat.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
@@ -3100,7 +3102,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				SystemType systemType = blueprintSystems.getSystemTypeByRoomId( roomId );
 				String systemId = (systemType != null) ? systemType.getId() : "empty";
 
-				result.append(String.format("RoomId: %2d (%s)\n", roomId, systemId));
+				result.append(String.format("Room Id: %2d (%s)\n", roomId, systemId));
 				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
@@ -3768,7 +3770,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Sex:                   %s\n", (male ? "Male" : "Female") ));
 			result.append(String.format("Health:                %5d\n", health));
 			result.append(String.format("Sprite Position:         %3d,%3d\n", spriteX, spriteY));
-			result.append(String.format("RoomId:                %5d\n", roomId));
+			result.append(String.format("Room Id:               %5d\n", roomId));
 			result.append(String.format("Room Square:           %5d\n", roomSquare));
 			result.append(String.format("Player Controlled:     %5b\n", playerControlled));
 			result.append(String.format("Clone Ready?:          %5d\n", cloneReady));
@@ -3798,7 +3800,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			FTLConstants origConstants = new OriginalFTLConstants();
 			FTLConstants advConstants = new AdvancedFTLConstants();
 
-			result.append(String.format("Saved RoomId:          %5d\n", savedRoomId));
+			result.append(String.format("Saved Room Id:         %5d\n", savedRoomId));
 			result.append(String.format("Saved Room Square:     %5d\n", savedRoomSquare));
 			result.append(String.format("Pilot Skill:           %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot(race), advConstants.getMasteryIntervalPilot(race)));
 			result.append(String.format("Engine Skill:          %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine(race), advConstants.getMasteryIntervalEngine(race)));
@@ -4809,7 +4811,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Armed:             %5b\n", armed));
 			result.append(String.format("Health:            %5d\n", health));
 			result.append(String.format("Body Position:     %3d,%3d\n", bodyX, bodyY));
-			result.append(String.format("Body RoomId:       %5d\n", bodyRoomId));
+			result.append(String.format("Body Room Id:      %5d\n", bodyRoomId));
 			result.append(String.format("Body Room Square:  %5d\n", bodyRoomSquare));
 			result.append(String.format("Player Controlled: %5b\n", playerControlled));
 
@@ -5683,7 +5685,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				int roomId = entry.getKey().intValue();
 				int occupantCount = entry.getValue().intValue();
 
-				result.append(String.format("RoomId: %2d, Crew: %d\n", roomId, occupantCount));
+				result.append(String.format("Room Id: %2d, Crew: %d\n", roomId, occupantCount));
 			}
 
 			return result.toString();
@@ -5757,7 +5759,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getProgressTicks() { return progressTicks; }
 
 		/**
-		 * Unknown.
+		 * Sets a scale factor.
+		 *
+		 * Projectiles with flightAnimId "debris_small" set their deathAnim
+		 * scale to 250.
 		 *
 		 * @param n a pseudo-float (1000 is 1.0)
 		 */
@@ -5768,6 +5773,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Unknown.
 		 *
 		 * Observed values: 0 (when playing), -1000 (when not playing).
+		 * One time, a missile exploded whose deathAnim had -32000.
 		 */
 		public void setX( int n ) { x = n; }
 		public void setY( int n ) { y = n; }
@@ -5782,7 +5788,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Looping?:          %7b\n", looping));
 			result.append(String.format("Current Frame:     %7d\n", currentFrame));
 			result.append(String.format("Progress Ticks:    %7d\n", progressTicks));
-			result.append(String.format("Scale?:            %7d (%5.03f)\n", scale, scale/1000f));
+			result.append(String.format("Scale:             %7d (%5.03f)\n", scale, scale/1000f));
 			result.append(String.format("X,Y?:                %5d,%5d\n", x, y));
 
 			return result.toString();
@@ -6148,7 +6154,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets elapsed time while the cloak is engaged.
 		 *
-		 * @param n a positive int less than, or equal to, the goal (MIN_INT when not engaged)
+		 * When this is not set, it is MIN_INT. After reaching or passing the
+		 * goal, this value lingers.
+		 *
+		 * @param n a positive int less than, or equal to, the goal (or MIN_INT)
 		 *
 		 * @see #setCloakTicksGoal(int)
 		 */
@@ -6450,7 +6459,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		private boolean autofire = false;
 
-		private int unknownEta = 0;  // TODO: 0 until boss fight, then matches 1-based flagship stage.
+		private int unknownEta = 0;
 
 		private int unknownIota = 0;
 		private int unknownKappa = 0;
@@ -6474,7 +6483,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Erratic values, large and small. Even changes mid-combat!?
 		 */
 		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
-		public void setUnknownZeta( Integer zeta ) { unknownZeta = zeta; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
 
 		/**
 		 * Unknown.
@@ -6483,7 +6492,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * This is only set when a nearby ship is present.
 		 */
-		public int getUnknownEpsilon() { return unknownEpsilon; }
+		public void setUnknownZeta( Integer zeta ) { unknownZeta = zeta; }
 		public Integer getUnknownZeta() { return unknownZeta; }
 
 		public void setAutofire( boolean b ) { autofire = b; }
@@ -6493,13 +6502,16 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Unknown.
 		 *
 		 * Observed values: 0 (normal), 1 (after encountering
-		 * first-stage boss).
+		 * first-stage boss), 2 (after encountering second-stage boss), 3
+		 * (after encountering third-stage boss).
 		 */
 		public void setUnknownEta( int n ) { unknownEta = n; }
 		public int getUnknownEta() { return unknownEta; }
 
 		/**
 		 * Unknown.
+		 *
+		 * During the third-stage boss fight, this does not change.
 		 *
 		 * Observed values: 30000 (normal), 21326 (after encountering
 		 * first-stage boss).
@@ -6511,7 +6523,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Unknown.
 		 *
 		 * Observed values: 0 (normal), 240 (after encountering
-		 * first-stage boss).
+		 * first-stage boss), 26563 (after defeating second-stage boss). Seems
+		 * to have no effect on first-stage boss, but this changes nonetheless.
+		 * During the second-stage boss, counts to ~25000, then it resets to 0,
+		 * and surge drones appear. During the third-stage boss, counts to
+		 * ~16000, then it either recharges its Zoltan shield or fires lots of
+		 * laser projectiles.
 		 */
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
 		public int getUnknownKappa() { return unknownKappa; }
@@ -6675,7 +6692,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	 * OwnerId (-1, 0, 1)
 	 */
 	public static enum Affiliation {
-		NEUTRAL, PLAYER_SHIP, NEARBY_SHIP;
+		OTHER, PLAYER_SHIP, NEARBY_SHIP;
 	}
 
 
@@ -6843,6 +6860,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setLifespan( int n ) { lifespan = n; }
 		public int getLifespan() { return lifespan; }
 
+		/**
+		 * Sets which ship to eventually use as the origin for position
+		 * coordinates.
+		 *
+		 * @param n player ship (0) or nearby ship (1)
+		 * @see #setCurrentSpace(int)
+		 */
 		public void setDestinationSpace( int n ) { destinationSpace = n; }
 		public int getDestinationSpace() { return destinationSpace; }
 
@@ -6936,6 +6960,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setType( int n ) { type = n; }
 		public int getType() { return type; }
 
+		/**
+		 * Sets whether a red dot should be painted at the targeted location.
+		 *
+		 * This is used by flak volleys.
+		 */
 		public void setBroadcastTarget( boolean b ) { broadcastTarget = b; }
 		public boolean getBroadcastTarget() { return broadcastTarget; }
 
@@ -6970,11 +6999,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("Current Position:  %8d,%8d (%9.03f,%9.03f)\n", currentPosX, currentPosY, currentPosX/1000f, currentPosY/1000f));
 			result.append(String.format("Previous Position: %8d,%8d (%9.03f,%9.03f)\n", prevPosX, prevPosY, prevPosX/1000f, prevPosY/1000f));
-			result.append(String.format("Speed?:            %8d (%9.03f)\n", speed, speed/1000f));
+			result.append(String.format("Speed:             %8d (%9.03f)\n", speed, speed/1000f));
 			result.append(String.format("Goal Position:     %8d,%8d (%9.03f,%9.03f)\n", goalPosX, goalPosY, goalPosX/1000f, goalPosY/1000f));
 			result.append(String.format("Heading?:          %8d\n", heading));
-			result.append(String.format("OwnerId?:          %8d\n", ownerId));
-			result.append(String.format("SelfId?:           %8d\n", selfId));
+			result.append(String.format("Owner Id?:         %8d\n", ownerId));
+			result.append(String.format("Self Id?:          %8d\n", selfId));
 
 			result.append(String.format("\nDamage...\n"));
 			if ( damage != null ) {
@@ -7016,7 +7045,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append("\n");
 
 			result.append(String.format("Type?:             %7d\n", type));
-			result.append(String.format("Broadcast Target?: %7b\n", broadcastTarget));
+			result.append(String.format("Broadcast Target:  %7b (Red dot at targeted location)\n", broadcastTarget));
 
 			result.append(String.format("\nExtended Projectile Info...\n"));
 			if ( extendedInfo != null ) {
@@ -7140,8 +7169,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("System Damage:     %7d\n", systemDamage));
 			result.append(String.format("Personnel Damage:  %7d\n", personnelDamage));
 			result.append(String.format("Hull Buster:       %7b (2x Hull damage vs systemless rooms)\n", hullBuster));
-			result.append(String.format("OwnerId?:          %7d\n", ownerId));
-			result.append(String.format("SelfId?:           %7d\n", selfId));
+			result.append(String.format("Owner Id?:         %7d\n", ownerId));
+			result.append(String.format("Self Id?:          %7d\n", selfId));
 			result.append(String.format("Lockdown:          %7b\n", lockdown));
 			result.append(String.format("Crystal Shard:     %7b\n", crystalShard));
 			result.append(String.format("Stun Chance:       %7d\n", stunChance));
@@ -7617,11 +7646,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		//
 		// BETA
-		// 0000 0080 (MIN_VALUE)
-		// 0000 0080 (MIN_VALUE)
-		// 0000 0080 0000 0080 (MIN_VALUE:MIN_VALUE)
-		// 0000 0080 (MIN_VALUE)
-		// 0000 0080 (MIN_VALUE)
+		// 0000 0080 0000 0080 (MIN_VALUE:MIN_VALUE) (Always MIN_VALUE)
+		// 0000 0080 0000 0080 (MIN_VALUE:MIN_VALUE) (Used by Combat drones; resembles position)
+		// 0000 0080 0000 0080 (MIN_VALUE:MIN_VALUE) (Used by Defense drones; erratic +/- 0-20000)
 
 		// GAMMA
 		// F401 0000 (500)
@@ -7646,7 +7673,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private DroneType droneType = null;
 		private int mourningTicks = 0;
 		private int currentSpace = 0;
-		private int destinationSpace = 0;
+		private int destinationSpace = -1;
 		private int currentPosX = 0, currentPosY = 0;
 		private int prevPosX = 0, prevPosY = 0;
 		private int goalPosX = 0, goalPosY = 0;
@@ -7725,6 +7752,16 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setCurrentSpace( int n ) { currentSpace = n; }
 		public int getCurrentSpace() { return currentSpace; }
 
+		/**
+		 * Sets which ship to eventually use as the origin for position
+		 * coordinates.
+		 *
+		 * This value is initially -1. It is set to one of the ships when the
+		 * drone pod is deployed. Then this value lingers.
+		 *
+		 * @param n player ship (0) or nearby ship (1) or none (-1)
+		 * @see #setCurrentSpace(int)
+		 */
 		public void setDestinationSpace( int n ) { destinationSpace = n; }
 		public int getDestinationSpace() { return destinationSpace; }
 
@@ -8007,7 +8044,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Delta?:             %7d\n", unknownDelta));
 			result.append(String.format("Body Health:        %7d\n", bodyHealth));
 			result.append(String.format("Body Position:      %7d,%7d\n", bodyX, bodyY));
-			result.append(String.format("Body RoomId:        %7d\n", bodyRoomId));
+			result.append(String.format("Body Room Id:       %7d\n", bodyRoomId));
 			result.append(String.format("Body Room Square:   %7d\n", bodyRoomSquare));
 
 			return result.toString();

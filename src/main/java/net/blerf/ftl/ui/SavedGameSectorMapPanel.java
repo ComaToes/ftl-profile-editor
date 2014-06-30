@@ -56,6 +56,8 @@ import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.parser.SavedGameParser.BeaconState;
 import net.blerf.ftl.parser.SavedGameParser.CrewType;
 import net.blerf.ftl.parser.SavedGameParser.FleetPresence;
+import net.blerf.ftl.parser.SavedGameParser.StoreShelf;
+import net.blerf.ftl.parser.SavedGameParser.StoreState;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
@@ -377,7 +379,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		beaconId = 0;
 		for ( SpriteReference<BeaconState> beaconRef : beaconRefs ) {
 			if ( beaconRef.get().getStore() != null ) {
-				StoreSprite storeSprite = new StoreSprite( beaconRef.get().getStore() );
+				StoreSprite storeSprite = new StoreSprite( beaconRef );
 				SectorMapConstraints storeC = new SectorMapConstraints( SectorMapConstraints.MISC_BOX );
 				storeC.setBeaconId( beaconId );
 				storeSprites.add( storeSprite );
@@ -441,24 +443,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			beaconStateList.add( new BeaconState( beaconRef.get() ) );
 		}
 
-		// Stores.
-		for ( StoreSprite storeSprite : storeSprites ) {
-			int beaconId = mapLayout.getBeaconId( storeSprite );
-			if ( beaconId != -1 && beaconId < beaconStateList.size() ) {
-				SavedGameParser.StoreState storeState = new SavedGameParser.StoreState();
-				storeState.setFuel( storeSprite.getFuel() );
-				storeState.setMissiles( storeSprite.getMissiles() );
-				storeState.setDroneParts( storeSprite.getDroneParts() );
-
-				storeState.getShelfList().clear();
-				for ( SavedGameParser.StoreShelf shelf : storeSprite.getShelfList() ) {
-					storeState.addShelf( new SavedGameParser.StoreShelf( shelf ) );
-				}
-
-				BeaconState beaconState = beaconStateList.get( beaconId );
-				beaconState.setStore( storeState );
-			}
-		}
+		// Stores are included in the beacons.
 
 		// Quests.
 		gameState.getQuestEventMap().clear();
@@ -556,7 +541,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 			@Override
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof StoreSprite ) {
-					showStoreEditor( (StoreSprite)sprite );
+					SpriteReference<BeaconState> beaconRef = ((StoreSprite)sprite).getReference();
+					showStoreEditor( beaconRef );
 				}
 				return true;
 			}
@@ -625,8 +611,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 					int beaconId = mapLayout.getBeaconId( sprite );
 
 					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId(beaconId) == null ) {
-						StoreSprite storeSprite = new StoreSprite( null );
-						storeSprite.addShelf( new SavedGameParser.StoreShelf() );
+						SpriteReference<BeaconState> beaconRef = ((BeaconSprite)sprite).getReference();
+
+						beaconRef.get().setStore( new StoreState() );
+						beaconRef.get().getStore().addShelf( new StoreShelf() );
+
+						StoreSprite storeSprite = new StoreSprite( beaconRef );
 						SectorMapConstraints storeC = new SectorMapConstraints( SectorMapConstraints.MISC_BOX );
 						storeC.setBeaconId( beaconId );
 						storeSprites.add( storeSprite );
@@ -1254,7 +1244,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private void showPlayerShipEditor( final PlayerShipSprite playerShipSprite ) {
 
-		String title = "Player Ship";
+		String title = String.format("Player Ship (Beacon %02d)", mapLayout.getBeaconId( playerShipSprite ) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 
@@ -1281,27 +1271,30 @@ public class SavedGameSectorMapPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showStoreEditor( final StoreSprite storeSprite ) {
+	private void showStoreEditor( final SpriteReference<BeaconState> beaconRef ) {
 		final String FUEL = "Fuel";
 		final String MISSILES = "Missiles";
 		final String DRONE_PARTS = "Drone Parts";
 
-		String title = String.format("Store (Beacon %02d)", mapLayout.getBeaconId(storeSprite) );
+		final StoreSprite storeSprite = beaconRef.getSprite( StoreSprite.class );
+
+		String title = String.format("Store (Beacon %02d)", mapLayout.getBeaconId( storeSprite ) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(FUEL).setText( ""+storeSprite.getFuel() );
 		editorPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(MISSILES).setText( ""+storeSprite.getMissiles() );
 		editorPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(DRONE_PARTS).setText( ""+storeSprite.getDroneParts() );
+
+		editorPanel.getInt(FUEL).setText( ""+ beaconRef.get().getStore().getFuel() );
+		editorPanel.getInt(MISSILES).setText( ""+ beaconRef.get().getStore().getMissiles() );
+		editorPanel.getInt(DRONE_PARTS).setText( ""+ beaconRef.get().getStore().getDroneParts() );
 
 		final JTabbedPane shelfTabsPane = new JTabbedPane();
 		shelfTabsPane.setTabLayoutPolicy( JTabbedPane.SCROLL_TAB_LAYOUT );
 
 		final List<StoreShelfPanel> shelfPanels = new ArrayList<StoreShelfPanel>();
 
-		for ( SavedGameParser.StoreShelf shelf : storeSprite.getShelfList() ) {
+		for ( StoreShelf shelf : beaconRef.get().getStore().getShelfList() ) {
 			StoreShelfPanel shelfPanel = new StoreShelfPanel( frame );
 			shelfPanel.setShelf( shelf );
 			shelfPanels.add( shelfPanel );
@@ -1330,23 +1323,18 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				String newString;
+				try { beaconRef.get().getStore().setFuel( editorPanel.parseInt(FUEL) ); }
+				catch ( NumberFormatException e ) {}
 
-				newString = editorPanel.getInt(FUEL).getText();
-				try { storeSprite.setFuel( Integer.parseInt(newString) ); }
-				catch (NumberFormatException e) {}
+				try { beaconRef.get().getStore().setMissiles( editorPanel.parseInt(MISSILES) ); }
+				catch ( NumberFormatException e ) {}
 
-				newString = editorPanel.getInt(MISSILES).getText();
-				try { storeSprite.setMissiles( Integer.parseInt(newString) ); }
-				catch (NumberFormatException e) {}
+				try { beaconRef.get().getStore().setDroneParts( editorPanel.parseInt(DRONE_PARTS) ); }
+				catch ( NumberFormatException e ) {}
 
-				newString = editorPanel.getInt(DRONE_PARTS).getText();
-				try { storeSprite.setDroneParts( Integer.parseInt(newString) ); }
-				catch (NumberFormatException e) {}
-
-				storeSprite.getShelfList().clear();
+				beaconRef.get().getStore().getShelfList().clear();
 				for ( StoreShelfPanel shelfPanel : shelfPanels ) {
-					SavedGameParser.StoreShelf newShelf = new SavedGameParser.StoreShelf();
+					StoreShelf newShelf = new StoreShelf();
 
 					SavedGameParser.StoreItemType itemType = shelfPanel.getItemType();
 					List<SavedGameParser.StoreItem> items = shelfPanel.getItems();
@@ -1356,8 +1344,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 						newShelf.addItem( item );
 					}
 
-					storeSprite.addShelf( newShelf );
+					beaconRef.get().getStore().addShelf( newShelf );
 				}
+
+				beaconRef.fireReferenceChange();
 
 				clearSidePanel();
 			}
@@ -1397,6 +1387,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 				clearSidePanel();
 				storeSprites.remove( storeSprite );
 				mapPanel.remove( storeSprite );
+				beaconRef.get().setStore( null );
+
+				beaconRef.fireReferenceChange();
 			}
 		});
 
@@ -1410,7 +1403,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		final Map<String, Encounters> allEncountersMap = DataManager.get().getEncounters();
 
-		String title = String.format("Quest (Beacon %02d)", mapLayout.getBeaconId(questSprite) );
+		String title = String.format("Quest (Beacon %02d)", mapLayout.getBeaconId( questSprite ) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( ENCOUNTERS_FILE, FieldEditorPanel.ContentType.COMBO );
@@ -1439,9 +1432,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 						editorPanel.getCombo(EVENT).addItem( tmpEventList );
 				}
 				if ( currentEvent != null ) {
-					editorPanel.getCombo(EVENT).setSelectedItem(currentEvent);
+					editorPanel.getCombo(EVENT).setSelectedItem( currentEvent );
 				} else if ( currentEventList != null ) {
-					editorPanel.getCombo(EVENT).setSelectedItem(currentEventList);
+					editorPanel.getCombo(EVENT).setSelectedItem( currentEventList );
 				} else {
 					editorPanel.getCombo(EVENT).setSelectedItem( "" );
 				}
@@ -1576,40 +1569,30 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 
 
-	public class StoreSprite extends JComponent {
-		private int fuel;
-		private int missiles;
-		private int droneParts;
-		private List<SavedGameParser.StoreShelf> shelfList = new ArrayList<SavedGameParser.StoreShelf>(3);
+	public class StoreSprite extends JComponent implements ReferenceSprite<BeaconState> {
 		private BufferedImage currentImage = null;
 
+		private SpriteReference<BeaconState> beaconRef;
 
-		public StoreSprite( SavedGameParser.StoreState storeState ) {
-			if ( storeState != null ) {
-				fuel = storeState.getFuel();
-				missiles = storeState.getMissiles();
-				droneParts = storeState.getDroneParts();
 
-				// Copy the store's shelves and add them to the sprite.
-				for ( SavedGameParser.StoreShelf tmpShelf : storeState.getShelfList() ) {
-					addShelf( new SavedGameParser.StoreShelf( tmpShelf ) );
-				}
-			}
+		public StoreSprite( SpriteReference<BeaconState> beaconRef ) {
+			this.beaconRef = beaconRef;
 
 			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_store.png", -1*80, -1*40, cachedImages );
 			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
+
+			beaconRef.addSprite( this );
+			referenceChanged();
 		}
 
-		public void setFuel( int n ) { fuel = n; }
-		public void setMissiles( int n ) { missiles = n; }
-		public void setDroneParts( int n ) { droneParts = n; }
+		@Override
+		public SpriteReference<BeaconState> getReference() {
+			return beaconRef;
+		}
 
-		public int getFuel() { return fuel; }
-		public int getMissiles() { return missiles; }
-		public int getDroneParts() { return droneParts; }
-
-		public void addShelf( SavedGameParser.StoreShelf shelf ) { shelfList.add( shelf ); }
-		public List<SavedGameParser.StoreShelf> getShelfList() { return shelfList; }
+		@Override
+		public void referenceChanged() {
+		}
 
 		@Override
 		public void paintComponent( Graphics g ) {
