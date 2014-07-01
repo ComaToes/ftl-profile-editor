@@ -1663,19 +1663,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		ExtendedProjectileInfo extendedInfo = null;
 		if ( projectile.getProjectileType() == 1 ) {
-			if ( projectile.getType() == 2 ) {                   // Flak (2)
-				IntegerProjectileInfo info = new IntegerProjectileInfo( 2 );
-				for (int i=0; i < info.getSize(); i++) {
-					info.set( i, readMinMaxedInt(in) );
-				}
-				extendedInfo = info;
+			if ( projectile.getType() == 2 ) {                   // Burst (2)
+				extendedInfo = readBurstProjectileInfo(in);
 			}
 			else if ( projectile.getType() == 4 ) {              // Ion (2)
-				IntegerProjectileInfo info = new IntegerProjectileInfo( 2 );
-				for (int i=0; i < info.getSize(); i++) {
-					info.set( i, readMinMaxedInt(in) );
-				}
-				extendedInfo = info;
+				extendedInfo = readIonProjectileInfo(in);
 			}
 			else if ( projectile.getType() == 5 ) {              // Beam (25)
 				extendedInfo = readBeamProjectileInfo(in);
@@ -1761,11 +1753,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				writeMinMaxedInt( out, intInfo.get( i ) );
 			}
 		}
+		else if ( extendedInfo instanceof BeamProjectileInfo ) {
+			writeBeamProjectileInfo( out, projectile.getExtendedInfo( BeamProjectileInfo.class ) );
+		}
 		else if ( extendedInfo instanceof BombProjectileInfo ) {
 			writeBombProjectileInfo( out, projectile.getExtendedInfo( BombProjectileInfo.class ) );
 		}
-		else if ( extendedInfo instanceof BeamProjectileInfo ) {
-			writeBeamProjectileInfo( out, projectile.getExtendedInfo( BeamProjectileInfo.class ) );
+		else if ( extendedInfo instanceof BurstProjectileInfo ) {
+			writeBurstProjectileInfo( out, projectile.getExtendedInfo( BurstProjectileInfo.class ) );
+		}
+		else if ( extendedInfo instanceof IonProjectileInfo ) {
+			writeIonProjectileInfo( out, projectile.getExtendedInfo( IonProjectileInfo.class ) );
 		}
 		else {
 			throw new IOException( "Unsupported extended projectile info: "+ extendedInfo.getClass().getSimpleName() );
@@ -1808,26 +1806,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		writeBool( out, damage.isCrystalShard() );
 		writeInt( out, damage.getStunChance() );
 		writeInt( out, damage.getStunAmount() );
-	}
-
-	private BombProjectileInfo readBombProjectileInfo( FileInputStream in ) throws IOException {
-		BombProjectileInfo bombInfo = new BombProjectileInfo();
-
-		bombInfo.setUnknownAlpha( readInt(in) );
-		bombInfo.setUnknownBeta( readInt(in) );
-		bombInfo.setUnknownGamma( readInt(in) );
-		bombInfo.setUnknownDelta( readInt(in) );
-		bombInfo.setUnknownEpsilon( readInt(in) );
-
-		return bombInfo;
-	}
-
-	public void writeBombProjectileInfo( OutputStream out, BombProjectileInfo bombInfo ) throws IOException {
-		writeInt( out, bombInfo.getUnknownAlpha() );
-		writeInt( out, bombInfo.getUnknownBeta() );
-		writeInt( out, bombInfo.getUnknownGamma() );
-		writeInt( out, bombInfo.getUnknownDelta() );
-		writeInt( out, bombInfo.getUnknownEpsilon() );
 	}
 
 	private BeamProjectileInfo readBeamProjectileInfo( FileInputStream in ) throws IOException {
@@ -1900,6 +1878,54 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		writeBool( out, beamInfo.getUnknownLambda() );
 		writeBool( out, beamInfo.getUnknownMu() );
 		writeBool( out, beamInfo.getUnknownNu() );
+	}
+
+	private BombProjectileInfo readBombProjectileInfo( FileInputStream in ) throws IOException {
+		BombProjectileInfo bombInfo = new BombProjectileInfo();
+
+		bombInfo.setUnknownAlpha( readInt(in) );
+		bombInfo.setUnknownBeta( readInt(in) );
+		bombInfo.setUnknownGamma( readInt(in) );
+		bombInfo.setUnknownDelta( readInt(in) );
+		bombInfo.setUnknownEpsilon( readBool(in) );
+
+		return bombInfo;
+	}
+
+	public void writeBombProjectileInfo( OutputStream out, BombProjectileInfo bombInfo ) throws IOException {
+		writeInt( out, bombInfo.getUnknownAlpha() );
+		writeInt( out, bombInfo.getUnknownBeta() );
+		writeInt( out, bombInfo.getUnknownGamma() );
+		writeInt( out, bombInfo.getUnknownDelta() );
+		writeBool( out, bombInfo.getUnknownEpsilon() );
+	}
+
+	private BurstProjectileInfo readBurstProjectileInfo( FileInputStream in ) throws IOException {
+		BurstProjectileInfo burstInfo = new BurstProjectileInfo();
+
+		burstInfo.setUnknownAlpha( readInt(in) );
+		burstInfo.setSpin( readInt(in) );
+
+		return burstInfo;
+	}
+
+	public void writeBurstProjectileInfo( OutputStream out, BurstProjectileInfo burstInfo ) throws IOException {
+		writeInt( out, burstInfo.getUnknownAlpha() );
+		writeInt( out, burstInfo.getSpin() );
+	}
+
+	private IonProjectileInfo readIonProjectileInfo( FileInputStream in ) throws IOException {
+		IonProjectileInfo ionInfo = new IonProjectileInfo();
+
+		ionInfo.setUnknownAlpha( readMinMaxedInt(in) );
+		ionInfo.setUnknownBeta( readMinMaxedInt(in) );
+
+		return ionInfo;
+	}
+
+	public void writeIonProjectileInfo( OutputStream out, IonProjectileInfo ionInfo ) throws IOException {
+		writeMinMaxedInt( out, ionInfo.getUnknownAlpha() );
+		writeMinMaxedInt( out, ionInfo.getUnknownBeta() );
 	}
 
 
@@ -6963,7 +6989,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets whether a red dot should be painted at the targeted location.
 		 *
-		 * This is used by flak volleys.
+		 * This is used by burst volleys (e.g., flak).
 		 */
 		public void setBroadcastTarget( boolean b ) { broadcastTarget = b; }
 		public boolean getBroadcastTarget() { return broadcastTarget; }
@@ -7266,7 +7292,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Alpha?...\n"));
+			result.append(String.format("Type:               Unknown Info\n"));
+
+			result.append(String.format("\nAlpha?...\n"));
 			for (int i=0; i < unknownAlpha.length; i++) {
 				result.append(String.format("%7s", prettyInt(unknownAlpha[i])));
 
@@ -7279,90 +7307,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				}
 			}
 			result.append("\n");
-
-			return result.toString();
-		}
-	}
-
-	public static class BombProjectileInfo extends ExtendedProjectileInfo {
-		private int unknownAlpha = 0;
-		private int unknownBeta = 0;
-		private int unknownGamma = 0;
-		private int unknownDelta = 0;
-		private int unknownEpsilon = 0;
-
-
-		/**
-		 * Constructor.
-		 */
-		public BombProjectileInfo() {
-			super();
-		}
-
-		/**
-		 * Copy constructor.
-		 */
-		protected BombProjectileInfo( BombProjectileInfo srcInfo ) {
-			super( srcInfo );
-			unknownAlpha = srcInfo.getUnknownAlpha();
-			unknownBeta = srcInfo.getUnknownBeta();
-			unknownGamma = srcInfo.getUnknownGamma();
-			unknownDelta = srcInfo.getUnknownDelta();
-			unknownEpsilon = srcInfo.getUnknownEpsilon();
-		}
-
-		@Override
-		public BombProjectileInfo copy() { return new BombProjectileInfo( this ); }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0.
-		 */
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public int getUnknownAlpha() { return unknownAlpha; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 400 (pending/newly spawned); then one of 356, -205.
-		 */
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public int getUnknownBeta() { return unknownBeta; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0.
-		 */
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public int getUnknownGamma() { return unknownGamma; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0.
-		 */
-		public void setUnknownDelta( int n ) { unknownDelta = n; }
-		public int getUnknownDelta() { return unknownDelta; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0 (when pending), 1 (once fired).
-		 */
-		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
-		public int getUnknownEpsilon() { return unknownEpsilon; }
-
-		@Override
-		public String toString() {
-			StringBuilder result = new StringBuilder();
-
-			result.append(String.format("Alpha?:             %7d\n", unknownAlpha));
-			result.append(String.format("Beta?:              %7d\n", unknownBeta));
-			result.append(String.format("Gamma?:             %7d\n", unknownGamma));
-			result.append(String.format("Delta?:             %7d\n", unknownDelta));
-			result.append(String.format("Epsilon?:           %7d\n", unknownEpsilon));
 
 			return result.toString();
 		}
@@ -7611,6 +7555,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
+			result.append(String.format("Type:               Beam Info\n"));
 			result.append(String.format("Firing Ship End:    %8d,%8d (%9.03f,%9.03f) (Off-screen endpoint of line from weapon)\n", firingShipEndX, firingShipEndY, firingShipEndX/1000f, firingShipEndY/1000f));
 			result.append(String.format("Target Ship Source: %8d,%8d (%9.03f,%9.03f) (Off-screen endpoint of line drawn toward swath)\n", targetShipSourceX, targetShipSourceY, targetShipSourceX/1000f, targetShipSourceY/1000f));
 			result.append(String.format("Target Ship End:    %8d,%8d (%9.03f,%9.03f) (On-screen endpoint of line drawn toward swath)\n", targetShipEndX, targetShipEndY, targetShipEndX/1000f, targetShipEndY/1000f));
@@ -7629,6 +7574,215 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Lambda?:            %8b\n", unknownLambda));
 			result.append(String.format("Mu?:                %8b\n", unknownMu));
 			result.append(String.format("Nu?:                %8b\n", unknownNu));
+
+			return result.toString();
+		}
+	}
+
+	public static class BombProjectileInfo extends ExtendedProjectileInfo {
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+		private boolean unknownEpsilon = false;
+
+
+		/**
+		 * Constructor.
+		 */
+		public BombProjectileInfo() {
+			super();
+		}
+
+		/**
+		 * Copy constructor.
+		 */
+		protected BombProjectileInfo( BombProjectileInfo srcInfo ) {
+			super( srcInfo );
+			unknownAlpha = srcInfo.getUnknownAlpha();
+			unknownBeta = srcInfo.getUnknownBeta();
+			unknownGamma = srcInfo.getUnknownGamma();
+			unknownDelta = srcInfo.getUnknownDelta();
+			unknownEpsilon = srcInfo.getUnknownEpsilon();
+		}
+
+		@Override
+		public BombProjectileInfo copy() { return new BombProjectileInfo( this ); }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0.
+		 */
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 400 (pending/newly spawned); then one of: 356, -205,
+		 * -313, -535.
+		 */
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public int getUnknownBeta() { return unknownBeta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0.
+		 */
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public int getUnknownGamma() { return unknownGamma; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0.
+		 */
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public int getUnknownDelta() { return unknownDelta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: false (when pending), true (once fired).
+		 */
+		public void setUnknownEpsilon( boolean b ) { unknownEpsilon = b; }
+		public boolean getUnknownEpsilon() { return unknownEpsilon; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Type:               Bomb Info\n"));
+			result.append(String.format("Alpha?:             %7d\n", unknownAlpha));
+			result.append(String.format("Beta?:              %7d\n", unknownBeta));
+			result.append(String.format("Gamma?:             %7d\n", unknownGamma));
+			result.append(String.format("Delta?:             %7d\n", unknownDelta));
+			result.append(String.format("Epsilon?:           %7b\n", unknownEpsilon));
+
+			return result.toString();
+		}
+	}
+
+	public static class BurstProjectileInfo extends ExtendedProjectileInfo {
+		private int unknownAlpha = 0;
+		private int spin = 0;
+
+
+		/**
+		 * Constructor.
+		 */
+		public BurstProjectileInfo() {
+			super();
+		}
+
+		/**
+		 * Copy constructor.
+		 */
+		protected BurstProjectileInfo( BurstProjectileInfo srcInfo ) {
+			super( srcInfo );
+			unknownAlpha = srcInfo.getUnknownAlpha();
+			spin = srcInfo.getSpin();
+		}
+
+		@Override
+		public BurstProjectileInfo copy() { return new BurstProjectileInfo( this ); }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: Varies in the range 200000-3000000.
+		 * Some kind of seed?
+		 */
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+
+		/**
+		 * Unknown.
+		 *
+		 * This is a pseudo-float based on the 'spin' tag of the
+		 * WeaponBlueprint's xml.
+		 */
+		public void setSpin( int n ) { spin = n; }
+		public int getSpin() { return spin; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Type:               Burst Info\n"));
+			result.append(String.format("Alpha?:             %7d\n", unknownAlpha));
+			result.append(String.format("Spin:               %7d\n", spin));
+
+			return result.toString();
+		}
+	}
+
+	public static class IonProjectileInfo extends ExtendedProjectileInfo {
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+
+
+		/**
+		 * Constructor.
+		 */
+		public IonProjectileInfo() {
+			super();
+		}
+
+		/**
+		 * Copy constructor.
+		 */
+		protected IonProjectileInfo( IonProjectileInfo srcInfo ) {
+			super( srcInfo );
+			unknownAlpha = srcInfo.getUnknownAlpha();
+			unknownBeta = srcInfo.getUnknownBeta();
+		}
+
+		@Override
+		public IonProjectileInfo copy() { return new IonProjectileInfo( this ); }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0 (generally).
+		 *
+		 * In one combat with the third-stage boss, the FED_3's flak artillery
+		 * weapon fired several projectiles of the ion type (not burst!?). This
+		 * value varied in the range of 100000-450000.
+		 */
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0 (generally).
+		 *
+		 * In one combat with the third-stage boss, the FED_3's flak artillery
+		 * weapon fired several projectiles of the ion type!? This value was
+		 * consistently 720000.
+		 */
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public int getUnknownBeta() { return unknownBeta; }
+
+
+		private String prettyInt( int n ) {
+			if ( n == Integer.MIN_VALUE ) return "MIN";
+			if ( n == Integer.MAX_VALUE ) return "MAX";
+
+			return String.format("%d", n);
+		}
+
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Type:               Ion Info\n"));
+			result.append(String.format("Alpha?:             %7s\n", prettyInt(unknownAlpha)));
+			result.append(String.format("Beta?:              %7s\n", prettyInt(unknownBeta)));
 
 			return result.toString();
 		}
@@ -8309,7 +8463,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private boolean unknownPhi = false;
 		private int animCharge = -1;
 		private AnimState chargeAnim = new AnimState();
-		private int lastProjectileId = 0;
+		private int lastProjectileId = -1;
 
 		private List<ProjectileState> pendingProjectiles = new ArrayList<ProjectileState>();
 
