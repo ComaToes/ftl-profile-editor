@@ -1617,10 +1617,28 @@ System.err.println(String.format("Environment: @%d", in.getChannel().position())
 System.err.println(String.format("Projectile: @%d", in.getChannel().position()));
 		ProjectileState projectile = new ProjectileState();
 
-		projectile.setProjectileType( readInt(in) );
-
-		if ( projectile.getProjectileType() == 0 ) {  // ProjectileType=0 is a null shot!?
-			return projectile;
+		int projectileTypeFlag = readInt(in);
+		if ( projectileTypeFlag == 0 ) {
+			projectile.setProjectileType( ProjectileType.INVALID );
+			return projectile;  // No other fields are set for invalid projectiles.
+		}
+		else if ( projectileTypeFlag == 1 ) {
+			projectile.setProjectileType( ProjectileType.LASER_OR_BURST );
+		}
+		else if ( projectileTypeFlag == 2 ) {
+			projectile.setProjectileType( ProjectileType.ROCK_OR_EXPLOSION );
+		}
+		else if ( projectileTypeFlag == 3 ) {
+			projectile.setProjectileType( ProjectileType.MISSILE );
+		}
+		else if ( projectileTypeFlag == 4 ) {
+			projectile.setProjectileType( ProjectileType.BOMB );
+		}
+		else if ( projectileTypeFlag == 5 ) {
+			projectile.setProjectileType( ProjectileType.BEAM );
+		}
+		else {
+			throw new IOException( String.format( "Unsupported projectileType flag: %d", projectileTypeFlag ) );
 		}
 
 		projectile.setCurrentPositionX( readInt(in) );
@@ -1662,39 +1680,30 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		projectile.setBroadcastTarget( readBool(in) );
 
 		ExtendedProjectileInfo extendedInfo = null;
-		if ( projectile.getProjectileType() == 1 ) {
-			if ( projectile.getType() == 2 ) {                   // Burst (2)
-				extendedInfo = readBurstProjectileInfo(in);
-			}
-			else if ( projectile.getType() == 4 ) {              // Ion (2)
-				extendedInfo = readIonProjectileInfo(in);
-			}
-			else if ( projectile.getType() == 5 ) {              // Beam (25)
-				extendedInfo = readBeamProjectileInfo(in);
-			}
+		if ( ProjectileType.LASER_OR_BURST.equals( projectile.getProjectileType() ) ) {
+			// Laser/Burst (2).
+			// Usually getType() is 4 for Laser, 2 for Burst.
+			extendedInfo = readLaserProjectileInfo(in);
 		}
-		else if ( projectile.getProjectileType() == 2 ) {      // Explosion/Asteroid? (0)
-			if ( projectile.getType() == 2 ) {
-				extendedInfo = new EmptyProjectileInfo();
-			}
+		else if ( ProjectileType.ROCK_OR_EXPLOSION.equals( projectile.getProjectileType() ) ) {
+			// Explosion/Asteroid (0).
+			// getType() is always 2?
+			extendedInfo = new EmptyProjectileInfo();
 		}
-		else if ( projectile.getProjectileType() == 3 ) {      // Missile? (0)
-			if ( projectile.getType() == 1 ) {
-				extendedInfo = new EmptyProjectileInfo();
-			}
+		else if ( ProjectileType.MISSILE.equals( projectile.getProjectileType() ) ) {
+			// Missile (0).
+			// getType() is always 1?
+			extendedInfo = new EmptyProjectileInfo();
 		}
-		else if ( projectile.getProjectileType() == 4 ) {      // Bomb? (5)
-			if ( projectile.getType() == 5 ) {
-				extendedInfo = readBombProjectileInfo(in);
-			}
+		else if ( ProjectileType.BOMB.equals( projectile.getProjectileType() ) ) {
+			// Bomb (5).
+			// getType() is always 5?
+			extendedInfo = readBombProjectileInfo(in);
 		}
-		else if ( projectile.getProjectileType() == 5 ) {
-			if ( projectile.getType() == 5 ) {                   // Beam (25)
-				extendedInfo = readBeamProjectileInfo(in);
-			}
-		}
-		if ( extendedInfo == null ) {
-			throw new IOException( String.format( "Unsupported projectileType combination: %d, %d", projectile.getProjectileType(), projectile.getType() ) );
+		else if ( ProjectileType.BEAM.equals( projectile.getProjectileType() ) ) {
+			// Beam (25).
+			// getType() is always 5?
+			extendedInfo = readBeamProjectileInfo(in);
 		}
 		projectile.setExtendedInfo( extendedInfo );
 
@@ -1702,10 +1711,33 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	}
 
 	public void writeProjectile( OutputStream out, ProjectileState projectile ) throws IOException {
-		writeInt( out, projectile.getProjectileType() );
 
-		if ( projectile.getProjectileType() == 0 ) {  // ProjectileType=0 is a null shot!?
-			return;
+		int projectileTypeFlag = 0;
+		if ( ProjectileType.INVALID.equals( projectile.getProjectileType() ) ) {
+			projectileTypeFlag = 0;
+		}
+		else if ( ProjectileType.LASER_OR_BURST.equals( projectile.getProjectileType() ) ) {
+			projectileTypeFlag = 1;
+		}
+		else if ( ProjectileType.ROCK_OR_EXPLOSION.equals( projectile.getProjectileType() ) ) {
+			projectileTypeFlag = 2;
+		}
+		else if ( ProjectileType.MISSILE.equals( projectile.getProjectileType() ) ) {
+			projectileTypeFlag = 3;
+		}
+		else if ( ProjectileType.BOMB.equals( projectile.getProjectileType() ) ) {
+			projectileTypeFlag = 4;
+		}
+		else if ( ProjectileType.BEAM.equals( projectile.getProjectileType() ) ) {
+			projectileTypeFlag = 5;
+		}
+		else {
+			throw new IOException( String.format( "Unsupported projectileType: %s", projectile.getProjectileType().toString() ) );
+		}
+		writeInt( out, projectileTypeFlag );
+
+		if ( ProjectileType.INVALID.equals( projectile.getProjectileType() ) ) {
+			return;  // No other fields are set for invalid projectiles.
 		}
 
 		writeInt( out, projectile.getCurrentPositionX() );
@@ -1759,11 +1791,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		else if ( extendedInfo instanceof BombProjectileInfo ) {
 			writeBombProjectileInfo( out, projectile.getExtendedInfo( BombProjectileInfo.class ) );
 		}
-		else if ( extendedInfo instanceof BurstProjectileInfo ) {
-			writeBurstProjectileInfo( out, projectile.getExtendedInfo( BurstProjectileInfo.class ) );
-		}
-		else if ( extendedInfo instanceof IonProjectileInfo ) {
-			writeIonProjectileInfo( out, projectile.getExtendedInfo( IonProjectileInfo.class ) );
+		else if ( extendedInfo instanceof LaserProjectileInfo ) {
+			writeLaserProjectileInfo( out, projectile.getExtendedInfo( LaserProjectileInfo.class ) );
 		}
 		else {
 			throw new IOException( "Unsupported extended projectile info: "+ extendedInfo.getClass().getSimpleName() );
@@ -1900,32 +1929,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		writeBool( out, bombInfo.getUnknownEpsilon() );
 	}
 
-	private BurstProjectileInfo readBurstProjectileInfo( FileInputStream in ) throws IOException {
-		BurstProjectileInfo burstInfo = new BurstProjectileInfo();
+	private LaserProjectileInfo readLaserProjectileInfo( FileInputStream in ) throws IOException {
+		LaserProjectileInfo laserInfo = new LaserProjectileInfo();
 
-		burstInfo.setUnknownAlpha( readInt(in) );
-		burstInfo.setSpin( readInt(in) );
+		laserInfo.setUnknownAlpha( readInt(in) );
+		laserInfo.setSpin( readInt(in) );
 
-		return burstInfo;
+		return laserInfo;
 	}
 
-	public void writeBurstProjectileInfo( OutputStream out, BurstProjectileInfo burstInfo ) throws IOException {
-		writeInt( out, burstInfo.getUnknownAlpha() );
-		writeInt( out, burstInfo.getSpin() );
-	}
-
-	private IonProjectileInfo readIonProjectileInfo( FileInputStream in ) throws IOException {
-		IonProjectileInfo ionInfo = new IonProjectileInfo();
-
-		ionInfo.setUnknownAlpha( readMinMaxedInt(in) );
-		ionInfo.setUnknownBeta( readMinMaxedInt(in) );
-
-		return ionInfo;
-	}
-
-	public void writeIonProjectileInfo( OutputStream out, IonProjectileInfo ionInfo ) throws IOException {
-		writeMinMaxedInt( out, ionInfo.getUnknownAlpha() );
-		writeMinMaxedInt( out, ionInfo.getUnknownBeta() );
+	public void writeLaserProjectileInfo( OutputStream out, LaserProjectileInfo laserInfo ) throws IOException {
+		writeInt( out, laserInfo.getUnknownAlpha() );
+		writeInt( out, laserInfo.getSpin() );
 	}
 
 
@@ -6712,6 +6727,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 
+	public static enum ProjectileType {
+		BEAM, BOMB, LASER_OR_BURST, MISSILE, ROCK_OR_EXPLOSION, INVALID;
+	}
+
+
+
 	/**
 	 * Constants for projectile/damage ownership.
 	 *
@@ -6724,13 +6745,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 	public static class ProjectileState {
-		private int projectileType = 0;
+		private ProjectileType projectileType = ProjectileType.INVALID;
 		private int currentPosX = 0, currentPosY = 0;
 		private int prevPosX = 0, prevPosY = 0;
 		private int speed = 0;
 		private int goalPosX = 0, goalPosY = 0;
 		private int heading = 0;
-		private int ownerId = 0;  // Might be 0 for player ship, 1 for nearby ship?
+		private int ownerId = 0;
 		private int selfId = 0;
 
 		private DamageState damage = null;
@@ -6768,7 +6789,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Constructs an incomplete ProjectileState.
 		 *
-		 * It will need type-specific extended info.
+		 * It will need Damage and type-specific extended info.
 		 */
 		public ProjectileState() {
 		}
@@ -6827,8 +6848,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			}
 		}
 
-		public void setProjectileType( int n ) { projectileType = n; }
-		public int getProjectileType() { return projectileType; }
+		public void setProjectileType( ProjectileType t ) { projectileType = t; }
+		public ProjectileType getProjectileType() { return projectileType; }
 
 		public void setCurrentPositionX( int n ) { currentPosX = n; }
 		public void setCurrentPositionY( int n ) { currentPosY = n; }
@@ -6868,8 +6889,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * The DamageState will sometimes (?) copy this value for its own
-		 * selfId.
+		 * A unique number for this projectile, presumably copied from some
+		 * global counter which increments with each new projectile.
+		 *
+		 * The DamageState will usually have the same value set for its own
+		 * selfId. But not always!? Projectile type and pending/fired status are
+		 * not predictive.
 		 */
 		public void setSelfId( int n ) { selfId = n; }
 		public int getSelfId() { return selfId; }
@@ -7015,11 +7040,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Projectile Type?:  %7d\n", projectileType));
+			result.append(String.format("Projectile Type:   %s\n", projectileType.toString()));
 
-			if ( projectileType == 0 ) {
+			if ( ProjectileType.INVALID.equals( projectileType ) ) {
 				result.append("\n");
-				result.append("(When Projectile Type is 0, no other fields are set.)\n");
+				result.append("(When Projectile Type is INVALID, no other fields are set.)\n");
 				return result.toString();
 			}
 
@@ -7070,8 +7095,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\n");
 
-			result.append(String.format("Type?:             %7d\n", type));
-			result.append(String.format("Broadcast Target:  %7b (Red dot at targeted location)\n", broadcastTarget));
+			result.append(String.format("Type?:             %8d\n", type));
+			result.append(String.format("Broadcast Target:  %8b (Red dot at targeted location)\n", broadcastTarget));
 
 			result.append(String.format("\nExtended Projectile Info...\n"));
 			if ( extendedInfo != null ) {
@@ -7161,6 +7186,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Unknown.
 		 *
 		 * When not set, this is -1.
+		 *
+		 * This only seems to be set by projectiles from bomb weapons: 1 when
+		 * from the nearby ship, once it materializes (-1 a moment before).
 		 */
 		public void setOwnerId( int n ) { ownerId = n; }
 		public int getOwnerId() { return ownerId; }
@@ -7645,7 +7673,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * Observed values: false (when pending), true (once fired).
+		 * Observed values: false (when pending), true (once it materializes).
 		 */
 		public void setUnknownEpsilon( boolean b ) { unknownEpsilon = b; }
 		public boolean getUnknownEpsilon() { return unknownEpsilon; }
@@ -7665,35 +7693,36 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 	}
 
-	public static class BurstProjectileInfo extends ExtendedProjectileInfo {
+	public static class LaserProjectileInfo extends ExtendedProjectileInfo {
 		private int unknownAlpha = 0;
 		private int spin = 0;
 
+		// This class represents projectiles from both Laser and Burst weapons.
 
 		/**
 		 * Constructor.
 		 */
-		public BurstProjectileInfo() {
+		public LaserProjectileInfo() {
 			super();
 		}
 
 		/**
 		 * Copy constructor.
 		 */
-		protected BurstProjectileInfo( BurstProjectileInfo srcInfo ) {
+		protected LaserProjectileInfo( LaserProjectileInfo srcInfo ) {
 			super( srcInfo );
 			unknownAlpha = srcInfo.getUnknownAlpha();
 			spin = srcInfo.getSpin();
 		}
 
 		@Override
-		public BurstProjectileInfo copy() { return new BurstProjectileInfo( this ); }
+		public LaserProjectileInfo copy() { return new LaserProjectileInfo( this ); }
 
 		/**
 		 * Unknown.
 		 *
-		 * Observed values: Varies in the range 200000-3000000.
-		 * Some kind of seed?
+		 * Observed values: For burst, it varies in the range 100000-3000000.
+		 * Some kind of seed? For regular lasers, it is 0.
 		 */
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public int getUnknownAlpha() { return unknownAlpha; }
@@ -7702,7 +7731,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Unknown.
 		 *
 		 * This is a pseudo-float based on the 'spin' tag of the
-		 * WeaponBlueprint's xml.
+		 * WeaponBlueprint's xml (burst-type weapons), if present, or 0.
 		 */
 		public void setSpin( int n ) { spin = n; }
 		public int getSpin() { return spin; }
@@ -7711,78 +7740,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Type:               Burst Info\n"));
+			result.append(String.format("Type:               Laser/Burst Info\n"));
 			result.append(String.format("Alpha?:             %7d\n", unknownAlpha));
 			result.append(String.format("Spin:               %7d\n", spin));
-
-			return result.toString();
-		}
-	}
-
-	public static class IonProjectileInfo extends ExtendedProjectileInfo {
-		private int unknownAlpha = 0;
-		private int unknownBeta = 0;
-
-
-		/**
-		 * Constructor.
-		 */
-		public IonProjectileInfo() {
-			super();
-		}
-
-		/**
-		 * Copy constructor.
-		 */
-		protected IonProjectileInfo( IonProjectileInfo srcInfo ) {
-			super( srcInfo );
-			unknownAlpha = srcInfo.getUnknownAlpha();
-			unknownBeta = srcInfo.getUnknownBeta();
-		}
-
-		@Override
-		public IonProjectileInfo copy() { return new IonProjectileInfo( this ); }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0 (generally).
-		 *
-		 * In one combat with the third-stage boss, the FED_3's flak artillery
-		 * weapon fired several projectiles of the ion type (not burst!?). This
-		 * value varied in the range of 100000-450000.
-		 */
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public int getUnknownAlpha() { return unknownAlpha; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0 (generally).
-		 *
-		 * In one combat with the third-stage boss, the FED_3's flak artillery
-		 * weapon fired several projectiles of the ion type!? This value was
-		 * consistently 720000.
-		 */
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public int getUnknownBeta() { return unknownBeta; }
-
-
-		private String prettyInt( int n ) {
-			if ( n == Integer.MIN_VALUE ) return "MIN";
-			if ( n == Integer.MAX_VALUE ) return "MAX";
-
-			return String.format("%d", n);
-		}
-
-
-		@Override
-		public String toString() {
-			StringBuilder result = new StringBuilder();
-
-			result.append(String.format("Type:               Ion Info\n"));
-			result.append(String.format("Alpha?:             %7s\n", prettyInt(unknownAlpha)));
-			result.append(String.format("Beta?:              %7s\n", prettyInt(unknownBeta)));
 
 			return result.toString();
 		}
