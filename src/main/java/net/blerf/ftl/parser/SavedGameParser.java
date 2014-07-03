@@ -549,10 +549,12 @@ public class SavedGameParser extends Parser {
 				cloakingInfo.setUnknownAlpha( readInt(in) );
 				cloakingInfo.setUnknownBeta( readInt(in) );
 				cloakingInfo.setCloakTicksGoal( readInt(in) );
-				cloakingInfo.setCloakTicks( readMinMaxedInt(in) );  // May be MIN_VALUE.
+				cloakingInfo.setCloakTicks( readMinMaxedInt(in) );
 
 				shipState.addExtendedSystemInfo( cloakingInfo );
 			}
+
+			// Other ExtendedSystemInfo may be added to the ship later (FTL 1.5.4+).
 		}
 
 		int roomCount = shipLayout.getRoomCount();
@@ -762,7 +764,7 @@ public class SavedGameParser extends Parser {
 				writeInt( out, cloakingInfo.getUnknownBeta() );
 				writeInt( out, cloakingInfo.getCloakTicksGoal() );
 
-				writeMinMaxedInt( out, cloakingInfo.getCloakTicks() );  // May be MIN_VALUE.
+				writeMinMaxedInt( out, cloakingInfo.getCloakTicks() );
 			}
     }
 
@@ -6575,8 +6577,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 	public static class UnknownZeus {
 		private List<ProjectileState> projectileList = new ArrayList<ProjectileState>();
-		private ExtendedShipInfo playerShipInfo = null;
-		private ExtendedShipInfo nearbyShipInfo = null;
 
 		private int unknownEpsilon = 0;
 		private Integer unknownZeta = null;
@@ -6594,12 +6594,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		public void setProjectileList( List<ProjectileState> projectileList ) { this.projectileList = projectileList; }
 		public List<ProjectileState> getProjectileList() { return projectileList; }
-
-		public void setPlayerExtendedShipInfo( ExtendedShipInfo shipInfo ) { playerShipInfo = shipInfo; }
-		public ExtendedShipInfo getPlayerExtendedShipInfo() { return playerShipInfo; }
-
-		public void setNearbyExtendedShipInfo( ExtendedShipInfo shipInfo ) { nearbyShipInfo = shipInfo; }
-		public ExtendedShipInfo getNearbyExtendedShipInfo() { return nearbyShipInfo; }
 
 		/**
 		 * Unknown.
@@ -6671,9 +6665,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
 
-			result.append("(Screen coords may be N*1000, where 185.5 becomes 185500.)\n");
-			result.append("(Numbers in greek lists are not necessarily related. Just conserving letters.)\n");
-
 			result.append("\nProjectiles...\n");
 			int projectileIndex = 0;
 			first = true;
@@ -6684,14 +6675,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				result.append(projectile.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
-			result.append("\nExtended Ship Info... (Player Ship)\n");
-			if ( playerShipInfo != null )
-				result.append(playerShipInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-
-			result.append("\nExtended Ship Info... (Nearby Ship)\n");
-			if ( nearbyShipInfo != null )
-				result.append(nearbyShipInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-
 			result.append("\n");
 
 			result.append(String.format("Epsilon?:  %11s (Player Ship)\n", prettyInt(unknownEpsilon)));
@@ -6700,66 +6683,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Eta?:      %11d\n", unknownEta));
 			result.append(String.format("Iota?:     %11s\n", prettyInt(unknownIota)));
 			result.append(String.format("Kappa?:    %11s\n", prettyInt(unknownKappa)));
-
-			return result.toString();
-		}
-	}
-
-
-
-	// Extended infos related to a ship.
-	public static class ExtendedShipInfo {
-		private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
-
-
-		public ExtendedShipInfo() {
-		}
-
-
-		public void addExtendedSystemInfo( ExtendedSystemInfo info ) {
-			extendedSystemInfoList.add( info );
-		}
-
-		public void setExtendedSystemInfoList( List<ExtendedSystemInfo> extendedSystemInfoList ) { this.extendedSystemInfoList = extendedSystemInfoList; }
-		public List<ExtendedSystemInfo> getExtendedSystemInfoList() { return extendedSystemInfoList; }
-
-		public <T extends ExtendedSystemInfo> List<T> getExtendedSystemInfoList( Class<T> infoClass ) {
-			List<T> result = new ArrayList<T>( 1 );
-			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-				if ( infoClass.isInstance(info) ) {
-					result.add( infoClass.cast(info) );
-				}
-			}
-			return result;
-		}
-
-		/**
-		 * Returns the first extended system info of a given class, or null.
-		 */
-		public <T extends ExtendedSystemInfo> T getExtendedSystemInfo( Class<T> infoClass ) {
-			T result = null;
-			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-				if ( infoClass.isInstance(info) ) {
-					result = infoClass.cast(info);
-					break;
-				}
-			}
-			return result;
-		}
-
-
-		@Override
-		public String toString() {
-			StringBuilder result = new StringBuilder();
-			boolean first = true;
-
-			result.append("\nMore Extended System Info...\n");
-			first = true;
-			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(info.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-			}
 
 			return result.toString();
 		}
@@ -8889,12 +8812,10 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 		}
 		zeus.setProjectileList( projectileList );
 
-		ExtendedShipInfo playerShipInfo = readExtendedShipInfo( in, gameState.getPlayerShipState(), headerAlpha );
-		zeus.setPlayerExtendedShipInfo( playerShipInfo );
+		readExtendedShipInfo( in, gameState.getPlayerShipState(), headerAlpha );
 
 		if ( gameState.getNearbyShipState() != null ) {
-			ExtendedShipInfo nearbyShipInfo = readExtendedShipInfo( in, gameState.getNearbyShipState(), headerAlpha );
-			zeus.setNearbyExtendedShipInfo( nearbyShipInfo );
+			readExtendedShipInfo( in, gameState.getNearbyShipState(), headerAlpha );
 		}
 
 		zeus.setUnknownEpsilon( readInt(in) );
@@ -8929,10 +8850,10 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 			writeProjectile( out, projectile );
 		}
 
-		writeExtendedShipInfo( out, zeus.getPlayerExtendedShipInfo(), gameState.getPlayerShipState(), headerAlpha );
+		writeExtendedShipInfo( out, gameState.getPlayerShipState(), headerAlpha );
 
 		if ( gameState.getNearbyShipState() != null ) {
-			writeExtendedShipInfo( out, zeus.getNearbyExtendedShipInfo(), gameState.getNearbyShipState(), headerAlpha );
+			writeExtendedShipInfo( out, gameState.getNearbyShipState(), headerAlpha );
 		}
 
 		writeInt( out, zeus.getUnknownEpsilon() );
@@ -8957,9 +8878,13 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 		}
 	}
 
-	private ExtendedShipInfo readExtendedShipInfo( FileInputStream in, ShipState shipState, int headerAlpha ) throws IOException {
+	/**
+	 * Reads additional fields of various ship-related classes.
+	 *
+	 * This method does not involve a dedicated class.
+	 */
+	private void readExtendedShipInfo( FileInputStream in, ShipState shipState, int headerAlpha ) throws IOException {
 System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().position()));
-		ExtendedShipInfo shipInfo = new ExtendedShipInfo();
 
 		// There is no explicit list count for drones.
 		for ( DroneState drone : shipState.getDroneList() ) {
@@ -9004,7 +8929,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 			DronePodState dronePod = readDronePod( in, DroneType.HACKING );  // The hacking drone.
 			hackingInfo.setDronePod( dronePod );
 
-			shipInfo.addExtendedSystemInfo( hackingInfo );
+			shipState.addExtendedSystemInfo( hackingInfo );
 		}
 
 		SystemState mindState = shipState.getSystem( SystemType.MIND );
@@ -9014,7 +8939,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 			mindInfo.setMindControlTicks( readInt(in) );
 			mindInfo.setMindControlTicksGoal( readInt(in) );
 
-			shipInfo.addExtendedSystemInfo( mindInfo );
+			shipState.addExtendedSystemInfo( mindInfo );
 		}
 
 		SystemState weaponsState = shipState.getSystem( SystemType.WEAPONS );
@@ -9041,7 +8966,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 
 				artilleryInfo.setWeaponModule( readWeaponModule( in, headerAlpha ) );
 
-				shipInfo.addExtendedSystemInfo( artilleryInfo );
+				shipState.addExtendedSystemInfo( artilleryInfo );
 			}
 		}
 
@@ -9068,11 +8993,14 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 
 			shipState.addStandaloneDrone( standaloneDrone );
 		}
-
-		return shipInfo;
 	}
 
-	public void writeExtendedShipInfo( OutputStream out, ExtendedShipInfo shipInfo, ShipState shipState, int headerAlpha ) throws IOException {
+	/**
+	 * Reads additional fields of various ship-related classes.
+	 *
+	 * This method does not involve a dedicated class.
+	 */
+	public void writeExtendedShipInfo( OutputStream out, ShipState shipState, int headerAlpha ) throws IOException {
 		// There is no explicit list count for drones.
 		for ( DroneState drone : shipState.getDroneList() ) {
 			ExtendedDroneInfo droneInfo = drone.getExtendedDroneInfo();
@@ -9088,7 +9016,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 		if ( hackingState != null && hackingState.getCapacity() > 0 ) {
 			// TODO: Compare system room count with extended info count.
 
-			HackingInfo hackingInfo = shipInfo.getExtendedSystemInfo( HackingInfo.class );
+			HackingInfo hackingInfo = shipState.getExtendedSystemInfo( HackingInfo.class );
 			// This should not be null.
 			writeInt( out, hackingInfo.getUnknownAlpha() );
 			writeInt( out, hackingInfo.getUnknownBeta() );
@@ -9105,7 +9033,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 
 		SystemState mindState = shipState.getSystem( SystemType.MIND );
 		if ( mindState != null && mindState.getCapacity() > 0 ) {
-			MindInfo mindInfo = shipInfo.getExtendedSystemInfo( MindInfo.class );
+			MindInfo mindInfo = shipState.getExtendedSystemInfo( MindInfo.class );
 			// This should not be null.
 			writeInt( out, mindInfo.getMindControlTicks() );
 			writeInt( out, mindInfo.getMindControlTicksGoal() );
@@ -9122,7 +9050,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 			}
 		}
 
-		List<ArtilleryInfo> artilleryInfoList = shipInfo.getExtendedSystemInfoList( ArtilleryInfo.class );
+		List<ArtilleryInfo> artilleryInfoList = shipState.getExtendedSystemInfoList( ArtilleryInfo.class );
 		for ( ArtilleryInfo artilleryInfo : artilleryInfoList ) {
 			writeWeaponModule( out, artilleryInfo.getWeaponModule(), headerAlpha );
 		}
