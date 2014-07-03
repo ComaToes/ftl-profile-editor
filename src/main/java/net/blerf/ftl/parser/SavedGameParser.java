@@ -619,6 +619,7 @@ public class SavedGameParser extends Parser {
 
 			shipState.addWeapon( weapon );
 		}
+		// WeaponStates may have WeaponModules set on them later (FTL 1.5.4+).
 
 		int droneCount = readInt(in);
 		for (int i=0; i < droneCount; i++) {
@@ -4664,6 +4665,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Constructs an incomplete WeaponState.
 		 *
 		 * It will need a weaponId.
+		 *
+		 * For FTL 1.5.4+ saved games, a weapon module will be needed.
 		 */
 		public WeaponState() {
 		}
