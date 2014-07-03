@@ -8981,9 +8981,9 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 				throw new IOException( String.format("Found %d WeaponModules, but there are %d Weapons.", weaponModCount, weaponCount) );
 			}
 
-			for ( WeaponState weaponState : shipState.getWeaponList() ) {
+			for ( WeaponState weapon : shipState.getWeaponList() ) {
 				WeaponModuleState weaponMod = readWeaponModule( in, headerAlpha );
-				weaponState.setWeaponModule( weaponMod );
+				weapon.setWeaponModule( weaponMod );
 			}
 		}
 
@@ -9073,8 +9073,8 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 
 			int weaponCount = shipState.getWeaponList().size();
 			writeInt( out, weaponCount );
-			for ( WeaponState weaponState : shipState.getWeaponList() ) {
-				writeWeaponModule( out, weaponState.getWeaponModule(), headerAlpha );
+			for ( WeaponState weapon : shipState.getWeaponList() ) {
+				writeWeaponModule( out, weapon.getWeaponModule(), headerAlpha );
 			}
 		}
 
