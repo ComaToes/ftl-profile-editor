@@ -69,6 +69,9 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String FLAGSHIP_MOVING = "Flagship Moving";
 	private static final String FLAGSHIP_BASE_TURNS = "Flagship Base Turns";
 	private static final String FLAGSHIP_NEARBY = "Flagship Nearby";
+	private static final String FLAGSHIP_ALPHA = "Alpha?";
+	private static final String FLAGSHIP_GAMMA = "Gamma?";
+	private static final String FLAGSHIP_DELTA = "Delta?";
 
 	private static final String ENV_RED_GIANT_LEVEL = "Red Giant Level?";
 	private static final String ENV_PULSAR_LEVEL = "Pulsar Level?";
@@ -100,13 +103,9 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String TOP_EPSILON = "Epsilon?";
 	private static final String TOP_KAPPA = "Kappa?";
 	private static final String TOP_MU = "Mu?";
-
-	private static final String ZEUS_EPSILON = "Epsilon?";
-	private static final String ZEUS_ZETA = "Zeta?";
-	private static final String ZEUS_AUTOFIRE = "Autofire";
-	private static final String ZEUS_ETA = "Eta?";
-	private static final String ZEUS_IOTA = "Iota?";
-	private static final String ZEUS_KAPPA = "Kappa?";
+	private static final String TOP_NU = "Nu?";
+	private static final String TOP_XI = "Xi?";
+	private static final String TOP_AUTOFIRE = "Autofire";
 
 	private FTLFrame frame;
 
@@ -117,11 +116,10 @@ public class SavedGameGeneralPanel extends JPanel {
 	private FieldEditorPanel envPanel = null;
 	private FieldEditorPanel aiPanel = null;
 	private FieldEditorPanel unknownsPanel = null;
-	private FieldEditorPanel zeusPanel = null;
 
+	private boolean flagshipEnabled = true;
 	private boolean envEnabled = true;
 	private boolean aiEnabled = true;
-	private boolean zeusEnabled = true;
 
 
 	public SavedGameGeneralPanel( FTLFrame frame ) {
@@ -193,6 +191,13 @@ public class SavedGameGeneralPanel extends JPanel {
 		bossPanel.addRow( FLAGSHIP_BASE_TURNS, FieldEditorPanel.ContentType.INTEGER );
 		bossPanel.addRow( FLAGSHIP_NEARBY, FieldEditorPanel.ContentType.BOOLEAN );
 		bossPanel.addBlankRow();
+		bossPanel.addRow( FLAGSHIP_ALPHA, FieldEditorPanel.ContentType.INTEGER );
+		bossPanel.getInt(FLAGSHIP_ALPHA).setDocument( new RegexDocument("-?[0-9]*") );
+		bossPanel.addRow( FLAGSHIP_GAMMA, FieldEditorPanel.ContentType.INTEGER );
+		bossPanel.getInt(FLAGSHIP_GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
+		bossPanel.addRow( FLAGSHIP_DELTA, FieldEditorPanel.ContentType.INTEGER );
+		bossPanel.getInt(FLAGSHIP_DELTA).setDocument( new RegexDocument("-?[0-9]*") );
+		bossPanel.addBlankRow();
 		bossPanel.addFillRow();
 
 		bossPanel.getBoolean(FLAGSHIP).addMouseListener( new StatusbarMouseListener(frame, "Toggle the rebel flagship on the map. (FTL 1.01-1.03.3: Instant loss if not in sector 8)") );
@@ -200,6 +205,9 @@ public class SavedGameGeneralPanel extends JPanel {
 		bossPanel.getBoolean(FLAGSHIP_MOVING).addMouseListener( new StatusbarMouseListener(frame, "The flagship is moving from its current beacon toward the next.") );
 		bossPanel.getInt(FLAGSHIP_BASE_TURNS).addMouseListener( new StatusbarMouseListener(frame, "Number of turns the flagship has started at the fed base. Instant loss will occur beyond 3.") );
 		bossPanel.getBoolean(FLAGSHIP_NEARBY).addMouseListener( new StatusbarMouseListener(frame, "True if nearby ship is the flagship. Only set when a nearby ship is present.") );
+		bossPanel.getInt(FLAGSHIP_ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Last seen rebel flagship stage, or 0. Redundant?") );
+		bossPanel.getInt(FLAGSHIP_GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Varies during first and second rebel flagship stages, or 0.") );
+		bossPanel.getInt(FLAGSHIP_DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Surge ticks during all rebel flagship stages, or 0. Goal varies. No visible effect during first stage.") );
 
 		bossPanel.getBoolean(FLAGSHIP).addItemListener(new ItemListener() {
 			@Override
@@ -309,8 +317,7 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		unknownsPanel = new FieldEditorPanel( true );
 		unknownsPanel.setBorder( BorderFactory.createTitledBorder("Top-Level Unknowns") );
-		unknownsPanel.addRow( TOP_GAMMA, FieldEditorPanel.ContentType.INTEGER );
-		unknownsPanel.getInt(TOP_GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.addRow( TOP_GAMMA, FieldEditorPanel.ContentType.BOOLEAN );
 		unknownsPanel.addRow( TOP_DELTA, FieldEditorPanel.ContentType.INTEGER );
 		unknownsPanel.getInt(TOP_DELTA).setDocument( new RegexDocument("-?[0-9]*") );
 		unknownsPanel.addRow( TOP_EPSILON, FieldEditorPanel.ContentType.STRING );
@@ -319,34 +326,22 @@ public class SavedGameGeneralPanel extends JPanel {
 		unknownsPanel.addRow( TOP_MU, FieldEditorPanel.ContentType.INTEGER );
 		unknownsPanel.getInt(TOP_MU).setDocument( new RegexDocument("-?[0-9]*") );
 		unknownsPanel.addBlankRow();
+		unknownsPanel.addRow( TOP_NU, FieldEditorPanel.ContentType.INTEGER );
+		unknownsPanel.getInt(TOP_NU).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.addRow( TOP_XI, FieldEditorPanel.ContentType.INTEGER );
+		unknownsPanel.getInt(TOP_XI).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.addRow( TOP_AUTOFIRE, FieldEditorPanel.ContentType.BOOLEAN );
+		unknownsPanel.addBlankRow();
 		unknownsPanel.addFillRow();
 
-		unknownsPanel.getInt(TOP_GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		unknownsPanel.getBoolean(TOP_GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
 		unknownsPanel.getInt(TOP_DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Some kind of seed? (-1 when not set)") );
 		unknownsPanel.getString(TOP_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Rare eventId. Related to waiting?") );
 		unknownsPanel.getInt(TOP_KAPPA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Maybe flagship-related?") );
 		unknownsPanel.getInt(TOP_MU).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-
-		zeusPanel = new FieldEditorPanel( true );
-		zeusPanel.setBorder( BorderFactory.createTitledBorder("Zeus?") );
-		zeusPanel.addRow( ZEUS_EPSILON, FieldEditorPanel.ContentType.INTEGER );
-		zeusPanel.getInt(ZEUS_EPSILON).setDocument( new RegexDocument("-?[0-9]*") );
-		zeusPanel.addRow( ZEUS_ZETA, FieldEditorPanel.ContentType.INTEGER );
-		zeusPanel.getInt(ZEUS_ZETA).setDocument( new RegexDocument("-?[0-9]*") );
-		zeusPanel.addRow( ZEUS_AUTOFIRE, FieldEditorPanel.ContentType.BOOLEAN );
-		zeusPanel.addRow( ZEUS_ETA, FieldEditorPanel.ContentType.INTEGER );
-		zeusPanel.getInt(ZEUS_ETA).setDocument( new RegexDocument("-?[0-9]*") );
-		zeusPanel.addRow( ZEUS_IOTA, FieldEditorPanel.ContentType.INTEGER );
-		zeusPanel.getInt(ZEUS_IOTA).setDocument( new RegexDocument("-?[0-9]*") );
-		zeusPanel.addRow( ZEUS_KAPPA, FieldEditorPanel.ContentType.INTEGER );
-		zeusPanel.getInt(ZEUS_KAPPA).setDocument( new RegexDocument("-?[0-9]*") );
-
-		zeusPanel.getInt(ZEUS_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the player ship.") );
-		zeusPanel.getInt(ZEUS_ZETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the nearby ship, when one is present.") );
-		zeusPanel.getBoolean(ZEUS_AUTOFIRE).addMouseListener( new StatusbarMouseListener(frame, "Toggle autofire.") );
-		zeusPanel.getInt(ZEUS_ETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		zeusPanel.getInt(ZEUS_IOTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		zeusPanel.getInt(ZEUS_KAPPA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		unknownsPanel.getInt(TOP_NU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the player ship.") );
+		unknownsPanel.getInt(TOP_XI).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the nearby ship, when one is present.") );
+		unknownsPanel.getBoolean(TOP_AUTOFIRE).addMouseListener( new StatusbarMouseListener(frame, "Toggle autofire.") );
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.fill = GridBagConstraints.NORTH;
@@ -378,9 +373,6 @@ public class SavedGameGeneralPanel extends JPanel {
 		thisC.gridy++;
 		this.add( unknownsPanel, thisC );
 
-		thisC.gridx++;
-		this.add( zeusPanel, thisC );
-
 		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weighty = 1.0;
 		thisC.gridx = 0;
@@ -401,7 +393,6 @@ public class SavedGameGeneralPanel extends JPanel {
 		envPanel.reset();
 		aiPanel.reset();
 		unknownsPanel.reset();
-		zeusPanel.reset();
 
 		if ( gameState != null ) {
 			SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
@@ -467,6 +458,18 @@ public class SavedGameGeneralPanel extends JPanel {
 			bossPanel.setBoolAndReminder( FLAGSHIP_MOVING, gameState.isRebelFlagshipMoving() );
 			bossPanel.setIntAndReminder( FLAGSHIP_BASE_TURNS, gameState.getRebelFlagshipBaseTurns() );
 			bossPanel.setBoolAndReminder( FLAGSHIP_NEARBY, gameState.isRebelFlagshipNearby() );
+
+			SavedGameParser.RebelFlagshipState flagship = gameState.getRebelFlagshipState();
+			flagshipEnabled = ( flagship != null );
+			bossPanel.getInt(FLAGSHIP_ALPHA).setEnabled( flagshipEnabled );
+			bossPanel.getInt(FLAGSHIP_GAMMA).setEnabled( flagshipEnabled );
+			bossPanel.getInt(FLAGSHIP_DELTA).setEnabled( flagshipEnabled );
+
+			if ( flagshipEnabled ) {
+				bossPanel.setIntAndReminder( FLAGSHIP_ALPHA, flagship.getUnknownAlpha() );
+				bossPanel.setIntAndReminder( FLAGSHIP_GAMMA, flagship.getUnknownGamma() );
+				bossPanel.setIntAndReminder( FLAGSHIP_DELTA, flagship.getUnknownDelta() );
+			}
 
 			for ( SavedGameParser.HazardVulnerability h : SavedGameParser.HazardVulnerability.values() ) {
 				envPanel.getCombo(ENV_VULN).addItem( h );
@@ -539,29 +542,14 @@ public class SavedGameGeneralPanel extends JPanel {
 				aiPanel.setIntAndReminder( AI_BOARDERS_NEEDED, ai.getBoardersNeeded() );
 			}
 
-			unknownsPanel.setIntAndReminder( TOP_GAMMA, gameState.getUnknownGamma() );
+			unknownsPanel.setBoolAndReminder( TOP_GAMMA, gameState.getUnknownGamma() );
 			unknownsPanel.setIntAndReminder( TOP_DELTA, gameState.getUnknownDelta() );
 			unknownsPanel.setStringAndReminder( TOP_EPSILON, gameState.getUnknownEpsilon() );
 			unknownsPanel.setIntAndReminder( TOP_KAPPA, gameState.getUnknownKappa() );
 			unknownsPanel.setIntAndReminder( TOP_MU, gameState.getUnknownMu() );
-
-			SavedGameParser.UnknownZeus zeus = gameState.getUnknownZeus();
-			zeusEnabled = ( zeus != null );
-			zeusPanel.getInt(ZEUS_EPSILON).setEnabled( zeusEnabled );
-			zeusPanel.getInt(ZEUS_ZETA).setEnabled( zeusEnabled );
-			zeusPanel.getBoolean(ZEUS_AUTOFIRE).setEnabled( zeusEnabled );
-			zeusPanel.getInt(ZEUS_ETA).setEnabled( zeusEnabled );
-			zeusPanel.getInt(ZEUS_IOTA).setEnabled( zeusEnabled );
-			zeusPanel.getInt(ZEUS_KAPPA).setEnabled( zeusEnabled );
-
-			if ( zeusEnabled ) {
-				zeusPanel.setIntAndReminder( ZEUS_EPSILON, zeus.getUnknownEpsilon() );
-				zeusPanel.setIntAndReminder( ZEUS_ZETA, (zeus.getUnknownZeta() != null ? zeus.getUnknownZeta().intValue() : 0) );
-				zeusPanel.setBoolAndReminder( ZEUS_AUTOFIRE, zeus.getAutofire() );
-				zeusPanel.setIntAndReminder( ZEUS_ETA, zeus.getUnknownEta() );
-				zeusPanel.setIntAndReminder( ZEUS_IOTA, zeus.getUnknownIota() );
-				zeusPanel.setIntAndReminder( ZEUS_KAPPA, zeus.getUnknownKappa() );
-			}
+			unknownsPanel.setIntAndReminder( TOP_NU, gameState.getUnknownNu() );
+			unknownsPanel.setIntAndReminder( TOP_XI, (gameState.getUnknownXi() != null ? gameState.getUnknownXi().intValue() : 0) );
+			unknownsPanel.setBoolAndReminder( TOP_AUTOFIRE, gameState.getAutofire() );
 		}
 
 		this.repaint();
@@ -570,22 +558,17 @@ public class SavedGameGeneralPanel extends JPanel {
 	@SuppressWarnings("unchecked")
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
 		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
-		String newString = null;
 
-		newString = sessionPanel.getInt(TOTAL_SHIPS_DEFEATED).getText();
-		try { gameState.setTotalShipsDefeated(Integer.parseInt(newString)); }
+		try { gameState.setTotalShipsDefeated( sessionPanel.parseInt(TOTAL_SHIPS_DEFEATED) ); }
 		catch ( NumberFormatException e ) {}
 
-		newString = sessionPanel.getInt(TOTAL_BEACONS).getText();
-		try { gameState.setTotalBeaconsExplored(Integer.parseInt(newString)); }
+		try { gameState.setTotalBeaconsExplored( sessionPanel.parseInt(TOTAL_BEACONS) ); }
 		catch ( NumberFormatException e ) {}
 
-		newString = sessionPanel.getInt(TOTAL_SCRAP).getText();
-		try { gameState.setTotalScrapCollected(Integer.parseInt(newString)); }
+		try { gameState.setTotalScrapCollected( sessionPanel.parseInt(TOTAL_SCRAP) ); }
 		catch ( NumberFormatException e ) {}
 
-		newString = sessionPanel.getInt(TOTAL_CREW_HIRED).getText();
-		try { gameState.setTotalCrewHired(Integer.parseInt(newString)); }
+		try { gameState.setTotalCrewHired( sessionPanel.parseInt(TOTAL_CREW_HIRED) ); }
 		catch ( NumberFormatException e ) {}
 
 		gameState.setDLCEnabled( sessionPanel.getBoolean(DLC).isSelected() );
@@ -593,8 +576,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		Object diffObj = sessionPanel.getCombo(DIFFICULTY).getSelectedItem();
 		gameState.setDifficulty( (Difficulty)diffObj );
 
-		newString = sessionPanel.getInt(TOP_BETA).getText();
-		try { gameState.setUnknownBeta(Integer.parseInt(newString)); }
+		try { gameState.setUnknownBeta( sessionPanel.parseInt(TOP_BETA) ); }
 		catch ( NumberFormatException e ) {}
 
 		gameState.getCargoIdList().clear();
@@ -608,8 +590,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			}
 		}
 
-		newString = sectorPanel.getInt(SECTOR_TREE_SEED).getText();
-		try { gameState.setSectorTreeSeed(Integer.parseInt(newString)); }
+		try { gameState.setSectorTreeSeed( sectorPanel.parseInt(SECTOR_TREE_SEED) ); }
 		catch ( NumberFormatException e ) {}
 
 		// Set the current sector, and unvisit any tree breadcrumbs beyond it.
@@ -624,20 +605,16 @@ public class SavedGameGeneralPanel extends JPanel {
 			}
 		}
 
-		newString = sectorPanel.getInt(SECTOR_LAYOUT_SEED).getText();
-		try { gameState.setSectorLayoutSeed(Integer.parseInt(newString)); }
+		try { gameState.setSectorLayoutSeed( sectorPanel.parseInt(SECTOR_LAYOUT_SEED) ); }
 		catch ( NumberFormatException e ) {}
 
-		newString = sectorPanel.getInt(REBEL_FLEET_OFFSET).getText();
-		try { gameState.setRebelFleetOffset(Integer.parseInt(newString)); }
+		try { gameState.setRebelFleetOffset( sectorPanel.parseInt(REBEL_FLEET_OFFSET) ); }
 		catch ( NumberFormatException e ) {}
 
-		newString = sectorPanel.getInt(REBEL_FLEET_FUDGE).getText();
-		try { gameState.setRebelFleetFudge(Integer.parseInt(newString)); }
+		try { gameState.setRebelFleetFudge( sectorPanel.parseInt(REBEL_FLEET_FUDGE) ); }
 		catch ( NumberFormatException e ) {}
 
-		newString = sectorPanel.getInt(REBEL_PURSUIT_MOD).getText();
-		try { gameState.setRebelPursuitMod(Integer.parseInt(newString)); }
+		try { gameState.setRebelPursuitMod( sectorPanel.parseInt(REBEL_PURSUIT_MOD) ); }
 		catch ( NumberFormatException e ) {}
 
 		gameState.setSectorIsHiddenCrystalWorlds( sectorPanel.getBoolean(HIDDEN_SECTOR).isSelected() );
@@ -650,8 +627,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			gameState.setRebelFlagshipHop( bossPanel.getSlider(FLAGSHIP_HOP).getValue() );
 			gameState.setRebelFlagshipMoving( bossPanel.getBoolean(FLAGSHIP_MOVING).isSelected() );
 
-			newString = bossPanel.getInt(FLAGSHIP_BASE_TURNS).getText();
-			try { gameState.setRebelFlagshipBaseTurns(Integer.parseInt(newString)); }
+			try { gameState.setRebelFlagshipBaseTurns( bossPanel.parseInt(FLAGSHIP_BASE_TURNS) ); }
 			catch ( NumberFormatException e ) {}
 		}
 		else {
@@ -661,18 +637,27 @@ public class SavedGameGeneralPanel extends JPanel {
 		}
 		gameState.setRebelFlagshipNearby( bossPanel.getBoolean(FLAGSHIP_NEARBY).isSelected() );
 
+		SavedGameParser.RebelFlagshipState flagship = gameState.getRebelFlagshipState();
+		if ( flagship != null && flagshipEnabled ) {
+			try { flagship.setUnknownAlpha( bossPanel.parseInt(FLAGSHIP_ALPHA) ); }
+			catch ( NumberFormatException e ) {}
+
+			try { flagship.setUnknownGamma( bossPanel.parseInt(FLAGSHIP_GAMMA) ); }
+			catch ( NumberFormatException e ) {}
+
+			try { flagship.setUnknownDelta( bossPanel.parseInt(FLAGSHIP_DELTA) ); }
+			catch ( NumberFormatException e ) {}
+		}
+
 		SavedGameParser.EnvironmentState env = gameState.getEnvironment();
 		if ( env != null && envEnabled ) {
-			newString = envPanel.getInt(ENV_RED_GIANT_LEVEL).getText();
-			try { env.setRedGiantLevel(Integer.parseInt(newString)); }
+			try { env.setRedGiantLevel( envPanel.parseInt(ENV_RED_GIANT_LEVEL) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = envPanel.getInt(ENV_PULSAR_LEVEL).getText();
-			try { env.setPulsarLevel(Integer.parseInt(newString)); }
+			try { env.setPulsarLevel( envPanel.parseInt(ENV_PULSAR_LEVEL) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = envPanel.getInt(ENV_PDS_LEVEL).getText();
-			try { env.setPDSLevel(Integer.parseInt(newString)); }
+			try { env.setPDSLevel( envPanel.parseInt(ENV_PDS_LEVEL) ); }
 			catch ( NumberFormatException e ) {}
 
 			Object vulnObj = envPanel.getCombo(ENV_VULN).getSelectedItem();
@@ -682,38 +667,30 @@ public class SavedGameGeneralPanel extends JPanel {
 			if ( envPanel.getBoolean(ENV_ASTEROID_FIELD).isSelected() ) {
 				asteroidField = new SavedGameParser.AsteroidFieldState();
 
-				newString = envPanel.getInt(ENV_ASTEROID_ALPHA).getText();
-				try { asteroidField.setUnknownAlpha(Integer.parseInt(newString)); }
+				try { asteroidField.setUnknownAlpha( envPanel.parseInt(ENV_ASTEROID_ALPHA) ); }
 				catch ( NumberFormatException e ) {}
 
-				newString = envPanel.getInt(ENV_ASTEROID_STRAY_TICKS).getText();
-				try { asteroidField.setStrayRockTicks(Integer.parseInt(newString)); }
+				try { asteroidField.setStrayRockTicks( envPanel.parseInt(ENV_ASTEROID_STRAY_TICKS) ); }
 				catch ( NumberFormatException e ) {}
 
-				newString = envPanel.getInt(ENV_ASTEROID_GAMMA).getText();
-				try { asteroidField.setUnknownGamma(Integer.parseInt(newString)); }
+				try { asteroidField.setUnknownGamma( envPanel.parseInt(ENV_ASTEROID_GAMMA) ); }
 				catch ( NumberFormatException e ) {}
 
-				newString = envPanel.getInt(ENV_ASTEROID_BKG_TICKS).getText();
-				try { asteroidField.setBgDriftTicks(Integer.parseInt(newString)); }
+				try { asteroidField.setBgDriftTicks( envPanel.parseInt(ENV_ASTEROID_BKG_TICKS) ); }
 				catch ( NumberFormatException e ) {}
 
-				newString = envPanel.getInt(ENV_ASTEROID_TARGET).getText();
-				try { asteroidField.setCurrentTarget(Integer.parseInt(newString)); }
+				try { asteroidField.setCurrentTarget( envPanel.parseInt(ENV_ASTEROID_TARGET) ); }
 				catch ( NumberFormatException e ) {}
 			}
 			env.setAsteroidField( asteroidField );
 
-			newString = envPanel.getInt(ENV_FLARE_FADE_TICKS).getText();
-			try { env.setSolarFlareFadeTicks(Integer.parseInt(newString)); }
+			try { env.setSolarFlareFadeTicks( envPanel.parseInt(ENV_FLARE_FADE_TICKS) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = envPanel.getInt(ENV_HAVOC_TICKS).getText();
-			try { env.setHavocTicks(Integer.parseInt(newString)); }
+			try { env.setHavocTicks( envPanel.parseInt(ENV_HAVOC_TICKS) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = envPanel.getInt(ENV_PDS_TICKS).getText();
-			try { env.setPDSTicks(Integer.parseInt(newString)); }
+			try { env.setPDSTicks( envPanel.parseInt(ENV_PDS_TICKS) ); }
 			catch ( NumberFormatException e ) {}
 		}
 
@@ -723,75 +700,47 @@ public class SavedGameGeneralPanel extends JPanel {
 			ai.setEscaping( aiPanel.getBoolean(AI_ESCAPING).isSelected() );
 			ai.setDestroyed( aiPanel.getBoolean(AI_DESTROYED).isSelected() );
 
-			newString = aiPanel.getInt(AI_SURRENDER_THRESHOLD).getText();
-			try { ai.setSurrenderThreshold(Integer.parseInt(newString)); }
+			try { ai.setSurrenderThreshold( aiPanel.parseInt(AI_SURRENDER_THRESHOLD) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = aiPanel.getInt(AI_ESCAPE_THRESHOLD).getText();
-			try { ai.setEscapeThreshold(Integer.parseInt(newString)); }
+			try { ai.setEscapeThreshold( aiPanel.parseInt(AI_ESCAPE_THRESHOLD) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = aiPanel.getInt(AI_ESCAPE_TICKS).getText();
-			try { ai.setEscapeTicks(Integer.parseInt(newString)); }
+			try { ai.setEscapeTicks( aiPanel.parseInt(AI_ESCAPE_TICKS) ); }
 			catch ( NumberFormatException e ) {}
 
 			ai.setStalemateTriggered( aiPanel.getBoolean(AI_STALEMATE).isSelected() );
 
-			newString = aiPanel.getInt(AI_STALEMATE_TICKS).getText();
-			try { ai.setStalemateTicks(Integer.parseInt(newString)); }
+			try { ai.setStalemateTicks( aiPanel.parseInt(AI_STALEMATE_TICKS) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = aiPanel.getInt(AI_BOARDING_ATTEMPTS).getText();
-			try { ai.setBoardingAttempts(Integer.parseInt(newString)); }
+			try { ai.setBoardingAttempts( aiPanel.parseInt(AI_BOARDING_ATTEMPTS) ); }
 			catch ( NumberFormatException e ) {}
 
-			newString = aiPanel.getInt(AI_BOARDERS_NEEDED).getText();
-			try { ai.setBoardersNeeded(Integer.parseInt(newString)); }
+			try { ai.setBoardersNeeded( aiPanel.parseInt(AI_BOARDERS_NEEDED) ); }
 			catch ( NumberFormatException e ) {}
 		}
 
-		newString = unknownsPanel.getInt(TOP_GAMMA).getText();
-		try { gameState.setUnknownGamma(Integer.parseInt(newString)); }
-		catch ( NumberFormatException e ) {}
+		gameState.setUnknownGamma( unknownsPanel.getBoolean(TOP_GAMMA).isSelected() );
 
-		newString = unknownsPanel.getInt(TOP_DELTA).getText();
-		try { gameState.setUnknownDelta(Integer.parseInt(newString)); }
+		try { gameState.setUnknownDelta( unknownsPanel.parseInt(TOP_DELTA) ); }
 		catch ( NumberFormatException e ) {}
 
 		gameState.setUnknownEpsilon( unknownsPanel.getString(TOP_EPSILON).getText() );
 
-		newString = unknownsPanel.getInt(TOP_KAPPA).getText();
-		try { gameState.setUnknownKappa(Integer.parseInt(newString)); }
+		try { gameState.setUnknownKappa( unknownsPanel.parseInt(TOP_KAPPA) ); }
 		catch ( NumberFormatException e ) {}
 
-		newString = unknownsPanel.getInt(TOP_MU).getText();
-		try { gameState.setUnknownMu(Integer.parseInt(newString)); }
+		try { gameState.setUnknownMu( unknownsPanel.parseInt(TOP_MU) ); }
 		catch ( NumberFormatException e ) {}
 
-		SavedGameParser.UnknownZeus zeus = gameState.getUnknownZeus();
-		if ( zeus != null && zeusEnabled ) {
-			newString = zeusPanel.getInt(ZEUS_EPSILON).getText();
-			try { zeus.setUnknownEpsilon(Integer.parseInt(newString)); }
-			catch ( NumberFormatException e ) {}
+		try { gameState.setUnknownNu( unknownsPanel.parseInt(TOP_NU) ); }
+		catch ( NumberFormatException e ) {}
 
-			newString = zeusPanel.getInt(ZEUS_ZETA).getText();
-			try { zeus.setUnknownZeta( new Integer(Integer.parseInt(newString)) ); }
-			catch ( NumberFormatException e ) {}
+		try { gameState.setUnknownXi( new Integer( unknownsPanel.parseInt(TOP_XI) ) ); }
+		catch ( NumberFormatException e ) {}
 
-			zeus.setAutofire( zeusPanel.getBoolean(ZEUS_AUTOFIRE).isSelected() );
-
-			newString = zeusPanel.getInt(ZEUS_ETA).getText();
-			try { zeus.setUnknownEta(Integer.parseInt(newString)); }
-			catch ( NumberFormatException e ) {}
-
-			newString = zeusPanel.getInt(ZEUS_IOTA).getText();
-			try { zeus.setUnknownIota(Integer.parseInt(newString)); }
-			catch ( NumberFormatException e ) {}
-
-			newString = zeusPanel.getInt(ZEUS_KAPPA).getText();
-			try { zeus.setUnknownKappa(Integer.parseInt(newString)); }
-			catch ( NumberFormatException e ) {}
-		}
+		gameState.setAutofire( unknownsPanel.getBoolean(TOP_AUTOFIRE).isSelected() );
 	}
 
 	/**

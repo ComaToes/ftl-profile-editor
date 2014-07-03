@@ -148,7 +148,7 @@ public class SavedGameParser extends Parser {
 			if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
 				gameState.setCurrentBeaconId( readInt(in) );
 
-				gameState.setUnknownGamma( readInt(in) );
+				gameState.setUnknownGamma( readBool(in) );
 				gameState.setUnknownDelta( readInt(in) );
 				gameState.setUnknownEpsilon( readString(in) );
 				gameState.setSectorHazardsVisible( readBool(in) );
@@ -239,8 +239,7 @@ public class SavedGameParser extends Parser {
 
 				// Flagship state is set much later.
 
-				UnknownZeus zeus = readZeus( in, gameState, headerAlpha );
-				gameState.setUnknownZeus( zeus );
+				readZeus( in, gameState, headerAlpha );
 			}
 
 			// The stream should end here.
@@ -331,7 +330,7 @@ public class SavedGameParser extends Parser {
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
 			writeInt( out, gameState.getCurrentBeaconId() );
 
-			writeInt( out, gameState.getUnknownGamma() );
+			writeBool( out, gameState.getUnknownGamma() );
 			writeInt( out, gameState.getUnknownDelta() );
 			writeString( out, gameState.getUnknownEpsilon() );
 			writeBool( out, gameState.areSectorHazardsVisible() );
@@ -404,7 +403,7 @@ public class SavedGameParser extends Parser {
 
 			// Flagship state is set much later.
 
-			writeZeus( out, gameState, gameState.getUnknownZeus(), headerAlpha );
+			writeZeus( out, gameState, headerAlpha );
 		}
 	}
 
@@ -2040,7 +2039,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int rebelFleetFudge = 100;    // Arbitrary default.
 		private int rebelPursuitMod = 0;
 		private int currentBeaconId = 0;
-		private int unknownGamma = 0;
+		private boolean unknownGamma = false;
 		private int unknownDelta = -1;
 		private String unknownEpsilon = "";
 		private boolean sectorHazardsVisible = false;
@@ -2060,10 +2059,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private ShipState nearbyShipState = null;
 		private NearbyShipAIState nearbyShipAI = null;
 		private EnvironmentState environment = null;
+		private List<ProjectileState> projectileList = new ArrayList<ProjectileState>();
+		private int unknownNu = 0;
+		private Integer unknownXi = null;
+		private boolean autofire = false;
 		private RebelFlagshipState rebelFlagshipState = null;
 		private List<MysteryBytes> mysteryList = new ArrayList<MysteryBytes>();
-
-		private UnknownZeus unknownZeus = null;
 
 
 		public SavedGameState() {
@@ -2268,13 +2269,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * Observed values: 0 (normal), 1 (distress beacon active, or at least
-		 * after waiting... until the wait-related events finish, then 0 again).
+		 * Observed values: false (normal), true (distress beacon active, or at
+		 * least after waiting... until the wait-related events finish, then
+		 * false again).
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public int getUnknownGamma() { return unknownGamma; }
+		public void setUnknownGamma( boolean b ) { unknownGamma = b; }
+		public boolean getUnknownGamma() { return unknownGamma; }
 
 		/**
 		 * Unknown.
@@ -2467,6 +2469,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public EncounterState getEncounter() { return encounter; }
 
 		/**
+		 * Toggles whether the nearby ship is the rebel flagship.
+		 *
+		 * Saved games omit this value when a nearby ship is not present.
+		 *
+		 * TODO: Document what happens when set to true.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setRebelFlagshipNearby( boolean b ) { rebelFlagshipNearby = b; }
+		public boolean isRebelFlagshipNearby() { return rebelFlagshipNearby; }
+
+		/**
 		 * Sets a nearby ship, or null.
 		 *
 		 * Since FTL 1.5.4, when this is non-null, a NearbyShipAI must be set.
@@ -2498,6 +2512,49 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setEnvironment( EnvironmentState env ) { environment = env; }
 		public EnvironmentState getEnvironment() { return environment; }
 
+
+		/**
+		 * Adds a projectile.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void addProjectile( ProjectileState projectile ) {
+			projectileList.add( projectile );
+		}
+
+		public List<ProjectileState> getProjectileList() { return projectileList; }
+
+
+		/**
+		 * Unknown.
+		 *
+		 * Erratic values, large and small. Even changes mid-combat!?
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownNu( int n ) { unknownNu = n; }
+		public int getUnknownNu() { return unknownNu; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Erratic values, large and small.
+		 *
+		 * This is only set when a nearby ship is present.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownXi( Integer n ) { unknownXi = n; }
+		public Integer getUnknownXi() { return unknownXi; }
+
+		/**
+		 * Toggles autofire.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setAutofire( boolean b ) { autofire = b; }
+		public boolean getAutofire() { return autofire; }
+
 		/**
 		 * Sets info about the next encounter with the rebel flagship.
 		 */
@@ -2507,22 +2564,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public RebelFlagshipState getRebelFlagshipState() {
 			return rebelFlagshipState;
 		}
-
-		/**
-		 * Toggles whether the nearby ship is the rebel flagship.
-		 *
-		 * Saved games omit this value when a nearby ship is not present.
-		 *
-		 * TODO: Document what happens when set to true.
-		 *
-		 * This was introduced in FTL 1.5.4.
-		 */
-		public void setRebelFlagshipNearby( boolean b ) { rebelFlagshipNearby = b; }
-		public boolean isRebelFlagshipNearby() { return rebelFlagshipNearby; }
-
-
-		public void setUnknownZeus( UnknownZeus zeus ) { unknownZeus = zeus; }
-		public UnknownZeus getUnknownZeus() { return unknownZeus; }
 
 
 		public void addMysteryBytes( MysteryBytes m ) {
@@ -2578,7 +2619,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge));
 			result.append(String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod));
 			result.append(String.format("Player BeaconId:    %5d\n", currentBeaconId));
-			result.append(String.format("Gamma?:             %5d\n", unknownGamma));
+			result.append(String.format("Gamma?:             %5b\n", unknownGamma));
 			result.append(String.format("Delta?:             %5d\n", unknownDelta));
 			result.append(String.format("Epsilon?:           %s\n", unknownEpsilon));
 			result.append(String.format("Sector Hazards Map: %5b\n", sectorHazardsVisible));
@@ -2643,12 +2684,24 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			}
 
 			result.append("\nEnvironment Hazards...\n");
-			if ( environment != null )
+			if ( environment != null ) {
 				result.append(environment.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
-			result.append("\nZeus?...\n");
-			if ( unknownZeus != null )
-				result.append(unknownZeus.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			result.append("\nProjectiles...\n");
+			int projectileIndex = 0;
+			first = true;
+			for ( ProjectileState projectile : projectileList ) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+				result.append(String.format("Projectile # %2d:\n", projectileIndex++));
+				result.append(projectile.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
+
+			result.append("\n");
+			result.append(String.format("Nu?:          %11d (Player Ship)\n", unknownNu));
+			result.append(String.format("Xi?:          %11s (Nearby Ship)\n", (unknownXi != null ? unknownXi.intValue() : "N/A")));
+			result.append(String.format("Autofire:           %5b\n", autofire));
 
 			result.append("\nRebel Flagship...\n");
 			if ( rebelFlagshipState != null ) {
@@ -5760,7 +5813,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 	public static class RebelFlagshipState {
+		private int unknownAlpha = 0;
 		private int pendingStage = 1;
+		private int unknownGamma = 30000;
+		private int unknownDelta = 0;
 		private Map<Integer, Integer> occupancyMap = new LinkedHashMap<Integer, Integer>();
 
 
@@ -5776,6 +5832,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 
 		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0 (normal), 1 (after encountering
+		 * first-stage boss), 2 (after encountering second-stage boss), 3
+		 * (after encountering third-stage boss).
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+
+		/**
 		 * Sets the next version of the flagship that will be encountered (1-based).
 		 *
 		 * This must be one of the available stages: 1-3.
@@ -5786,6 +5854,35 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getPendingStage() {
 			return pendingStage;
 		}
+
+		/**
+		 * Unknown.
+		 *
+		 * During the third-stage boss fight, this does not change.
+		 *
+		 * Observed values: 30000 (normal), 21326 (after encountering
+		 * first-stage boss).
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public int getUnknownGamma() { return unknownGamma; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0 (normal), 240 (after encountering
+		 * first-stage boss), 26563 (after defeating second-stage boss). Seems
+		 * to have no effect on first-stage boss, but this changes nonetheless.
+		 * During the second-stage boss, counts to ~25000, then it resets to 0,
+		 * and surge drones appear. During the third-stage boss, counts to
+		 * ~16000, then it either recharges its Zoltan shield or fires lots of
+		 * laser projectiles.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public int getUnknownDelta() { return unknownDelta; }
 
 		/**
 		 * Sets whether a room had crew members in the last seen layout.
@@ -5822,7 +5919,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Pending Flagship Stage: %s\n", pendingStage));
+			result.append(String.format("Alpha?:                 %11d\n", unknownAlpha));
+			result.append(String.format("Pending Flagship Stage: %11d\n", pendingStage));
+			result.append(String.format("Gamma?:                 %11d\n", unknownGamma));
+			result.append(String.format("Delta?:                 %11d\n", unknownDelta));
 
 			result.append("\nOccupancy of Last Seen Flagship...\n");
 			for (Map.Entry<Integer, Integer> entry : occupancyMap.entrySet()) {
@@ -6587,121 +6687,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			if ( weaponMod != null ) {
 				result.append(weaponMod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
-
-			return result.toString();
-		}
-	}
-
-
-
-	public static class UnknownZeus {
-		private List<ProjectileState> projectileList = new ArrayList<ProjectileState>();
-
-		private int unknownEpsilon = 0;
-		private Integer unknownZeta = null;
-
-		private boolean autofire = false;
-
-		private int unknownEta = 0;
-
-		private int unknownIota = 0;
-		private int unknownKappa = 0;
-
-
-		public UnknownZeus() {
-		}
-
-		public void setProjectileList( List<ProjectileState> projectileList ) { this.projectileList = projectileList; }
-		public List<ProjectileState> getProjectileList() { return projectileList; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Erratic values, large and small. Even changes mid-combat!?
-		 */
-		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
-		public int getUnknownEpsilon() { return unknownEpsilon; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Erratic values, large and small.
-		 *
-		 * This is only set when a nearby ship is present.
-		 */
-		public void setUnknownZeta( Integer zeta ) { unknownZeta = zeta; }
-		public Integer getUnknownZeta() { return unknownZeta; }
-
-		public void setAutofire( boolean b ) { autofire = b; }
-		public boolean getAutofire() { return autofire; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0 (normal), 1 (after encountering
-		 * first-stage boss), 2 (after encountering second-stage boss), 3
-		 * (after encountering third-stage boss).
-		 */
-		public void setUnknownEta( int n ) { unknownEta = n; }
-		public int getUnknownEta() { return unknownEta; }
-
-		/**
-		 * Unknown.
-		 *
-		 * During the third-stage boss fight, this does not change.
-		 *
-		 * Observed values: 30000 (normal), 21326 (after encountering
-		 * first-stage boss).
-		 */
-		public void setUnknownIota( int n ) { unknownIota = n; }
-		public int getUnknownIota() { return unknownIota; }
-
-		/**
-		 * Unknown.
-		 *
-		 * Observed values: 0 (normal), 240 (after encountering
-		 * first-stage boss), 26563 (after defeating second-stage boss). Seems
-		 * to have no effect on first-stage boss, but this changes nonetheless.
-		 * During the second-stage boss, counts to ~25000, then it resets to 0,
-		 * and surge drones appear. During the third-stage boss, counts to
-		 * ~16000, then it either recharges its Zoltan shield or fires lots of
-		 * laser projectiles.
-		 */
-		public void setUnknownKappa( int n ) { unknownKappa = n; }
-		public int getUnknownKappa() { return unknownKappa; }
-
-
-		private String prettyInt( int n ) {
-			if ( n == Integer.MIN_VALUE ) return "MIN";
-			if ( n == Integer.MAX_VALUE ) return "MAX";
-
-			return String.format("%d", n);
-		}
-
-
-		@Override
-		public String toString() {
-			StringBuilder result = new StringBuilder();
-			boolean first = true;
-
-			result.append("\nProjectiles...\n");
-			int projectileIndex = 0;
-			first = true;
-			for ( ProjectileState projectile : projectileList ) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(String.format("Projectile # %2d:\n", projectileIndex++));
-				result.append(projectile.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-			}
-
-			result.append("\n");
-
-			result.append(String.format("Epsilon?:  %11s (Player Ship)\n", prettyInt(unknownEpsilon)));
-			result.append(String.format("Zeta?:     %11s (Nearby Ship)\n", (unknownZeta != null ? prettyInt(unknownZeta.intValue()) : "N/A")));
-			result.append(String.format("Autofire:  %11b\n", autofire));
-			result.append(String.format("Eta?:      %11d\n", unknownEta));
-			result.append(String.format("Iota?:     %11s\n", prettyInt(unknownIota)));
-			result.append(String.format("Kappa?:    %11s\n", prettyInt(unknownKappa)));
 
 			return result.toString();
 		}
@@ -8820,18 +8805,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	}
 
 
-	private UnknownZeus readZeus( FileInputStream in, SavedGameState gameState, int headerAlpha ) throws IOException {
+	/**
+	 * Reads additional SavedGameState fields.
+	 *
+	 * This method does not involve a dedicated class.
+	 */
+	private void readZeus( FileInputStream in, SavedGameState gameState, int headerAlpha ) throws IOException {
 System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
-		UnknownZeus zeus = new UnknownZeus();
-
-		long fileSize = in.getChannel().size();
 
 		int projectileCount = readInt(in);
-		List<ProjectileState> projectileList = new ArrayList<ProjectileState>();
 		for (int i=0; i < projectileCount; i++) {
-			projectileList.add( readProjectile(in) );
+			gameState.addProjectile( readProjectile(in) );
 		}
-		zeus.setProjectileList( projectileList );
 
 		readExtendedShipInfo( in, gameState.getPlayerShipState(), headerAlpha );
 
@@ -8839,21 +8824,20 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 			readExtendedShipInfo( in, gameState.getNearbyShipState(), headerAlpha );
 		}
 
-		zeus.setUnknownEpsilon( readInt(in) );
+		gameState.setUnknownNu( readInt(in) );
 
 		if ( gameState.getNearbyShipState() != null ) {
-			zeus.setUnknownZeta( new Integer(readInt(in)) );
+			gameState.setUnknownXi( new Integer(readInt(in)) );
 		}
 
-		zeus.setAutofire( readBool(in) );
+		gameState.setAutofire( readBool(in) );
 
 		RebelFlagshipState flagship = new RebelFlagshipState();
 
-		zeus.setUnknownEta( readInt(in) );
+		flagship.setUnknownAlpha( readInt(in) );
 		flagship.setPendingStage( readInt(in) );
-
-		zeus.setUnknownIota( readInt(in) );
-		zeus.setUnknownKappa( readInt(in) );
+		flagship.setUnknownGamma( readInt(in) );
+		flagship.setUnknownDelta( readInt(in) );
 
 		int flagshipOccupancyCount = readInt(in);
 		for (int i=0; i < flagshipOccupancyCount; i++) {
@@ -8861,13 +8845,16 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 		}
 
 		gameState.setRebelFlagshipState( flagship );
-
-		return zeus;
 	}
 
-	public void writeZeus( OutputStream out, SavedGameState gameState, UnknownZeus zeus, int headerAlpha ) throws IOException {
-		writeInt( out, zeus.getProjectileList().size() );
-		for ( ProjectileState projectile : zeus.getProjectileList() ) {
+	/**
+	 * Writes additional SavedGameState fields.
+	 *
+	 * This method does not involve a dedicated class.
+	 */
+	public void writeZeus( OutputStream out, SavedGameState gameState, int headerAlpha ) throws IOException {
+		writeInt( out, gameState.getProjectileList().size() );
+		for ( ProjectileState projectile : gameState.getProjectileList() ) {
 			writeProjectile( out, projectile );
 		}
 
@@ -8877,20 +8864,20 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 			writeExtendedShipInfo( out, gameState.getNearbyShipState(), headerAlpha );
 		}
 
-		writeInt( out, zeus.getUnknownEpsilon() );
+		writeInt( out, gameState.getUnknownNu() );
 
 		if ( gameState.getNearbyShipState() != null ) {
-			writeInt( out, zeus.getUnknownZeta().intValue() );
+			writeInt( out, gameState.getUnknownXi().intValue() );
 		}
 
-		writeBool( out, zeus.getAutofire() );
+		writeBool( out, gameState.getAutofire() );
 
 		RebelFlagshipState flagship = gameState.getRebelFlagshipState();
 
-		writeInt( out, zeus.getUnknownEta() );
+		writeInt( out, flagship.getUnknownAlpha() );
 		writeInt( out, flagship.getPendingStage() );
-		writeInt( out, zeus.getUnknownIota() );
-		writeInt( out, zeus.getUnknownKappa() );
+		writeInt( out, flagship.getUnknownGamma() );
+		writeInt( out, flagship.getUnknownDelta() );
 
 		writeInt( out, flagship.getOccupancyMap().size() );
 		for (Map.Entry<Integer, Integer> entry : flagship.getOccupancyMap().entrySet()) {
@@ -9017,7 +9004,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 	}
 
 	/**
-	 * Reads additional fields of various ship-related classes.
+	 * Writes additional fields of various ship-related classes.
 	 *
 	 * This method does not involve a dedicated class.
 	 */
