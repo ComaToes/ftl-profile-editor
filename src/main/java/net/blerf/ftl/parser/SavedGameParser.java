@@ -632,6 +632,8 @@ public class SavedGameParser extends Parser {
 			shipState.addAugmentId( readString(in) );
 		}
 
+		// Standalone drones may be added to the ship later (FTL 1.5.4+).
+
 		return shipState;
 	}
 
@@ -2661,6 +2663,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private List<WeaponState> weaponList = new ArrayList<WeaponState>();
 		private List<DroneState> droneList = new ArrayList<DroneState>();
 		private List<String> augmentIdList = new ArrayList<String>();
+		private List<StandaloneDroneState> standaloneDroneList = new ArrayList<StandaloneDroneState>();
 
 		private int unknownAlpha = 0;
 		private int unknownGamma = 0;
@@ -3069,6 +3072,21 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public List<String> getAugmentIdList() { return augmentIdList; }
 
 
+		/**
+		 * Adds a standalone surge drone.
+		 *
+		 * TODO: See what happens when standalone drones are added to ships that
+		 * aren't rebel flagships.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void addStandaloneDrone( StandaloneDroneState standaloneDrone ) {
+			standaloneDroneList.add( standaloneDrone );
+		}
+
+		public List<StandaloneDroneState> getStandaloneDroneList() { return standaloneDroneList; }
+
+
 		@Override
 		public String toString() {
 			// The blueprint fetching might vary if auto == true.
@@ -3202,6 +3220,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
+
+
+			result.append("\nStandalone Drones... (Surge)\n");
+			int standaloneDroneIndex = 0;
+			first = true;
+			for ( StandaloneDroneState standaloneDrone : standaloneDroneList ) {
+				if (first) { first = false; }
+				else { result.append(",\n"); }
+				result.append(String.format("Surge Drone # %2d:\n", standaloneDroneIndex++));
+				result.append(standaloneDrone.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nAugments...\n");
@@ -6681,7 +6710,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	// Extended infos related to a ship.
 	public static class ExtendedShipInfo {
 		private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
-		private List<StandaloneDroneState> standaloneDroneList = new ArrayList<StandaloneDroneState>();
 
 
 		public ExtendedShipInfo() {
@@ -6720,10 +6748,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 
 
-		public void setStandaloneDroneList( List<StandaloneDroneState> standaloneDroneList ) { this.standaloneDroneList = standaloneDroneList; }
-		public List<StandaloneDroneState> getStandaloneDroneList() { return standaloneDroneList; }
-
-
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
@@ -6735,16 +6759,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(info.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-			}
-
-			result.append("\nStandalone Drones... (Surge)\n");
-			int standaloneDroneIndex = 0;
-			first = true;
-			for ( StandaloneDroneState standaloneDrone : standaloneDroneList ) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(String.format("Surge Drone # %2d:\n", standaloneDroneIndex++));
-				result.append(standaloneDrone.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			return result.toString();
@@ -9034,7 +9048,6 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 		// A list of standalone drones, for flagship swarms. Always 0 for player.
 
 		int standaloneDroneCount = readInt(in);
-		List<StandaloneDroneState> standaloneDroneList = new ArrayList<StandaloneDroneState>();
 		for (int i=0; i < standaloneDroneCount; i++) {
 			String droneId = readString(in);
 			DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneId );
@@ -9053,9 +9066,8 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 			standaloneDrone.setUnknownBeta( readInt(in) );
 			standaloneDrone.setUnknownGamma( readInt(in) );
 
-			standaloneDroneList.add( standaloneDrone );
+			shipState.addStandaloneDrone( standaloneDrone );
 		}
-		shipInfo.setStandaloneDroneList( standaloneDroneList );
 
 		return shipInfo;
 	}
@@ -9115,8 +9127,8 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 			writeWeaponModule( out, artilleryInfo.getWeaponModule(), headerAlpha );
 		}
 
-		writeInt( out, shipInfo.getStandaloneDroneList().size() );
-		for ( StandaloneDroneState standaloneDrone : shipInfo.getStandaloneDroneList() ) {
+		writeInt( out, shipState.getStandaloneDroneList().size() );
+		for ( StandaloneDroneState standaloneDrone : shipState.getStandaloneDroneList() ) {
 			writeString( out, standaloneDrone.getDroneId() );
 
 			writeDronePod( out, standaloneDrone.getDronePod() );
