@@ -768,8 +768,14 @@ public class SavedGameParser extends Parser {
 			}
     }
 
-		for ( RoomState room : shipState.getRoomList() ) {
-			writeRoom( out, room, headerAlpha );
+		int roomCount = shipLayout.getRoomCount();
+		for (int r=0; r < roomCount; r++) {
+			EnumMap<ShipLayout.RoomInfo, Integer> roomInfo = shipLayout.getRoomInfo( r );
+			int squaresH = roomInfo.get(ShipLayout.RoomInfo.SQUARES_H).intValue();
+			int squaresV = roomInfo.get(ShipLayout.RoomInfo.SQUARES_V).intValue();
+
+			RoomState room = shipState.getRoom( r );
+			writeRoom( out, room, squaresH, squaresV, headerAlpha );
 		}
 
 		writeInt( out, shipState.getBreachMap().size() );
@@ -1107,13 +1113,26 @@ public class SavedGameParser extends Parser {
 		return room;
 	}
 
-	public void writeRoom( OutputStream out, RoomState room, int headerAlpha ) throws IOException {
+	public void writeRoom( OutputStream out, RoomState room, int squaresH, int squaresV, int headerAlpha ) throws IOException {
 		writeInt( out, room.getOxygen() );
 
-		for ( SquareState square : room.getSquareList() ) {
-			writeInt( out, square.getFireHealth() );
-			writeInt( out, square.getIgnitionProgress() );
-			writeInt( out, square.getExtinguishmentProgress() );
+		// Squares referenced by IDs left-to-right, top-to-bottom. (Index == ID)
+		List<SquareState> squareList = room.getSquareList();
+		int squareIndex = 0;
+		SquareState[][] tmpSquares = new SquareState[squaresH][squaresV];
+		for (int v=0; v < squaresV; v++) {
+			for (int h=0; h < squaresH; h++) {
+				tmpSquares[h][v] = squareList.get( squareIndex++ );
+			}
+		}
+		// Squares are written to disk top-to-bottom, left-to-right. (Index != ID!)
+		for (int h=0; h < squaresH; h++) {
+			for (int v=0; v < squaresV; v++) {
+				SquareState square = tmpSquares[h][v];
+				writeInt( out, square.getFireHealth() );
+				writeInt( out, square.getIgnitionProgress() );
+				writeInt( out, square.getExtinguishmentProgress() );
+			}
 		}
 
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
@@ -2606,19 +2625,22 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Mu?:                %5d\n", unknownMu));
 
 			result.append("\nCurrent Encounter...\n");
-			if ( encounter != null )
+			if ( encounter != null ) {
 				result.append(encounter.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
 			result.append("\n");
 			result.append(String.format("Flagship Nearby:    %5b (Only set when a nearby ship is present)\n", rebelFlagshipNearby));
 
 			result.append("\nNearby Ship...\n");
-			if ( nearbyShipState != null )
+			if ( nearbyShipState != null ) {
 				result.append(nearbyShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
 			result.append("\nNearby Ship AI...\n");
-			if ( nearbyShipAI != null )
+			if ( nearbyShipAI != null ) {
 				result.append(nearbyShipAI.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
 			result.append("\nEnvironment Hazards...\n");
 			if ( environment != null )
@@ -2629,8 +2651,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				result.append(unknownZeus.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 
 			result.append("\nRebel Flagship...\n");
-			if ( rebelFlagshipState != null )
+			if ( rebelFlagshipState != null ) {
 				result.append(rebelFlagshipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
 			result.append("\nMystery Bytes...\n");
 			first = true;
@@ -4997,7 +5020,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public BeaconState( BeaconState srcBeacon ) {
 			visitCount = srcBeacon.getVisitCount();
 			bgStarscapeImageInnerPath = srcBeacon.getBgStarscapeImageInnerPath();
-			bgSpriteImageInnerPath = srcBeacon.getBgStarscapeImageInnerPath();
+			bgSpriteImageInnerPath = srcBeacon.getBgSpriteImageInnerPath();
 			bgSpritePosX = srcBeacon.getBgSpritePosX();
 			bgSpritePosY = srcBeacon.getBgSpritePosY();
 			bgSpriteRotation = srcBeacon.getBgSpriteRotation();
@@ -5736,10 +5759,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 
-	/**
-	 * Information from previous flagship encounters to use when setting up
-	 * the next one.
-	 */
 	public static class RebelFlagshipState {
 		private int pendingStage = 1;
 		private Map<Integer, Integer> occupancyMap = new LinkedHashMap<Integer, Integer>();
@@ -7789,6 +7808,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			destinationSpace = srcPod.getDestinationSpace();
 			currentPosX = srcPod.getCurrentPositionX();
 			currentPosY = srcPod.getCurrentPositionY();
+			prevPosX = srcPod.getPreviousPositionX();
+			prevPosY = srcPod.getPreviousPositionY();
 			goalPosX = srcPod.getGoalPositionX();
 			goalPosY = srcPod.getGoalPositionY();
 
@@ -9203,6 +9224,9 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			writeInt( out, hackingPodInfo.getUnknownDelta() );
 			writeAnim( out, hackingPodInfo.getLandingAnim() );
 			writeAnim( out, hackingPodInfo.getExtensionAnim() );
+		}
+		else if ( extendedInfo instanceof EmptyDronePodInfo ) {
+			// No-op.
 		}
 		else {
 			throw new IOException( "Unsupported extended drone pod info: "+ extendedInfo.getClass().getSimpleName() );
