@@ -4657,6 +4657,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private String weaponId = null;
 		private boolean armed = false;
 		private int cooldownTicks = 0;
+		private WeaponModuleState weaponMod = null;
 
 
 		/**
@@ -4667,12 +4668,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public WeaponState() {
 		}
 
-		public WeaponState( String weaponId, boolean armed, int cooldownTicks ) {
-			this.weaponId = weaponId;
-			this.armed = armed;
-			this.cooldownTicks = cooldownTicks;
-		}
-
 		/**
 		 * Copy constructor.
 		 */
@@ -4680,6 +4675,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			weaponId = srcWeapon.getWeaponId();
 			armed = srcWeapon.isArmed();
 			cooldownTicks = srcWeapon.getCooldownTicks();
+
+			if ( srcWeapon.getWeaponModule() != null ) {
+				weaponMod = new WeaponModuleState( srcWeapon.getWeaponModule() );
+			}
 		}
 
 		public void setWeaponId( String s ) { weaponId = s; }
@@ -4694,13 +4693,26 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets time elapsed waiting for the weapon to cool down.
 		 *
-		 * This increments from 0, by 1 each second, until the
-		 * weaponBlueprint's cooldown (0 when not armed).
+		 * This increments from 0, by 1 each second. Its goal is the value of
+		 * the 'coolown' tag in its WeaponBlueprint xml (0 when not armed).
 		 *
 		 * Since FTL 1.5.4, this is no longer saved.
+		 *
+		 * @see WeaponModuleState.setCooldownTicks(int)
 		 */
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 		public int getCooldownTicks() { return cooldownTicks; }
+
+		/**
+		 * Sets additional weapon fields.
+		 *
+		 * Advanced edition added extra weapon fields at the end of saved game
+		 * files. They're nested inside this class for convenience.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setWeaponModule( WeaponModuleState weaponMod ) { this.weaponMod = weaponMod; }
+		public WeaponModuleState getWeaponModule() { return weaponMod; }
 
 		@Override
 		public String toString() {
@@ -4712,6 +4724,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("WeaponId:       %s\n", weaponId));
 			result.append(String.format("Armed:          %b\n", armed));
 			result.append(String.format("Cooldown Ticks: %2d (max: %2s) (Not used as of FTL 1.5.4)\n", cooldownTicks, cooldownString));
+
+			result.append("\nWeapon Module...\n");
+			if ( weaponMod != null ) {
+				result.append(weaponMod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
 			return result.toString();
 		}
@@ -6481,8 +6498,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("SystemId:                 %s\n", SystemType.ARTILLERY.toString()));
 
 			result.append("\nWeapon Module...\n");
-			if ( weaponMod != null )
+			if ( weaponMod != null ) {
 				result.append(weaponMod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
 			return result.toString();
 		}
@@ -6628,7 +6646,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	public static class ExtendedShipInfo {
 		private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
 		private List<ExtendedDroneInfo> extendedDroneInfoList = new ArrayList<ExtendedDroneInfo>();
-		private List<WeaponModuleState> weaponModList = new ArrayList<WeaponModuleState>();
 		private List<StandaloneDroneState> standaloneDroneList = new ArrayList<StandaloneDroneState>();
 
 
@@ -6671,9 +6688,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setExtendedDroneInfoList( List<ExtendedDroneInfo> droneInfoList ) { extendedDroneInfoList = droneInfoList; }
 		public List<ExtendedDroneInfo> getExtendedDroneInfoList() { return extendedDroneInfoList; }
 
-		public void setWeaponModuleList( List<WeaponModuleState> weaponModList ) { this.weaponModList = weaponModList; }
-		public List<WeaponModuleState> getWeaponModuleList() { return weaponModList; }
-
 		public void setStandaloneDroneList( List<StandaloneDroneState> standaloneDroneList ) { this.standaloneDroneList = standaloneDroneList; }
 		public List<StandaloneDroneState> getStandaloneDroneList() { return standaloneDroneList; }
 
@@ -6699,16 +6713,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				else { result.append(",\n"); }
 				result.append(String.format("Drone # %2d:\n", droneIndex++));
 				result.append(droneInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-			}
-
-			result.append("\nWeapon Modules...\n");
-			int weaponModIndex = 0;
-			first = true;
-			for ( WeaponModuleState weaponMod : weaponModList ) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(String.format("Weapon #%2d:\n", weaponModIndex++));
-				result.append(weaponMod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nStandalone Drones... (Surge)\n");
@@ -8476,6 +8480,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * @param n a positive int less than, or equal to, the goal (0 when not armed)
 		 *
 		 * @see #setCooldownTicksGoal(int)
+		 * @see WeaponState#setCooldownTicks(int)
 		 */
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 		public int getCooldownTicks() { return cooldownTicks; }
@@ -8967,13 +8972,16 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 		SystemState weaponsState = shipState.getSystem( SystemType.WEAPONS );
 		if ( weaponsState != null && weaponsState.getCapacity() > 0 ) {
 
-			//int playerWeaponCount = shipState.getWeaponList().size();
-			int weaponCount = readInt(in);
-			List<WeaponModuleState> weaponModList = new ArrayList<WeaponModuleState>();
-			for (int i=0; i < weaponCount; i++) {
-				weaponModList.add( readWeaponModule( in, headerAlpha ) );
+			int weaponCount = shipState.getWeaponList().size();
+			int weaponModCount = readInt(in);
+			if ( weaponModCount != weaponCount ) {
+				throw new IOException( String.format("Found %d WeaponModules, but there are %d Weapons.", weaponModCount, weaponCount) );
 			}
-			shipInfo.setWeaponModuleList( weaponModList );
+
+			for ( WeaponState weaponState : shipState.getWeaponList() ) {
+				WeaponModuleState weaponMod = readWeaponModule( in, headerAlpha );
+				weaponState.setWeaponModule( weaponMod );
+			}
 		}
 
 		// Get ALL artillery rooms' SystemStates from the ShipState.
@@ -9059,9 +9067,11 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 		// If there's a Weapons system, write the weapon modules (even if there are 0 of them).
 		SystemState weaponsState = shipState.getSystem( SystemType.WEAPONS );
 		if ( weaponsState != null && weaponsState.getCapacity() > 0 ) {
-			writeInt( out, shipInfo.getWeaponModuleList().size() );
-			for ( WeaponModuleState weaponMod : shipInfo.getWeaponModuleList() ) {
-				writeWeaponModule( out, weaponMod, headerAlpha );
+
+			int weaponCount = shipState.getWeaponList().size();
+			writeInt( out, weaponCount );
+			for ( WeaponState weaponState : shipState.getWeaponList() ) {
+				writeWeaponModule( out, weaponState.getWeaponModule(), headerAlpha );
 			}
 		}
 
