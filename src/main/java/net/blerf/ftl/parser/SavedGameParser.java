@@ -625,6 +625,7 @@ public class SavedGameParser extends Parser {
 		for (int i=0; i < droneCount; i++) {
 			shipState.addDrone( readDrone(in) );
 		}
+		// DroneStates may have ExtendedDroneInfo set on them later (FTL 1.5.4+).
 
 		int augmentCount = readInt(in);
 		for (int i=0; i < augmentCount; i++) {
@@ -4788,22 +4789,32 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int bodyRoomId = -1;
 		private int bodyRoomSquare = -1;
 		private int health = 1;
+		private ExtendedDroneInfo droneInfo = null;
 
 
 		/**
 		 * Constructs an incomplete DroneState.
 		 *
 		 * It will need a droneId.
+		 *
+		 * For FTL 1.5.4+ saved games, extended info may be needed.
 		 */
 		public DroneState() {
 		}
 
+		/**
+		 * Constructs an incomplete DroneState.
+		 *
+		 * For FTL 1.5.4+ saved games, extended info may be needed.
+		 */
 		public DroneState( String droneId ) {
 			this.droneId = droneId;
 		}
 
 		/**
 		 * Copy constructor.
+		 *
+		 * The extended info will be copy-constructed as well.
 		 */
 		public DroneState( DroneState srcDrone ) {
 			droneId = srcDrone.getDroneId();
@@ -4814,6 +4825,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			bodyRoomId = srcDrone.getBodyRoomId();
 			bodyRoomSquare = srcDrone.getBodyRoomSquare();
 			health = srcDrone.getHealth();
+
+			if ( srcDrone.getExtendedDroneInfo() != null ) {
+				droneInfo = new ExtendedDroneInfo( srcDrone.getExtendedDroneInfo() );
+			}
 		}
 
 		public void setDroneId( String s ) { droneId = s; }
@@ -4866,6 +4881,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setHealth( int n ) { health = n; }
 		public int getHealth() { return health; }
 
+		/**
+		 * Sets additional drone fields.
+		 *
+		 * Advanced Edition added extra drone fields at the end of saved game
+		 * files. They're nested inside this class for convenience.
+		 *
+		 * This was introduced in FTL 1.5.4.
+		 */
+		public void setExtendedDroneInfo( ExtendedDroneInfo droneInfo ) { this.droneInfo = droneInfo; }
+		public ExtendedDroneInfo getExtendedDroneInfo() { return droneInfo; }
+
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
@@ -4877,6 +4903,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Body Room Id:      %5d\n", bodyRoomId));
 			result.append(String.format("Body Room Square:  %5d\n", bodyRoomSquare));
 			result.append(String.format("Player Controlled: %5b\n", playerControlled));
+
+			result.append("\nExtended Drone Info...\n");
+			if ( droneInfo != null ) {
+				result.append(droneInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			}
 
 			return result.toString();
 		}
@@ -6650,7 +6681,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	// Extended infos related to a ship.
 	public static class ExtendedShipInfo {
 		private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
-		private List<ExtendedDroneInfo> extendedDroneInfoList = new ArrayList<ExtendedDroneInfo>();
 		private List<StandaloneDroneState> standaloneDroneList = new ArrayList<StandaloneDroneState>();
 
 
@@ -6690,9 +6720,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 
 
-		public void setExtendedDroneInfoList( List<ExtendedDroneInfo> droneInfoList ) { extendedDroneInfoList = droneInfoList; }
-		public List<ExtendedDroneInfo> getExtendedDroneInfoList() { return extendedDroneInfoList; }
-
 		public void setStandaloneDroneList( List<StandaloneDroneState> standaloneDroneList ) { this.standaloneDroneList = standaloneDroneList; }
 		public List<StandaloneDroneState> getStandaloneDroneList() { return standaloneDroneList; }
 
@@ -6708,16 +6735,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				if (first) { first = false; }
 				else { result.append(",\n"); }
 				result.append(info.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
-			}
-
-			result.append("\nExtended Drone Info...\n");
-			int droneIndex = 0;
-			first = true;
-			for ( ExtendedDroneInfo droneInfo : extendedDroneInfoList ) {
-				if (first) { first = false; }
-				else { result.append(",\n"); }
-				result.append(String.format("Drone # %2d:\n", droneIndex++));
-				result.append(droneInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
 			result.append("\nStandalone Drones... (Surge)\n");
@@ -8329,6 +8346,20 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public ExtendedDroneInfo() {
 		}
 
+		/**
+		 * Copy-constructor.
+		 *
+		 * The drone pod will be copy-constructed as well.
+		 */
+		public ExtendedDroneInfo( ExtendedDroneInfo srcInfo ) {
+			deployed = srcInfo.isDeployed();
+			armed = srcInfo.isArmed();
+
+			if ( srcInfo.getDronePod() != null ) {
+				dronePod = new DronePodState( srcInfo.getDronePod() );
+			}
+		}
+
 		public void setDeployed( boolean b ) { deployed = b; }
 		public void setArmed( boolean b ) { armed = b; }
 
@@ -8917,8 +8948,6 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 		ExtendedShipInfo shipInfo = new ExtendedShipInfo();
 
 		// There is no explicit list count for drones.
-		List<ExtendedDroneInfo> droneInfoList = new ArrayList<ExtendedDroneInfo>();
-
 		for ( DroneState drone : shipState.getDroneList() ) {
 			ExtendedDroneInfo droneInfo = new ExtendedDroneInfo();
 
@@ -8932,17 +8961,17 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 			DroneType droneType = DroneType.findById( droneBlueprint.getType() );
 			if ( droneType == null ) throw new IOException( String.format("DroneBlueprint \"%s\" has an unrecognized type: %s", droneId, droneBlueprint.getType()) );
 
-			droneInfoList.add( droneInfo );
-
 			if ( DroneType.REPAIR.equals(droneType) ||
 			     DroneType.BATTLE.equals(droneType) ) {
-				continue;
+				// No drone pod for these types.
+			}
+			else {
+				DronePodState dronePod = readDronePod( in, droneType );
+				droneInfo.setDronePod( dronePod );
 			}
 
-			DronePodState dronePod = readDronePod( in, droneType );
-			droneInfo.setDronePod( dronePod );
+			drone.setExtendedDroneInfo( droneInfo );
 		}
-		shipInfo.setExtendedDroneInfoList( droneInfoList );
 
 		SystemState hackingState = shipState.getSystem( SystemType.HACKING );
 		if ( hackingState != null && hackingState.getCapacity() > 0 ) {
@@ -9033,7 +9062,8 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 
 	public void writeExtendedShipInfo( OutputStream out, ExtendedShipInfo shipInfo, ShipState shipState, int headerAlpha ) throws IOException {
 		// There is no explicit list count for drones.
-		for ( ExtendedDroneInfo droneInfo : shipInfo.getExtendedDroneInfoList() ) {
+		for ( DroneState drone : shipState.getDroneList() ) {
+			ExtendedDroneInfo droneInfo = drone.getExtendedDroneInfo();
 			writeBool( out, droneInfo.isDeployed() );
 			writeBool( out, droneInfo.isArmed() );
 
