@@ -4673,6 +4673,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Copy constructor.
+		 *
+		 * The weapon module will be copy-constructed as well.
 		 */
 		public WeaponState( WeaponState srcWeapon ) {
 			weaponId = srcWeapon.getWeaponId();
@@ -4709,7 +4711,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets additional weapon fields.
 		 *
-		 * Advanced edition added extra weapon fields at the end of saved game
+		 * Advanced Edition added extra weapon fields at the end of saved game
 		 * files. They're nested inside this class for convenience.
 		 *
 		 * This was introduced in FTL 1.5.4.
