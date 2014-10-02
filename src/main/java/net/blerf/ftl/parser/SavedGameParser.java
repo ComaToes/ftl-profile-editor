@@ -6839,10 +6839,20 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		public void setGoalPositionX( int n ) { goalPosX = n; }
 		public void setGoalPositionY( int n ) { goalPosY = n; }
-		public void setHeading( int n ) { heading = n; }
-
 		public int getGoalPositionX() { return goalPosX; }
 		public int getGoalPositionY() { return goalPosY; }
+
+		/**
+		 * Set's the projectile's orientation.
+		 *
+		 * MISSILE_2's image file points north.
+		 * A heading of 0 renders it pointing east.
+		 * A heading of 45 points southeast, pivoting the body around the tip.
+		 * A heading of 90 points south, with the body above the pivot point.
+		 *
+		 * @param n degrees clockwise (may be negative)
+		 */
+		public void setHeading( int n ) { heading = n; }
 		public int getHeading() { return heading; }
 
 		/**
@@ -7019,7 +7029,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Previous Position: %8d,%8d (%9.03f,%9.03f)\n", prevPosX, prevPosY, prevPosX/1000f, prevPosY/1000f));
 			result.append(String.format("Speed:             %8d (%9.03f)\n", speed, speed/1000f));
 			result.append(String.format("Goal Position:     %8d,%8d (%9.03f,%9.03f)\n", goalPosX, goalPosY, goalPosX/1000f, goalPosY/1000f));
-			result.append(String.format("Heading?:          %8d\n", heading));
+			result.append(String.format("Heading:           %8d\n", heading));
 			result.append(String.format("Owner Id?:         %8d\n", ownerId));
 			result.append(String.format("Self Id?:          %8d\n", selfId));
 
