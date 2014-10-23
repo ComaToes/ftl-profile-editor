@@ -416,12 +416,20 @@ public class ProfileParser extends Parser {
 			int sector = readInt(in);
 			boolean victory = readInt(in) == 1;
 
+			// In "profile.sav", scores' difficulty had the meanings of 0 and 1 backward.
+
 			int diffFlag = readInt(in);
 			Difficulty diff;
-			if ( diffFlag == 0 ) {
+			if ( diffFlag == 0 && headerAlpha == 4 ) {
+				diff = Difficulty.NORMAL;
+			}
+			else if ( diffFlag == 1 && headerAlpha == 4 ) {
 				diff = Difficulty.EASY;
 			}
-			else if ( diffFlag == 1 ) {
+			else if ( diffFlag == 0 && headerAlpha == 9 ) {
+				diff = Difficulty.EASY;
+			}
+			else if ( diffFlag == 1 && headerAlpha == 9 ) {
 				diff = Difficulty.NORMAL;
 			}
 			else if ( diffFlag == 2 && headerAlpha == 9 ) {
@@ -454,10 +462,16 @@ public class ProfileParser extends Parser {
 			writeInt( out, (score.isVictory() ? 1 : 0) );
 
 			int diffFlag = 0;
-			if ( score.getDifficulty() == Difficulty.EASY ) {
+			if ( score.getDifficulty() == Difficulty.NORMAL && headerAlpha == 4 ) {
 				diffFlag = 0;
 			}
-			else if ( score.getDifficulty() == Difficulty.NORMAL ) {
+			else if ( score.getDifficulty() == Difficulty.EASY && headerAlpha == 4 ) {
+				diffFlag = 1;
+			}
+			else if ( score.getDifficulty() == Difficulty.EASY && headerAlpha == 9 ) {
+				diffFlag = 0;
+			}
+			else if ( score.getDifficulty() == Difficulty.NORMAL && headerAlpha == 9 ) {
 				diffFlag = 1;
 			}
 			else if ( score.getDifficulty() == Difficulty.HARD && headerAlpha == 9 ) {
