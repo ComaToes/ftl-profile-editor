@@ -13,9 +13,9 @@ About
   fires, breaches, etc.
 
   Note:
-  FTL 1.01-1.03.3's files are fully editable.
-  FTL 1.5.4's "ae_prof.sav" is fully editable.
-  FTL 1.5.4's saved game is only partially editable.
+  FTL 1.01-1.03.3: "prof.sav" and "continue.sav" are fully editable.
+  FTL 1.5.4-1.5.13: "ae_prof.sav" is fully editable.
+  FTL 1.5.4-1.5.13: "continue.sav" is only partially editable.
 
 
 Requirements
@@ -23,7 +23,7 @@ Requirements
   Java (1.6 or higher).
     http://www.java.com/en/download/
 
-  FTL (1.01-1.03.3 or 1.5.4, Windows/OSX/Linux, Steam/GOG/Standalone).
+  FTL (1.01-1.03.3 or 1.5.4-1.5.13, Windows/OSX/Linux, Steam/GOG/Standalone).
     http://www.ftlgame.com/
 
   * WinXP SP1 can't run Java 1.7.
