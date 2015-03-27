@@ -8700,7 +8700,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				result.append(target.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
 			}
 
-			result.append("\nPrevious Tergets?... (Reticle Coords)\n");
+			result.append("\nPrevious Targets?... (Reticle Coords)\n");
 			first = true;
 			for ( ReticleCoordinate target : prevTargets ) {
 				if (first) { first = false; }
