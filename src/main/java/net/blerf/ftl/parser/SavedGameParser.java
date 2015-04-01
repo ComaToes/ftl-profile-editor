@@ -2747,12 +2747,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
 
-		private int unknownEpsilon = 0;
-		private int unknownZeta = 0;
-		private int unknownEta = 0;
-		private int unknownTheta = 0;
-
-
 
 		/**
 		 * Constructs an incomplete ShipState.
@@ -3414,7 +3408,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int stunTicks = 0;
 		private int healthBoost = 0;
 		private int clonebayPriority = -1;
-		private int damageBoost = 0;
+		private int damageBoost = 1000;
 		private int unknownLambda = 0;
 		private int universalDeathCount = 0;
 		private int pilotMasteryOne = 0, pilotMasteryTwo = 0;
@@ -6128,7 +6122,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	public static class BatteryInfo extends ExtendedSystemInfo {
 		private boolean active = false;
 		private int usedBattery = 0;
-		private int dischargeTicks = 0;
+		private int dischargeTicks = 1000;
 
 		// Plasma storms only halve *reserve* power.
 		// The Battery system is unaffected by plasma storms (<environment type="storm"/>).
@@ -6357,7 +6351,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownAlpha = 0;
 		private int unknownBeta = 0;
 		private int cloakTicksGoal = 0;
-		private int cloakTicks = 0;
+		private int cloakTicks = Integer.MIN_VALUE;
 
 
 		public CloakingInfo() {
@@ -6423,7 +6417,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	}
 
 	public static class HackingInfo extends ExtendedSystemInfo {
-		private int unknownAlpha = 0;
+		private int unknownAlpha = -1;
 		private int unknownBeta = 0;
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
