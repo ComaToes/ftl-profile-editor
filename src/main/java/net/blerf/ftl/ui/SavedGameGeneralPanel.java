@@ -73,9 +73,9 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String FLAGSHIP_GAMMA = "Gamma?";
 	private static final String FLAGSHIP_DELTA = "Delta?";
 
-	private static final String ENV_RED_GIANT_LEVEL = "Red Giant Level?";
-	private static final String ENV_PULSAR_LEVEL = "Pulsar Level?";
-	private static final String ENV_PDS_LEVEL = "PDS Level?";
+	private static final String ENV_RED_GIANT_PRESENT = "Red Giant Present";
+	private static final String ENV_PULSAR_PRESENT = "Pulsar Present";
+	private static final String ENV_PDS_PRESENT = "PDS Present";
 	private static final String ENV_VULN = "Vulnerable Ships";
 	private static final String ENV_ASTEROID_FIELD = "Asteroid Field";
 	private static final String ENV_ASTEROID_ALPHA = "Alpha?";
@@ -227,9 +227,9 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		envPanel = new FieldEditorPanel( true );
 		envPanel.setBorder( BorderFactory.createTitledBorder("Environment") );
-		envPanel.addRow( ENV_RED_GIANT_LEVEL, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.addRow( ENV_PULSAR_LEVEL, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.addRow( ENV_PDS_LEVEL, FieldEditorPanel.ContentType.INTEGER );
+		envPanel.addRow( ENV_RED_GIANT_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
+		envPanel.addRow( ENV_PULSAR_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
+		envPanel.addRow( ENV_PDS_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
 		envPanel.addRow( ENV_VULN, FieldEditorPanel.ContentType.COMBO );
 		envPanel.addBlankRow();
 		envPanel.addRow( ENV_ASTEROID_FIELD, FieldEditorPanel.ContentType.BOOLEAN );
@@ -253,9 +253,9 @@ public class SavedGameGeneralPanel extends JPanel {
 		envPanel.addBlankRow();
 		envPanel.addFillRow();
 
-		envPanel.getInt(ENV_RED_GIANT_LEVEL).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_PULSAR_LEVEL).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_PDS_LEVEL).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		envPanel.getBoolean(ENV_RED_GIANT_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of a red giant hazard.") );
+		envPanel.getBoolean(ENV_PULSAR_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of a pulsar hazard.") );
+		envPanel.getBoolean(ENV_PDS_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of a PDS hazard.") );
 		envPanel.getCombo(ENV_VULN).addMouseListener( new StatusbarMouseListener(frame, "Which ship the environment will affect (PDS only).") );
 		envPanel.getBoolean(ENV_ASTEROID_FIELD).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of asteroids.") );
 		envPanel.getInt(ENV_ASTEROID_ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
@@ -477,9 +477,9 @@ public class SavedGameGeneralPanel extends JPanel {
 
 			SavedGameParser.EnvironmentState env = gameState.getEnvironment();
 			envEnabled = ( env != null );
-			envPanel.getInt(ENV_RED_GIANT_LEVEL).setEnabled( envEnabled );
-			envPanel.getInt(ENV_PULSAR_LEVEL).setEnabled( envEnabled );
-			envPanel.getInt(ENV_PDS_LEVEL).setEnabled( envEnabled );
+			envPanel.getBoolean(ENV_RED_GIANT_PRESENT).setEnabled( envEnabled );
+			envPanel.getBoolean(ENV_PULSAR_PRESENT).setEnabled( envEnabled );
+			envPanel.getBoolean(ENV_PDS_PRESENT).setEnabled( envEnabled );
 			envPanel.getCombo(ENV_VULN).setEnabled( envEnabled );
 			envPanel.getBoolean(ENV_ASTEROID_FIELD).setEnabled( envEnabled );
 			envPanel.getInt(ENV_ASTEROID_ALPHA).setEnabled( envEnabled );
@@ -494,9 +494,9 @@ public class SavedGameGeneralPanel extends JPanel {
 			forceCheckBox( envPanel.getBoolean(ENV_ASTEROID_FIELD), false );
 
 			if ( envEnabled ) {
-				envPanel.setIntAndReminder( ENV_RED_GIANT_LEVEL, env.getRedGiantLevel() );
-				envPanel.setIntAndReminder( ENV_PULSAR_LEVEL, env.getPulsarLevel() );
-				envPanel.setIntAndReminder( ENV_PDS_LEVEL, env.getPDSLevel() );
+				envPanel.setBoolAndReminder( ENV_RED_GIANT_PRESENT, env.isRedGiantPresent() );
+				envPanel.setBoolAndReminder( ENV_PULSAR_PRESENT, env.isPulsarPresent() );
+				envPanel.setBoolAndReminder( ENV_PDS_PRESENT, env.isPDSPresent() );
 				envPanel.setComboAndReminder( ENV_VULN, env.getVulnerableShips() );
 
 				SavedGameParser.AsteroidFieldState asteroidField = env.getAsteroidField();
@@ -651,14 +651,9 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		SavedGameParser.EnvironmentState env = gameState.getEnvironment();
 		if ( env != null && envEnabled ) {
-			try { env.setRedGiantLevel( envPanel.parseInt(ENV_RED_GIANT_LEVEL) ); }
-			catch ( NumberFormatException e ) {}
-
-			try { env.setPulsarLevel( envPanel.parseInt(ENV_PULSAR_LEVEL) ); }
-			catch ( NumberFormatException e ) {}
-
-			try { env.setPDSLevel( envPanel.parseInt(ENV_PDS_LEVEL) ); }
-			catch ( NumberFormatException e ) {}
+			env.setRedGiantPresent( envPanel.getBoolean(ENV_RED_GIANT_PRESENT).isSelected() );
+			env.setPulsarPresent( envPanel.getBoolean(ENV_PULSAR_PRESENT).isSelected() );
+			env.setPDSPresent( envPanel.getBoolean(ENV_PDS_PRESENT).isSelected() );
 
 			Object vulnObj = envPanel.getCombo(ENV_VULN).getSelectedItem();
 			env.setVulnerableShips( (SavedGameParser.HazardVulnerability)vulnObj );

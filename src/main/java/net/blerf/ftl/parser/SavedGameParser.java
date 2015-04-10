@@ -1517,9 +1517,9 @@ System.err.println(String.format("Ship AI: @%d", in.getChannel().position()));
 System.err.println(String.format("Environment: @%d", in.getChannel().position()));
 		EnvironmentState env = new EnvironmentState();
 
-		env.setRedGiantLevel( readInt(in) );
-		env.setPulsarLevel( readInt(in) );
-		env.setPDSLevel( readInt(in) );
+		env.setRedGiantPresent( readBool(in) );
+		env.setPulsarPresent( readBool(in) );
+		env.setPDSPresent( readBool(in) );
 
 		int vulnFlag = readInt(in);
 		HazardVulnerability vuln = null;
@@ -1555,9 +1555,9 @@ System.err.println(String.format("Environment: @%d", in.getChannel().position())
 	}
 
 	public void writeEnvironment( OutputStream out, EnvironmentState env ) throws IOException {
-		writeInt( out, env.getRedGiantLevel() );
-		writeInt( out, env.getPulsarLevel() );
-		writeInt( out, env.getPDSLevel() );
+		writeBool( out, env.isRedGiantPresent() );
+		writeBool( out, env.isPulsarPresent() );
+		writeBool( out, env.isPDSPresent() );
 
 		int vulnFlag = 0;
 		if ( env.getVulnerableShips() == HazardVulnerability.PLAYER_SHIP ) {
@@ -5673,9 +5673,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	}
 
 	public static class EnvironmentState {
-		private int redGiantLevel = 0;
-		private int pulsarLevel = 0;
-		private int pdsLevel = 0;
+		private boolean redGiantPresent = false;
+		private boolean pulsarPresent = false;
+		private boolean pdsPresent = false;
 		private HazardVulnerability vulnerableShips = HazardVulnerability.BOTH_SHIPS;
 		private AsteroidFieldState asteroidField = null;
 		private int solarFlareFadeTicks = 0;
@@ -5686,14 +5686,30 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public EnvironmentState() {
 		}
 
-		public void setRedGiantLevel( int n ) { redGiantLevel = n; }
-		public int getRedGiantLevel() { return redGiantLevel; }
 
-		public void setPulsarLevel( int n ) { pulsarLevel = n; }
-		public int getPulsarLevel() { return pulsarLevel; }
+		/**
+		 * Toggles the presence of a red giant hazard.
+		 *
+		 * Red giant, pulsar, and PDS hazards can coexist.
+		 */
+		public void setRedGiantPresent( boolean b ) { redGiantPresent = b; }
+		public boolean isRedGiantPresent() { return redGiantPresent; }
 
-		public void setPDSLevel( int n ) { pdsLevel = n; }
-		public int getPDSLevel() { return pdsLevel; }
+		/**
+		 * Toggles the presence of a pulsar hazard.
+		 *
+		 * Red giant, pulsar, and PDS hazards can coexist.
+		 */
+		public void setPulsarPresent( boolean b ) { pulsarPresent = b; }
+		public boolean isPulsarPresent() { return pulsarPresent; }
+
+		/**
+		 * Toggles the presence of a PDS hazard.
+		 *
+		 * Red giant, pulsar, and PDS hazards can coexist.
+		 */
+		public void setPDSPresent( boolean b ) { pdsPresent = b; }
+		public boolean isPDSPresent() { return pdsPresent; }
 
 		/**
 		 * Sets which ships will be targeted by a PDS.
@@ -5740,9 +5756,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append(String.format("Red Giant Level?:  %7d\n", redGiantLevel));
-			result.append(String.format("Pulsar Level?:     %7d\n", pulsarLevel));
-			result.append(String.format("PDS Level?:        %7d\n", pdsLevel));
+			result.append(String.format("Red Giant Present: %5b\n", redGiantPresent));
+			result.append(String.format("Pulsar Present:    %5b\n", pulsarPresent));
+			result.append(String.format("PDS Present:       %5b\n", pdsPresent));
 			result.append(String.format("Vulnerable Ships:  %s (PDS only)\n", vulnerableShips.toString()));
 
 			result.append("\nAsteroid Field...\n");
