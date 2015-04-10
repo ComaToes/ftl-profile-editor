@@ -31,7 +31,7 @@ public class FTLProfileEditor {
 	private static final Logger log = LogManager.getLogger(FTLProfileEditor.class);
 
 	public static final String APP_NAME = "FTL Profile Editor";
-	private static final int APP_VERSION = 25;
+	public static final int APP_VERSION = 25;
 
 
 	public static void main( String[] args ) {

@@ -258,6 +258,8 @@ public class ProfileShipUnlockPanel extends JPanel {
 			shipAvail.setUnlockedC( unlockedC );
 
 			// Remove ship achievements for locked ships.
+			// TODO: FTL:AE permits Type-B and Type-C ships in the absense of Type-A.
+			// Original FTL's menus expected Type-A at least to be present.
 			if ( !unlockedA ) {
 				List<Achievement> shipAchs = DataManager.get().getShipAchievements( DataManager.get().getPlayerShipVariant( baseId, 0 ) );
 				if ( shipAchs != null ) {

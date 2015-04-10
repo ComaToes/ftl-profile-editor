@@ -143,7 +143,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sidePanel.setBorder( BorderFactory.createEmptyBorder(4, 4, 4, 6) );
 
 		miscSelector = new SpriteSelector();
-		miscSelector.setOpaque(false);
+		miscSelector.setOpaque( false );
 		miscSelector.setSize( mapPanel.getPreferredSize() );
 		mapHolderPanel.add( miscSelector, MISC_SELECTION_LAYER );
 

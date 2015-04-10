@@ -211,7 +211,7 @@ public class SavedGameParser extends Parser {
 				boolean shipNearby = readBool(in);
 				if ( shipNearby ) {
 					ShipState nearbyShipState = readShip( in, true, headerAlpha, gameState.isDLCEnabled() );
-					gameState.setNearbyShipState(nearbyShipState);
+					gameState.setNearbyShipState( nearbyShipState );
 				}
 
 				RebelFlagshipState flagshipState = readRebelFlagship(in);
@@ -230,7 +230,7 @@ public class SavedGameParser extends Parser {
 					gameState.setRebelFlagshipNearby( readBool(in) );
 
 					ShipState nearbyShipState = readShip( in, true, headerAlpha, gameState.isDLCEnabled() );
-					gameState.setNearbyShipState(nearbyShipState);
+					gameState.setNearbyShipState( nearbyShipState );
 
 					gameState.setNearbyShipAI( readNearbyShipAI(in) );
 				}
@@ -2514,7 +2514,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 		/**
-		 * Adds a projectile.
+		 * Adds a projectile, currently in transit between ships.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */

@@ -1376,9 +1376,10 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void setStatusText( String text ) {
-		if (text.length() > 0)
+		if (text.length() > 0) {
 			statusLbl.setText( text );
-		else
+		} else {
 			statusLbl.setText( " " );
+		}
 	}
 }

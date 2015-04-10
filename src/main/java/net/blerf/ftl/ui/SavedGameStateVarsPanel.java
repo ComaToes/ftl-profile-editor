@@ -44,6 +44,7 @@ public class SavedGameStateVarsPanel extends JPanel {
 	private FieldEditorPanel varsOnePanel = null;
 	private FieldEditorPanel varsTwoPanel = null;
 
+
 	public SavedGameStateVarsPanel( FTLFrame frame ) {
 		this.setLayout( new GridBagLayout() );
 
@@ -131,7 +132,7 @@ public class SavedGameStateVarsPanel extends JPanel {
 					int value = Integer.parseInt(newString);
 					gameState.setStateVar(id, value);
 				}
-				catch (NumberFormatException e) {}
+				catch ( NumberFormatException e ) {}
 			}
 		}
 	}
