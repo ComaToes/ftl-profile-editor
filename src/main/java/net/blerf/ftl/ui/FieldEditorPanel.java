@@ -365,8 +365,13 @@ public class FieldEditorPanel extends JPanel {
 			SpinnerModel spinnerModel = valueSpinner.getModel();
 			if ( spinnerModel instanceof SpinnerNumberModel ) {
 				SpinnerNumberModel numberModel = ((SpinnerNumberModel)spinnerModel);
-				Comparable minInt = numberModel.getMinimum();
-				Comparable maxInt = numberModel.getMaximum();
+
+				@SuppressWarnings("unchecked")
+				Comparable<Number> minInt = (Comparable<Number>)numberModel.getMinimum();
+
+				@SuppressWarnings("unchecked")
+				Comparable<Number> maxInt = (Comparable<Number>)numberModel.getMaximum();
+
 				if ( ( minInt == null || minInt.compareTo( defaultInt ) != 1 ) && ( maxInt == null || maxInt.compareTo( defaultInt ) != -1 ) ) {
 					valueSpinner.setValue( defaultInt );
 				}
