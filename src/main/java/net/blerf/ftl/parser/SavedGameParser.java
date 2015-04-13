@@ -148,8 +148,8 @@ public class SavedGameParser extends Parser {
 			if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
 				gameState.setCurrentBeaconId( readInt(in) );
 
-				gameState.setUnknownGamma( readBool(in) );
-				gameState.setUnknownDelta( readInt(in) );
+				gameState.setWaiting( readBool(in) );
+				gameState.setWaitEventSeed( readInt(in) );
 				gameState.setUnknownEpsilon( readString(in) );
 				gameState.setSectorHazardsVisible( readBool(in) );
 				gameState.setRebelFlagshipVisible( readBool(in) );
@@ -330,8 +330,8 @@ public class SavedGameParser extends Parser {
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
 			writeInt( out, gameState.getCurrentBeaconId() );
 
-			writeBool( out, gameState.getUnknownGamma() );
-			writeInt( out, gameState.getUnknownDelta() );
+			writeBool( out, gameState.isWaiting() );
+			writeInt( out, gameState.getWaitEventSeed() );
 			writeString( out, gameState.getUnknownEpsilon() );
 			writeBool( out, gameState.areSectorHazardsVisible() );
 			writeBool( out, gameState.isRebelFlagshipVisible() );
@@ -2039,8 +2039,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int rebelFleetFudge = 100;    // Arbitrary default.
 		private int rebelPursuitMod = 0;
 		private int currentBeaconId = 0;
-		private boolean unknownGamma = false;
-		private int unknownDelta = -1;
+		private boolean waiting = false;
+		private int waitEventSeed = -1;
 		private String unknownEpsilon = "";
 		private boolean sectorHazardsVisible = false;
 		private boolean rebelFlagshipVisible = false;
@@ -2268,37 +2268,51 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getRebelPursuitMod() { return rebelPursuitMod; }
 
 		/**
-		 * Unknown.
+		 * Toggles whether a wait event is active (as in out of fuel).
 		 *
-		 * Observed values: false (normal), true (distress beacon active, or at
-		 * least after waiting... until the wait-related events finish, then
-		 * false again).
+		 * If true, the waitEventSeed must be set, or FTL will crash.
+		 *
+		 * If true, a random fuel-related event will be chosen (distress signal
+		 * status is not saved, only remembered while FTL runs - even bouncing to
+		 * the main menu). The EncounterState's choice list will need to be empty
+		 * or incomplete for the event popup to appear.
+		 *
+		 * Note: The EncounterState's text will NOT be synchronized with the
+		 * event. Any lingering value will display with this event's choices
+		 * below it... unless the text is set manually.
+		 *
+		 * After the wait event has completed, this will be set to false.
 		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setWaitEventSeed(int)
+		 * @see EncounterState#setText(String)
+		 * @see EncounterState#setChoiceList(List<Integer>)
 		 */
-		public void setUnknownGamma( boolean b ) { unknownGamma = b; }
-		public boolean getUnknownGamma() { return unknownGamma; }
+		public void setWaiting( boolean b ) { waiting = b; }
+		public boolean isWaiting() { return waiting; }
 
 		/**
-		 * Unknown.
+		 * Sets a seed for wait events.
 		 *
-		 * Observed values: 5592, 4223, 4822.
-		 * Some kind of seed? (Was set after waiting with the distress beacon.)
+		 * This has no effect when not waiting.
 		 *
 		 * When not set, this is -1.
 		 *
 		 * This value lingers.
 		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setWaiting(boolean)
 		 */
-		public void setUnknownDelta( int n ) { unknownDelta = n; }
-		public int getUnknownDelta() { return unknownDelta; }
+		public void setWaitEventSeed( int n ) { waitEventSeed = n; }
+		public int getWaitEventSeed() { return waitEventSeed; }
 
 		/**
 		 * Unknown.
 		 *
 		 * This has been observed to be an eventId of some sort
-		 * ("FUEL_ESCAPE_ASTEROIDS").
+		 * ("FUEL_ESCAPE_ASTEROIDS") related to waiting.
 		 *
 		 * When not set, this is "".
 		 *
@@ -2620,8 +2634,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Rebel Fleet Fudge:  %5d\n", rebelFleetFudge));
 			result.append(String.format("Rebel Pursuit Mod:  %5d\n", rebelPursuitMod));
 			result.append(String.format("Player BeaconId:    %5d\n", currentBeaconId));
-			result.append(String.format("Gamma?:             %5b\n", unknownGamma));
-			result.append(String.format("Delta?:             %5d\n", unknownDelta));
+			result.append(String.format("Waiting:            %5b\n", waiting));
+			result.append(String.format("Wait Event Seed:    %5d\n", waitEventSeed));
 			result.append(String.format("Epsilon?:           %s\n", unknownEpsilon));
 			result.append(String.format("Sector Hazards Map: %5b\n", sectorHazardsVisible));
 			result.append(String.format("In Hidden Sector:   %5b\n", sectorIsHiddenCrystalWorlds));
@@ -5692,7 +5706,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Any event - 'static', secondary, or wait - may set this value. It may
 		 * have no relation to the last event id.
 		 *
+		 * Note: Wait events triggered in-game set this value. Toggling waiting
+		 * programmatically does NOT set this value. That must be done
+		 * separately.
+		 *
 		 * After the event popup is dismissed, this value lingers.
+		 *
+		 * @see SavedGameState#setWaiting(boolean)
 		 */
 		public void setText( String s ) { text = s; }
 		public String getText() { return text; }
@@ -5720,6 +5740,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * The list typically ends with a 0, since events usually conclude with
 		 * a lone "continue" choice.
+		 *
+		 * Note: If waiting, this list will cause a wait event to be selected
+		 * from fuel-related event lists, instead of a normal event.
+		 *
+		 * @see SavedGameState#setWaiting(boolean)
 		 */
 		public void setChoiceList( List<Integer> choiceList ) { this.choiceList = choiceList; }
 		public List<Integer> getChoiceList() { return choiceList; }

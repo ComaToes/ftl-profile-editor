@@ -98,8 +98,8 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String AI_BOARDING_ATTEMPTS = "Boarding Attempts?";
 	private static final String AI_BOARDERS_NEEDED = "Boarders Needed?";
 
-	private static final String TOP_GAMMA = "Gamma?";
-	private static final String TOP_DELTA = "Delta?";
+	private static final String TOP_WAITING = "Waiting";
+	private static final String TOP_WAIT_EVENT_SEED = "Wait Event Seed";
 	private static final String TOP_EPSILON = "Epsilon?";
 	private static final String TOP_KAPPA = "Kappa?";
 	private static final String TOP_MU = "Mu?";
@@ -317,9 +317,9 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		unknownsPanel = new FieldEditorPanel( true );
 		unknownsPanel.setBorder( BorderFactory.createTitledBorder("Top-Level Unknowns") );
-		unknownsPanel.addRow( TOP_GAMMA, FieldEditorPanel.ContentType.BOOLEAN );
-		unknownsPanel.addRow( TOP_DELTA, FieldEditorPanel.ContentType.INTEGER );
-		unknownsPanel.getInt(TOP_DELTA).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.addRow( TOP_WAITING, FieldEditorPanel.ContentType.BOOLEAN );
+		unknownsPanel.addRow( TOP_WAIT_EVENT_SEED, FieldEditorPanel.ContentType.INTEGER );
+		unknownsPanel.getInt(TOP_WAIT_EVENT_SEED).setDocument( new RegexDocument("-?[0-9]*") );
 		unknownsPanel.addRow( TOP_EPSILON, FieldEditorPanel.ContentType.STRING );
 		unknownsPanel.addRow( TOP_KAPPA, FieldEditorPanel.ContentType.INTEGER );
 		unknownsPanel.getInt(TOP_KAPPA).setDocument( new RegexDocument("-?[0-9]*") );
@@ -334,8 +334,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		unknownsPanel.addBlankRow();
 		unknownsPanel.addFillRow();
 
-		unknownsPanel.getBoolean(TOP_GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		unknownsPanel.getInt(TOP_DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Some kind of seed? (-1 when not set)") );
+		unknownsPanel.getBoolean(TOP_WAITING).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether any current random event is a wait event. (Set a wait seed!)") );
+		unknownsPanel.getInt(TOP_WAIT_EVENT_SEED).addMouseListener( new StatusbarMouseListener(frame, "Seed for random wait events. (-1 when not set. Waiting without a seed crashes FTL.)") );
 		unknownsPanel.getString(TOP_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Rare eventId. Related to waiting?") );
 		unknownsPanel.getInt(TOP_KAPPA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Maybe flagship-related?") );
 		unknownsPanel.getInt(TOP_MU).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
@@ -542,8 +542,8 @@ public class SavedGameGeneralPanel extends JPanel {
 				aiPanel.setIntAndReminder( AI_BOARDERS_NEEDED, ai.getBoardersNeeded() );
 			}
 
-			unknownsPanel.setBoolAndReminder( TOP_GAMMA, gameState.getUnknownGamma() );
-			unknownsPanel.setIntAndReminder( TOP_DELTA, gameState.getUnknownDelta() );
+			unknownsPanel.setBoolAndReminder( TOP_WAITING, gameState.isWaiting() );
+			unknownsPanel.setIntAndReminder( TOP_WAIT_EVENT_SEED, gameState.getWaitEventSeed() );
 			unknownsPanel.setStringAndReminder( TOP_EPSILON, gameState.getUnknownEpsilon() );
 			unknownsPanel.setIntAndReminder( TOP_KAPPA, gameState.getUnknownKappa() );
 			unknownsPanel.setIntAndReminder( TOP_MU, gameState.getUnknownMu() );
@@ -716,9 +716,9 @@ public class SavedGameGeneralPanel extends JPanel {
 			catch ( NumberFormatException e ) {}
 		}
 
-		gameState.setUnknownGamma( unknownsPanel.getBoolean(TOP_GAMMA).isSelected() );
+		gameState.setWaiting( unknownsPanel.getBoolean(TOP_WAITING).isSelected() );
 
-		try { gameState.setUnknownDelta( unknownsPanel.parseInt(TOP_DELTA) ); }
+		try { gameState.setWaitEventSeed( unknownsPanel.parseInt(TOP_WAIT_EVENT_SEED) ); }
 		catch ( NumberFormatException e ) {}
 
 		gameState.setUnknownEpsilon( unknownsPanel.getString(TOP_EPSILON).getText() );
