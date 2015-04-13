@@ -258,10 +258,9 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 				}
 			}
 		}
-		// Add blank panels to fill all four slots.
-		int panelsCount = bestScorePanels.size();
-		for ( int i=0; i < MAX_SCORE_PANELS - panelsCount; i++ ) {
-			ScorePanel bsp = new ScorePanel( panelsCount+i+1, null );
+		// Add blank panels to fill all remaining slots.
+		while ( bestScorePanels.size() < MAX_SCORE_PANELS ) {
+			ScorePanel bsp = new ScorePanel( bestScorePanels.size()+1, null );
 			bsp.setCacheMap( cachedImages );
 			bsp.setShipId( currentShipId );
 			bsp.setShipIdEditingEnabled( false );
@@ -286,9 +285,13 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 		shipScoreList.clear();
 
 		for ( ScorePanel bsp : bestScorePanels ) {
-			if ( bsp.isBlank() || !currentShipId.equals(bsp.getShipId()) ) continue;
+			if ( bsp.isBlank() ) continue;
+			if ( bsp.getShipName().length() == 0 || bsp.getShipId().length() == 0 ) continue;
+
 			// Ignore panels that changed to another ship? *shrug*
-			// TODO: Add a setShipEditable(boolean) method to ScorePanel.
+			// TODO: Handle ScorePanels with setShipIdEditable(true).
+
+			if ( !currentShipId.equals(bsp.getShipId()) ) continue;
 
 			Score newScore = bsp.createScore();
 			if ( newScore == null ) continue;

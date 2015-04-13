@@ -35,6 +35,8 @@ public class ProfileGeneralStatsPanel extends JPanel {
 
 	private static final Logger log = LogManager.getLogger(ProfileGeneralStatsPanel.class);
 
+	private static final int MAX_SCORE_PANELS = 5;
+
 	private FTLFrame frame;
 
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
@@ -95,6 +97,16 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		for ( Score s : stats.getTopScores() ) {
 			ScorePanel tsp = new ScorePanel( ++i, s );
 			tsp.setCacheMap( cachedImages );
+			tsp.setBlankable( true );
+			tsp.setEditable( true );
+			topScoresPanel.add( tsp );
+			topScorePanels.add( tsp );
+		}
+		// Add blank panels to fill all remaining slots.
+		while ( topScorePanels.size() < MAX_SCORE_PANELS ) {
+			ScorePanel tsp = new ScorePanel( topScorePanels.size()+1, null );
+			tsp.setBlankable( true );
+			tsp.setEditable( true );
 			topScoresPanel.add( tsp );
 			topScorePanels.add( tsp );
 		}
@@ -140,9 +152,12 @@ public class ProfileGeneralStatsPanel extends JPanel {
 
 		stats.getTopScores().clear();
 		for ( ScorePanel tsp : topScorePanels ) {
-			Score s = new Score( tsp.getShipName(), tsp.getShipId(), tsp.getValue(), tsp.getSector(), tsp.getDifficulty(), tsp.isVictory() );
-			s.setDLCEnabled( tsp.isDLCEnabled() );
-			stats.getTopScores().add(s);
+			if ( tsp.isBlank() ) continue;
+			if ( tsp.getShipName().length() == 0 || tsp.getShipId().length() == 0 ) continue;
+
+			Score newScore = tsp.createScore();
+			if ( newScore == null ) continue;
+			stats.getTopScores().add( newScore );
 		}
 
 		for ( StatType type : sessionStatTypes ) {
