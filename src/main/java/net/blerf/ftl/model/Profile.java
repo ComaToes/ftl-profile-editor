@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.blerf.ftl.constants.NewbieTipLevel;
 import net.blerf.ftl.model.ShipAvailability;
 import net.blerf.ftl.model.Stats.StatType;
 
@@ -16,7 +17,7 @@ public class Profile {
 	private Map<String, ShipAvailability> shipUnlockMap;
 	private Stats stats;
 
-	private int unknownBeta = 0;
+	private NewbieTipLevel newbieTipLevel = NewbieTipLevel.VETERAN;
 
 
 	public Profile() {
@@ -43,8 +44,9 @@ public class Profile {
 
 		stats = new Stats( srcProfile.getStats() );
 
-		unknownBeta = srcProfile.getUnknownBeta();
+		newbieTipLevel = srcProfile.getNewbieTipLevel();
 	}
+
 
 	/**
 	 * Sets the magic number indicating file format, apparently.
@@ -57,6 +59,20 @@ public class Profile {
 	}
 	public int getHeaderAlpha() {
 		return unknownHeaderAlpha;
+	}
+
+	/**
+	 * Sets the newbie tip level.
+	 *
+	 * This was introduced in FTL 1.5.4.
+	 *
+	 * @see net.blerf.ftl.constants.NewbieTipLevel
+	 */
+	public void setNewbieTipLevel( NewbieTipLevel level ) {
+		newbieTipLevel = level;
+	}
+	public NewbieTipLevel getNewbieTipLevel() {
+		return newbieTipLevel;
 	}
 
 	public void setAchievements( List<AchievementRecord> achievements ) {
@@ -78,13 +94,6 @@ public class Profile {
 	}
 	public Stats getStats() {
 		return stats;
-	}
-
-	public void setUnknownBeta( int n ) {
-		unknownBeta = n;
-	}
-	public int getUnknownBeta() {
-		return unknownBeta;
 	}
 
 
@@ -139,7 +148,7 @@ public class Profile {
 		}
 
 		result.append(String.format("File Format:            %4d (%s)\n", unknownHeaderAlpha, formatDesc));
-		result.append(String.format("Beta?:                  %4d\n", unknownBeta));
+		result.append(String.format("Newbie Tip Level:       %4s\n", newbieTipLevel.toString()));
 
 		result.append("\nShip Unlocks...\n");
 		first = true;

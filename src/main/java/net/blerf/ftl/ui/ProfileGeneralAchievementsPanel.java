@@ -7,14 +7,17 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 
 import net.blerf.ftl.constants.Difficulty;
+import net.blerf.ftl.constants.NewbieTipLevel;
 import net.blerf.ftl.model.AchievementRecord;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
+import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.IconCycleButton;
 import net.blerf.ftl.ui.ImageUtilities;
@@ -32,11 +35,15 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 	private static final int ICON_NORMAL = 2;
 	private static final int ICON_HARD = 3;
 
+	private static final String NEWBIE_TIP_LEVEL = "Newbie Tip Level";
+
 	private static final Logger log = LogManager.getLogger(ProfileGeneralAchievementsPanel.class);
 
 	private FTLFrame frame;
 
 	private HashMap<Achievement, IconCycleButton> generalAchBoxes = new HashMap<Achievement, IconCycleButton>();
+
+	private FieldEditorPanel newbiePanel = null;
 
 
 	public ProfileGeneralAchievementsPanel( FTLFrame frame ) {
@@ -51,6 +58,21 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 		this.add( createAchievementsSubPanel( "General Progression", achievements, 0 ) );
 		this.add( createAchievementsSubPanel( "Going the Distance", achievements, 7 ) );
 		this.add( createAchievementsSubPanel( "Skill and Equipment Feats", achievements, 14 ) );
+
+		this.add( Box.createVerticalStrut( 5 ) );
+
+		newbiePanel = new FieldEditorPanel( true );
+		newbiePanel.setBorder( BorderFactory.createTitledBorder("Hangar Menu") );
+		newbiePanel.addRow( NEWBIE_TIP_LEVEL, FieldEditorPanel.ContentType.COMBO );
+
+		newbiePanel.getCombo(NEWBIE_TIP_LEVEL).addMouseListener( new StatusbarMouseListener(frame, "Pending tips to display for new players.") );
+
+		for ( NewbieTipLevel level : NewbieTipLevel.values() ) {
+			newbiePanel.getCombo(NEWBIE_TIP_LEVEL).addItem( level );
+		}
+		newbiePanel.addBlankRow();
+		newbiePanel.setMaximumSize( newbiePanel.getPreferredSize() );
+		this.add( newbiePanel );
 	}
 
 	private JPanel createAchievementsSubPanel( String title, List<Achievement> achievements, int offset ) {
@@ -101,9 +123,13 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 				}
 			}
 		}
+
+		newbiePanel.setComboAndReminder( NEWBIE_TIP_LEVEL, p.getNewbieTipLevel() );
+
 		this.repaint();
 	}
 
+	@SuppressWarnings("unchecked")
 	public void updateProfile( Profile p ) {
 		ArrayList<AchievementRecord> newAchRecs = new ArrayList<AchievementRecord>();
 		newAchRecs.addAll( p.getAchievements() );
@@ -145,5 +171,8 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 		}
 
 		p.setAchievements(newAchRecs);
+
+		Object newbieObj = newbiePanel.getCombo(NEWBIE_TIP_LEVEL).getSelectedItem();
+		p.setNewbieTipLevel( (NewbieTipLevel)newbieObj );
 	}
 }

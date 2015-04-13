@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.blerf.ftl.constants.Difficulty;
+import net.blerf.ftl.constants.NewbieTipLevel;
 import net.blerf.ftl.model.AchievementRecord;
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Profile;
@@ -59,7 +60,20 @@ public class ProfileParser extends Parser {
 		else if ( headerAlpha == 9 ) {
 			// FTL 1.5.4+.
 			p.setHeaderAlpha( headerAlpha );
-			p.setUnknownBeta( readInt(in) );
+
+			int newbieFlag = readInt(in);
+			if ( newbieFlag == 0 ) {
+				p.setNewbieTipLevel( NewbieTipLevel.SHIPS_UNLOCKED );
+			}
+			else if ( newbieFlag == 1 ) {
+				p.setNewbieTipLevel( NewbieTipLevel.SHIP_LIST_INTRO );
+			}
+			else if ( newbieFlag == 2 ) {
+				p.setNewbieTipLevel( NewbieTipLevel.VETERAN );
+			}
+			else {
+				throw new IOException( String.format("Unsupported newbie tip level flag: %d", newbieFlag) );
+			}
 		}
 		else {
 			throw new IOException( "Unexpected first byte ("+ headerAlpha +") for a PROFILE." );
@@ -78,7 +92,23 @@ public class ProfileParser extends Parser {
 		writeInt( out, p.getHeaderAlpha() );
 
 		if ( p.getHeaderAlpha() == 9 ) {
-			writeInt( out, p.getUnknownBeta() );
+			int newbieFlag = 0;
+			if ( p.getNewbieTipLevel() == NewbieTipLevel.SHIPS_UNLOCKED ) {
+				newbieFlag = 0;
+			}
+			else if ( p.getNewbieTipLevel() == NewbieTipLevel.SHIP_LIST_INTRO ) {
+				newbieFlag = 1;
+			}
+			else if ( p.getNewbieTipLevel() == NewbieTipLevel.VETERAN ) {
+				newbieFlag = 2;
+			}
+			else {
+				//throw new IOException( String.format("Unsupported newbie tip level: %s", p.getNewbieTipLevel().toString()) );
+				log.warn( String.format("Substituting VETERAN for unsupported newbie tip level: %s", p.getNewbieTipLevel().toString()) );
+				newbieFlag = 0;
+			}
+
+			writeInt( out, newbieFlag );
 		}
 
 		writeAchievements( out, p.getAchievements(), p.getHeaderAlpha() );
