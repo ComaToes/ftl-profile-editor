@@ -44,6 +44,12 @@ public class SavedGameHangarPanel extends JPanel {
 	private static final Logger log = LogManager.getLogger(SavedGameHangarPanel.class);
 
 	private FTLFrame frame;
+	private JComboBox shipCombo = null;
+	private JButton createShipBtn = null;
+	private JComboBox autoCombo = null;
+	private JButton createAutoBtn = null;
+	private JButton stealNearbyShipBtn = null;
+
 
 	public SavedGameHangarPanel( FTLFrame frame ) {
 		this.setLayout( new GridBagLayout() );
@@ -82,34 +88,35 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarC.gridwidth = 1;
 		hangarC.gridx = 0;
 		hangarC.gridy++;
-		final JComboBox shipCombo = new JComboBox();
+		shipCombo = new JComboBox();
 		for ( ShipBlueprint blueprint : playerShipMap.values() )
 			shipCombo.addItem( blueprint );
 		hangarPanel.add( shipCombo, hangarC );
 
 		hangarC.fill = GridBagConstraints.NONE;
 		hangarC.gridx++;
-		JButton createShipBtn = new JButton( "Create" );
+		createShipBtn = new JButton( "Create" );
 		hangarPanel.add( createShipBtn, hangarC );
 
 		hangarC.fill = GridBagConstraints.HORIZONTAL;
 		hangarC.gridx = 0;
 		hangarC.gridy++;
-		final JComboBox autoCombo = new JComboBox();
+		autoCombo = new JComboBox();
 		for ( ShipBlueprint blueprint : autoShipMap.values() )
 			autoCombo.addItem( blueprint );
 		hangarPanel.add( autoCombo, hangarC );
 
 		hangarC.fill = GridBagConstraints.NONE;
 		hangarC.gridx++;
-		JButton createAutoBtn = new JButton( "Create" );
+		createAutoBtn = new JButton( "Create" );
 		hangarPanel.add( createAutoBtn, hangarC );
 
 		hangarC.fill = GridBagConstraints.NONE;
 		hangarC.gridwidth = 2;
 		hangarC.gridx = 0;
 		hangarC.gridy++;
-		JButton stealNearbyShipBtn = new JButton( "Steal Nearby Ship" );
+		stealNearbyShipBtn = new JButton( "Steal Nearby Ship" );
+		stealNearbyShipBtn.addMouseListener( new StatusbarMouseListener(frame, "Abandon the player ship and commandeer one nearby.") );
 		hangarPanel.add( stealNearbyShipBtn, hangarC );
 
 		borderPanel.add( hangarPanel, BorderLayout.CENTER );
@@ -180,6 +187,13 @@ public class SavedGameHangarPanel extends JPanel {
 		SavedGameParser.SavedGameState gameState = frame.getGameState();
 		if ( gameState == null ) return;
 
+		String nag = "";
+		nag += "The player ship is about to be replaced with the nearby one.\n";
+		nag += "Some ships lack shield oval and floor outline images.\n";
+		nag += "Are you sure you want to do this?";
+		int response = JOptionPane.showConfirmDialog(frame, nag, "Steal Nearby Ship", JOptionPane.YES_NO_OPTION);
+		if ( response != JOptionPane.YES_OPTION ) return;
+
 		// Apply all other pending changes.
 		frame.updateGameState( gameState );
 
@@ -188,20 +202,54 @@ public class SavedGameHangarPanel extends JPanel {
 			return;
 		}
 
-		String nag = "";
-		nag += "The player ship is about to be replaced with the nearby one.\n";
-		nag += "Some ships lack shield oval and floor outline images.\n";
-		nag += "Are you sure you want to do this?";
-		int response = JOptionPane.showConfirmDialog(frame, nag, "Steal Nearby Ship", JOptionPane.YES_NO_OPTION);
-		if ( response != JOptionPane.YES_OPTION ) return;
-
-		gameState.setPlayerShipState( gameState.getNearbyShipState() );
+		SavedGameParser.ShipState shipState = gameState.getNearbyShipState();
 		gameState.setNearbyShipState( null );
+		gameState.setNearbyShipAI( null );
+		shipState.commandeer();
+		gameState.setPlayerShipState( shipState );
+
+		gameState.getProjectileList().clear();
 
 		// Sync session's redundant ship info with player ship.
 		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
 		gameState.setPlayerShipBlueprintId( gameState.getPlayerShipState().getShipBlueprintId() );
 
 		frame.loadGameState( gameState );
+	}
+
+
+	public void setGameState( SavedGameParser.SavedGameState gameState ) {
+		// This panel doesn't cache anything of the state. It just toggles the UI.
+
+		if ( gameState != null && gameState.getHeaderAlpha() == 2 ) {
+			shipCombo.setEnabled( true );
+			createShipBtn.setEnabled( true );
+			autoCombo.setEnabled( true );
+			createAutoBtn.setEnabled( true );
+
+			stealNearbyShipBtn.setEnabled( (gameState.getNearbyShipState() != null) );
+		}
+		else if ( gameState != null && ( gameState.getHeaderAlpha() == 7 || gameState.getHeaderAlpha() == 8 || gameState.getHeaderAlpha() == 9 ) ) {
+			// FTL 1.5.4 is only partially editable.
+
+			shipCombo.setEnabled( false );
+			createShipBtn.setEnabled( false );
+			autoCombo.setEnabled( false );
+			createAutoBtn.setEnabled( false );
+
+			stealNearbyShipBtn.setEnabled( (gameState.getNearbyShipState() != null) );
+		}
+		else {
+			shipCombo.setEnabled( false );
+			createShipBtn.setEnabled( false );
+			autoCombo.setEnabled( false );
+			createAutoBtn.setEnabled( false );
+
+			stealNearbyShipBtn.setEnabled( false );
+		}
+	}
+
+	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
+		// This panel makes its changes immediately. Nothing to do here.
 	}
 }

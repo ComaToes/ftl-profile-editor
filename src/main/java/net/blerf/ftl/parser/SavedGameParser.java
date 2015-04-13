@@ -2070,6 +2070,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public SavedGameState() {
 		}
 
+
 		/**
 		 * Sets the difficulty.
 		 *
@@ -2215,7 +2216,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Note: The RNG algorithm FTL uses to interpret seeds will vary with
 		 * each platform. Results will be inconsistent if a saved game is
-		 * resumed to another operating system..
+		 * resumed on another operating system..
 		 */
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
 		public int getSectorLayoutSeed() { return sectorLayoutSeed; }
@@ -2499,7 +2500,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
-		 * @see #setNearbyShipState( ShipState )
+		 * @see #setNearbyShipState(ShipState)
 		 */
 		public void setNearbyShipAI( NearbyShipAIState ai ) { nearbyShipAI = ai; }
 		public NearbyShipAIState getNearbyShipAI() { return nearbyShipAI; }
@@ -2859,6 +2860,130 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				setDronePartsAmt( shipBlueprint.getDroneList().drones );
 			if ( shipBlueprint.getWeaponList() != null )
 				setMissilesAmt( shipBlueprint.getWeaponList().missiles );
+		}
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This should be called when turning a nearby ship into a player ship.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public void commandeer() {
+			setUnknownAlpha( 1 );  // TODO: Vet this default.
+			setJumpTicks( 0 );
+			setUnknownGamma( 0 );  // TODO: Vet this default.
+			setUnknownDelta( 0 );  // TODO: Vet this default.
+
+			for ( CrewState crew : getCrewList() ) {
+				crew.commandeer();
+			}
+
+			for ( Map.Entry<SystemType, List<SystemState>> entry : getSystemsMap().entrySet() ) {
+				for ( SystemState s : entry.getValue() ) {
+					if ( !entry.getKey().isSubsystem() ) {
+						s.setPower( 0 );
+					}
+					// TODO: Find out if NOT resetting subsystem power is okay.
+					// Otherwise, damage, etc. will need to be taken into account.
+
+					s.setBatteryPower( 0 );
+					s.setHackLevel( 0 );
+					s.setHacked( false );
+					s.setTemporaryCapacityCap( 1000 );
+					s.setTemporaryCapacityLoss( 0 );
+					s.setTemporaryCapacityDivisor( 1 );
+				}
+			}
+
+			ClonebayInfo clonebayInfo = getExtendedSystemInfo( ClonebayInfo.class );
+			if ( clonebayInfo != null ) {
+				clonebayInfo.setBuildTicks( 0 );
+				clonebayInfo.setBuildTicksGoal( 0 );
+				clonebayInfo.setDoomTicks( 0 );
+			}
+
+			BatteryInfo batteryInfo = getExtendedSystemInfo( BatteryInfo.class );
+			if ( batteryInfo != null ) {
+				batteryInfo.setActive( false );
+				batteryInfo.setUsedBattery( 0 );
+				batteryInfo.setDischargeTicks( 1000 );
+			}
+
+			ShieldsInfo shieldsInfo = getExtendedSystemInfo( ShieldsInfo.class );
+			if ( shieldsInfo != null ) {
+				shieldsInfo.setShieldLayers( 0 );
+				shieldsInfo.setShieldRechargeTicks( 0 );
+				shieldsInfo.setShieldDropAnimOn( false );
+				shieldsInfo.setShieldDropAnimTicks( 0 );   // TODO: Vet this default.
+				shieldsInfo.setShieldRaiseAnimOn( false );
+				shieldsInfo.setShieldRaiseAnimTicks( 0 );  // TODO: Vet this default.
+			}
+
+			CloakingInfo cloakingInfo = getExtendedSystemInfo( CloakingInfo.class );
+			if ( cloakingInfo != null ) {
+				cloakingInfo.setUnknownAlpha( 0 );    // TODO: Vet this default.
+				cloakingInfo.setUnknownBeta( 0 );     // TODO: Vet this default.
+				cloakingInfo.setCloakTicksGoal( 0 );
+				cloakingInfo.setCloakTicks( Integer.MIN_VALUE );
+			}
+
+			HackingInfo hackingInfo = getExtendedSystemInfo( HackingInfo.class );
+			if ( hackingInfo != null ) {
+				hackingInfo.setUnknownAlpha( -1 );
+				hackingInfo.setUnknownBeta( 0 );
+				hackingInfo.setUnknownGamma( 0 );
+				hackingInfo.setUnknownDelta( 0 );
+
+				hackingInfo.setUnknownEpsilon( 0 );
+				hackingInfo.setUnknownZeta( 0 );
+				hackingInfo.setUnknownEta( 0 );
+
+				hackingInfo.setDisruptionTicks( 0 );
+				hackingInfo.setDisruptionTicksGoal( 10000 );
+				hackingInfo.setDisrupting( false );
+
+				DronePodState pod = hackingInfo.getDronePod();
+				if ( pod != null ) {
+					pod.commandeer();
+				}
+			}
+
+			MindInfo mindInfo = getExtendedSystemInfo( MindInfo.class );
+			if ( mindInfo != null ) {
+				mindInfo.setMindControlTicks( 0 );
+				mindInfo.setMindControlTicksGoal( 0 );
+			}
+
+			for ( ArtilleryInfo artilleryInfo : getExtendedSystemInfoList( ArtilleryInfo.class ) ) {
+				WeaponModuleState weaponMod = artilleryInfo.getWeaponModule();
+				if ( weaponMod != null ) {
+					weaponMod.commandeer();
+				}
+			}
+
+			for ( DoorState door : getDoorMap().values() ) {
+				int nominalHealth = door.getNominalHealth();
+				door.setCurrentMaxHealth( nominalHealth );
+				door.setHealth( door.getCurrentMaxHealth() );
+
+				door.setUnknownDelta( 0 );    // TODO: Vet this default.
+				door.setUnknownEpsilon( 0 );  // TODO: Vet this default.
+			}
+
+			setCloakAnimTicks( 0 );
+			getLockdownCrystalList().clear();
+
+			for ( WeaponState weapon : getWeaponList() ) {
+				weapon.commandeer();
+			}
+
+			for ( DroneState drone : getDroneList() ) {
+				drone.commandeer();
+			}
+
+			getStandaloneDroneList().clear();
 		}
 
 
@@ -3490,6 +3615,55 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			lockdownRechargeTicksGoal = srcCrew.getLockdownRechargeTicksGoal();
 			unknownOmega = srcCrew.getUnknownOmega();
 		}
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Normal Crew will NOT have their playerControlled status toggled.
+		 *
+		 * Crew flagged as enemy boarding drones will remain so; when a nearby
+		 * ship becomes the player ship, such crew, which formerly belonged to
+		 * the player, will then be hostile to the player. Their playerControlled
+		 * status will be set to false, as FTL woulld set it on the player ship.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public void commandeer() {
+
+			if ( isEnemyBoardingDrone() ) {
+				setPlayerControlled( false );
+			}
+
+			setCloneReady( 0 );  // TODO: Vet this default.
+			setMindControlled( false );
+
+			setSavedRoomId( -1 );
+			setSavedRoomSquare( -1 );
+
+			setStunTicks( 0 );
+
+			if ( getHealthBoost() > 0 ) {
+				setHealth( getHealth() - getHealthBoost() );
+				setHealthBoost( 0 );
+			}
+
+			setDamageBoost( 0 );
+			setUnknownLambda( 0 );               // TODO: Vet this default;
+			setUnknownNu( false );               // TODO: Vet this default;
+
+			getTeleportAnim().setPlaying( false );
+			getTeleportAnim().setCurrentFrame( 0 );
+			getTeleportAnim().setProgressTicks( 0 );
+
+			setUnknownPhi( false );              // TODO: Vet this default;
+			setLockdownRechargeTicks( 0 );
+			setLockdownRechargeTicksGoal( 0 );
+			setUnknownOmega( 0 );                // TODO: Vet this default;
+		}
+
 
 		public void setName( String s ) { name = s; }
 		public String getName() { return name; }
@@ -4788,6 +4962,24 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			}
 		}
 
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public void commandeer() {
+			setArmed( false );
+			setCooldownTicks( 0 );
+
+			if ( getWeaponModule() != null ) {
+				getWeaponModule().commandeer();
+			}
+		}
+
+
 		public void setWeaponId( String s ) { weaponId = s; }
 		public String getWeaponId() { return weaponId; }
 
@@ -4931,6 +5123,24 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				droneInfo = new ExtendedDroneInfo( srcDrone.getExtendedDroneInfo() );
 			}
 		}
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public void commandeer() {
+			setArmed( false );
+			setPlayerControlled( false );
+
+			if ( getExtendedDroneInfo() != null ) {
+				getExtendedDroneInfo().commandeer();
+			}
+		}
+
 
 		public void setDroneId( String s ) { droneId = s; }
 		public String getDroneId() { return droneId; }
@@ -5437,6 +5647,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		public EncounterState() {
 		}
+
 
 		/**
 		 * Sets a seed to randomly generate the enemy ship (layout, etc).
@@ -7832,6 +8043,31 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			}
 		}
 
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public void commandeer() {
+			setMourningTicks( 0 );
+			setCurrentSpace( 0 );
+			setDestinationSpace( -1 );
+
+			// TODO: unknownBeta and unknownGamma
+
+			getDeathAnim().setPlaying( false );
+			getDeathAnim().setCurrentFrame( 0 );
+			getDeathAnim().setProgressTicks( 0 );
+
+			if ( getExtendedInfo( ExtendedDronePodInfo.class ) != null ) {
+				getExtendedInfo( ExtendedDronePodInfo.class ).commandeer();
+			}
+		}
+
+
 		public void setDroneType( DroneType droneType ) { this.droneType = droneType; }
 		public DroneType getDroneType() { return droneType; }
 
@@ -7966,6 +8202,16 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Subclasses override this with return values of their own type.
 		 */
 		public abstract ExtendedDronePodInfo copy();
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public abstract void commandeer();
 	}
 
 	public static class EmptyDronePodInfo extends ExtendedDronePodInfo {
@@ -7986,6 +8232,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		@Override
 		public EmptyDronePodInfo copy() { return new EmptyDronePodInfo( this ); }
+
+
+		@Override
+		public void commandeer() {
+		}
+
 
 		@Override
 		public String toString() {
@@ -8019,6 +8271,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		@Override
 		public IntegerDronePodInfo copy() { return new IntegerDronePodInfo( this ); }
+
+
+		@Override
+		public void commandeer() {
+		}
+
 
 		public int getSize() { return unknownAlpha.length; }
 
@@ -8093,6 +8351,19 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public BoarderDronePodInfo copy() { return new BoarderDronePodInfo( this ); }
 
 
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		@Override
+		public void commandeer() {
+			// TODO
+		}
+
+
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public int getUnknownAlpha() { return unknownAlpha; }
 
@@ -8155,7 +8426,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	}
 
 	public static class ShieldDronePodInfo extends ExtendedDronePodInfo {
-		private int unknownAlpha = -1000;  // Zoltan shield recharge ticks?
+		private int unknownAlpha = -1000;
 
 		/**
 		 * Constructor.
@@ -8175,6 +8446,27 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		@Override
 		public ShieldDronePodInfo copy() { return new ShieldDronePodInfo( this ); }
 
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		@Override
+		public void commandeer() {
+			setUnknownAlpha( -1000 );
+		}
+
+
+		/**
+		 * Unknown.
+		 *
+		 * Zoltan shield recharge ticks?
+		 *
+		 * Observed values: -1000 (inactive)
+		 */
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public int getUnknownAlpha() { return unknownAlpha; }
 
@@ -8218,6 +8510,31 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		@Override
 		public HackingDronePodInfo copy() { return new HackingDronePodInfo( this ); }
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		@Override
+		public void commandeer() {
+			setUnknownAlpha( 0 );
+			setUnknownBeta( 0 );
+			setUnknownGamma( 0 );
+			setUnknownDelta( 0 );
+
+			getLandingAnim().setPlaying( false );
+			getLandingAnim().setCurrentFrame( 0 );
+			getLandingAnim().setProgressTicks( 0 );
+
+			getExtensionAnim().setPlaying( false );
+			getExtensionAnim().setCurrentFrame( 0 );
+			getExtensionAnim().setProgressTicks( 0 );
+		}
+
 
 		/**
 		 * Unknown.
@@ -8322,6 +8639,24 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				dronePod = new DronePodState( srcInfo.getDronePod() );
 			}
 		}
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public void commandeer() {
+			setDeployed( false );
+			setArmed( false );
+
+			if ( getDronePod() != null ) {
+				getDronePod().commandeer();
+			}
+		}
+
 
 		public void setDeployed( boolean b ) { deployed = b; }
 		public void setArmed( boolean b ) { armed = b; }
@@ -8472,6 +8807,49 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				pendingProjectiles.add( new ProjectileState( projectile ) );
 			}
 		}
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 * TODO: Recurse into all nested objects.
+		 */
+		public void commandeer() {
+			setCooldownTicks( 0 );
+			setCooldownTicksGoal( 0 );     // TODO: Vet this default.
+			setSubcooldownTicks( 0 );      // TODO: Vet this default.
+			setSubcooldownTicksGoal( 0 );  // TODO: Vet this default.
+			setBoost( 0 );
+			setCharge( 0 );
+
+			getCurrentTargets().clear();
+			getPreviousTargets().clear();
+
+			setAutofire( false );
+			setFireWhenReady( false );
+			setTargetId( -1 );
+
+			getWeaponAnim().setPlaying( false );
+			getWeaponAnim().setCurrentFrame( 0 );
+			getWeaponAnim().setProgressTicks( 0 );
+
+			setProtractAnimTicks( 0 );
+			setFiring( false );
+
+			setAnimCharge( -1 );
+			setUnknownPhi( false );
+
+			getChargeAnim().setPlaying( false );
+			getChargeAnim().setCurrentFrame( 0 );
+			getChargeAnim().setProgressTicks( 0 );
+
+			setLastProjectileId( -1 );
+
+			getPendingProjectiles().clear();
+		}
+
 
 		/**
 		 * Sets time elapsed waiting for the weapon to cool down.
