@@ -5668,6 +5668,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * When the player ship visits a beacon, the resulting encounter
 		 * will use the beacon's enemy ship event seed.
+		 *
+		 * When not set, this is 0. After encountering ships, this value lingers.
 		 */
 		public void setShipEventSeed( int n ) { shipEventSeed = n; }
 		public int getShipEventSeed() { return shipEventSeed; }

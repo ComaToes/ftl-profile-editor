@@ -107,6 +107,17 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String TOP_XI = "Xi?";
 	private static final String TOP_AUTOFIRE = "Autofire";
 
+	private static final String ENC_SHIP_EVENT_SEED = "Ship Event Seed";
+	private static final String ENC_SURRENDER_EVENT = "Surrender Event";
+	private static final String ENC_ESCAPE_EVENT = "Escape Event";
+	private static final String ENC_DESTROYED_EVENT = "Destroyed Event";
+	private static final String ENC_DEAD_CREW_EVENT = "Dead Crew Event";
+	private static final String ENC_GOT_AWAY_EVENT = "Got Away Event";
+	private static final String ENC_LAST_EVENT = "Last Event";
+	private static final String ENC_TEXT = "Text";
+	private static final String ENC_CREW_SEED = "Affected Crew Seed";
+	private static final String ENC_CHOICES = "Last Event Choices";
+
 	private FTLFrame frame;
 
 	private FieldEditorPanel sessionPanel = null;
@@ -116,10 +127,12 @@ public class SavedGameGeneralPanel extends JPanel {
 	private FieldEditorPanel envPanel = null;
 	private FieldEditorPanel aiPanel = null;
 	private FieldEditorPanel unknownsPanel = null;
+	private FieldEditorPanel encPanel = null;
 
 	private boolean flagshipEnabled = true;
 	private boolean envEnabled = true;
 	private boolean aiEnabled = true;
+	private boolean encEnabled = true;
 
 
 	public SavedGameGeneralPanel( FTLFrame frame ) {
@@ -338,10 +351,34 @@ public class SavedGameGeneralPanel extends JPanel {
 		unknownsPanel.getInt(TOP_WAIT_EVENT_SEED).addMouseListener( new StatusbarMouseListener(frame, "Seed for random wait events. (-1 when not set. Waiting without a seed crashes FTL.)") );
 		unknownsPanel.getString(TOP_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Rare eventId. Related to waiting?") );
 		unknownsPanel.getInt(TOP_KAPPA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Maybe flagship-related?") );
-		unknownsPanel.getInt(TOP_MU).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		unknownsPanel.getInt(TOP_MU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Maybe event-related?") );
 		unknownsPanel.getInt(TOP_NU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the player ship.") );
 		unknownsPanel.getInt(TOP_XI).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the nearby ship, when one is present.") );
 		unknownsPanel.getBoolean(TOP_AUTOFIRE).addMouseListener( new StatusbarMouseListener(frame, "Toggle autofire.") );
+
+		encPanel = new FieldEditorPanel( true );
+		encPanel.setBorder( BorderFactory.createTitledBorder("Encounter") );
+		encPanel.addRow( ENC_SHIP_EVENT_SEED, FieldEditorPanel.ContentType.INTEGER );
+		encPanel.addRow( ENC_SURRENDER_EVENT, FieldEditorPanel.ContentType.STRING );
+		encPanel.addRow( ENC_ESCAPE_EVENT, FieldEditorPanel.ContentType.STRING );
+		encPanel.addRow( ENC_DESTROYED_EVENT, FieldEditorPanel.ContentType.STRING );
+		encPanel.addRow( ENC_DEAD_CREW_EVENT, FieldEditorPanel.ContentType.STRING );
+		encPanel.addRow( ENC_GOT_AWAY_EVENT, FieldEditorPanel.ContentType.STRING );
+		encPanel.addRow( ENC_LAST_EVENT, FieldEditorPanel.ContentType.STRING );
+		encPanel.addRow( ENC_TEXT, FieldEditorPanel.ContentType.STRING );
+		encPanel.getString(ENC_TEXT).setColumns( 10 );
+		encPanel.addRow( ENC_CREW_SEED, FieldEditorPanel.ContentType.INTEGER );
+		encPanel.getInt(ENC_CREW_SEED).setDocument( new RegexDocument("-?[0-9]*") );
+		encPanel.addRow( ENC_CHOICES, FieldEditorPanel.ContentType.STRING );
+		encPanel.getString(ENC_CHOICES).setDocument( new RegexDocument("(?:-?[0-9]*)(?:,-?[0-9]*)*") );
+		encPanel.addBlankRow();
+		encPanel.addFillRow();
+
+		encPanel.getInt(ENC_SHIP_EVENT_SEED).addMouseListener( new StatusbarMouseListener(frame, "A seed for randomly generating a nearby ship. Copied from beacons on arrival.") );
+		encPanel.getString(ENC_LAST_EVENT).addMouseListener( new StatusbarMouseListener(frame, "The last dynamically triggered event. (Sector's beacon events are initially static.)") );
+		encPanel.getString(ENC_TEXT).addMouseListener( new StatusbarMouseListener(frame, "Last situation-describing text shown in an event window. (From any event.)") );
+		encPanel.getInt(ENC_CREW_SEED).addMouseListener( new StatusbarMouseListener(frame, "A seed for randomly selecting crew. (-1 when not set.)") );
+		encPanel.getString(ENC_CHOICES).addMouseListener( new StatusbarMouseListener(frame, "Breadcrumbs tracking already-selected choices at each prompt. (0-based) Blank for fresh events.") );
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.fill = GridBagConstraints.NORTH;
@@ -372,6 +409,9 @@ public class SavedGameGeneralPanel extends JPanel {
 		thisC.gridx = 0;
 		thisC.gridy++;
 		this.add( unknownsPanel, thisC );
+
+		thisC.gridx++;
+		this.add( encPanel, thisC );
 
 		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weighty = 1.0;
@@ -550,6 +590,29 @@ public class SavedGameGeneralPanel extends JPanel {
 			unknownsPanel.setIntAndReminder( TOP_NU, gameState.getUnknownNu() );
 			unknownsPanel.setIntAndReminder( TOP_XI, (gameState.getUnknownXi() != null ? gameState.getUnknownXi().intValue() : 0) );
 			unknownsPanel.setBoolAndReminder( TOP_AUTOFIRE, gameState.getAutofire() );
+
+			SavedGameParser.EncounterState enc = gameState.getEncounter();
+			encEnabled = ( enc != null );
+			encPanel.getInt(ENC_SHIP_EVENT_SEED).setEnabled( encEnabled );
+
+			if ( encEnabled ) {
+				encPanel.setIntAndReminder( ENC_SHIP_EVENT_SEED, enc.getShipEventSeed() );
+				encPanel.setStringAndReminder( ENC_SURRENDER_EVENT, enc.getSurrenderEventId() );
+				encPanel.setStringAndReminder( ENC_ESCAPE_EVENT, enc.getEscapeEventId() );
+				encPanel.setStringAndReminder( ENC_DESTROYED_EVENT, enc.getDestroyedEventId() );
+				encPanel.setStringAndReminder( ENC_DEAD_CREW_EVENT, enc.getDeadCrewEventId() );
+				encPanel.setStringAndReminder( ENC_GOT_AWAY_EVENT, enc.getGotAwayEventId() );
+				encPanel.setStringAndReminder( ENC_LAST_EVENT, enc.getLastEventId() );
+				encPanel.getString(ENC_TEXT).setText( enc.getText() );
+				encPanel.setIntAndReminder( ENC_CREW_SEED, enc.getAffectedCrewSeed() );
+
+				StringBuilder choiceBuf = new StringBuilder();
+				for ( Integer n : enc.getChoiceList() ) {
+					if ( choiceBuf.length() > 0 ) choiceBuf.append( "," );
+					choiceBuf.append( n.toString() );
+				}
+				encPanel.setStringAndReminder( ENC_CHOICES, choiceBuf.toString() );
+			}
 		}
 
 		this.repaint();
@@ -736,6 +799,34 @@ public class SavedGameGeneralPanel extends JPanel {
 		catch ( NumberFormatException e ) {}
 
 		gameState.setAutofire( unknownsPanel.getBoolean(TOP_AUTOFIRE).isSelected() );
+
+		SavedGameParser.EncounterState enc = gameState.getEncounter();
+		if ( enc != null && encEnabled ) {
+			try { enc.setShipEventSeed( encPanel.parseInt(ENC_SHIP_EVENT_SEED) ); }
+			catch ( NumberFormatException e ) {}
+
+			enc.setEscapeEventId( encPanel.getString(ENC_ESCAPE_EVENT).getText() );
+			enc.setDestroyedEventId( encPanel.getString(ENC_DESTROYED_EVENT).getText() );
+			enc.setDeadCrewEventId( encPanel.getString(ENC_DEAD_CREW_EVENT).getText() );
+			enc.setGotAwayEventId( encPanel.getString(ENC_GOT_AWAY_EVENT).getText() );
+			enc.setLastEventId( encPanel.getString(ENC_LAST_EVENT).getText() );
+			enc.setText( encPanel.getString(ENC_TEXT).getText() );
+
+			try { enc.setAffectedCrewSeed( encPanel.parseInt(ENC_CREW_SEED) ); }
+			catch ( NumberFormatException e ) {}
+
+			try {
+				List<Integer> newChoices = new ArrayList<Integer>();
+				String choicesString = encPanel.getString(ENC_CHOICES).getText();
+				choicesString = choicesString.replaceAll( ",,+", "," );
+				choicesString = choicesString.replaceAll( "^,|,$", "" );
+				for ( String chunk : choicesString.split( "," ) ) {
+					newChoices.add( new Integer( chunk ) );
+				}
+				enc.setChoiceList( newChoices );
+			}
+			catch ( NumberFormatException e ) {}
+		}
 	}
 
 	/**
