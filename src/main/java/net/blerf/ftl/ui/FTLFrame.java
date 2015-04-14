@@ -1295,6 +1295,7 @@ public class FTLFrame extends JFrame {
 			savedGameGeneralPanel.setGameState( gs );
 			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
 			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
+			savedGameHangarPanel.setGameState( gs );
 			savedGameSectorMapPanel.setGameState( gs );
 			savedGameStateVarsPanel.setGameState( gs );
 
@@ -1312,13 +1313,14 @@ public class FTLFrame extends JFrame {
 			savedGameGeneralPanel.setGameState( gs );
 			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
 			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
+			savedGameHangarPanel.setGameState( gs );
 			savedGameSectorMapPanel.setGameState( gs );
 			savedGameStateVarsPanel.setGameState( gs );
 
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "General" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Player Ship" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Nearby Ship" ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Change Ship" ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Change Ship" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "Sector Map" ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( "State Vars" ), true );
 			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( "Dump" ) );
@@ -1328,6 +1330,7 @@ public class FTLFrame extends JFrame {
 			savedGameGeneralPanel.setGameState( null );
 			savedGamePlayerFloorplanPanel.setShipState( null, null );
 			savedGameNearbyFloorplanPanel.setShipState( null, null );
+			savedGameHangarPanel.setGameState( null );
 			savedGameSectorMapPanel.setGameState( null );
 			savedGameStateVarsPanel.setGameState( null );
 
@@ -1350,6 +1353,7 @@ public class FTLFrame extends JFrame {
 			savedGameGeneralPanel.updateGameState( gs );
 			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
 			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
+			// savedGameHangarPanel doesn't modify anything.
 			savedGameSectorMapPanel.updateGameState( gs );
 			savedGameStateVarsPanel.updateGameState( gs );
 
@@ -1364,6 +1368,7 @@ public class FTLFrame extends JFrame {
 			savedGameGeneralPanel.updateGameState( gs );
 			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
 			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
+			// savedGameHangarPanel doesn't modify anything.
 			savedGameSectorMapPanel.updateGameState( gs );
 			savedGameStateVarsPanel.updateGameState( gs );
 
