@@ -210,6 +210,17 @@ public class SavedGameHangarPanel extends JPanel {
 
 		gameState.getProjectileList().clear();
 
+		if ( gameState.isRebelFlagshipNearby() ) {
+			// Stole the flagship!? Have the enemy approach this beacon again.
+			gameState.setRebelFlagshipNearby( false );
+
+			if ( gameState.getRebelFlagshipHop() > 0 ) {
+				gameState.setRebelFlagshipHop( gameState.getRebelFlagshipHop()-1 );
+			}
+
+			gameState.setRebelFlagshipMoving( true );
+		}
+
 		// Sync session's redundant ship info with player ship.
 		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
 		gameState.setPlayerShipBlueprintId( gameState.getPlayerShipState().getShipBlueprintId() );
