@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.xml.bind.JAXBException;
 
 import org.jdom2.JDOMException;
@@ -30,6 +32,9 @@ import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.Encounters;
 import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
+import net.blerf.ftl.xml.SectorData;
+import net.blerf.ftl.xml.SectorDescription;
+import net.blerf.ftl.xml.SectorType;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipEvent;
 import net.blerf.ftl.xml.ShipEvents;
@@ -102,6 +107,10 @@ public class DefaultDataManager extends DataManager {
 	private List<CrewNameList.CrewName> crewNamesMale;
 	private List<CrewNameList.CrewName> crewNamesFemale;
 
+	private Map<String, SectorDescription> sectorDescriptionIdMap;
+	private Map<String, SectorType> stdSectorTypeIdMap;
+	private Map<String, SectorType> dlcSectorTypeIdMap;
+
 	private File dataDatFile = null;
 	private File resDatFile = null;
 	private FTLDat.FTLPack dataP = null;
@@ -129,7 +138,7 @@ public class DefaultDataManager extends DataManager {
 			log.info( "Reading Achievements..." );
 			log.debug( "Reading \"data/achievements.xml\"..." );
 			InputStream achStream = getDataInputStream( "data/achievements.xml" );
-			streams.add(achStream);
+			streams.add( achStream );
 			List<Achievement> achievements = datParser.readAchievements( achStream, "achievements.xml" );
 
 			log.info( "Reading Blueprints..." );
@@ -208,13 +217,38 @@ public class DefaultDataManager extends DataManager {
 			log.info( "Reading Crew Names..." );
 			log.debug( "Reading \"data/names.xml\"..." );
 			InputStream crewNamesStream = getDataInputStream( "data/names.xml" );
-			streams.add(crewNamesStream);
+			streams.add( crewNamesStream );
 			List<CrewNameList> crewNameLists = datParser.readCrewNames( crewNamesStream, "names.xml" );
+
+			log.info( "Reading Sector Data..." );
+			log.debug( "Reading \"data/sector_data.xml\"..." );
+			InputStream sectorDataStream = getDataInputStream( "data/sector_data.xml" );
+			streams.add( sectorDataStream );
+			SectorData tmpSectorData = datParser.readSectorData( sectorDataStream, "sector_data.xml" );
+			sectorDescriptionIdMap = new LinkedHashMap<String, SectorDescription>();
+			for ( SectorDescription tmpDesc : tmpSectorData.getSectorDescriptions() ) {
+				sectorDescriptionIdMap.put( tmpDesc.getId(), tmpDesc );
+			}
+			stdSectorTypeIdMap = new LinkedHashMap<String, SectorType>();
+			dlcSectorTypeIdMap = new LinkedHashMap<String, SectorType>();
+			Pattern sectorOverridePtn = Pattern.compile( "^OVERRIDE_(.*)" );
+
+			for ( SectorType tmpType : tmpSectorData.getSectorTypes() ) {
+				if ( sectorOverridePtn.matcher( tmpType.getId() ).matches() ) continue;
+				stdSectorTypeIdMap.put( tmpType.getId(), tmpType );
+				dlcSectorTypeIdMap.put( tmpType.getId(), tmpType );
+			}
+			for ( SectorType tmpType : tmpSectorData.getSectorTypes() ) {
+				Matcher m = sectorOverridePtn.matcher( tmpType.getId() );
+				if ( !m.matches() ) continue;
+				String baseId = m.group( 1 );
+				dlcSectorTypeIdMap.put( baseId, tmpType );
+			}
 
 			log.info( "Reading Background Image Lists..." );
 			log.debug( "Reading \"data/events_imageList.xml\"..." );
 			InputStream imageListsStream = getDataInputStream( "data/events_imageList.xml" );
-			streams.add(imageListsStream);
+			streams.add( imageListsStream );
 			List<BackgroundImageList> imageLists = datParser.readImageLists( imageListsStream, "events_imageList.xml" );
 
 			log.info( "Finished reading FTL resources." );
@@ -952,29 +986,6 @@ public class DefaultDataManager extends DataManager {
 	}
 
 	/**
-	 * Returns true (male) or false (female).
-	 * All possible names have equal
-	 * probability, which will skew the
-	 * male-to-female ratio.
-	 */
-	@Override
-	public boolean getCrewSex() {
-		int n = (int)(Math.random()*(crewNamesMale.size()+crewNamesFemale.size()));
-		boolean result = (n < crewNamesMale.size());
-		return result;
-	}
-
-	/**
-	 * Returns a random name for a given sex.
-	 */
-	@Override
-	public String getCrewName( boolean isMale ) {
-		List<CrewNameList.CrewName> crewNames = (isMale ? crewNamesMale : crewNamesFemale);
-		int n = (int)(Math.random()*crewNames.size());
-		return crewNames.get(n).name;
-	}
-
-	/**
 	 * Returns an Event with a given id.
 	 * All event xml files are searched.
 	 *
@@ -1064,6 +1075,55 @@ public class DefaultDataManager extends DataManager {
 		}
 
 		return shipEvents;
+	}
+
+	/**
+	 * Returns true (male) or false (female).
+	 * All possible names have equal
+	 * probability, which will skew the
+	 * male-to-female ratio.
+	 */
+	@Override
+	public boolean getCrewSex() {
+		int n = (int)(Math.random()*(crewNamesMale.size()+crewNamesFemale.size()));
+		boolean result = (n < crewNamesMale.size());
+		return result;
+	}
+
+	/**
+	 * Returns a random name for a given sex.
+	 */
+	@Override
+	public String getCrewName( boolean isMale ) {
+		List<CrewNameList.CrewName> crewNames = (isMale ? crewNamesMale : crewNamesFemale);
+		int n = (int)(Math.random()*crewNames.size());
+		return crewNames.get(n).name;
+	}
+
+	@Override
+	public SectorType getSectorTypeById( String id, boolean dlcEnabled ) {
+		Map<String, SectorType> sectorTypes = null;
+		if ( dlcEnabled ) {
+			sectorTypes = dlcSectorTypeIdMap;
+		} else {
+			sectorTypes = stdSectorTypeIdMap;
+		}
+
+		SectorType result = sectorTypes.get(id);
+		if ( result == null )
+			log.error( "No SectorType found for id: "+ id );
+		return result;
+	}
+
+	/**
+	 * Returns a SectorDescription with a given id.
+	 */
+	@Override
+	public SectorDescription getSectorDescriptionById( String id ) {
+		SectorDescription result = sectorDescriptionIdMap.get( id );
+		if ( result == null )
+			log.error( "No SectorDescription found for id: "+ id );
+		return result;
 	}
 
 	/**

@@ -123,7 +123,7 @@ public class SavedGameParser extends Parser {
 			for (int i=0; i < stateVarCount; i++) {
 				String stateVarId = readString(in);
 				Integer stateVarValue = new Integer(readInt(in));
-				gameState.setStateVar(stateVarId, stateVarValue);
+				gameState.setStateVar( stateVarId, stateVarValue );
 			}
 
 			ShipState playerShipState = readShip( in, false, headerAlpha, gameState.isDLCEnabled() );
@@ -168,10 +168,12 @@ public class SavedGameParser extends Parser {
 				gameState.setRebelFlagshipMoving( readBool(in) );
 			}
 
-			int sectorCount = readInt(in);
-			for (int i=0; i < sectorCount; i++) {
-				gameState.addSector( readBool(in) );
+			int sectorVisitationCount = readInt(in);
+			List<Boolean> route = new ArrayList<Boolean>();
+			for (int i=0; i < sectorVisitationCount; i++) {
+				route.add( new Boolean( readBool(in) ) );
 			}
+			gameState.setSectorVisitation( route );
 
 			// The number on the sector map is this+1,
 			// but the sector's type on the map is
@@ -309,7 +311,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, gameState.getUnknownBeta() );
 
 		writeInt( out, gameState.getStateVars().size() );
-		for (Map.Entry<String, Integer> entry : gameState.getStateVars().entrySet()) {
+		for ( Map.Entry<String, Integer> entry : gameState.getStateVars().entrySet() ) {
 			writeString( out, entry.getKey() );
 			writeInt( out, entry.getValue().intValue() );
 		}
@@ -317,7 +319,7 @@ public class SavedGameParser extends Parser {
 		writeShip( out, gameState.getPlayerShipState(), headerAlpha );
 
 		writeInt( out, gameState.getCargoIdList().size() );
-		for (String cargoItemId : gameState.getCargoIdList()) {
+		for ( String cargoItemId : gameState.getCargoIdList() ) {
 			writeString( out, cargoItemId );
 		}
 
@@ -347,8 +349,8 @@ public class SavedGameParser extends Parser {
 			writeBool( out, gameState.isRebelFlagshipMoving() );
 		}
 
-		writeInt( out, gameState.getSectorList().size() );
-		for (Boolean visited : gameState.getSectorList()) {
+		writeInt( out, gameState.getSectorVisitation().size() );
+		for ( Boolean visited : gameState.getSectorVisitation() ) {
 			writeBool( out, visited.booleanValue() );
 		}
 
@@ -356,18 +358,18 @@ public class SavedGameParser extends Parser {
 		writeBool( out, gameState.isSectorHiddenCrystalWorlds() );
 
 		writeInt( out, gameState.getBeaconList().size() );
-		for (BeaconState beacon : gameState.getBeaconList()) {
+		for ( BeaconState beacon : gameState.getBeaconList() ) {
 			writeBeacon( out, beacon, headerAlpha );
 		}
 
 		writeInt( out, gameState.getQuestEventMap().size() );
-		for (Map.Entry<String, Integer> entry : gameState.getQuestEventMap().entrySet()) {
+		for ( Map.Entry<String, Integer> entry : gameState.getQuestEventMap().entrySet() ) {
 			writeString( out, entry.getKey() );
 			writeInt( out, entry.getValue().intValue() );
 		}
 
 		writeInt( out, gameState.getDistantQuestEventList().size() );
-		for (String questEventId : gameState.getDistantQuestEventList()) {
+		for ( String questEventId : gameState.getDistantQuestEventList() ) {
 			writeString( out, questEventId );
 		}
 
@@ -2048,7 +2050,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private boolean rebelFlagshipMoving = false;
 		private int unknownKappa = 0;
 		private int rebelFlagshipBaseTurns = 0;
-		private List<Boolean> sectorList = new ArrayList<Boolean>();
+		private List<Boolean> sectorVisitationList = new ArrayList<Boolean>();
 		private boolean sectorIsHiddenCrystalWorlds = false;
 		private List<BeaconState> beaconList = new ArrayList<BeaconState>();
 		private Map<String, Integer> questEventMap = new LinkedHashMap<String, Integer>();
@@ -2382,25 +2384,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getRebelFlagshipBaseTurns() { return rebelFlagshipBaseTurns; }
 
 		/**
-		 * Adds a dot of the sector tree.
-		 * Dots are indexed top-to-bottom for each column, left-to-right.
-		 */
-		public void addSector( boolean visited ) {
-			sectorList.add( new Boolean(visited) );
-		}
-
-		/**
 		 * Toggles whether a dot on the sector tree has been visited.
 		 *
 		 * @param sector an index of the sector list (0-based)
 		 * @param visited true if visited, false otherwise
 		 */
 		public void setSectorVisited( int sector, boolean visited ) {
-			sectorList.set( sector, new Boolean(visited) );
+			sectorVisitationList.set( sector, new Boolean(visited) );
 		}
 
 		/**
-		 * Returns a list of sector tree breadcrumbs.
+		 * Sets a list of sector tree breadcrumbs.
 		 *
 		 * Saved games only contain a linear set of boolean flags to
 		 * track visited status. FTL reconstructs the sector tree at
@@ -2408,7 +2402,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * booleans to the dots: top-to-bottom for each column,
 		 * left-to-right.
 		 */
-		public List<Boolean> getSectorList() { return sectorList; }
+		public void setSectorVisitation( List<Boolean> route ) { sectorVisitationList = route; }
+		public List<Boolean> getSectorVisitation() { return sectorVisitationList; }
 
 		/**
 		 * Sets whether this sector is hidden.
@@ -2648,7 +2643,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
-			for ( Boolean b : sectorList ) {
+			for ( Boolean b : sectorVisitationList ) {
 				if (first) { first = false; }
 				else { result.append(","); }
 				result.append( (b ? "T" : "F") );

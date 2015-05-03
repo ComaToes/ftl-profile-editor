@@ -33,6 +33,7 @@ import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.CrewNameLists;
 import net.blerf.ftl.xml.Encounters;
+import net.blerf.ftl.xml.SectorData;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.ShipEvent;
@@ -185,6 +186,22 @@ public class DatParser {
 		CrewNameLists cnl = (CrewNameLists)u.unmarshal( domOutputter.output( doc ) );
 
 		return cnl.getCrewNameLists();
+	}
+
+
+	public SectorData readSectorData( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
+
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<sectorData>"+ streamText +"</sectorData>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
+
+		JAXBContext jc = JAXBContext.newInstance( SectorData.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		SectorData sectorData = (SectorData)u.unmarshal( domOutputter.output( doc ) );
+
+		return sectorData;
 	}
 
 

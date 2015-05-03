@@ -32,6 +32,9 @@ To build, run "mvn clean" and "mvn package" in this folder.
 
 
 This project depends on the following libraries.
+- Java Native Access
+    https://github.com/twall/jna
+    (JavaDocs are linked from readme.md)
 - JDOM 2.x
     http://www.jdom.org/
     (For JavaDocs, look left.)

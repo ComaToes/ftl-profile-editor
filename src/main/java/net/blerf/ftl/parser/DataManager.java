@@ -20,6 +20,8 @@ import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.Encounters;
 import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
+import net.blerf.ftl.xml.SectorDescription;
+import net.blerf.ftl.xml.SectorType;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipEvent;
 import net.blerf.ftl.xml.ShipEvents;
@@ -276,14 +278,6 @@ public abstract class DataManager implements Closeable {
 		throw new UnsupportedOperationException();
 	}
 
-	public boolean getCrewSex() {
-		throw new UnsupportedOperationException();
-	}
-
-	public String getCrewName( boolean isMale ) {
-		throw new UnsupportedOperationException();
-	}
-
 	public FTLEvent getEventById( String id, boolean dlcEnabled ) {
 		throw new UnsupportedOperationException();
 	}
@@ -337,6 +331,29 @@ public abstract class DataManager implements Closeable {
 	 */
 	public Map<String, ShipEvent> getShipEvents() {
 		return getShipEvents( dlcEnabledByDefault );
+	}
+
+	public boolean getCrewSex() {
+		throw new UnsupportedOperationException();
+	}
+
+	public String getCrewName( boolean isMale ) {
+		throw new UnsupportedOperationException();
+	}
+
+	public SectorType getSectorTypeById( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public SectorType getSectorTypeById( String id ) {
+		return getSectorTypeById( id, dlcEnabledByDefault );
+	}
+
+	public SectorDescription getSectorDescriptionById( String id ) {
+		throw new UnsupportedOperationException();
 	}
 
 	public Map<String, BackgroundImageList> getBackgroundImageLists() {

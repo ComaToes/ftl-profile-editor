@@ -61,7 +61,7 @@ public class SavedGameStateVarsPanel extends JPanel {
 		varsTwoPanel.addFillRow();
 
 		GridBagConstraints thisC = new GridBagConstraints();
-		thisC.fill = GridBagConstraints.NORTH;
+		thisC.anchor = GridBagConstraints.NORTH;
 		thisC.fill = GridBagConstraints.BOTH;
 		thisC.weightx = 0.0;
 		thisC.weighty = 0.0;

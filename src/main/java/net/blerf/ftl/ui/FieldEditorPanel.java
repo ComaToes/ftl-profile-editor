@@ -111,9 +111,9 @@ public class FieldEditorPanel extends JPanel {
 		if ( contentType == ContentType.WRAPPED_LABEL ) {
 			gridC.anchor = GridBagConstraints.WEST;
 			JTextArea valueArea = new JTextArea();
-			valueArea.setBackground(null);
+			valueArea.setBackground( null );
 			valueArea.setEditable( false );
-			valueArea.setBorder(null);
+			valueArea.setBorder( null );
 			valueArea.setLineWrap( true );
 			valueArea.setWrapStyleWord( true );
 			valueArea.setFocusable( false );
@@ -174,7 +174,7 @@ public class FieldEditorPanel extends JPanel {
 		else if ( contentType == ContentType.COMBO ) {
 			gridC.anchor = GridBagConstraints.CENTER;
 			JComboBox valueCombo = new JComboBox();
-			valueCombo.setEditable(false);
+			valueCombo.setEditable( false );
 			comboMap.put( valueName, valueCombo );
 			this.add( valueCombo, gridC );
 		}
@@ -216,6 +216,20 @@ public class FieldEditorPanel extends JPanel {
 		gridC.gridx = 0;
 
 		this.add(Box.createVerticalGlue(), gridC);
+		gridC.gridy++;
+	}
+
+	/**
+	 * Adds an arbitrary component.
+	 */
+	public void addComponent( JComponent c ) {
+		gridC.anchor = GridBagConstraints.CENTER;
+		gridC.fill = GridBagConstraints.NONE;
+		gridC.weighty = 0.0;
+		gridC.gridwidth = GridBagConstraints.REMAINDER;
+		gridC.gridx = 0;
+
+		this.add( c, gridC );
 		gridC.gridy++;
 	}
 
@@ -351,7 +365,7 @@ public class FieldEditorPanel extends JPanel {
 			valueField.setText("");
 
 		for ( JCheckBox valueCheck : boolMap.values() )
-			valueCheck.setSelected(false);
+			valueCheck.setSelected( false );
 
 		for ( JSlider valueSlider : sliderMap.values() )
 			valueSlider.setValue(0);
