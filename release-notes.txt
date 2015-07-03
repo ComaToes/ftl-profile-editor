@@ -1,3 +1,13 @@
+25
+Reinstated nearby ship stealing in saved games (Change Ship tab).
+Improved sector tree editing in saved games (Sector Tree tab).
+Added top score removal in profiles.
+Added hangar's newbie tip level in profiles (General Achievements tab).
+Added current event editing in saved games (General tab).
+Fixed fire placement (Previously, rows/cols were mixed up).
+Fixed misreported difficulty in old "profile.sav" scores.
+Fixed FTLProfileEditor.command double-clicking on linux?
+
 24
 Added support for FTL 1.5.12/1.5.13 saved games.
 Added Quest/Victory achievement editing in profiles (Ship Stats tab).
