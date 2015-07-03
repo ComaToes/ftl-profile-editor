@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -125,7 +126,10 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		genPanel.addBlankRow();
 		genPanel.addFillRow();
 
+		genPanel.getCombo(ALGORITHM).addMouseListener( new StatusbarMouseListener(frame, "An algorithm of the OS the saved game was created under, or native for the current OS.") );
+		genPanel.getCombo(TREE_TYPE).addMouseListener( new StatusbarMouseListener(frame, "The type of tree to generate.") );
 		genPanel.getInt(SECTOR_TREE_SEED).addMouseListener( new StatusbarMouseListener(frame, "A per-game constant that seeds the random generation of the sector tree.") );
+		genApplyBtn.addMouseListener( new StatusbarMouseListener(frame, "Generate a sector tree with the given algorithm, type, and seed.") );
 
 		miscPanel =  new FieldEditorPanel( true );
 		miscPanel.setBorder( BorderFactory.createTitledBorder("") );
@@ -137,16 +141,23 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		miscPanel.addBlankRow();
 		miscPanel.addFillRow();
 
+		miscRandomSeedBtn.addMouseListener( new StatusbarMouseListener(frame, "Generate an entirely new sector tree.") );
+		miscRestoreBtn.addMouseListener( new StatusbarMouseListener(frame, "Restore the sector tree that was last opened/saved.") );
+
 		StringBuilder noticeBuf = new StringBuilder();
 		noticeBuf.append( "Saved games contain a seed for building the sector tree, " );
 		noticeBuf.append( "which FTL sends to the OS's random number generator. " );
 		noticeBuf.append( "As such, the tree is fragile: platform-dependent and mod-sensitive.\n" );
 		noticeBuf.append( "\n" );
 		noticeBuf.append( "This editor can reconstruct the tree using various algorithms, " );
-		noticeBuf.append( "or display a flat line for backtracking. ");
+		noticeBuf.append( "or display a flat line for backtracking.\n");
+		noticeBuf.append( "\n" );
 		noticeBuf.append( "Invoking an RNG (switching to the expanded view or setting a new seed) " );
-		noticeBuf.append( "may risk creating visitation breadcrumbs inconsistent with the tree " );
-		noticeBuf.append( "if FTL interprets the seed differently." );
+		noticeBuf.append( "may risk creating visitation breadcrumbs inconsistent with the tree, " );
+		noticeBuf.append( "if FTL interprets the seed differently in-game. " );
+		noticeBuf.append( "In other words, charting a glitchy course through unexpected sectors.\n" );
+		noticeBuf.append( "\n" );
+		noticeBuf.append( "A linear preview with the original seed should always be safe." );
 
 		JPanel noticePanel = new JPanel( new BorderLayout() );
 		noticePanel.setBorder( BorderFactory.createEtchedBorder() );
@@ -348,6 +359,10 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 			genPanel.setIntAndReminder( SECTOR_TREE_SEED, gameState.getSectorTreeSeed() );
 		}
+
+		// Scroll back to the top. (The notice area's wrap pulls the viewport down?)
+
+		SavedGameSectorTreePanel.this.scrollRectToVisible( new Rectangle(0,0,0,0) );
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {

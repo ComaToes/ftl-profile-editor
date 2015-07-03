@@ -187,11 +187,13 @@ public class SavedGameHangarPanel extends JPanel {
 		SavedGameParser.SavedGameState gameState = frame.getGameState();
 		if ( gameState == null ) return;
 
-		String nag = "";
-		nag += "The player ship is about to be replaced with the nearby one.\n";
-		nag += "Some ships lack shield oval and floor outline images.\n";
-		nag += "Are you sure you want to do this?";
-		int response = JOptionPane.showConfirmDialog(frame, nag, "Steal Nearby Ship", JOptionPane.YES_NO_OPTION);
+		StringBuilder nagBuf = new StringBuilder();
+		nagBuf.append( "The player ship is about to be replaced with the nearby one.\n" );
+		nagBuf.append( "\n" );
+		nagBuf.append( "Some ships lack shield oval and floor outline images.\n" );
+		nagBuf.append( "\n" );
+		nagBuf.append( "Are you sure you want to do this?" );
+		int response = JOptionPane.showConfirmDialog(frame, nagBuf.toString(), "Steal Nearby Ship", JOptionPane.YES_NO_OPTION);
 		if ( response != JOptionPane.YES_OPTION ) return;
 
 		// Apply all other pending changes.
