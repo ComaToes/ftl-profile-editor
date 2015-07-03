@@ -58,6 +58,16 @@ Troubleshooting
 * If you get "java.lang.UnsupportedClassVersionError" on startup...
     You need a newer version of Java.
 
+* If you get "NullPointerException" on startup (at com.sun.java.swing.plaf)...
+    You may have set unusual theme for your OS, and Java's having trouble
+    getting all the info it expects in order to mimic the aesthetics.
+
+    Tell the editor to use the default Java UI instead of the native theme.
+    Edit or create "ftl-editor.cfg" with notepad, in the editor's folder,
+    with the following line.
+
+    useDefaultUI=true
+
 * Error reading profile. [...] Initial int not expected value: 2...
     You likely tried to open a saved game while in the "Profile" tab.
 
