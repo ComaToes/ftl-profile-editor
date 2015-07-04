@@ -108,7 +108,7 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 			editorPanel.addRow( AVAIL[i], FieldEditorPanel.ContentType.BOOLEAN );
 			editorPanel.addRow( EXTRA[i], FieldEditorPanel.ContentType.INTEGER );
 
-			editorPanel.getInt(AVAIL[i]).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether this item has already been bought.") );
+			editorPanel.getBoolean(AVAIL[i]).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether this item has already been bought.") );
 			editorPanel.getInt(EXTRA[i]).addMouseListener( new StatusbarMouseListener(frame, "Misc info (DroneCtrl system only, specifying bonus drone).") );
 
 			editorPanel.getCombo(SLOTS[i]).addItem( "" );
