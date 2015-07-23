@@ -1820,6 +1820,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		else if ( extendedInfo instanceof LaserProjectileInfo ) {
 			writeLaserProjectileInfo( out, projectile.getExtendedInfo( LaserProjectileInfo.class ) );
 		}
+		else if ( extendedInfo instanceof EmptyProjectileInfo ) {
+			// No-op.
+		}
 		else {
 			throw new IOException( "Unsupported extended projectile info: "+ extendedInfo.getClass().getSimpleName() );
 		}
