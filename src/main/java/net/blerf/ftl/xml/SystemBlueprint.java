@@ -31,7 +31,7 @@ public class SystemBlueprint {
 	private int cost;
 
 	@XmlElement(required=false)
-	private int locked;
+	private Integer locked;
 
 	public void setId( String id ) {
 		this.id = id;
@@ -105,11 +105,11 @@ public class SystemBlueprint {
 		return cost;
 	}
 
-	public void setLocked( int locked ) {
+	public void setLocked( Integer locked ) {
 		this.locked = locked;
 	}
 
-	public int getLocked() {
+	public Integer getLocked() {
 		return locked;
 	}
 }

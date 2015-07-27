@@ -31,7 +31,7 @@ public class WeaponAnim {
 	private Offset mountPoint;
 
 	@XmlElement(name="delayChargeAnim",required=false)
-	private float chargeDelay;
+	private Float chargeDelay;
 
 	@XmlElement(name="chargeImage",required=false)
 	private String chargeImagePath;
@@ -92,11 +92,11 @@ public class WeaponAnim {
 		return mountPoint;
 	}
 
-	public void setChargeDelay( float chargeDelay ) {
+	public void setChargeDelay( Float chargeDelay ) {
 		this.chargeDelay = chargeDelay;
 	}
 
-	public float getChargeDelay() {
+	public Float getChargeDelay() {
 		return chargeDelay;
 	}
 

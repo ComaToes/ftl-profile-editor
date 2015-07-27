@@ -18,18 +18,20 @@ public class ShipBlueprint {
 	
 	@XmlAttribute(name="name")
 	private String id;
+
 	@XmlAttribute
 	private String layout;
+
 	@XmlAttribute(name="img")
 	private String gfxBaseName;
 	
 	@XmlElement(name="class")
 	private String shipClass;
-	private String name, desc;
+
+	private String name;
+	private String desc;
 	
 	private SystemList systemList;
-	private Health health;
-	private MaxPower maxPower;   // Initial reserve power capacity.
 
 	@XmlElement(required=false)  // Not present in autoBlueprints.xml.
 	private Integer weaponSlots, droneSlots;
@@ -43,39 +45,38 @@ public class ShipBlueprint {
 	@XmlElement(required=false)
 	private DroneList droneList;
 
-	private Object crewCount;  // TODO: model
+	private Health health;
+	private MaxPower maxPower;   // Initial reserve power capacity.
+	private CrewCount crewCount;
 
 	@XmlElement(required=false)
-	private Object boardingAI;  // TODO: model
-	
-	@XmlRootElement
+	private String boardingAI;  // Only present in autoBlueprints.xml.
+
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class SystemList {
 
-		@XmlRootElement
 		@XmlAccessorType(XmlAccessType.FIELD)
 		public static class RoomSlot {
+
 			@XmlElement(required=false)
 			private String direction;
-			@XmlElement
+
 			private int number;
 			
-			public String getDirection() {
-				return direction;
-			}
 			public void setDirection( String direction ) {
 				this.direction = direction;
 			}
-			public int getNumber() {
-				return number;
+			public String getDirection() {
+				return direction;
 			}
 			public void setNumber( int number ) {
 				this.number = number;
 			}
-			
+			public int getNumber() {
+				return number;
+			}
 		}
 		
-		@XmlRootElement
 		@XmlAccessorType(XmlAccessType.FIELD)
 		public static class SystemRoom {
 			
@@ -84,12 +85,14 @@ public class ShipBlueprint {
 			                           // Systems will try to be fully powered
 			                           // unless the ship's reserve is
 			                           // insufficient.
+
 			@XmlAttribute(name="max",required=false)
 			private Integer maxPower;  // Maximum random system capacity.
 			                           // Not capped by SystemBlueprint's maxPower.
 
 			@XmlAttribute(name="room")
 			private int roomId;
+
 			@XmlAttribute(required=false)
 			private Boolean start;     // Whether this system it pre-installed.
 			                           // Treat null omissions as as true.
@@ -98,46 +101,46 @@ public class ShipBlueprint {
 
 			@XmlAttribute(required=false)
 			private String img;
+
 			@XmlElement(required=false)
 			private RoomSlot slot;
 			
-			public int getPower() {
-				return power;
-			}
 			public void setPower( int power ) {
 				this.power = power;
 			}
-			public Integer getMaxPower() {
-				return maxPower;
+			public int getPower() {
+				return power;
 			}
 			public void setMaxPower( Integer maxPower ) {
 				this.maxPower = maxPower;
 			}
-			public int getRoomId() {
-				return roomId;
+			public Integer getMaxPower() {
+				return maxPower;
 			}
 			public void setRoomId( int roomId ) {
 				this.roomId = roomId;
 			}
-			public Boolean getStart() {
-				return start;
+			public int getRoomId() {
+				return roomId;
 			}
 			public void setStart( Boolean start ) {
 				this.start = start;
 			}
-			public String getImg() {
-				return img;
+			public Boolean getStart() {
+				return start;
 			}
 			public void setImg( String img ) {
 				this.img = img;
 			}
-			public RoomSlot getSlot() {
-				return slot;
+			public String getImg() {
+				return img;
 			}
 			public void setSlot( RoomSlot slot ) {
 				this.slot = slot;
 			}
-			
+			public RoomSlot getSlot() {
+				return slot;
+			}
 		}
 		
 		@XmlElement(name="pilot")
@@ -185,101 +188,101 @@ public class ShipBlueprint {
 			return list.toArray(new SystemRoom[list.size()]);
 		}
 		
-		public SystemRoom getPilotRoom() {
-			return pilotRoom;
-		}
 		public void setPilotRoom( SystemRoom pilotRoom ) {
 			this.pilotRoom = pilotRoom;
 		}
-		public SystemRoom getDoorsRoom() {
-			return doorsRoom;
+		public SystemRoom getPilotRoom() {
+			return pilotRoom;
 		}
 		public void setDoorsRoom( SystemRoom doorsRoom ) {
 			this.doorsRoom = doorsRoom;
 		}
-		public SystemRoom getSensorsRoom() {
-			return sensorsRoom;
+		public SystemRoom getDoorsRoom() {
+			return doorsRoom;
 		}
 		public void setSensorsRoom( SystemRoom sensorsRoom ) {
 			this.sensorsRoom = sensorsRoom;
 		}
-		public SystemRoom getMedicalRoom() {
-			return medicalRoom;
+		public SystemRoom getSensorsRoom() {
+			return sensorsRoom;
 		}
 		public void setMedicalRoom( SystemRoom medicalRoom ) {
 			this.medicalRoom = medicalRoom;
 		}
-		public SystemRoom getLifeSupportRoom() {
-			return lifeSupportRoom;
+		public SystemRoom getMedicalRoom() {
+			return medicalRoom;
 		}
 		public void setLifeSupportRoom( SystemRoom lifeSupportRoom ) {
 			this.lifeSupportRoom = lifeSupportRoom;
 		}
-		public SystemRoom getShieldRoom() {
-			return shieldRoom;
+		public SystemRoom getLifeSupportRoom() {
+			return lifeSupportRoom;
 		}
 		public void setShieldRoom( SystemRoom shieldRoom ) {
 			this.shieldRoom = shieldRoom;
 		}
-		public SystemRoom getEngineRoom() {
-			return engineRoom;
+		public SystemRoom getShieldRoom() {
+			return shieldRoom;
 		}
 		public void setEngineRoom( SystemRoom engineRoom ) {
 			this.engineRoom = engineRoom;
 		}
-		public SystemRoom getWeaponRoom() {
-			return weaponRoom;
+		public SystemRoom getEngineRoom() {
+			return engineRoom;
 		}
 		public void setWeaponRoom( SystemRoom weaponRoom ) {
 			this.weaponRoom = weaponRoom;
 		}
-		public SystemRoom getDroneRoom() {
-			return droneRoom;
+		public SystemRoom getWeaponRoom() {
+			return weaponRoom;
 		}
 		public void setDroneRoom( SystemRoom droneRoom ) {
 			this.droneRoom = droneRoom;
 		}
-		public SystemRoom getTeleporterRoom() {
-			return teleporterRoom;
+		public SystemRoom getDroneRoom() {
+			return droneRoom;
 		}
 		public void setTeleporterRoom( SystemRoom teleporterRoom ) {
 			this.teleporterRoom = teleporterRoom;
 		}
-		public SystemRoom getCloakRoom() {
-			return cloakRoom;
+		public SystemRoom getTeleporterRoom() {
+			return teleporterRoom;
 		}
 		public void setCloakRoom( SystemRoom cloakRoom ) {
 			this.cloakRoom = cloakRoom;
 		}
-		public List<SystemRoom> getArtilleryRooms() {
-			return artilleryRooms;
+		public SystemRoom getCloakRoom() {
+			return cloakRoom;
 		}
 		public void setArtilleryRooms( List<SystemRoom> artilleryRooms ) {
 			this.artilleryRooms = artilleryRooms;
 		}
-		public SystemRoom getCloneRoom() {
-			return cloneRoom;
+		public List<SystemRoom> getArtilleryRooms() {
+			return artilleryRooms;
 		}
 		public void setCloneRoom( SystemRoom cloneRoom ) {
 			this.cloneRoom = cloneRoom;
 		}
-		public SystemRoom getHackRoom() {
-			return hackRoom;
+		public SystemRoom getCloneRoom() {
+			return cloneRoom;
 		}
 		public void setHackRoom( SystemRoom hackRoom ) {
 			this.hackRoom = hackRoom;
 		}
-		public SystemRoom getMindRoom() {
-			return mindRoom;
+		public SystemRoom getHackRoom() {
+			return hackRoom;
 		}
 		public void setMindRoom( SystemRoom mindRoom ) {
 			this.mindRoom = mindRoom;
 		}
-		public SystemRoom getBatteryRoom() {
-			return batteryRoom;
+		public SystemRoom getMindRoom() {
+			return mindRoom;
 		}
 		public void setBatteryRoom( SystemRoom batteryRoom ) {
 			this.batteryRoom = batteryRoom;
+		}
+		public SystemRoom getBatteryRoom() {
+			return batteryRoom;
 		}
 
 		/**
@@ -358,12 +361,15 @@ public class ShipBlueprint {
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class WeaponList {
-		// 'count' isn't an independent field; a getter/setter calc's it.
+
+		// 'count' isn't an independent field; a getter/setter calc's it (See below).
 
 		@XmlAttribute
 		public int missiles;
+
 		@XmlAttribute(name="load",required=false)
 		public String blueprintListId;
+
 		@XmlElement(name="weapon")
 		private List<WeaponId> weaponIds;
 
@@ -373,19 +379,19 @@ public class ShipBlueprint {
 			public String name;
 		}
 
+		public void setCount( int n ) { /* No-op */ }
+
 		@XmlAttribute(name="count")
 		public int getCount() {
 			return (weaponIds != null ? weaponIds.size() : 0);
 		}
 
-		public void setCount( int n ) { /* No-op */ }
+		public void setWeaponIds( List<WeaponId> weaponIds ) {
+			this.weaponIds = weaponIds;
+		}
 
 		public List<WeaponId> getWeaponIds() {
 			return weaponIds;
-		}
-
-		public void setWeaponIds( List<WeaponId> weaponIds ) {
-			this.weaponIds = weaponIds;
 		}
 	}
 
@@ -397,12 +403,15 @@ public class ShipBlueprint {
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class DroneList {
-		// 'count' isn't an independent field; a getter/setter calc's it.
+
+		// 'count' isn't an independent field; a getter/setter calc's it (See below).
 
 		@XmlAttribute
 		public int drones;
+
 		@XmlAttribute(name="load",required=false)
 		public String blueprintListId;
+
 		@XmlElement(name="drone")
 		private List<DroneId> droneIds;
 
@@ -412,154 +421,172 @@ public class ShipBlueprint {
 			public String name;
 		}
 
+		public void setCount( int n ) { /* No-op */ }
+
 		@XmlAttribute(name="count")
 		public int getCount() {
 			return (droneIds != null ? droneIds.size() : 0);
 		}
 
-		public void setCount( int n ) { /* No-op */ }
+		public void setDroneIds( List<DroneId> droneIds ) {
+			this.droneIds = droneIds;
+		}
 
 		public List<DroneId> getDroneIds() {
 			return droneIds;
 		}
-
-		public void setDroneIds( List<DroneId> droneIds ) {
-			this.droneIds = droneIds;
-		}
 	}
 
-	@XmlRootElement
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class Health {
 		@XmlAttribute
 		public int amount;
 	}
 
-	@XmlRootElement
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class MaxPower {
 		@XmlAttribute
 		public int amount;
 	}
 
-	public String getId() {
-		return id;
+	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class CrewCount {
+		@XmlAttribute
+		public int amount;
+
+		@XmlAttribute(required=false)
+		public Integer max;  // Only present in autoBlueprints.xml.
+
+		@XmlAttribute(name="class")
+		public String race;
 	}
 
 	public void setId( String id ) {
 		this.id = id;
 	}
 
-	public String getLayout() {
-		return layout;
+	public String getId() {
+		return id;
 	}
 
 	public void setLayout( String layout ) {
 		this.layout = layout;
 	}
 
-	public String getGraphicsBaseName() {
-		return gfxBaseName;
+	public String getLayout() {
+		return layout;
 	}
 
 	public void setGraphicsBaseName( String gfxBaseName ) {
 		this.gfxBaseName = gfxBaseName;
 	}
 
-	public String getShipClass() {
-		return shipClass;
+	public String getGraphicsBaseName() {
+		return gfxBaseName;
 	}
 
 	public void setShipClass( String shipClass ) {
 		this.shipClass = shipClass;
 	}
 
-	public String getName() {
-		return name;
+	public String getShipClass() {
+		return shipClass;
 	}
 
 	public void setName( String name ) {
 		this.name = name;
 	}
 
-	public String getDesc() {
-		return desc;
+	public String getName() {
+		return name;
 	}
 
 	public void setDesc( String desc ) {
 		this.desc = desc;
 	}
 
-	public SystemList getSystemList() {
-		return systemList;
+	public String getDesc() {
+		return desc;
 	}
 
 	public void setSystemList( SystemList systemList ) {
 		this.systemList = systemList;
 	}
 
-	public Integer getWeaponSlots() {
-		return weaponSlots;
+	public SystemList getSystemList() {
+		return systemList;
 	}
 
 	public void setWeaponSlots( Integer weaponSlots ) {
 		this.weaponSlots = weaponSlots;
 	}
 
-	public Integer getDroneSlots() {
-		return droneSlots;
+	public Integer getWeaponSlots() {
+		return weaponSlots;
 	}
 
 	public void setDroneSlots( Integer droneSlots ) {
 		this.droneSlots = droneSlots;
 	}
 
-	public WeaponList getWeaponList() {
-		return weaponList;
+	public Integer getDroneSlots() {
+		return droneSlots;
 	}
 
 	public void setWeaponList( WeaponList weaponList ) {
 		this.weaponList = weaponList;
 	}
 
-	public List<AugmentId> getAugments() {
-		return augmentIds;
+	public WeaponList getWeaponList() {
+		return weaponList;
 	}
 
 	public void setAugments( List<AugmentId> augmentIds ) {
 		this.augmentIds = augmentIds;
 	}
 
-	public DroneList getDroneList() {
-		return droneList;
+	public List<AugmentId> getAugments() {
+		return augmentIds;
 	}
 
 	public void setDroneList( DroneList droneList ) {
 		this.droneList = droneList;
 	}
 
-	public Health getHealth() {
-		return health;
+	public DroneList getDroneList() {
+		return droneList;
 	}
 
 	public void setHealth( Health health ) {
 		this.health = health;
 	}
 
-	public MaxPower getMaxPower() {
-		return maxPower;
+	public Health getHealth() {
+		return health;
 	}
 
 	public void setMaxPower( MaxPower maxPower ) {
 		this.maxPower = maxPower;
 	}
 
-	public Object getCrewCount() {
+	public MaxPower getMaxPower() {
+		return maxPower;
+	}
+
+	public void setCrewCount( CrewCount crewCount ) {
+		this.crewCount = crewCount;
+	}
+
+	public CrewCount getCrewCount() {
 		return crewCount;
 	}
 
-	public void setCrewCount( Object crewCount ) {
-		this.crewCount = crewCount;
+	public void setBoardingAI( String boardingAI ) {
+		this.boardingAI = boardingAI;
+	}
+
+	public String getBoardingAI() {
+		return boardingAI;
 	}
 
 	@Override

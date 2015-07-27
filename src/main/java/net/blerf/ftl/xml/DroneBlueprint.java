@@ -17,7 +17,7 @@ public class DroneBlueprint {
 	private String type;
 
 	@XmlElement(required=false)
-	private int locked;
+	private Integer locked;
 
 	private String title;
 
@@ -30,7 +30,7 @@ public class DroneBlueprint {
 	private int bp;  // TODO: Rename this.
 
 	@XmlElement(required=false)
-	private int cooldown, dodge, speed;
+	private Integer cooldown, dodge, speed;
 
 	private int power;
 	private int cost;
@@ -65,11 +65,11 @@ public class DroneBlueprint {
 		return type;
 	}
 
-	public void setLocked( int locked ) {
+	public void setLocked( Integer locked ) {
 		this.locked = locked;
 	}
 
-	public int getLocked() {
+	public Integer getLocked() {
 		return locked;
 	}
 
@@ -113,27 +113,27 @@ public class DroneBlueprint {
 		return power;
 	}
 
-	public void setCooldown( int cooldown ) {
+	public void setCooldown( Integer cooldown ) {
 		this.cooldown = cooldown;
 	}
 
-	public int getCooldown() {
+	public Integer getCooldown() {
 		return cooldown;
 	}
 
-	public void setDodge( int dodge ) {
+	public void setDodge( Integer dodge ) {
 		this.dodge = dodge;
 	}
 
-	public int getDodge() {
+	public Integer getDodge() {
 		return dodge;
 	}
 
-	public void setSpeed( int speed ) {
+	public void setSpeed( Integer speed ) {
 		this.speed = speed;
 	}
 
-	public int getSpeed() {
+	public Integer getSpeed() {
 		return speed;
 	}
 

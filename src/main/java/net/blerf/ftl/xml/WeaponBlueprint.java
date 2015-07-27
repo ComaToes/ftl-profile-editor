@@ -24,7 +24,7 @@ public class WeaponBlueprint {
 	private String shortTitle;
 
 	@XmlElement(required=false)
-	private int locked;
+	private Integer locked;
 
 	private String desc;
 	private String tooltip;
@@ -98,11 +98,11 @@ public class WeaponBlueprint {
 		return shortTitle;
 	}
 
-	public void setLocked( int locked ) {
+	public void setLocked( Integer locked ) {
 		this.locked = locked;
 	}
 
-	public int getLocked() {
+	public Integer getLocked() {
 		return locked;
 	}
 
