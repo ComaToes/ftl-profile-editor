@@ -501,11 +501,11 @@ public class ShipBlueprint {
 		return name;
 	}
 
-	public void setDesc( String desc ) {
+	public void setDescription( String desc ) {
 		this.desc = desc;
 	}
 
-	public String getDesc() {
+	public String getDescription() {
 		return desc;
 	}
 
