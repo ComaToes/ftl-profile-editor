@@ -13,16 +13,22 @@ import javax.xml.bind.annotation.XmlValue;
 @XmlRootElement(name="nameList")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CrewNameList {
+
 	@XmlAttribute
-	private String race, sex;  // FTL ignores race.
+	private String race;  // FTL ignores race.
+
+	@XmlAttribute
+	private String sex;
 
 	@XmlElement(name="name")
 	private List<CrewName> names;
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class CrewName {
+
 		@XmlAttribute(required=false)
 		public String shortName;
+
 		@XmlValue
 		public String name;
 	}

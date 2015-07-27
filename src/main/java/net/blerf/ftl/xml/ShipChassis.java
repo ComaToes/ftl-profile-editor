@@ -1,24 +1,34 @@
 package net.blerf.ftl.xml;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+
+import net.blerf.ftl.xml.ExplosionAdapter;
+import net.blerf.ftl.xml.Offset;
 
 
 @XmlRootElement(name="shipChassis")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ShipChassis {
+
 	@XmlElement(name="img")
 	private ChassisImageBounds imageBounds;
 
 	private Offsets offsets;  // FTL 1.5.4 introduced floor/cloak offsets.
 
-	@XmlElement(name="weaponMounts")
-	private WeaponMountList weaponMountList;
+	@XmlElementWrapper(name="weaponMounts")
+	@XmlElement(name="mount")
+	private List<WeaponMount> weaponMountList;
+
+	private Explosion explosion;
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class ChassisImageBounds {
@@ -34,50 +44,38 @@ public class ShipChassis {
 
 		@XmlElement(name="cloak")
 		public Offset cloakOffset;
-
-		@XmlAccessorType(XmlAccessType.FIELD)
-		public static class Offset {
-			@XmlAttribute
-			public int x, y;
-		}
 	}
 
 	@XmlAccessorType(XmlAccessType.FIELD)
-	public static class WeaponMountList {
+	public static class WeaponMount {
 
-		@XmlElement(name="mount")
-		public List<WeaponMount> mount;
+		@XmlAttribute
+		public int x, y, gib;
 
-		@XmlAccessorType(XmlAccessType.FIELD)
-		public static class WeaponMount {
-			@XmlAttribute
-			public int x, y, gib;
-			@XmlAttribute
-			public boolean rotate, mirror;
-			@XmlAttribute
-			public String slide;
-		}
+		@XmlAttribute
+		public boolean rotate, mirror;
+
+		@XmlAttribute
+		public String slide;
 	}
 
-	@XmlRootElement(name="explosion")
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlJavaTypeAdapter(ExplosionAdapter.class)
 	public static class Explosion {
-		private List<Gib> gib;
+		public List<Gib> gibs = new ArrayList<Gib>();
+	}
 
-		@XmlRootElement(name="gib")
-		@XmlAccessorType(XmlAccessType.FIELD)
-		public static class Gib {
-			private FloatRange velocity;
-			private FloatRange direction;
-			private FloatRange angular;
-			private int x, y;
+	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class Gib {
+		public FloatRange velocity;
+		public FloatRange direction;
+		public FloatRange angular;
+		public int x, y;
+	}
 
-			@XmlAccessorType(XmlAccessType.FIELD)
-			public static class FloatRange {
-				@XmlAttribute
-				private float min, max;
-			}
-		}
+	@XmlAccessorType(XmlAccessType.FIELD)
+	public static class FloatRange {
+		@XmlAttribute
+		public float min, max;
 	}
 
 	public void setImageBounds( ChassisImageBounds imageBounds ) {
@@ -96,11 +94,19 @@ public class ShipChassis {
 		return offsets;
 	}
 
-	public void setWeaponMountList( WeaponMountList weaponMountList ) {
+	public void setWeaponMountList( List<WeaponMount> weaponMountList ) {
 		this.weaponMountList = weaponMountList;
 	}
 
-	public WeaponMountList getWeaponMountList() {
+	public List<WeaponMount> getWeaponMountList() {
 		return weaponMountList;
+	}
+
+	public void setExplosion( Explosion explosion ) {
+		this.explosion = explosion;
+	}
+
+	public Explosion getExplosion() {
+		return explosion;
 	}
 }

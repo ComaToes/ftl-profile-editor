@@ -27,6 +27,7 @@ import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.TextUtilities;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Achievements;
+import net.blerf.ftl.xml.Animations;
 import net.blerf.ftl.xml.BackgroundImageList;
 import net.blerf.ftl.xml.BackgroundImageLists;
 import net.blerf.ftl.xml.Blueprints;
@@ -250,5 +251,21 @@ public class DatParser {
 		BackgroundImageLists imgs = (BackgroundImageLists)u.unmarshal( domOutputter.output( doc ) );
 
 		return imgs.getImageLists();
+	}
+
+
+	public Animations readAnimations( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
+
+		String streamText = TextUtilities.decodeText( stream, fileName ).text;
+		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = "<animations>"+ streamText  +"</animations>";
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+		DOMOutputter domOutputter = new DOMOutputter();
+
+		JAXBContext jc = JAXBContext.newInstance( Animations.class );
+		Unmarshaller u = jc.createUnmarshaller();
+		Animations animations = (Animations)u.unmarshal( domOutputter.output( doc ) );
+
+		return animations;
 	}
 }

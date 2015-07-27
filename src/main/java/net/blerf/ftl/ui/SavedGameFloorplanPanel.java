@@ -108,6 +108,7 @@ import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.CrewBlueprint;
 import net.blerf.ftl.xml.CrewNameList;
 import net.blerf.ftl.xml.DroneBlueprint;
+import net.blerf.ftl.xml.Offset;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
@@ -863,7 +864,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				floorLbl.setSize( new Dimension(floorImage.getWidth(), floorImage.getHeight()) );
 
 				if ( shipChassis.getOffsets() != null ) {
-					ShipChassis.Offsets.Offset floorOffset = shipChassis.getOffsets().floorOffset;
+					Offset floorOffset = shipChassis.getOffsets().floorOffset;
 					if ( floorOffset != null ) {
 						floorLbl.setLocation( floorOffset.x, floorOffset.y );
 					}
@@ -965,7 +966,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add Weapons.
-		List<ShipChassis.WeaponMountList.WeaponMount> weaponMounts = shipChassis.getWeaponMountList().mount;
+		List<ShipChassis.WeaponMount> weaponMounts = shipChassis.getWeaponMountList();
 		List<WeaponState> weaponList = shipState.getWeaponList();
 		Integer blueprintWeaponSlots = shipBlueprint.getWeaponSlots();
 
@@ -988,7 +989,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		for (int i=0; i < actualWeaponSlots; i++) {
-			ShipChassis.WeaponMountList.WeaponMount weaponMount = null;
+			ShipChassis.WeaponMount weaponMount = null;
 
 			if ( weaponMounts.size() > i ) weaponMount = weaponMounts.get(i);
 			if ( weaponMount == null ) continue;  // *shrug* Truncate extra weapons.
@@ -1732,7 +1733,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipPanel.add( droneBodySprite, DRONE_LAYER );
 	}
 
-	private void addWeaponSprite( ShipChassis.WeaponMountList.WeaponMount weaponMount, int slot, SpriteReference<WeaponState> weaponRef ) {
+	private void addWeaponSprite( ShipChassis.WeaponMount weaponMount, int slot, SpriteReference<WeaponState> weaponRef ) {
 		WeaponSprite weaponSprite = new WeaponSprite( weaponRef, slot, weaponMount.rotate );
 
 		weaponSprite.setSize( weaponSprite.getPreferredSize() );

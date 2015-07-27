@@ -39,67 +39,67 @@ public class Achievement {
 	private boolean quest = false;
 
 
+	public void setId( String id ) {
+		this.id = id;
+	}
+
 	public String getId() {
 		return id;
 	}
 
-	public void setId(String id) {
-		this.id = id;
+	public void setName( String name ) {
+		this.name = name;
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setDescription( String description ) {
+		this.description = description;
 	}
 
 	public String getDescription() {
 		return description;
 	}
 
-	public void setDescription(String description) {
-		this.description = description;
+	public void setImagePath( String imagePath ) {
+		this.imagePath = imagePath;
 	}
 
 	public String getImagePath() {
 		return imagePath;
 	}
 
-	public void setImagePath(String imagePath) {
-		this.imagePath = imagePath;
+	public void setShipId( String shipId ) {
+		this.shipId = shipId;
 	}
 
 	public String getShipId() {
 		return shipId;
 	}
 
-	public void setShipId(String shipId) {
-		this.shipId = shipId;
+	public void setMultiDifficulty( int multiDifficulty ) {
+		this.multiDifficulty = multiDifficulty;
 	}
 
 	public int getMultiDifficulty() {
 		return multiDifficulty;
 	}
 
-	public void setMultiDifficulty(int multiDifficulty) {
-		this.multiDifficulty = multiDifficulty;
+	public void setVictory( boolean b ) {
+		victory = b;
 	}
 
 	public boolean isVictory() {
 		return victory;
 	}
 
-	public void setVictory( boolean b ) {
-		victory = b;
+	public void setQuest( boolean b ) {
+		quest = b;
 	}
 
 	public boolean isQuest() {
 		return quest;
-	}
-
-	public void setQuest( boolean b ) {
-		quest = b;
 	}
 }
