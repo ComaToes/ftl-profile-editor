@@ -2079,22 +2079,60 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the difficulty.
 		 *
-		 * 0 = Easy
-		 * 1 = Normal
-		 * 2 = Hard   (FTL 1.5.4+)
+		 * EASY
+		 * NORMAL
+		 * HARD    (FTL 1.5.4+)
 		 */
 		public void setDifficulty( Difficulty d ) { difficulty = d; }
 		public Difficulty getDifficulty() { return difficulty; }
 
+		/**
+		 * Sets the total number of ships defeated.
+		 *
+		 * Either reducing hull to 0 or eliminating crew will increase this total.
+		 */
 		public void setTotalShipsDefeated( int n ) { totalShipsDefeated = n; }
-		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
-		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
-		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
-
 		public int getTotalShipsDefeated() { return totalShipsDefeated; }
+
+		public void setTotalBeaconsExplored( int n ) { totalBeaconsExplored = n; }
 		public int getTotalBeaconsExplored() { return totalBeaconsExplored; }
+
+		/**
+		 * Sets the total scrap collected.
+		 *
+		 * Sales at stores and the Scrap Recovery Arm do not increase this total.
+		 */
+		public void setTotalScrapCollected( int n ) { totalScrapCollected = n; }
 		public int getTotalScrapCollected() { return totalScrapCollected; }
+
+		public void setTotalCrewHired( int n ) { totalCrewHired = n; }
 		public int getTotalCrewHired() { return totalCrewHired; }
+
+		/**
+		 * Returns the computed score, as would be displayed in FTL if the game had ended.
+		 *
+		 * @see #setDifficulty(Difficulty)
+		 * @see #setTotalShipsDefeated(int)
+		 * @see #setTotalBeaconsExplored(int)
+		 * @see #setTotalScrapCollected(int)
+		 */
+		public int calculateScore() {
+			float diffMod;
+			if ( difficulty == Difficulty.EASY ) {
+				diffMod = 1.0f;
+			}
+			else if ( difficulty == Difficulty.NORMAL ) {
+				diffMod = 1.25f;
+			}
+			else if ( difficulty == Difficulty.HARD ) {
+				diffMod = 1.5f;
+			}
+			else {
+				log.warn( String.format("Substituting EASY for unsupported difficulty while calculating score: %s", difficulty.toString()) );
+				diffMod = 1.0f;
+			}
+			return (int)((totalScrapCollected + 10*totalBeaconsExplored + 20*totalShipsDefeated) * diffMod);
+		}
 
 		/** Sets redundant player ship name. */
 		public void setPlayerShipName( String shipName) {
@@ -4838,7 +4876,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Observed values: 0 (normal), 1 (while level 2 Doors system is
 		 * unmanned), 1 (while level 1 Doors system is manned), 2 (while level 3
-		 * Doors system is unmanned), 3  (while level 3 Doors system is manned),
+		 * Doors system is unmanned), 3 (while level 3 Doors system is manned),
 		 * 2 (hacking pod passively attached, set on
 		 * contact). Still 2 while hack-disrupting.
 		 *
