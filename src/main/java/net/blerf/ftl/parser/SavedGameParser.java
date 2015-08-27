@@ -2442,6 +2442,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * runtime using the sector tree seed, and it maps these
 		 * booleans to the dots: top-to-bottom for each column,
 		 * left-to-right.
+		 *
+		 * @see net.blerf.ftl.model.SectorDot#setVisited(boolean)
+		 * @see net.blerf.ftl.model.SectorTree#setSectorVisitation(List)
 		 */
 		public void setSectorVisitation( List<Boolean> route ) { sectorVisitationList = route; }
 		public List<Boolean> getSectorVisitation() { return sectorVisitationList; }

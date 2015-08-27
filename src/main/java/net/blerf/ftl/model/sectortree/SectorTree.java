@@ -63,6 +63,8 @@ public class SectorTree {
 	 * Sets the visitation of all dots.
 	 *
 	 * @param route a list of visited values for each column, top-to-bottom
+	 * @see net.blerf.ftl.model.SectorDot#setVisited(boolean)
+	 * @see net.blerf.ftl.parser.SavedGameParser.SavedGameState#setSectorVisitation(List)
 	 */
 	public void setSectorVisitation( List<Boolean> route ) {
 		int dotsSoFar = 0;

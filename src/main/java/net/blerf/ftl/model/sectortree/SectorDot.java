@@ -24,6 +24,12 @@ public class SectorDot {
 		visited = srcDot.isVisited();
 	}
 
+	/**
+	 * Marks whether the player has been to this location.
+	 *
+	 * @see net.blerf.ftl.model.SectorTree#setSectorVisitation(List)
+	 * @see net.blerf.ftl.parser.SavedGameParser.SavedGameState#setSectorVisitation(List)
+	 */
 	public void setVisited( boolean b ) { visited = b; }
 	public boolean isVisited() { return visited; }
 
