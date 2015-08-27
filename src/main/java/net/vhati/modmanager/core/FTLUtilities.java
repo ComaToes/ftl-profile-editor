@@ -1,4 +1,4 @@
-// Copied from a snapshot of Slipstream Mod Manager after 1.4.
+// Copied from a snapshot of Slipstream Mod Manager after 1.7.
 // https://github.com/Vhati/Slipstream-Mod-Manager/blob/b980f4cdf64667799c013b8fd9025bcb0d389717/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
 
 package net.vhati.modmanager.core;
@@ -47,6 +47,7 @@ public class FTLUtilities {
 			new File( new File(""+System.getenv("ProgramFiles")), humblePath ),
 			// Linux - Steam
 			new File( xdgDataHome +"/Steam/SteamApps/common/FTL Faster Than Light/data/resources" ),
+			new File( xdgDataHome +"/.steam/steam/SteamApps/common/FTL Faster Than Light/data/resources" ),
 			// OSX - Steam
 			new File( System.getProperty("user.home") +"/Library/Application Support/Steam/SteamApps/common/FTL Faster Than Light/FTL.app/Contents/Resources" ),
 			// OSX
