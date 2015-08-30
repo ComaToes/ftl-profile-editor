@@ -8015,39 +8015,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 	public static class DronePodState {
-		// Mourning Ticks
-		// Current Space
-		// Destination Space
-		// Current Position X,Y
-		// Previous Position X,Y
-		// Goal Position X,Y
-
-		//
-		// BETA
-		// 0000 0080 0000 0080 (MIN_VALUE:MIN_VALUE) (Always MIN_VALUE)
-		// 0000 0080 0000 0080 (MIN_VALUE:MIN_VALUE) (Used by Combat drones; resembles position)
-		// 0000 0080 0000 0080 (MIN_VALUE:MIN_VALUE) (Used by Defense drones; erratic +/- 0-20000)
-
-		// GAMMA
-		// F401 0000 (500)
-		// 0000 0000 
-		// 0000 0000 
-		// F818 0300 (203000)
-		// 0000 0000 
-		// 38BB 0200 (179000)
-		// FFFF FF7F (MAX_VALUE)
-		// 0000 0000 0000 0000 0000 0000 
-		// 18FC FFFF (-1000)
-		// 0000 0000 
-
-		// DELTA
-		// 8BE4 FFFF 0000 0000 (-7029:0)
-		// 0000 0000 0000 0000 0A00 0000 
-		// 0000 0000 E803 0000 
-		// 0000 0000 0000 0000 
-
-		// Remainder varies with the droneBlueprint type.
-
 		private DroneType droneType = null;
 		private int mourningTicks = 0;
 		private int currentSpace = 0;
@@ -8055,23 +8022,33 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int currentPosX = 0, currentPosY = 0;
 		private int prevPosX = 0, prevPosY = 0;
 		private int goalPosX = 0, goalPosY = 0;
-		private int[] unknownBeta = new int[6];
-		private int[] unknownGamma = new int[14];
+
+		// This block was formerly a length 6 array named beta.
+		private int unknownEpsilon = 0;
+		private int unknownZeta = 0;
+		private int unknownEta = 0;
+		private int unknownTheta = 0;
+		private int unknownIota = 0;
+		private int unknownKappa = 0;
+
+		// This block was formerly a length 14 array named gamma.
+		private int unknownLambda = 0;
+		private int unknownMu = 0;
+		private int unknownNu = 0;
+		private int orbitAngle = 0;
+		private int orbitRadius = 0;
+		private int unknownXi = 0;
+		private int unknownOmicron = 0;
+		private int unknownPi = 0;
+		private int unknownRho = 0;
+		private int unknownSigma = 0;
+		private int unknownTau = 0;
+		private int unknownUpsilon = 0;
+		private int unknownPhi = 0;
+		private int unknownChi = 0;
+
 		private AnimState deathAnim = new AnimState();
 		private ExtendedDronePodInfo extendedInfo = null;
-
-		// Degrees CW (0 is east)
-		// Gamma[0] went from -1000 to 500 when hacking drone pod switched from
-		//   player space to target space.
-		// Gamma[4] Turret angle (0 when not set)
-		//   For combat or non-turret defense varieties, turns entire drone.
-		//   TODO: Confirm with turret defense drone.
-		// Gamma[5] Facing (0 when not set)
-		//   For combat varieties, strange values.
-		//   For hacking, turns entire drone.
-		//     U:-89 L:179 R:8.745 D:89
-		// Gamma[12] went from 0 to 6865 when hacking drone pod was launched.
-		//   Then 6884, 6845, 6836 (space switch), 6832, 6847 (contact)
 
 
 		/**
@@ -8095,12 +8072,27 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			goalPosX = srcPod.getGoalPositionX();
 			goalPosY = srcPod.getGoalPositionY();
 
-			for (int i=0; i < unknownBeta.length; i++) {
-				unknownBeta[i] = srcPod.getUnknownBeta()[i];
-			}
-			for (int i=0; i < unknownGamma.length; i++) {
-				unknownGamma[i] = srcPod.getUnknownGamma()[i];
-			}
+			unknownEpsilon = srcPod.getUnknownEpsilon();
+			unknownZeta = srcPod.getUnknownZeta();
+			unknownEta = srcPod.getUnknownEta();
+			unknownTheta = srcPod.getUnknownTheta();
+			unknownIota = srcPod.getUnknownIota();
+			unknownKappa = srcPod.getUnknownKappa();
+
+			unknownLambda = srcPod.getUnknownLambda();
+			unknownMu = srcPod.getUnknownMu();
+			unknownNu = srcPod.getUnknownNu();
+			orbitAngle = srcPod.getOrbitAngle();
+			orbitRadius = srcPod.getOrbitRadius();
+			unknownXi = srcPod.getUnknownXi();
+			unknownOmicron = srcPod.getUnknownOmicron();
+			unknownPi = srcPod.getUnknownPi();
+			unknownRho = srcPod.getUnknownRho();
+			unknownSigma = srcPod.getUnknownSigma();
+			unknownTau = srcPod.getUnknownTau();
+			unknownUpsilon = srcPod.getUnknownUpsilon();
+			unknownPhi = srcPod.getUnknownPhi();
+			unknownChi = srcPod.getUnknownChi();
 
 			deathAnim = srcPod.getDeathAnim();
 
@@ -8122,7 +8114,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			setCurrentSpace( 0 );
 			setDestinationSpace( -1 );
 
-			// TODO: unknownBeta and unknownGamma
+			// TODO: Unknowns.
 
 			getDeathAnim().setPlaying( false );
 			getDeathAnim().setCurrentFrame( 0 );
@@ -8185,11 +8177,146 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getGoalPositionX() { return goalPosX; }
 		public int getGoalPositionY() { return goalPosY; }
 
-		public void setUnknownBeta( int index, int n ) { unknownBeta[index] = n; }
-		public int[] getUnknownBeta() { return unknownBeta; }
 
-		public void setUnknownGamma( int index, int n ) { unknownGamma[index] = n; }
-		public int[] getUnknownGamma() { return unknownGamma; }
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: Always MIN_INT?
+		 */
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: Always MIN_INT?
+		 */
+		public void setUnknownZeta( int n ) { unknownZeta = n; }
+		public int getUnknownZeta() { return unknownZeta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * When not set, this is MIN_INT.
+		 *
+		 * Observed values: Combat (Resembles position).
+		 */
+		public void setUnknownEta( int n ) { unknownEta = n; }
+		public int getUnknownEta() { return unknownEta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * When not set, this is MIN_INT.
+		 *
+		 * Observed values: Combat (Resembles position).
+		 */
+		public void setUnknownTheta( int n ) { unknownTheta = n; }
+		public int getUnknownTheta() { return unknownTheta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * When not set, this is MIN_INT.
+		 *
+		 * Observed values: Defense (erratic +/- 0-20000).
+		 */
+		public void setUnknownIota( int n ) { unknownIota = n; }
+		public int getUnknownIota() { return unknownIota; }
+
+		/**
+		 * Unknown.
+		 *
+		 * When not set, this is MIN_INT.
+		 *
+		 * Observed values: Defense (erratic +/- 0-20000).
+		 */
+		public void setUnknownKappa( int n ) { unknownKappa = n; }
+		public int getUnknownKappa() { return unknownKappa; }
+
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: Went from -1000 to 500 when hacking drone pod
+		 * switched from player space to target space.
+		 */
+		public void setUnknownLambda( int n ) { unknownLambda = n; }
+		public int getUnknownLambda() { return unknownLambda; }
+
+		public void setUnknownMu( int n ) { unknownMu = n; }
+		public int getUnknownMu() { return unknownMu; }
+
+		public void setUnknownNu( int n ) { unknownNu = n; }
+		public int getUnknownNu() { return unknownNu; }
+
+		/**
+		 * Sets the drone's orbital progress around the shield ellipse.
+		 *
+		 * @param n a pseudo-float (n degrees clockwise from east)
+		 */
+		public void setOrbitAngle( int n ) { orbitAngle = n; }
+		public int getOrbitAngle() { return orbitAngle; }
+
+		/**
+		 * Sets the drone's orbital distance from the center (of the shield ellipse?).
+		 *
+		 * @param n a pseudo-float (n pixels)
+		 */
+		public void setOrbitRadius( int n ) { orbitRadius = n; }
+		public int getOrbitRadius() { return orbitRadius; }
+
+
+		/**
+		 * Unknown.
+		 *
+		 * Might be facing, to rotate the entire drone?
+		 *
+		 * Observed values: Hacking (U:-89 L:179 R:8.745 D:89); Combat drones
+		 * have strange values.
+		 *
+		 * When not set, this is 0.
+		 *
+		 * @param n a pseudo-float (n degrees clockwise from east)
+		 */
+		public void setUnknownXi( int n ) { unknownXi = n; }
+		public int getUnknownXi() { return unknownXi; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: Always MAX_INT?
+		 */
+		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
+		public int getUnknownOmicron() { return unknownOmicron; }
+
+		public void setUnknownPi( int n ) { unknownPi = n; }
+		public int getUnknownPi() { return unknownPi; }
+
+		public void setUnknownRho( int n ) { unknownRho = n; }
+		public int getUnknownRho() { return unknownRho; }
+
+		public void setUnknownSigma( int n ) { unknownSigma = n; }
+		public int getUnknownSigma() { return unknownSigma; }
+
+		public void setUnknownTau( int n ) { unknownTau = n; }
+		public int getUnknownTau() { return unknownTau; }
+
+		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
+		public int getUnknownUpsilon() { return unknownUpsilon; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: Went from 0 to 6865 when hacking drone pod was
+		 * launched. Then 6884, 6845, 6836 (space switch), 6832, 6847 (contact).
+		 */
+		public void setUnknownPhi( int n ) { unknownPhi = n; }
+		public int getUnknownPhi() { return unknownPhi; }
+
+		public void setUnknownChi( int n ) { unknownChi = n; }
+		public int getUnknownChi() { return unknownChi; }
+
 
 		public void setDeathAnim( AnimState anim ) { deathAnim = anim; }
 		public AnimState getDeathAnim() { return deathAnim; }
@@ -8224,19 +8351,26 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Previous Position: %7s,%7s\n", prettyInt(prevPosX), prettyInt(prevPosY)));
 			result.append(String.format("Goal Position:     %7s,%7s\n", prettyInt(goalPosX), prettyInt(goalPosY)));
 
-			result.append(String.format("\nBeta?...\n"));
-			result.append(String.format("%7s, %7s,\n", prettyInt(unknownBeta[0]), prettyInt(unknownBeta[1])));
-			result.append(String.format("%7s, %7s,\n", prettyInt(unknownBeta[2]), prettyInt(unknownBeta[3])));
-			result.append(String.format("%7s, %7s\n", prettyInt(unknownBeta[4]), prettyInt(unknownBeta[5])));
+			result.append(String.format("\n"));
+			result.append(String.format("Epsilon?, Zeta?:   %7s,%7s\n", prettyInt(unknownEpsilon), prettyInt(unknownZeta)));
+			result.append(String.format("Eta?, Theta?:      %7s,%7s\n", prettyInt(unknownEta), prettyInt(unknownTheta)));
+			result.append(String.format("Iota?, Kappa?:     %7s,%7s\n", prettyInt(unknownIota), prettyInt(unknownKappa)));
 
-			result.append(String.format("\nGamma?...\n"));
-			result.append(String.format("%7s, %7s,\n", prettyInt(unknownGamma[0]), prettyInt(unknownGamma[1])));
-			result.append(String.format("%7s, %7s,\n", prettyInt(unknownGamma[2]), prettyInt(unknownGamma[3])));
-			result.append(String.format("%7s,\n", prettyInt(unknownGamma[4])));
-			result.append(String.format("%7s, %7s, %7s,\n", prettyInt(unknownGamma[5]), prettyInt(unknownGamma[6]), prettyInt(unknownGamma[7])));
-			result.append(String.format("%7s, %7s,\n", prettyInt(unknownGamma[8]), prettyInt(unknownGamma[9])));
-			result.append(String.format("%7s, %7s,\n", prettyInt(unknownGamma[10]), prettyInt(unknownGamma[11])));
-			result.append(String.format("%7s, %7s\n", prettyInt(unknownGamma[12]), prettyInt(unknownGamma[13])));
+			result.append(String.format("\n"));
+			result.append(String.format("Lambda?:           %7d\n", unknownLambda));
+			result.append(String.format("Mu?:               %7d\n", unknownMu));
+			result.append(String.format("Nu?:               %7d\n", unknownNu));
+			result.append(String.format("Orbit Angle:       %7s\n", orbitAngle));
+			result.append(String.format("Orbit Radius:      %7s\n", orbitRadius));
+			result.append(String.format("Xi?:               %7d\n", unknownXi));
+			result.append(String.format("Omicron?:          %7s\n", prettyInt(unknownOmicron)));
+			result.append(String.format("Pi?:               %7d\n", unknownPi));
+			result.append(String.format("Rho?:              %7d\n", unknownRho));
+			result.append(String.format("Sigma?:            %7d\n", unknownSigma));
+			result.append(String.format("Tau?:              %7d\n", unknownTau));
+			result.append(String.format("Upsilon?:          %7d\n", unknownUpsilon));
+			result.append(String.format("Phi?:              %7d\n", unknownPhi));
+			result.append(String.format("Chi?:              %7d\n", unknownChi));
 
 			result.append("\nDeath Anim...\n");
 			if ( deathAnim != null) {
@@ -8380,6 +8514,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 	}
 
+	/**
+	 * Extended boarder drone info.
+	 *
+	 * Boarder drones exclusively store body info in ExtendedDronePodInfo.
+	 * The traditional DroneState's body fields remain at inoperative defaults.
+	 *
+	 * @see DroneState
+	 */
 	public static class BoarderDronePodInfo extends ExtendedDronePodInfo {
 		private int unknownAlpha = 0;
 		private int unknownBeta = 0;
@@ -9556,12 +9698,27 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		dronePod.setGoalPositionX( readMinMaxedInt(in) );
 		dronePod.setGoalPositionY( readMinMaxedInt(in) );
 
-		for (int i=0; i < 6; i++) {
-			dronePod.setUnknownBeta( i, readMinMaxedInt(in) );
-		}
-		for (int i=0; i < 14; i++) {
-			dronePod.setUnknownGamma( i, readMinMaxedInt(in) );
-		}
+		dronePod.setUnknownEpsilon( readMinMaxedInt(in) );
+		dronePod.setUnknownZeta( readMinMaxedInt(in) );
+		dronePod.setUnknownEta( readMinMaxedInt(in) );
+		dronePod.setUnknownTheta( readMinMaxedInt(in) );
+		dronePod.setUnknownIota( readMinMaxedInt(in) );
+		dronePod.setUnknownKappa( readMinMaxedInt(in) );
+
+		dronePod.setUnknownLambda( readInt(in) );
+		dronePod.setUnknownMu( readInt(in) );
+		dronePod.setUnknownNu( readInt(in) );
+		dronePod.setOrbitAngle( readInt(in) );
+		dronePod.setOrbitRadius( readInt(in) );
+		dronePod.setUnknownXi( readInt(in) );
+		dronePod.setUnknownOmicron( readMinMaxedInt(in) );
+		dronePod.setUnknownPi( readInt(in) );
+		dronePod.setUnknownRho( readInt(in) );
+		dronePod.setUnknownSigma( readInt(in) );
+		dronePod.setUnknownTau( readInt(in) );
+		dronePod.setUnknownUpsilon( readInt(in) );
+		dronePod.setUnknownPhi( readInt(in) );
+		dronePod.setUnknownChi( readInt(in) );
 
 		dronePod.setDeathAnim( readAnim(in) );
 
@@ -9634,13 +9791,27 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		writeMinMaxedInt( out, dronePod.getGoalPositionX() );
 		writeMinMaxedInt( out, dronePod.getGoalPositionY() );
 
-		for ( int n : dronePod.getUnknownBeta() ) {
-			writeMinMaxedInt( out, n );
-		}
+		writeMinMaxedInt( out, dronePod.getUnknownEpsilon() );
+		writeMinMaxedInt( out, dronePod.getUnknownZeta() );
+		writeMinMaxedInt( out, dronePod.getUnknownEta() );
+		writeMinMaxedInt( out, dronePod.getUnknownTheta() );
+		writeMinMaxedInt( out, dronePod.getUnknownIota() );
+		writeMinMaxedInt( out, dronePod.getUnknownKappa() );
 
-		for ( int n : dronePod.getUnknownGamma() ) {
-			writeMinMaxedInt( out, n );
-		}
+		writeInt( out, dronePod.getUnknownLambda() );
+		writeInt( out, dronePod.getUnknownMu() );
+		writeInt( out, dronePod.getUnknownNu() );
+		writeInt( out, dronePod.getOrbitAngle() );
+		writeInt( out, dronePod.getOrbitRadius() );
+		writeInt( out, dronePod.getUnknownXi() );
+		writeMinMaxedInt( out, dronePod.getUnknownOmicron() );
+		writeInt( out, dronePod.getUnknownPi() );
+		writeInt( out, dronePod.getUnknownRho() );
+		writeInt( out, dronePod.getUnknownSigma() );
+		writeInt( out, dronePod.getUnknownTau() );
+		writeInt( out, dronePod.getUnknownUpsilon() );
+		writeInt( out, dronePod.getUnknownPhi() );
+		writeInt( out, dronePod.getUnknownChi() );
 
 		writeAnim( out, dronePod.getDeathAnim() );
 
