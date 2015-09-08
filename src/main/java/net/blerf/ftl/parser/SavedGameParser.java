@@ -8034,7 +8034,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		// This block was formerly a length 14 array named gamma.
 		private int unknownLambda = 0;
 		private int unknownMu = 0;
-		private int unknownNu = 0;
+		private int cooldownTicks = 0;
 		private int orbitAngle = 0;
 		private int orbitRadius = 0;
 		private int unknownXi = 0;
@@ -8081,7 +8081,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			unknownLambda = srcPod.getUnknownLambda();
 			unknownMu = srcPod.getUnknownMu();
-			unknownNu = srcPod.getUnknownNu();
+			cooldownTicks = srcPod.getCooldownTicks();
 			orbitAngle = srcPod.getOrbitAngle();
 			orbitRadius = srcPod.getOrbitRadius();
 			unknownXi = srcPod.getUnknownXi();
@@ -8247,11 +8247,25 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setUnknownMu( int n ) { unknownMu = n; }
 		public int getUnknownMu() { return unknownMu; }
 
-		public void setUnknownNu( int n ) { unknownNu = n; }
-		public int getUnknownNu() { return unknownNu; }
+		/**
+		 * Sets time elapsed while this drone is unable to shoot again after
+		 * firing.
+		 *
+		 * This is based on the 'cooldown' tag of the DroneBlueprint's xml.
+		 *
+		 * If greater than 0, the drone's light will be red while this number
+		 * decrements to 0. After reaching or passing 0, the light turns
+		 * green, and this is set to -1000.
+		 *
+		 * When not set, this is 0.
+		 */
+		public void setCooldownTicks( int n ) { cooldownTicks = n; }
+		public int getCooldownTicks() { return cooldownTicks; }
 
 		/**
 		 * Sets the drone's orbital progress around the shield ellipse.
+		 *
+		 * Hacking drones leave this at 229000.
 		 *
 		 * @param n a pseudo-float (n degrees clockwise from east)
 		 */
@@ -8260,6 +8274,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Sets the drone's orbital distance from the center (of the shield ellipse?).
+		 *
+		 * Hacking drones leave this at 0.
+		 *
+		 * When not set, this is 0.
 		 *
 		 * @param n a pseudo-float (n pixels)
 		 */
@@ -8299,6 +8317,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setUnknownSigma( int n ) { unknownSigma = n; }
 		public int getUnknownSigma() { return unknownSigma; }
 
+		/**
+		 * Unknown.
+		 *
+		 * When not set, this is -1000.
+		 */
 		public void setUnknownTau( int n ) { unknownTau = n; }
 		public int getUnknownTau() { return unknownTau; }
 
@@ -8359,7 +8382,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("\n"));
 			result.append(String.format("Lambda?:           %7d\n", unknownLambda));
 			result.append(String.format("Mu?:               %7d\n", unknownMu));
-			result.append(String.format("Nu?:               %7d\n", unknownNu));
+			result.append(String.format("Cooldown Ticks:    %7d (Decrements to 0, green-lit at -1000)\n", cooldownTicks));
 			result.append(String.format("Orbit Angle:       %7s\n", orbitAngle));
 			result.append(String.format("Orbit Radius:      %7s\n", orbitRadius));
 			result.append(String.format("Xi?:               %7d\n", unknownXi));
@@ -9707,7 +9730,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 
 		dronePod.setUnknownLambda( readInt(in) );
 		dronePod.setUnknownMu( readInt(in) );
-		dronePod.setUnknownNu( readInt(in) );
+		dronePod.setCooldownTicks( readInt(in) );
 		dronePod.setOrbitAngle( readInt(in) );
 		dronePod.setOrbitRadius( readInt(in) );
 		dronePod.setUnknownXi( readInt(in) );
@@ -9800,7 +9823,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 
 		writeInt( out, dronePod.getUnknownLambda() );
 		writeInt( out, dronePod.getUnknownMu() );
-		writeInt( out, dronePod.getUnknownNu() );
+		writeInt( out, dronePod.getCooldownTicks() );
 		writeInt( out, dronePod.getOrbitAngle() );
 		writeInt( out, dronePod.getOrbitRadius() );
 		writeInt( out, dronePod.getUnknownXi() );
