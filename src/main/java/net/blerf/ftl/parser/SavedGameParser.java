@@ -3762,7 +3762,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * CrewType's normal max health. FTL 1.01-1.03.3 had no such modifiers
 		 * and capped health at the max.
 		 *
-		 * @see setHealthBoost(int)
+		 * @see #setHealthBoost(int)
 		 */
 		public void setHealth( int n ) { health = n; }
 		public int getHealth() { return health; }
@@ -4027,7 +4027,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * This was introduced in FTL 1.5.12.
 		 *
-		 * @see setSkillMasteries(int)
+		 * @see #setSkillMasteries(int)
 		 */
 		public void setPilotMasteryOne( int n ) { pilotMasteryOne = n; }
 		public void setPilotMasteryTwo( int n ) { pilotMasteryTwo = n; }
@@ -8036,7 +8036,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownMu = 0;
 		private int cooldownTicks = 0;
 		private int orbitAngle = 0;
-		private int orbitRadius = 0;
+		private int turretAngle = 0;
 		private int unknownXi = 0;
 		private int unknownOmicron = 0;
 		private int unknownPi = 0;
@@ -8044,8 +8044,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownSigma = 0;
 		private int unknownTau = 0;
 		private int unknownUpsilon = 0;
-		private int unknownPhi = 0;
-		private int unknownChi = 0;
+		private int deltaPosX = 0, deltaPosY = 0;
 
 		private AnimState deathAnim = new AnimState();
 		private ExtendedDronePodInfo extendedInfo = null;
@@ -8083,7 +8082,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			unknownMu = srcPod.getUnknownMu();
 			cooldownTicks = srcPod.getCooldownTicks();
 			orbitAngle = srcPod.getOrbitAngle();
-			orbitRadius = srcPod.getOrbitRadius();
+			turretAngle = srcPod.getTurretAngle();
 			unknownXi = srcPod.getUnknownXi();
 			unknownOmicron = srcPod.getUnknownOmicron();
 			unknownPi = srcPod.getUnknownPi();
@@ -8091,8 +8090,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			unknownSigma = srcPod.getUnknownSigma();
 			unknownTau = srcPod.getUnknownTau();
 			unknownUpsilon = srcPod.getUnknownUpsilon();
-			unknownPhi = srcPod.getUnknownPhi();
-			unknownChi = srcPod.getUnknownChi();
+			deltaPosX = srcPod.getDeltaPositionX();
+			deltaPosY = srcPod.getDeltaPositionY();
 
 			deathAnim = srcPod.getDeathAnim();
 
@@ -8265,7 +8264,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the drone's orbital progress around the shield ellipse.
 		 *
-		 * Hacking drones leave this at 229000.
+		 * Drones which do not orbit will have some lingering value instead.
+		 *
+		 * TODO: Modify this value in the editor. In CheatEngine, changing
+		 * this has no effect, appearing to be read-only field for reference.
 		 *
 		 * @param n a pseudo-float (n degrees clockwise from east)
 		 */
@@ -8273,16 +8275,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getOrbitAngle() { return orbitAngle; }
 
 		/**
-		 * Sets the drone's orbital distance from the center (of the shield ellipse?).
-		 *
-		 * Hacking drones leave this at 0.
+		 * Sets the drone's turret angle.
 		 *
 		 * When not set, this is 0.
 		 *
-		 * @param n a pseudo-float (n pixels)
+		 * @param n a pseudo-float (n degrees clockwise from east)
 		 */
-		public void setOrbitRadius( int n ) { orbitRadius = n; }
-		public int getOrbitRadius() { return orbitRadius; }
+		public void setTurretAngle( int n ) { turretAngle = n; }
+		public int getTurretAngle() { return turretAngle; }
 
 
 		/**
@@ -8329,16 +8329,20 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getUnknownUpsilon() { return unknownUpsilon; }
 
 		/**
-		 * Unknown.
+		 * Sets the recent change in position (Current - Previous + 1).
 		 *
-		 * Observed values: Went from 0 to 6865 when hacking drone pod was
-		 * launched. Then 6884, 6845, 6836 (space switch), 6832, 6847 (contact).
+		 * TODO: Modify this value in the editor. In CheatEngine, changing
+		 * this has no effect, appearing to be read-only field for reference.
+		 *
+		 * @param n a pseudo-float
+		 *
+		 * @see #setCurrentPositionX(int)
+		 * @see #setPreviousPositionX(int)
 		 */
-		public void setUnknownPhi( int n ) { unknownPhi = n; }
-		public int getUnknownPhi() { return unknownPhi; }
-
-		public void setUnknownChi( int n ) { unknownChi = n; }
-		public int getUnknownChi() { return unknownChi; }
+		public void setDeltaPositionX( int n ) { deltaPosX = n; }
+		public void setDeltaPositionY( int n ) { deltaPosY = n; }
+		public int getDeltaPositionX() { return deltaPosX; }
+		public int getDeltaPositionY() { return deltaPosY; }
 
 
 		public void setDeathAnim( AnimState anim ) { deathAnim = anim; }
@@ -8383,8 +8387,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Lambda?:           %7d\n", unknownLambda));
 			result.append(String.format("Mu?:               %7d\n", unknownMu));
 			result.append(String.format("Cooldown Ticks:    %7d (Decrements to 0, green-lit at -1000)\n", cooldownTicks));
-			result.append(String.format("Orbit Angle:       %7s\n", orbitAngle));
-			result.append(String.format("Orbit Radius:      %7s\n", orbitRadius));
+			result.append(String.format("Orbit Angle:       %7d\n", orbitAngle));
+			result.append(String.format("Turret Angle:      %7d\n", turretAngle));
 			result.append(String.format("Xi?:               %7d\n", unknownXi));
 			result.append(String.format("Omicron?:          %7s\n", prettyInt(unknownOmicron)));
 			result.append(String.format("Pi?:               %7d\n", unknownPi));
@@ -8392,8 +8396,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Sigma?:            %7d\n", unknownSigma));
 			result.append(String.format("Tau?:              %7d\n", unknownTau));
 			result.append(String.format("Upsilon?:          %7d\n", unknownUpsilon));
-			result.append(String.format("Phi?:              %7d\n", unknownPhi));
-			result.append(String.format("Chi?:              %7d\n", unknownChi));
+			result.append(String.format("Delta Position:    %7d,%7d (Current - Previous + 1)\n", deltaPosX, deltaPosY));
 
 			result.append("\nDeath Anim...\n");
 			if ( deathAnim != null) {
@@ -8532,6 +8535,111 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				}
 			}
 			result.append("\n");
+
+			return result.toString();
+		}
+	}
+
+	/**
+	 * Extended combat/beam/repair drone info.
+	 *
+	 * These drones flit to a random (?) point, stop, then move to another,
+	 * and so on.
+	 */
+	public static class ZigZagDronePodInfo extends ExtendedDronePodInfo {
+		private int lastWaypointX = 0;
+		private int lastWaypointY = 0;
+		private int transitTicks = 0;
+		private int exhaustAngle = 0;
+		private int unknownEpsilon = 0;
+
+		/**
+		 * Constructor.
+		 */
+		public ZigZagDronePodInfo() {
+			super();
+		}
+
+		/**
+		 * Copy constructor.
+		 */
+		protected ZigZagDronePodInfo( ZigZagDronePodInfo srcInfo ) {
+			super( srcInfo );
+			lastWaypointX = srcInfo.getLastWaypointX();
+			lastWaypointY = srcInfo.getLastWaypointY();
+			transitTicks = srcInfo.getTransitTicks();
+			exhaustAngle = srcInfo.getExhaustAngle();
+			unknownEpsilon = srcInfo.getUnknownEpsilon();
+		}
+
+		@Override
+		public ZigZagDronePodInfo copy() { return new ZigZagDronePodInfo( this ); }
+
+
+		/**
+		 * Resets aspects of an existing object to be viable for use by players.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 */
+		@Override
+		public void commandeer() {
+		}
+
+
+		/**
+		 * Sets the cached position from when the drone last stopped.
+		 *
+		 * TODO: Modify this value in the editor. In CheatEngine, changing
+		 * this has no effect, appearing to be read-only field for reference.
+		 *
+		 * @param n a pseudo-float
+		 */
+		public void setLastWaypointX( int n ) { lastWaypointX = n; }
+		public void setLastWaypointY( int n ) { lastWaypointY = n; }
+		public int getLastWaypointX() { return lastWaypointX; }
+		public int getLastWaypointY() { return lastWaypointY; }
+
+		/**
+		 * Sets time elapsed while this drone moves.
+		 *
+		 * This increments from 0 to 1000 as the drone drifts toward a new
+		 * waypoint. While this value is below 200, exhaust flames are
+		 * visible. Then they vanish. The moment the drone pauses at the
+		 * destination, this is set to 1000.
+		 *
+		 * TODO: Modify this value in the editor. In CheatEngine, changing
+		 * this has no effect, appearing to be read-only field for reference.
+		 *
+		 * @see #setExhaustAngle(int)
+		 */
+		public void setTransitTicks( int n ) { transitTicks = n; }
+		public int getTransitTicks() { return transitTicks; }
+
+		/**
+		 * Sets the angle to display exhaust flames thrusting toward.
+		 *
+		 * TODO: Modify this value in the editor. In CheatEngine, changing
+		 * this DOES work.
+		 *
+		 * @param n a pseudo-float (n degrees clockwise from east)
+		 *
+		 * @see #setTransitTicks(int)
+		 */
+		public void setExhaustAngle( int n ) { exhaustAngle = n; }
+		public int getExhaustAngle() { return exhaustAngle; }
+
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append(String.format("Last Waypoint:      %7d,%7d\n", lastWaypointX, lastWaypointY));
+			result.append(String.format("TransitTicks:       %7d\n", transitTicks));
+			result.append(String.format("Exhaust Angle:      %7d\n", exhaustAngle));
+			result.append(String.format("Epsilon?:           %7d\n", unknownEpsilon));
 
 			return result.toString();
 		}
@@ -9159,7 +9267,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * TODO: Confirm autofire behavior.
 		 *
-		 * @see setPreviousTargets(List)
+		 * @see #setPreviousTargets(List)
 		 */
 		public void setCurrentTargets( List<ReticleCoordinate> targetList ) { currentTargets = targetList; }
 		public List<ReticleCoordinate> getCurrentTargets() { return currentTargets; }
@@ -9169,7 +9277,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * The moment the player places a target reticle, this is populated.
 		 *
-		 * @see setCurrentTargets(List)
+		 * @see #setCurrentTargets(List)
 		 */
 		public void setPreviousTargets( List<ReticleCoordinate> targetList ) { prevTargets = targetList; }
 		public List<ReticleCoordinate> getPreviousTargets() { return prevTargets; }
@@ -9732,7 +9840,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		dronePod.setUnknownMu( readInt(in) );
 		dronePod.setCooldownTicks( readInt(in) );
 		dronePod.setOrbitAngle( readInt(in) );
-		dronePod.setOrbitRadius( readInt(in) );
+		dronePod.setTurretAngle( readInt(in) );
 		dronePod.setUnknownXi( readInt(in) );
 		dronePod.setUnknownOmicron( readMinMaxedInt(in) );
 		dronePod.setUnknownPi( readInt(in) );
@@ -9740,8 +9848,8 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		dronePod.setUnknownSigma( readInt(in) );
 		dronePod.setUnknownTau( readInt(in) );
 		dronePod.setUnknownUpsilon( readInt(in) );
-		dronePod.setUnknownPhi( readInt(in) );
-		dronePod.setUnknownChi( readInt(in) );
+		dronePod.setDeltaPositionX( readInt(in) );
+		dronePod.setDeltaPositionY( readInt(in) );
 
 		dronePod.setDeathAnim( readAnim(in) );
 
@@ -9772,11 +9880,13 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		else if ( DroneType.COMBAT.equals(droneType) || 
 		          DroneType.BEAM.equals(droneType) ) {
 
-			IntegerDronePodInfo intPodInfo = new IntegerDronePodInfo( 5 );
-			for (int i=0; i < intPodInfo.getSize(); i++) {
-				intPodInfo.set( i, readMinMaxedInt(in) );
-			}
-			extendedInfo = intPodInfo;
+			ZigZagDronePodInfo zigPodInfo = new ZigZagDronePodInfo();
+			zigPodInfo.setLastWaypointX( readInt(in) );
+			zigPodInfo.setLastWaypointY( readInt(in) );
+			zigPodInfo.setTransitTicks( readInt(in) );
+			zigPodInfo.setExhaustAngle( readInt(in) );
+			zigPodInfo.setUnknownEpsilon( readInt(in) );
+			extendedInfo = zigPodInfo;
 		}
 		else if ( DroneType.DEFENSE.equals(droneType) ) {
 			extendedInfo = new EmptyDronePodInfo();
@@ -9787,11 +9897,13 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			extendedInfo = shieldPodInfo;
 		}
 		else if ( DroneType.SHIP_REPAIR.equals(droneType) ) {
-			IntegerDronePodInfo intPodInfo = new IntegerDronePodInfo( 5 );
-			for (int i=0; i < intPodInfo.getSize(); i++) {
-				intPodInfo.set( i, readMinMaxedInt(in) );
-			}
-			extendedInfo = intPodInfo;
+			ZigZagDronePodInfo zigPodInfo = new ZigZagDronePodInfo();
+			zigPodInfo.setLastWaypointX( readInt(in) );
+			zigPodInfo.setLastWaypointY( readInt(in) );
+			zigPodInfo.setTransitTicks( readInt(in) );
+			zigPodInfo.setExhaustAngle( readInt(in) );
+			zigPodInfo.setUnknownEpsilon( readInt(in) );
+			extendedInfo = zigPodInfo;
 		}
 		else {
 			throw new IOException( "Unsupported droneType for drone pod: "+ droneType.getId() );
@@ -9825,7 +9937,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		writeInt( out, dronePod.getUnknownMu() );
 		writeInt( out, dronePod.getCooldownTicks() );
 		writeInt( out, dronePod.getOrbitAngle() );
-		writeInt( out, dronePod.getOrbitRadius() );
+		writeInt( out, dronePod.getTurretAngle() );
 		writeInt( out, dronePod.getUnknownXi() );
 		writeMinMaxedInt( out, dronePod.getUnknownOmicron() );
 		writeInt( out, dronePod.getUnknownPi() );
@@ -9833,8 +9945,8 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		writeInt( out, dronePod.getUnknownSigma() );
 		writeInt( out, dronePod.getUnknownTau() );
 		writeInt( out, dronePod.getUnknownUpsilon() );
-		writeInt( out, dronePod.getUnknownPhi() );
-		writeInt( out, dronePod.getUnknownChi() );
+		writeInt( out, dronePod.getDeltaPositionX() );
+		writeInt( out, dronePod.getDeltaPositionY() );
 
 		writeAnim( out, dronePod.getDeathAnim() );
 
@@ -9869,6 +9981,14 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			writeInt( out, hackingPodInfo.getUnknownDelta() );
 			writeAnim( out, hackingPodInfo.getLandingAnim() );
 			writeAnim( out, hackingPodInfo.getExtensionAnim() );
+		}
+		else if ( extendedInfo instanceof ZigZagDronePodInfo ) {
+			ZigZagDronePodInfo zigPodInfo = dronePod.getExtendedInfo( ZigZagDronePodInfo.class );
+			writeInt( out, zigPodInfo.getLastWaypointX() );
+			writeInt( out, zigPodInfo.getLastWaypointY() );
+			writeInt( out, zigPodInfo.getTransitTicks() );
+			writeInt( out, zigPodInfo.getExhaustAngle() );
+			writeInt( out, zigPodInfo.getUnknownEpsilon() );
 		}
 		else if ( extendedInfo instanceof EmptyDronePodInfo ) {
 			// No-op.
