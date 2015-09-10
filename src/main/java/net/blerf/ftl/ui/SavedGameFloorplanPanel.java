@@ -156,10 +156,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private int shipDroneParts = 0;
 	private int shipMissiles = 0;
 	private int shipScrap = 0;
-	private int shipAlpha = 0;
-	private int shipJumpTicks = 0;
-	private int shipGamma = 0;
-	private int shipDelta = 0;
+	private boolean shipHostile = false;
+	private int shipJumpChargeTicks = 0;
+	private boolean shipJumping = false;
+	private int shipJumpAnimTicks = 0;
 	private int shipCloakAnimTicks = 0;
 	private boolean shipPlayerControlled = false;
 	private List<String> shipAugmentIdList = new ArrayList<String>();
@@ -716,10 +716,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			shipDroneParts = 0;
 			shipMissiles = 0;
 			shipScrap = 0;
-			shipAlpha = 0;
-			shipJumpTicks = 0;
-			shipGamma = 0;
-			shipDelta = 0;
+			shipHostile = false;
+			shipJumpChargeTicks = 0;
+			shipJumping = false;
+			shipJumpAnimTicks = 0;
 			shipCloakAnimTicks = 0;
 			shipPlayerControlled = false;
 			roomRegionRoomIdMap.clear();
@@ -754,10 +754,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipDroneParts = shipState.getDronePartsAmt();
 		shipMissiles = shipState.getMissilesAmt();
 		shipScrap = shipState.getScrapAmt();
-		shipAlpha = shipState.getUnknownAlpha();
-		shipJumpTicks = shipState.getJumpTicks();
-		shipGamma = shipState.getUnknownGamma();
-		shipDelta = shipState.getUnknownDelta();
+		shipHostile = shipState.isHostile();
+		shipJumpChargeTicks = shipState.getJumpChargeTicks();
+		shipJumping = shipState.isJumping();
+		shipJumpAnimTicks = shipState.getJumpAnimTicks();
 		shipCloakAnimTicks = shipState.getCloakAnimTicks();
 		shipPlayerControlled = ( shipState == gameState.getPlayerShipState() );
 		shipAugmentIdList.addAll( shipState.getAugmentIdList() );
@@ -1193,10 +1193,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipState.setDronePartsAmt( shipDroneParts );
 		shipState.setMissilesAmt( shipMissiles );
 		shipState.setScrapAmt( shipScrap );
-		shipState.setUnknownAlpha( shipAlpha );
-		shipState.setJumpTicks( shipJumpTicks );
-		shipState.setUnknownGamma( shipGamma );
-		shipState.setUnknownDelta( shipDelta );
+		shipState.setHostile( shipHostile );
+		shipState.setJumpChargeTicks( shipJumpChargeTicks );
+		shipState.setJumping( shipJumping );
+		shipState.setJumpAnimTicks( shipJumpAnimTicks );
 		shipState.setCloakAnimTicks( shipCloakAnimTicks );
 
 		// Augments.
@@ -2222,10 +2222,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String DRONE_PARTS = "Drone Parts";
 		final String MISSILES = "Missiles";
 		final String SCRAP = "Scrap";
-		final String ALPHA = "Alpha?";
-		final String JUMP_TICKS = "Jump Ticks";
-		final String GAMMA = "Gamma?";
-		final String DELTA = "Delta?";
+		final String HOSTILE = "Hostile";
+		final String JUMP_CHARGE_TICKS = "Jump Charge Ticks";
+		final String JUMPING = "Jumping";
+		final String JUMP_ANIM_TICKS = "Jump Anim Ticks";
 		final String CLOAK_ANIM_TICKS = "Cloak Anim Ticks";
 
 		String title = "General";
@@ -2239,13 +2239,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( SCRAP, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addBlankRow();
-		editorPanel.addRow( ALPHA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(ALPHA).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.addRow( JUMP_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( GAMMA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.addRow( DELTA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(DELTA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.addRow( HOSTILE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( JUMP_CHARGE_TICKS, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( JUMPING, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( JUMP_ANIM_TICKS, FieldEditorPanel.ContentType.SLIDER );
+		editorPanel.getSlider(JUMP_ANIM_TICKS).setMaximum( 2000 );  // TODO: Magic number.
 		editorPanel.addBlankRow();
 		editorPanel.addRow( CLOAK_ANIM_TICKS, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider(CLOAK_ANIM_TICKS).setMaximum( 500 );  // TODO: Magic number.
@@ -2256,16 +2256,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(DRONE_PARTS).setText( ""+shipDroneParts );
 		editorPanel.getInt(MISSILES).setText( ""+shipMissiles );
 		editorPanel.getInt(SCRAP).setText( ""+shipScrap );
-		editorPanel.getInt(ALPHA).setText( ""+shipAlpha );
-		editorPanel.getInt(JUMP_TICKS).setText( ""+shipJumpTicks );
-		editorPanel.getInt(GAMMA).setText( ""+shipGamma );
-		editorPanel.getInt(DELTA).setText( ""+shipDelta );
+		editorPanel.getBoolean(HOSTILE).setSelected( shipHostile );
+		editorPanel.getInt(JUMP_CHARGE_TICKS).setText( ""+shipJumpChargeTicks );
+		editorPanel.getBoolean(JUMPING).setSelected( shipJumping );
+		editorPanel.getSlider(JUMP_ANIM_TICKS).setValue( shipJumpAnimTicks );
 		editorPanel.getSlider(CLOAK_ANIM_TICKS).setValue( shipCloakAnimTicks );
 
-		editorPanel.getInt(ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		editorPanel.getInt(JUMP_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed waiting for the FTL to charge (Counts to 85000).") );
-		editorPanel.getInt(GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		editorPanel.getInt(DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		editorPanel.getBoolean(HOSTILE).addMouseListener( new StatusbarMouseListener(frame, "Toggle hostile/neutral status (No effect on player ships).") );
+		editorPanel.getInt(JUMP_CHARGE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed waiting for the FTL to charge (Counts to 85000).") );
+		editorPanel.getBoolean(JUMPING).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether the ship is jumping away (No effect on player ships).") );
+		editorPanel.getSlider(JUMP_ANIM_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while jumping away (0=Normal to 2000=Gone; No effect on player ships).") );
 		editorPanel.getSlider(CLOAK_ANIM_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Cloak image visibility (0=Uncloaked to 500=Cloaked).") );
 
 		final Runnable applyCallback = new Runnable() {
@@ -2289,17 +2289,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 				try { shipScrap = editorPanel.parseInt(SCRAP); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipAlpha = editorPanel.parseInt(ALPHA); }
+				shipHostile = editorPanel.getBoolean(HOSTILE).isSelected();
+
+				try { shipJumpChargeTicks = editorPanel.parseInt(JUMP_CHARGE_TICKS); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipJumpTicks = editorPanel.parseInt(JUMP_TICKS); }
-				catch ( NumberFormatException e ) {}
+				shipJumping = editorPanel.getBoolean(JUMPING).isSelected();
 
-				try { shipGamma = editorPanel.parseInt(GAMMA); }
-				catch ( NumberFormatException e ) {}
-
-				try { shipDelta = editorPanel.parseInt(DELTA); }
-				catch ( NumberFormatException e ) {}
+				shipJumpAnimTicks = editorPanel.getSlider(JUMP_ANIM_TICKS).getValue();
 
 				shipCloakAnimTicks = editorPanel.getSlider(CLOAK_ANIM_TICKS).getValue();
 

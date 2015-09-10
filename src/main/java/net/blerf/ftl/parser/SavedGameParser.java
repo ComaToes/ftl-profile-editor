@@ -436,10 +436,10 @@ public class SavedGameParser extends Parser {
 		}
 
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
-			shipState.setUnknownAlpha( readInt(in) );
-			shipState.setJumpTicks( readInt(in) );
-			shipState.setUnknownGamma( readInt(in) );
-			shipState.setUnknownDelta( readInt(in) );
+			shipState.setHostile( readBool(in) );
+			shipState.setJumpChargeTicks( readInt(in) );
+			shipState.setJumping( readBool(in) );
+			shipState.setJumpAnimTicks( readInt(in) );
 		}
 
 		shipState.setHullAmt( readInt(in) );
@@ -664,10 +664,10 @@ public class SavedGameParser extends Parser {
 		}
 
 		if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
-			writeInt( out, shipState.getUnknownAlpha() );
-			writeInt( out, shipState.getJumpTicks() );
-			writeInt( out, shipState.getUnknownGamma() );
-			writeInt( out, shipState.getUnknownDelta() );
+			writeBool( out, shipState.isHostile() );
+			writeInt( out, shipState.getJumpChargeTicks() );
+			writeBool( out, shipState.isJumping() );
+			writeInt( out, shipState.getJumpAnimTicks() );
 		}
 
 		writeInt( out, shipState.getHullAmt() );
@@ -2781,7 +2781,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private String shipName, shipBlueprintId, shipLayoutId;
 		private String shipGfxBaseName;
 		private List<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
-		private int jumpTicks = 0;
+		private boolean hostile = false;
+		private int jumpChargeTicks = 0;
+		private boolean jumping = false;
+		private int jumpAnimTicks = 0;
 		private int hullAmt = 0, fuelAmt = 0, dronePartsAmt = 0, missilesAmt = 0, scrapAmt = 0;
 		private List<CrewState> crewList = new ArrayList<CrewState>();
 		private int reservePowerCapacity = 0;
@@ -2796,10 +2799,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private List<DroneState> droneList = new ArrayList<DroneState>();
 		private List<String> augmentIdList = new ArrayList<String>();
 		private List<StandaloneDroneState> standaloneDroneList = new ArrayList<StandaloneDroneState>();
-
-		private int unknownAlpha = 0;
-		private int unknownGamma = 0;
-		private int unknownDelta = 0;
 
 
 		/**
@@ -2924,10 +2923,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * TODO: Recurse into all nested objects.
 		 */
 		public void commandeer() {
-			setUnknownAlpha( 1 );  // TODO: Vet this default.
-			setJumpTicks( 0 );
-			setUnknownGamma( 0 );  // TODO: Vet this default.
-			setUnknownDelta( 0 );  // TODO: Vet this default.
+			setHostile( false );
+			setJumpChargeTicks( 0 );
+			setJumping( false );
+			setJumpAnimTicks( 0 );
 
 			for ( CrewState crew : getCrewList() ) {
 				crew.commandeer();
@@ -3064,18 +3063,16 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 		/**
-		 * Unknown.
+		 * Toggles whether this ship is hostile or neutral.
 		 *
-		 * Observed values: 1, 0.
 		 *
-		 * A nearby ship went from 1 to 0, when all enemies were killed and a
-		 * player-controlled crew member was still aboard). Also 0 for neutral
-		 * traders.
+		 * Neutral ships hide their floorplans unless a player-controlled crew
+		 * is on board. They also don't attack, of course.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public int getUnknownAlpha() { return unknownAlpha; }
+		public void setHostile( boolean b ) { hostile = b; }
+		public boolean isHostile() { return hostile; }
 
 		/**
 		 * Sets time elapsed while waiting for the FTL drive to charge.
@@ -3084,28 +3081,40 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
-		public void setJumpTicks( int n ) { jumpTicks = n; }
-		public int getJumpTicks() { return jumpTicks; }
+		public void setJumpChargeTicks( int n ) { jumpChargeTicks = n; }
+		public int getJumpChargeTicks() { return jumpChargeTicks; }
 
 		/**
-		 * Unknown.
+		 * Toggles whether this ship is currently jumping away.
 		 *
-		 * Observed values: 0, 1 (rarely).
+		 * If true, this ship will fade out immediately upon loading. If
+		 * paused, the animation will play anyway, but the ship will still be
+		 * present, albeit invisible. Once unpaused, an event popup will
+		 * appear in response to the ship's departure.
+		 *
+		 * This value is ignored on player ships.
 		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setJumpAnimTicks(int)
 		 */
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public int getUnknownGamma() { return unknownGamma; }
+		public void setJumping( boolean b ) { jumping = b; }
+		public boolean isJumping() { return jumping; }
 
 		/**
-		 * Unknown.
+		 * Sets time elapsed while jumping away.
 		 *
-		 * Observed values: 0, 50 (rarely).
+		 * This counts from 0 (normal) to 2000 (gone).
+		 *
+		 * This value is ignored on player ships - and on nearby ships which
+		 * aren't currently jumping.
 		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setJumping(boolean)
 		 */
-		public void setUnknownDelta( int n ) { unknownDelta = n; }
-		public int getUnknownDelta() { return unknownDelta; }
+		public void setJumpAnimTicks( int n ) { jumpAnimTicks = n; }
+		public int getJumpAnimTicks() { return jumpAnimTicks; }
 
 		public void setHullAmt( int n ) { hullAmt = n; }
 		public void setFuelAmt( int n ) { fuelAmt = n; }
@@ -3362,10 +3371,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Missiles:    %3d\n", missilesAmt));
 			result.append(String.format("Scrap:       %3d\n", scrapAmt));
 			result.append("\n");
-			result.append(String.format("Alpha?:      %3d\n", unknownAlpha));
-			result.append(String.format("Jump Ticks:  %3d (85000 is fully charged)\n", jumpTicks));
-			result.append(String.format("Gamma?:      %3d\n", unknownGamma));
-			result.append(String.format("Delta?:      %3d\n", unknownDelta));
+			result.append(String.format("Hostile:           %7b\n", hostile));
+			result.append(String.format("Jump Charge Ticks: %7d (85000 is fully charged)\n", jumpChargeTicks));
+			result.append(String.format("Jumping:           %7b\n", jumping));
+			result.append(String.format("Jump Anim Ticks:   %7d (0=Normal to 2000=Gone)\n", jumpAnimTicks));
 
 			result.append("\nStarting Crew...\n");
 			first = true;
@@ -8198,7 +8207,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * When not set, this is MIN_INT.
 		 *
-		 * Observed values: Combat (Resembles position).
+		 * Observed values: Combat/repair (Resembles position). Related to
+		 * ZigZag waypoints?
 		 */
 		public void setUnknownEta( int n ) { unknownEta = n; }
 		public int getUnknownEta() { return unknownEta; }
@@ -8208,7 +8218,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * When not set, this is MIN_INT.
 		 *
-		 * Observed values: Combat (Resembles position).
+		 * Observed values: Combat/repair (Resembles position). Related to
+		 * ZigZag waypoints?
 		 */
 		public void setUnknownTheta( int n ) { unknownTheta = n; }
 		public int getUnknownTheta() { return unknownTheta; }
