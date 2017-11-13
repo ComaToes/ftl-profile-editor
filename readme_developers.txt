@@ -2,6 +2,10 @@ The build process for this project is automated by Maven.
   http://maven.apache.org/
   http://docs.codehaus.org/display/MAVENUSER/Getting+Started+with+Maven
 
+  If your build environment is limited to Java 1.6,
+    use Maven 3.2.5 (the last to support that compiler).
+  Current Java compilers should be able to build backward-compatible jars.
+
 
 To build, run "mvn clean" and "mvn package" in this folder.
 
