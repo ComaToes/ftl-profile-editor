@@ -389,7 +389,7 @@ public class FTLFrame extends JFrame {
 						byte[] buf = new byte[4096];
 						int len = 0;
 						while ( (len = in.read(buf)) >= 0 ) {
-							for (int j=0; j < len; j++) {
+							for ( int j=0; j < len; j++ ) {
 								hexBuf.append( String.format( "%02x", buf[j] ) );
 								if ( (j+1) % 32 == 0 ) {
 									hexBuf.append( "\n" );
@@ -471,16 +471,7 @@ public class FTLFrame extends JFrame {
 							}
 
 							if ( exception != null ) {
-								reportBuf.append( String.format("Exception: %s\n", exception.toString()) );
-								reportBuf.append( "\n" );
-
-								reportBuf.append( "Stack Trace...\n" );
-								StackTraceElement[] traceElements = exception.getStackTrace();
-								int traceDepth = 5;
-								for (int i=0; i < traceDepth && i < traceElements.length; i++) {
-									reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
-								}
-								reportBuf.append( "\n" );
+								appendStackTrace( reportBuf, exception );
 							}
 
 							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
@@ -789,7 +780,7 @@ public class FTLFrame extends JFrame {
 						byte[] buf = new byte[4096];
 						int len = 0;
 						while ( (len = in.read(buf)) >= 0 ) {
-							for (int j=0; j < len; j++) {
+							for ( int j=0; j < len; j++ ) {
 								hexBuf.append( String.format( "%02x", buf[j] ) );
 								if ( (j+1) % 32 == 0 ) {
 									hexBuf.append( "\n" );
@@ -808,8 +799,8 @@ public class FTLFrame extends JFrame {
 							StringBuilder musteryBuf = new StringBuilder();
 							musteryBuf.append( "This saved game file contains mystery bytes the developers hadn't anticipated!\n" );
 							boolean first = true;
-							for (MysteryBytes m : gameState.getMysteryList()) {
-								if (first) { first = false; }
+							for ( MysteryBytes m : gameState.getMysteryList() ) {
+								if ( first ) { first = false; }
 								else { musteryBuf.append( ",\n" ); }
 								musteryBuf.append(m.toString().replaceAll( "(^|\n)(.+)", "$1  $2") );
 							}
@@ -847,16 +838,7 @@ public class FTLFrame extends JFrame {
 							reportBuf.append( "\n" );
 
 							if ( exception != null ) {
-								reportBuf.append( String.format("Exception: %s\n", exception.toString()) );
-								reportBuf.append( "\n" );
-
-								reportBuf.append( "Stack Trace...\n" );
-								StackTraceElement[] traceElements = exception.getStackTrace();
-								int traceDepth = 5;
-								for (int i=0; i < traceDepth && i < traceElements.length; i++) {
-									reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
-								}
-								reportBuf.append( "\n" );
+								appendStackTrace( reportBuf, exception );
 							}
 
 							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
@@ -1180,7 +1162,7 @@ public class FTLFrame extends JFrame {
 					String[] placeholders = new String[] { "{version}", "{items}" };
 					String[] values = new String[] { "v"+releaseVersion, releaseBuf.toString() };
 					releaseDesc = historyTemplate;
-					for (int i=0; i < placeholders.length; i++)
+					for ( int i=0; i < placeholders.length; i++ )
 						releaseDesc = releaseDesc.replaceAll(Pattern.quote(placeholders[i]), Matcher.quoteReplacement(values[i]) );
 					historyBuf.append(releaseDesc);
 				}
@@ -1213,6 +1195,38 @@ public class FTLFrame extends JFrame {
 		dlg.setLocationRelativeTo( this );
 
 		return dlg;
+	}
+
+	/**
+	 * Formats an exception, appending lines to a bug report buffer.
+	 */
+	private void appendStackTrace( StringBuilder reportBuf, Throwable exception ) {
+		reportBuf.append( String.format("Exception: %s\n", exception.toString()) );
+		reportBuf.append( "\n" );
+
+		reportBuf.append( "Stack Trace...\n" );
+		StackTraceElement[] traceElements = exception.getStackTrace();
+		int traceDepth = 5;
+		for ( int i=0; i < traceDepth && i < traceElements.length; i++ ) {
+			reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
+		}
+/*
+		Throwable currentCause = exception;
+
+		// Traditional loggers truncate each cause's trace when a line is
+		// already mentioned in the next downstream exception, i.e.,
+		// remaining lines are redundant.
+
+		while ( currentCause.getCause() != currentCause && null != (currentCause=currentCause.getCause()) ) {
+			reportBuf.append( String.format("Caused by: %s\n", currentCause.toString()) );
+			StackTraceElement[] causeElements = currentCause.getStackTrace();
+			int causeDepth = 3;
+			for ( int i=0; i < causeDepth && i < causeElements.length; i++ ) {
+				reportBuf.append( String.format("  %s\n", causeElements[i].toString()) );
+			}
+		}
+*/
+		reportBuf.append( "\n" );
 	}
 
 	private JDialog createBugReportDialog( String title, String message, String report ) {
