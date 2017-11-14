@@ -359,13 +359,18 @@ public class FTLFrame extends JFrame {
 				log.trace( "Open profile button clicked." );
 
 				fc.setDialogTitle( "Open Profile" );
-				int chooserResponse = fc.showOpenDialog(FTLFrame.this);
+				int chooserResponse = fc.showOpenDialog( FTLFrame.this );
 				File chosenFile = fc.getSelectedFile();
 				boolean sillyMistake = false;
 
 				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( "continue.sav".equals(chosenFile.getName()) ) {
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Profile tab, and you're opening \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					List<String> sillyNames = new ArrayList<String>();
+					sillyNames.add( "continue.sav" );
+					sillyNames.add( "data.dat" );
+					sillyNames.add( "resource.dat" );
+
+					if ( sillyNames.contains( chosenFile.getName() ) ) {
+						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Profile tab, and you're opening \""+ chosenFile.getName() +"\" instead of \"ae_prof.sav\" or \"prof.sav\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
 						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
 					}
 				}
@@ -753,15 +758,19 @@ public class FTLFrame extends JFrame {
 				log.trace( "Open saved game button clicked." );
 
 				fc.setDialogTitle( "Open Saved Game" );
-				int chooserResponse = fc.showOpenDialog(FTLFrame.this);
+				int chooserResponse = fc.showOpenDialog( FTLFrame.this );
 				File chosenFile = fc.getSelectedFile();
 				boolean sillyMistake = false;
 
 				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( "ae_prof.sav".equals(chosenFile.getName()) ||
-					     "prof.sav".equals(chosenFile.getName()) ) {
+					List<String> sillyNames = new ArrayList<String>();
+					sillyNames.add( "ae_prof.sav" );
+					sillyNames.add( "prof.sav" );
+					sillyNames.add( "data.dat" );
+					sillyNames.add( "resource.dat" );
 
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the SavedGame tab, and you're opening \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyNames.contains( chosenFile.getName() ) ) {
+						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the SavedGame tab, and you're opening \""+ chosenFile.getName() +"\" instead of \"continue.sav\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
 						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
 					}
 				}
