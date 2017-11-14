@@ -56,11 +56,26 @@ Troubleshooting
 * If double-clicking FTLProfileEditor.command doesn't work on Linux...
     Several terminals have bugs executing scripts whose paths contain spaces.
     There's no universal way to create a relative *.desktop shortcut either.
+
     For now, you'll need to open a terminal yourself.
       Then drag FTLProfileEditor.command onto that window, and hit enter.
 
+    These might help?
+      https://askubuntu.com/questions/617687/shell-script-does-not-run-when-i-double-click
+      https://bugs.launchpad.net/ubuntu/+source/lubuntu-default-settings/+bug/975152
+
 * If you get "java.lang.UnsupportedClassVersionError" on startup...
     You need a newer version of Java.
+
+* If you get "java.lang.NoClassDefFoundError: javax/xml/bind/JAXBException"...
+    That should only occur if you try to run "java -jar ..." yourself.
+    Java 9 made one of its libraries opt-in, requiring a special argument.
+
+    java --add-modules=java.xml.bind -jar FTLProfileEditor.jar
+
+    The launcher straddles Java releases by telling older ones to ignore it.
+
+    java -XX:+IgnoreUnrecognizedVMOptions ...
 
 * Error reading profile. [...] Initial int not expected value: 2...
     You likely tried to open a saved game while in the "Profile" tab.

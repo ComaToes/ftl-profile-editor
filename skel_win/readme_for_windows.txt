@@ -58,6 +58,16 @@ Troubleshooting
 * If you get "java.lang.UnsupportedClassVersionError" on startup...
     You need a newer version of Java.
 
+* If you get "java.lang.NoClassDefFoundError: javax/xml/bind/JAXBException"...
+    That should only occur if you try to run "java -jar ..." yourself.
+    Java 9 made one of its libraries opt-in, requiring a special argument.
+
+    java --add-modules=java.xml.bind -jar FTLProfileEditor.jar
+
+    The launcher straddles Java releases by telling older ones to ignore it.
+
+    java -XX:+IgnoreUnrecognizedVMOptions ...
+
 * If you get "NullPointerException" on startup (at com.sun.java.swing.plaf)...
     You may have set unusual theme for your OS, and Java's having trouble
     getting all the info it expects in order to mimic the aesthetics.
