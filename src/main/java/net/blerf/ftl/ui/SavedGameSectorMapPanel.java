@@ -408,7 +408,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		mapPanel.add( playerShipSprite, playerShipC );
 
 		// Add column controls.
-		for (int i=0; i < 6; i++) {
+		for ( int i=0; i < 6; i++ ) {
 			IncrementBox iBox = new IncrementBox();
 			iBox.decBtn.addActionListener( columnCtrlListener );
 			iBox.incBtn.addActionListener( columnCtrlListener );

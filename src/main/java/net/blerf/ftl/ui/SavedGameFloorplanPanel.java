@@ -770,7 +770,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			roomRegionRoomIdMap.clear();
 			squareRegionRoomIdMap.clear();
 			squareRegionSquareIdMap.clear();
-			for (int i=0; i < shipLayout.getRoomCount(); i++) {
+			for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
 				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
 				int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 				int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
@@ -782,7 +782,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				Rectangle roomRect = new Rectangle( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
 				roomRegionRoomIdMap.put( roomRect, new Integer(i) );
 
-				for (int s=0; s < squaresH*squaresV; s++) {
+				for ( int s=0; s < squaresH*squaresV; s++ ) {
 					int squareX = roomX + tileEdge + (s%squaresH)*squareSize;
 					int squareY = roomY + tileEdge + (s/squaresH)*squareSize;
 					Rectangle squareRect = new Rectangle(squareX, squareY, squareSize, squareSize);
@@ -951,7 +951,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		}
 
-		for (int i=0; i < actualDroneSlots; i++) {
+		for ( int i=0; i < actualDroneSlots; i++ ) {
 			// It's fine if droneState is null. Empty slot.
 			SpriteReference<DroneState> droneRef = new SpriteReference<DroneState>( null );
 			if ( droneList.size() > i ) {
@@ -988,7 +988,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			log.warn( String.format("Ship state has %d weapons, but its chassis only has %d", weaponList.size(), weaponMounts.size()) );
 		}
 
-		for (int i=0; i < actualWeaponSlots; i++) {
+		for ( int i=0; i < actualWeaponSlots; i++ ) {
 			ShipChassis.WeaponMount weaponMount = null;
 
 			if ( weaponMounts.size() > i ) weaponMount = weaponMounts.get(i);
@@ -1005,7 +1005,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add rooms.
-		for (int i=0; i < shipLayout.getRoomCount(); i++) {
+		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
 			int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 			int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
@@ -1028,7 +1028,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for ( SystemType systemType : SystemType.values() ) {
 			int[] roomIds = shipBlueprint.getSystemList().getRoomIdBySystemType( systemType );
 			if ( roomIds != null ) {
-				for (int i=0; i < roomIds.length; i++) {
+				for ( int i=0; i < roomIds.length; i++ ) {
 					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomIds[i] );
 					int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 					int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
@@ -1084,7 +1084,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add fires.
-		for (int i=0; i < shipLayout.getRoomCount(); i++) {
+		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
 			int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 			int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
@@ -1094,7 +1094,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
 
 			RoomState roomState = shipState.getRoom(i);
-			for (int s=0; s < squaresH*squaresV; s++) {
+			for ( int s=0; s < squaresH*squaresV; s++ ) {
 				int fireHealth = roomState.getSquare(s).getFireHealth();
 				if ( fireHealth > 0 ) {
 					int fireX = roomX+tileEdge + (s%squaresH)*squareSize + squareSize/2;
@@ -1284,7 +1284,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Fires.
-		for (int i=0; i < shipLayout.getRoomCount(); i++) {
+		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
 			RoomState roomState = shipState.getRoom(i);
 			for ( SquareState squareState : roomState.getSquareList() )
 				squareState.setFireHealth( 0 );
@@ -1761,7 +1761,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		Map<Integer, BufferedImage>  openImages = new TreeMap<Integer, BufferedImage>();
 		// If the image doesn't have enough rows for all levels, let the rest be null.
 
-		for (int i=0; i < levelCount && (i+1)*h <= bigImage.getHeight(); i++) {
+		for ( int i=0; i < levelCount && (i+1)*h <= bigImage.getHeight(); i++ ) {
 			closedImages.put( new Integer(i), bigImage.getSubimage(chop, i*h, w-chop*2, h) );
 			openImages.put( new Integer(i), bigImage.getSubimage(4*w+chop, i*h, w-chop*2, h) );
 		}
@@ -1821,7 +1821,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		DoorState doorState = null;
 		int fromX, fromY, toX, toY;
 
-		for (int i=0; i < shipLayout.getRoomCount(); i++) {
+		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
 			int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 			int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
@@ -1833,13 +1833,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			// Draw floor lines within rooms.
 			wallG.setColor( floorCrackColor );
 			wallG.setStroke( floorCrackStroke );
-			for (int n=1; n <= squaresV-1; n++)  // H lines.
+			for ( int n=1; n <= squaresV-1; n++ )  // H lines.
 				wallG.drawLine( roomX+1, roomY+n*squareSize, roomX+squaresH*squareSize-1, roomY+n*squareSize );
-			for (int n=1; n <= squaresH-1; n++)  // V lines.
+			for ( int n=1; n <= squaresH-1; n++ )  // V lines.
 				wallG.drawLine( roomX+n*squareSize, roomY+1, roomX+n*squareSize, roomY+squaresV*squareSize-1 );
 
 			// Draw borders around rooms.
-			for (int n=1; n <= squaresV; n++) {  // V lines.
+			for ( int n=1; n <= squaresV; n++ ) {  // V lines.
 				// West side.
 				fromX = roomX;
 				fromY = roomY+(n-1)*squareSize;
@@ -1879,7 +1879,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			wallG.setStroke( roomBorderStroke );
 			wallG.setColor( roomBorderColor );
-			for (int n=1; n <= squaresH; n++) {  // H lines.
+			for ( int n=1; n <= squaresH; n++ ) {  // H lines.
 				// North side.
 				fromX = roomX+(n-1)*squareSize;
 				fromY = roomY;
@@ -2325,7 +2325,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getWrappedLabel(DESC).setMinimumSize( new Dimension(0, editorPanel.getWrappedLabel(DESC).getPreferredSize().height) );
 		editorPanel.addBlankRow();
 
-		for (int i=0; i < augSlots.length; i++) {
+		for ( int i=0; i < augSlots.length; i++ ) {
 			editorPanel.addRow( augSlots[i], FieldEditorPanel.ContentType.COMBO );
 
 			editorPanel.getCombo(augSlots[i]).addItem("");
@@ -2341,7 +2341,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public void run() {
 				shipAugmentIdList.clear();
 
-				for (int i=0; i < augSlots.length; i++) {
+				for ( int i=0; i < augSlots.length; i++ ) {
 					Object augObj = editorPanel.getCombo(augSlots[i]).getSelectedItem();
 					if ( augObj instanceof AugBlueprint )
 						shipAugmentIdList.add( ((AugBlueprint)augObj).getId() );
@@ -2355,7 +2355,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
-				for (int i=0; i < augSlots.length; i++) {
+				for ( int i=0; i < augSlots.length; i++ ) {
 					JComboBox augCombo = editorPanel.getCombo(augSlots[i]);
 					if ( source == augCombo ) {
 						Object augObj = augCombo.getSelectedItem();
@@ -2364,7 +2364,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 							if ( ((AugBlueprint)augObj).isStackable() == false ) {
 								// Clear other slots' copies of this unique augment.
-								for (int j=0; j < augSlots.length; j++) {
+								for ( int j=0; j < augSlots.length; j++ ) {
 									if ( j == i ) continue;
 									if ( editorPanel.getCombo(augSlots[j]).getSelectedItem() == augObj )
 										editorPanel.getCombo(augSlots[j]).setSelectedItem("");
@@ -2376,7 +2376,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 		};
-		for (int i=0; i < augSlots.length; i++) {
+		for ( int i=0; i < augSlots.length; i++ ) {
 			editorPanel.getCombo(augSlots[i]).addActionListener( augListener );
 		}
 
@@ -3908,7 +3908,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
 						int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
 
-						for (int s=0; s < squaresH*squaresV; s++) {
+						for ( int s=0; s < squaresH*squaresV; s++ ) {
 							int squareX = roomX + tileEdge + (s%squaresH)*squareSize;
 							int squareY = roomY + tileEdge + (s/squaresH)*squareSize;
 							Rectangle squareRect = new Rectangle(squareX, squareY, squareSize, squareSize);

@@ -123,7 +123,7 @@ public class ProfileParser extends Parser {
 
 		List<AchievementRecord> achievements = new ArrayList<AchievementRecord>( achievementCount );
 
-		for (int i=0; i < achievementCount; i++) {
+		for ( int i=0; i < achievementCount; i++ ) {
 			String achId = readString(in);
 
 			int diffFlag = readInt(in);
@@ -158,7 +158,7 @@ public class ProfileParser extends Parser {
 
 					Difficulty[] variantDiffs = new Difficulty[3];
 
-					for (int j=0; j < variantDiffs.length; j++) {
+					for ( int j=0; j < variantDiffs.length; j++ ) {
 						Difficulty variantDiff = null;
 						int variantDiffFlag = readInt(in);
 
@@ -438,7 +438,7 @@ public class ProfileParser extends Parser {
 
 		List<Score> scores = new ArrayList<Score>(scoreCount);
 
-		for (int i=0; i < scoreCount; i++) {
+		for ( int i=0; i < scoreCount; i++ ) {
 			String shipName = readString(in);
 
 			String shipId = readString(in);

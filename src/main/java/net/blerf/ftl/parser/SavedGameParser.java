@@ -120,7 +120,7 @@ public class SavedGameParser extends Parser {
 			gameState.setUnknownBeta( readInt(in) );
 
 			int stateVarCount = readInt(in);
-			for (int i=0; i < stateVarCount; i++) {
+			for ( int i=0; i < stateVarCount; i++ ) {
 				String stateVarId = readString(in);
 				Integer stateVarValue = new Integer(readInt(in));
 				gameState.setStateVar( stateVarId, stateVarValue );
@@ -131,7 +131,7 @@ public class SavedGameParser extends Parser {
 
 			// Nearby ships have no cargo, so this isn't in readShip().
 			int cargoCount = readInt(in);
-			for (int i=0; i < cargoCount; i++) {
+			for ( int i=0; i < cargoCount; i++ ) {
 				gameState.addCargoItemId( readString(in) );
 			}
 
@@ -170,7 +170,7 @@ public class SavedGameParser extends Parser {
 
 			int sectorVisitationCount = readInt(in);
 			List<Boolean> route = new ArrayList<Boolean>();
-			for (int i=0; i < sectorVisitationCount; i++) {
+			for ( int i=0; i < sectorVisitationCount; i++ ) {
 				route.add( new Boolean( readBool(in) ) );
 			}
 			gameState.setSectorVisitation( route );
@@ -190,19 +190,19 @@ public class SavedGameParser extends Parser {
 			gameState.setSectorIsHiddenCrystalWorlds( readBool(in) );
 
 			int beaconCount = readInt(in);
-			for (int i=0; i < beaconCount; i++) {
+			for ( int i=0; i < beaconCount; i++ ) {
 				gameState.addBeacon( readBeacon( in, headerAlpha ) );
 			}
 
 			int questEventCount = readInt(in);
-			for (int i=0; i < questEventCount; i++) {
+			for ( int i=0; i < questEventCount; i++ ) {
 				String questEventId = readString(in);
 				int questBeaconId = readInt(in);
 				gameState.addQuestEvent( questEventId, questBeaconId );
 			}
 
 			int distantQuestEventCount = readInt(in);
-			for (int i=0; i < distantQuestEventCount; i++) {
+			for ( int i=0; i < distantQuestEventCount; i++ ) {
 				String distantQuestEventId = readString(in);
 				gameState.addDistantQuestEvent( distantQuestEventId );
 			}
@@ -431,7 +431,7 @@ public class SavedGameParser extends Parser {
 		ShipState shipState = new ShipState( shipName, shipBlueprintId, shipLayoutId, shipGfxBaseName, auto );
 
 		int startingCrewCount = readInt(in);
-		for (int i=0; i < startingCrewCount; i++) {
+		for ( int i=0; i < startingCrewCount; i++ ) {
 			shipState.addStartingCrewMember( readStartingCrewMember(in) );
 		}
 
@@ -449,7 +449,7 @@ public class SavedGameParser extends Parser {
 		shipState.setScrapAmt( readInt(in) );
 
 		int crewCount = readInt(in);
-		for (int i=0; i < crewCount; i++) {
+		for ( int i=0; i < crewCount; i++ ) {
 			shipState.addCrewMember( readCrewMember( in, headerAlpha ) );
 		}
 
@@ -559,7 +559,7 @@ public class SavedGameParser extends Parser {
 		}
 
 		int roomCount = shipLayout.getRoomCount();
-		for (int r=0; r < roomCount; r++) {
+		for ( int r=0; r < roomCount; r++ ) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfo = shipLayout.getRoomInfo( r );
 			int squaresH = roomInfo.get(ShipLayout.RoomInfo.SQUARES_H).intValue();
 			int squaresV = roomInfo.get(ShipLayout.RoomInfo.SQUARES_V).intValue();
@@ -569,7 +569,7 @@ public class SavedGameParser extends Parser {
 		}
 
 		int breachCount = readInt(in);
-		for (int i=0; i < breachCount; i++) {
+		for ( int i=0; i < breachCount; i++ ) {
 			shipState.setBreach( readInt(in), readInt(in), readInt(in) );
 		}
 
@@ -603,7 +603,7 @@ public class SavedGameParser extends Parser {
 			if ( headerAlpha == 8 || headerAlpha == 9 ) {
 				int crystalCount = readInt(in);
 				List<LockdownCrystal> crystalList = new ArrayList<LockdownCrystal>();
-				for (int i=0; i < crystalCount; i++) {
+				for ( int i=0; i < crystalCount; i++ ) {
 					crystalList.add( readLockdownCrystal(in) );
 				}
 				shipState.setLockdownCrystalList( crystalList );
@@ -611,7 +611,7 @@ public class SavedGameParser extends Parser {
 		}
 
 		int weaponCount = readInt(in);
-		for (int i=0; i < weaponCount; i++) {
+		for ( int i=0; i < weaponCount; i++ ) {
 			WeaponState weapon = new WeaponState();
 			weapon.setWeaponId( readString(in) );
 			weapon.setArmed( readBool(in) );
@@ -625,13 +625,13 @@ public class SavedGameParser extends Parser {
 		// WeaponStates may have WeaponModules set on them later (FTL 1.5.4+).
 
 		int droneCount = readInt(in);
-		for (int i=0; i < droneCount; i++) {
+		for ( int i=0; i < droneCount; i++ ) {
 			shipState.addDrone( readDrone(in) );
 		}
 		// DroneStates may have ExtendedDroneInfo set on them later (FTL 1.5.4+).
 
 		int augmentCount = readInt(in);
-		for (int i=0; i < augmentCount; i++) {
+		for ( int i=0; i < augmentCount; i++ ) {
 			shipState.addAugmentId( readString(in) );
 		}
 
@@ -770,7 +770,7 @@ public class SavedGameParser extends Parser {
     }
 
 		int roomCount = shipLayout.getRoomCount();
-		for (int r=0; r < roomCount; r++) {
+		for ( int r=0; r < roomCount; r++ ) {
 			EnumMap<ShipLayout.RoomInfo, Integer> roomInfo = shipLayout.getRoomInfo( r );
 			int squaresH = roomInfo.get(ShipLayout.RoomInfo.SQUARES_H).intValue();
 			int squaresV = roomInfo.get(ShipLayout.RoomInfo.SQUARES_V).intValue();
@@ -873,7 +873,7 @@ public class SavedGameParser extends Parser {
 
 			int tintCount = readInt(in);
 			List<Integer> spriteTintIndeces = new ArrayList<Integer>();
-			for (int i=0; i < tintCount; i++) {
+			for ( int i=0; i < tintCount; i++ ) {
 				spriteTintIndeces.add( new Integer(readInt(in)) );
 			}
 			crew.setSpriteTintIndeces( spriteTintIndeces );
@@ -1076,14 +1076,14 @@ public class SavedGameParser extends Parser {
 
 		// Squares are written to disk top-to-bottom, left-to-right. (Index != ID!)
 		SquareState[][] tmpSquares = new SquareState[squaresH][squaresV];
-		for (int h=0; h < squaresH; h++) {
-			for (int v=0; v < squaresV; v++) {
+		for ( int h=0; h < squaresH; h++ ) {
+			for ( int v=0; v < squaresV; v++ ) {
 				tmpSquares[h][v] = new SquareState( readInt(in), readInt(in), readInt(in) );
 			}
 		}
 		// Add them to the room left-to-right, top-to-bottom. (Index == ID)
-		for (int v=0; v < squaresV; v++) {
-			for (int h=0; h < squaresH; h++) {
+		for ( int v=0; v < squaresV; v++ ) {
+			for ( int h=0; h < squaresH; h++ ) {
 				room.addSquare( tmpSquares[h][v] );
 			}
 		}
@@ -1125,14 +1125,14 @@ public class SavedGameParser extends Parser {
 		List<SquareState> squareList = room.getSquareList();
 		int squareIndex = 0;
 		SquareState[][] tmpSquares = new SquareState[squaresH][squaresV];
-		for (int v=0; v < squaresV; v++) {
-			for (int h=0; h < squaresH; h++) {
+		for ( int v=0; v < squaresV; v++ ) {
+			for ( int h=0; h < squaresH; h++ ) {
 				tmpSquares[h][v] = squareList.get( squareIndex++ );
 			}
 		}
 		// Squares are written to disk top-to-bottom, left-to-right. (Index != ID!)
-		for (int h=0; h < squaresH; h++) {
-			for (int v=0; v < squaresV; v++) {
+		for ( int h=0; h < squaresH; h++ ) {
+			for ( int v=0; v < squaresV; v++ ) {
 				SquareState square = tmpSquares[h][v];
 				writeInt( out, square.getFireHealth() );
 				writeInt( out, square.getIgnitionProgress() );
@@ -1303,7 +1303,7 @@ public class SavedGameParser extends Parser {
 			if ( headerAlpha == 7 || headerAlpha == 8 || headerAlpha == 9 ) {
 				shelfCount = readInt(in);  // FTL 1.5.4 made shelves into an N-sized list.
 			}
-			for (int i=0; i < shelfCount; i++) {
+			for ( int i=0; i < shelfCount; i++ ) {
 				store.addShelf( readStoreShelf( in, headerAlpha ) );
 			}
 
@@ -1356,10 +1356,10 @@ public class SavedGameParser extends Parser {
 
 				int shelfLimit = 2;
 				int shelfCount = Math.min( store.getShelfList().size(), shelfLimit );
-				for (int i=0; i < shelfCount; i++) {
+				for ( int i=0; i < shelfCount; i++ ) {
 					writeStoreShelf( out, store.getShelfList().get( i ), headerAlpha );
 				}
-				for (int i=0; i < shelfLimit - shelfCount; i++) {
+				for ( int i=0; i < shelfLimit - shelfCount; i++ ) {
 					StoreShelf dummyShelf = new StoreShelf();
 					writeStoreShelf( out, dummyShelf, headerAlpha );
 				}
@@ -1402,7 +1402,7 @@ public class SavedGameParser extends Parser {
 			default: throw new RuntimeException( "Unknown store item type: " + itemType );
 		}
 
-		for (int i = 0; i < 3; i++) {
+		for ( int i = 0; i < 3; i++ ) {
 			int available = readInt(in); // -1=no item, 0=bought already, 1=buyable
 			if ( available < 0 )
 				continue;
@@ -1430,7 +1430,7 @@ public class SavedGameParser extends Parser {
 		else throw new RuntimeException( "Unknown store item type: "+ itemType );
 
 		List<StoreItem> items = shelf.getItems();
-		for (int i=0; i < 3; i++) {
+		for ( int i=0; i < 3; i++ ) {
 			if ( items.size() > i ) {
 				int available = (items.get(i).isAvailable() ? 1 : 0);
 				writeInt( out, available );
@@ -1462,7 +1462,7 @@ public class SavedGameParser extends Parser {
 
 		int choiceCount = readInt(in);
 		List<Integer> choiceList = new ArrayList<Integer>();
-		for (int i=0; i < choiceCount; i++) {
+		for ( int i=0; i < choiceCount; i++ ) {
 			choiceList.add( new Integer(readInt(in)) );
 		}
 		encounter.setChoiceList( choiceList );
@@ -1602,7 +1602,7 @@ System.err.println(String.format("Environment: @%d", in.getChannel().position())
 		flagship.setPendingStage( readInt(in) );
 
 		int previousRoomCount = readInt(in);
-		for (int i=0; i < previousRoomCount; i++) {
+		for ( int i=0; i < previousRoomCount; i++ ) {
 			flagship.setPreviousOccupancy( i, readInt(in) );
 		}
 
@@ -2657,13 +2657,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Total Crew Hired:       %5d\n", totalCrewHired));
 
 			result.append("\nState Vars...\n");
-			for (Map.Entry<String, Integer> entry : stateVars.entrySet()) {
+			for ( Map.Entry<String, Integer> entry : stateVars.entrySet() ) {
 				result.append(String.format("%-16s %4d\n", entry.getKey() +":", entry.getValue().intValue()));
 			}
 
 			result.append("\nPlayer Ship...\n");
 			if ( playerShipState != null )
-				result.append(playerShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( playerShipState.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 
 			result.append("\nCargo...\n");
 			for (String cargoItemId : cargoIdList) {
@@ -2692,7 +2692,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append("\nSector Tree Breadcrumbs...\n");
 			first = true;
 			for ( Boolean b : sectorVisitationList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(","); }
 				result.append( (b ? "T" : "F") );
 			}
@@ -2702,7 +2702,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			int beaconId = 0;
 			first = true;
 			for( BeaconState beacon : beaconList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 				result.append(String.format("BeaconId: %2d\n", beaconId++));
 				result.append( beacon.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
@@ -2750,10 +2750,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			int projectileIndex = 0;
 			first = true;
 			for ( ProjectileState projectile : projectileList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 				result.append(String.format("Projectile # %2d:\n", projectileIndex++));
-				result.append(projectile.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( projectile.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -2763,15 +2763,15 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nRebel Flagship...\n");
 			if ( rebelFlagshipState != null ) {
-				result.append(rebelFlagshipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( rebelFlagshipState.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nMystery Bytes...\n");
 			first = true;
 			for ( MysteryBytes m : mysteryList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(m.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( m.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			// ...
@@ -2878,13 +2878,13 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			// Rooms.
 			getRoomList().clear();
-			for (int r=0; r < shipLayout.getRoomCount(); r++) {
+			for ( int r=0; r < shipLayout.getRoomCount(); r++ ) {
 				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(r);
 				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
 				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
 
 				RoomState roomState = new RoomState();
-				for (int s=0; s < squaresH*squaresV; s++) {
+				for ( int s=0; s < squaresH*squaresV; s++ ) {
 					roomState.addSquare( new SquareState( 0, 0, -1 ) );
 				}
 				addRoom( roomState );
@@ -3383,17 +3383,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append("\nStarting Crew...\n");
 			first = true;
 			for ( StartingCrewState sc : startingCrewList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(sc.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( sc.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nCurrent Crew...\n");
 			first = true;
 			for ( CrewState c : crewList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(c.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( c.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nSystems...\n");
@@ -3402,24 +3402,24 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			first = true;
 			for ( Map.Entry<SystemType, List<SystemState>> entry : systemsMap.entrySet() ) {
 				for ( SystemState s : entry.getValue() ) {
-					if (first) { first = false; }
+					if ( first ) { first = false; }
 					else { result.append(",\n"); }
-					result.append(s.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+					result.append( s.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 				}
 			}
 
 			result.append("\nExtended System Info...\n");
 			first = true;
 			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(info.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( info.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nRooms...\n");
 			first = true;
 			for (ListIterator<RoomState> it=roomList.listIterator(); it.hasNext(); ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 				int roomId = it.nextIndex();
 
@@ -3427,14 +3427,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				String systemId = (systemType != null) ? systemType.getId() : "empty";
 
 				result.append(String.format("Room Id: %2d (%s)\n", roomId, systemId));
-				result.append(it.next().toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( it.next().toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nHull Breaches...\n");
 			int breachId = -1;
 			first = true;
 			for ( Map.Entry<Point, Integer> entry : breachMap.entrySet() ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 
 				Point breachCoord = entry.getKey();
@@ -3447,16 +3447,16 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append("\nDoors...\n");
 			int doorId = -1;
 			first = true;
-			for (Map.Entry<ShipLayout.DoorCoordinate, DoorState> entry : doorMap.entrySet()) {
-				if (first) { first = false; }
+			for ( Map.Entry<ShipLayout.DoorCoordinate, DoorState> entry : doorMap.entrySet() ) {
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 
 				ShipLayout.DoorCoordinate doorCoord = entry.getKey();
 				DoorState d = entry.getValue();
-				String orientation = (doorCoord.v==1 ? "V" : "H");
+				String orientation = ( doorCoord.v == 1 ) ? "V" : "H";
 
 				result.append(String.format("DoorId: %2d (%2d,%2d,%2s)\n", ++doorId, doorCoord.x, doorCoord.y, orientation));
-				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( d.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append(String.format("\nCloak Anim Ticks:  %3d (0=Uncloaked to 500=Cloaked)\n", cloakAnimTicks));
@@ -3464,25 +3464,25 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append("\nLockdown Crystals...\n");
 			first = true;
 			for ( LockdownCrystal c : lockdownCrystalList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(c.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( c.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nWeapons...\n");
 			first = true;
 			for ( WeaponState w : weaponList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(w.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( w.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nDrones...\n");
 			first = true;
 			for ( DroneState d : droneList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(d.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( d.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 
@@ -3490,10 +3490,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			int standaloneDroneIndex = 0;
 			first = true;
 			for ( StandaloneDroneState standaloneDrone : standaloneDroneList ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 				result.append(String.format("Surge Drone # %2d:\n", standaloneDroneIndex++));
-				result.append(standaloneDrone.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( standaloneDrone.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nAugments...\n");
@@ -4161,7 +4161,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Mind Controlled:       %5b\n", mindControlled));
 
 			result.append("\nSprite Tints...\n");
-			for (int i=0; i < spriteTintIndeces.size(); i++) {
+			for ( int i=0; i < spriteTintIndeces.size(); i++ ) {
 				Integer colorIndex = spriteTintIndeces.get(i);
 
 				String colorHint = null;
@@ -4213,7 +4213,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nTeleport Anim...\n");
 			if ( teleportAnim != null) {
-				result.append(teleportAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( teleportAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -4718,7 +4718,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("Squares...\n");
 			for (SquareState square : squareList) {
-				result.append(square.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( square.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -5092,7 +5092,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nWeapon Module...\n");
 			if ( weaponMod != null ) {
-				result.append(weaponMod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( weaponMod.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -5283,7 +5283,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nExtended Drone Info...\n");
 			if ( droneInfo != null ) {
-				result.append(droneInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( droneInfo.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -5512,7 +5512,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			if ( store != null ) {
 				result.append("\nStore...\n");
-				result.append( store.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+				result.append( store.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -5577,7 +5577,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			for ( int i=0; i < shelfList.size(); i++ ) {
 				result.append(String.format("\nShelf %d...\n", i));
-				result.append( shelfList.get(i).toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+				result.append( shelfList.get(i).toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -5635,9 +5635,9 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("Item Type: %s\n", itemType));
 			for (StoreItem item : items) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append( item.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+				result.append( item.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -6053,7 +6053,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nAsteroid Field...\n");
 			if ( asteroidField != null )
-				result.append( asteroidField.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+				result.append( asteroidField.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 
 			result.append("\n");
 
@@ -6881,7 +6881,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nDrone Pod...\n");
 			if ( dronePod != null ) {
-				result.append(dronePod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( dronePod.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -6985,7 +6985,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nWeapon Module...\n");
 			if ( weaponMod != null ) {
-				result.append(weaponMod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( weaponMod.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -7335,7 +7335,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("\nDamage...\n"));
 			if ( damage != null ) {
-				result.append(damage.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( damage.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -7350,12 +7350,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("\nDeath Anim?...\n"));
 			if ( deathAnim != null ) {
-				result.append(deathAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( deathAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append(String.format("\nFlight Anim?...\n"));
 			if ( flightAnim != null ) {
-				result.append(flightAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( flightAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -7377,7 +7377,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("\nExtended Projectile Info...\n"));
 			if ( extendedInfo != null ) {
-				result.append(extendedInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( extendedInfo.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -7571,7 +7571,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		protected IntegerProjectileInfo( IntegerProjectileInfo srcInfo ) {
 			super( srcInfo );
 			unknownAlpha = new int[srcInfo.getSize()];
-			for (int i=0; i < unknownAlpha.length; i++) {
+			for ( int i=0; i < unknownAlpha.length; i++ ) {
 				unknownAlpha[i] = srcInfo.get( i );
 			}
 		}
@@ -7600,7 +7600,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Type:               Unknown Info\n"));
 
 			result.append(String.format("\nAlpha?...\n"));
-			for (int i=0; i < unknownAlpha.length; i++) {
+			for ( int i=0; i < unknownAlpha.length; i++ ) {
 				result.append(String.format("%7s", prettyInt(unknownAlpha[i])));
 
 				if ( i != unknownAlpha.length-1 ) {
@@ -8415,12 +8415,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nDeath Anim...\n");
 			if ( deathAnim != null) {
-				result.append(deathAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( deathAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nExtended Drone Pod Info... (Varies by Drone Type)\n");
 			if ( extendedInfo != null) {
-				result.append(extendedInfo.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( extendedInfo.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -8505,7 +8505,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		protected IntegerDronePodInfo( IntegerDronePodInfo srcInfo ) {
 			super( srcInfo );
 			unknownAlpha = new int[srcInfo.getSize()];
-			for (int i=0; i < unknownAlpha.length; i++) {
+			for ( int i=0; i < unknownAlpha.length; i++ ) {
 				unknownAlpha[i] = srcInfo.get( i );
 			}
 		}
@@ -8538,7 +8538,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			StringBuilder result = new StringBuilder();
 
 			result.append(String.format("Alpha?...\n"));
-			for (int i=0; i < unknownAlpha.length; i++) {
+			for ( int i=0; i < unknownAlpha.length; i++ ) {
 				result.append(String.format("%7s", prettyInt(unknownAlpha[i])));
 
 				if ( i != unknownAlpha.length-1 ) {
@@ -8952,12 +8952,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("\nLanding Anim?...\n"));
 			if ( landingAnim != null ) {
-				result.append(landingAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( landingAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append(String.format("\nExtension Anim?...\n"));
 			if ( extensionAnim != null ) {
-				result.append(extensionAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( extensionAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -9034,7 +9034,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nDrone Pod...\n");
 			if ( dronePod != null ) {
-				result.append(dronePod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( dronePod.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			} else {
 				result.append("N/A\n");
 			}
@@ -9081,7 +9081,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("DroneId:           %s\n", droneId));
 
 			result.append("\nDrone Pod...\n");
-			result.append(dronePod.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+			result.append( dronePod.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 
 			result.append("\n");
 
@@ -9437,17 +9437,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append("\nCurrent Targets?... (Reticle Coords)\n");
 			first = true;
 			for ( ReticleCoordinate target : currentTargets ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(target.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( target.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nPrevious Targets?... (Reticle Coords)\n");
 			first = true;
 			for ( ReticleCoordinate target : prevTargets ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
-				result.append(target.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( target.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -9458,7 +9458,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nWeapon Anim...\n");
 			if ( weaponAnim != null) {
-				result.append(weaponAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( weaponAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -9470,7 +9470,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nCharge Anim?...\n");
 			if ( chargeAnim != null) {
-				result.append(chargeAnim.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( chargeAnim.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -9481,10 +9481,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			int projectileIndex = 0;
 			first = true;
 			for ( ProjectileState projectile : pendingProjectiles ) {
-				if (first) { first = false; }
+				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 				result.append(String.format("Projectile # %2d:\n", projectileIndex++));
-				result.append(projectile.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( projectile.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			return result.toString();
@@ -9566,7 +9566,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 
 		int projectileCount = readInt(in);
-		for (int i=0; i < projectileCount; i++) {
+		for ( int i=0; i < projectileCount; i++ ) {
 			gameState.addProjectile( readProjectile(in) );
 		}
 
@@ -9592,7 +9592,7 @@ System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
 		flagship.setUnknownDelta( readInt(in) );
 
 		int flagshipOccupancyCount = readInt(in);
-		for (int i=0; i < flagshipOccupancyCount; i++) {
+		for ( int i=0; i < flagshipOccupancyCount; i++ ) {
 			flagship.setPreviousOccupancy( i, readInt(in) );
 		}
 
@@ -9733,7 +9733,7 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 		// A list of standalone drones, for flagship swarms. Always 0 for player.
 
 		int standaloneDroneCount = readInt(in);
-		for (int i=0; i < standaloneDroneCount; i++) {
+		for ( int i=0; i < standaloneDroneCount; i++ ) {
 			String droneId = readString(in);
 			DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneId );
 			if ( droneBlueprint == null ) throw new IOException( "Unrecognized DroneBlueprint: "+ droneId );
@@ -9968,7 +9968,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		ExtendedDronePodInfo extendedInfo = dronePod.getExtendedInfo( ExtendedDronePodInfo.class );
 		if ( extendedInfo instanceof IntegerDronePodInfo ) {
 			IntegerDronePodInfo intPodInfo = dronePod.getExtendedInfo( IntegerDronePodInfo.class );
-			for (int i=0; i < intPodInfo.getSize(); i++) {
+			for ( int i=0; i < intPodInfo.getSize(); i++ ) {
 				writeMinMaxedInt( out, intPodInfo.get( i ) );
 			}
 		}
@@ -10026,14 +10026,14 @@ System.err.println(String.format("Weapon Module: @%d", in.getChannel().position(
 
 		int currentTargetsCount = readInt(in);
 		List<ReticleCoordinate> currentTargetsList = new ArrayList<ReticleCoordinate>();
-		for (int i=0; i < currentTargetsCount; i++) {
+		for ( int i=0; i < currentTargetsCount; i++ ) {
 			currentTargetsList.add( readReticleCoordinate( in ) );
 		}
 		weaponMod.setCurrentTargets( currentTargetsList );
 
 		int prevTargetsCount = readInt(in);
 		List<ReticleCoordinate> prevTargetsList = new ArrayList<ReticleCoordinate>();
-		for (int i=0; i < prevTargetsCount; i++) {
+		for ( int i=0; i < prevTargetsCount; i++ ) {
 			prevTargetsList.add( readReticleCoordinate( in ) );
 		}
 		weaponMod.setPreviousTargets( prevTargetsList );
