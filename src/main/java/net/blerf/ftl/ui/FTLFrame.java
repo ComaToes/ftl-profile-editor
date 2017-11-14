@@ -494,7 +494,7 @@ public class FTLFrame extends JFrame {
 							reportBuf.append( "\n[/code]\n" );
 
 							JDialog failDialog = createBugReportDialog( "Profile Parser Error", errBuf.toString(), reportBuf.toString() );
-							failDialog.setVisible(true);
+							failDialog.setVisible( true );
 						}
 					}
 				}
@@ -870,7 +870,7 @@ public class FTLFrame extends JFrame {
 							reportBuf.append( "\n[/code]\n" );
 
 							JDialog failDialog = createBugReportDialog( "SavedGame Parser Error", errBuf.toString(), reportBuf.toString() );
-							failDialog.setVisible(true);
+							failDialog.setVisible( true );
 						}
 					}
 				}

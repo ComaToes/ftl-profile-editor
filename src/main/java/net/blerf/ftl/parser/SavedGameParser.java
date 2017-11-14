@@ -560,7 +560,7 @@ public class SavedGameParser extends Parser {
 
 		int roomCount = shipLayout.getRoomCount();
 		for (int r=0; r < roomCount; r++) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfo = shipLayout.getRoomInfo(r);
+			EnumMap<ShipLayout.RoomInfo, Integer> roomInfo = shipLayout.getRoomInfo( r );
 			int squaresH = roomInfo.get(ShipLayout.RoomInfo.SQUARES_H).intValue();
 			int squaresV = roomInfo.get(ShipLayout.RoomInfo.SQUARES_V).intValue();
 
@@ -1068,7 +1068,11 @@ public class SavedGameParser extends Parser {
 
 	private RoomState readRoom( InputStream in, int squaresH, int squaresV, int headerAlpha ) throws IOException {
 		RoomState room = new RoomState();
-		room.setOxygen( readInt(in) );
+		int oxygen = readInt(in);
+		if ( oxygen < 0 || oxygen > 100 ) {
+			throw new IOException( "Unsupported room oxygen: "+ oxygen );
+		}
+		room.setOxygen( oxygen );
 
 		// Squares are written to disk top-to-bottom, left-to-right. (Index != ID!)
 		SquareState[][] tmpSquares = new SquareState[squaresH][squaresV];
@@ -2641,7 +2645,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			boolean first = true;
 			result.append(String.format("File Format:            %5d (%s)\n", unknownHeaderAlpha, formatDesc));
-			result.append(String.format("AE Content:             %5b\n", (dlcEnabled ? "Enabled" : "Disabled") ));
+			result.append(String.format("AE Content:             %5s\n", (dlcEnabled ? "Enabled" : "Disabled") ));
 			result.append(String.format("Ship Name:              %s\n", playerShipName));
 			result.append(String.format("Ship Type:              %s\n", playerShipBlueprintId));
 			result.append(String.format("Difficulty:             %s\n", difficulty.toString() ));

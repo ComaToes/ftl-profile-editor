@@ -803,7 +803,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
 					log.trace(String.format("Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId) );
 
-					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(badRoomId);
+					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( badRoomId );
 					int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 					int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
 					int roomX = originX + roomLocX*squareSize;
@@ -851,7 +851,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			finally {
 				try {if (in != null) in.close();}
 				catch ( IOException e ) {}
-	    }
+			}
 
 			// Load the interior image.
 			floorLbl.setIcon(null);
@@ -879,7 +879,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			finally {
 				try {if (in != null) in.close();}
 				catch ( IOException e ) {}
-	    }
+			}
 
 			for ( JComponent roomDecor : roomDecorations )
 				shipPanel.remove( roomDecor );
@@ -888,7 +888,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				String roomImgPath = systemRoom.getImg();
 
 				int roomId = systemRoom.getRoomId();
-				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(roomId);
+				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomId );
 				int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 				int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
 				int roomX = originX + roomLocX*squareSize;
@@ -911,7 +911,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 
 				if ( systemRoom == blueprintSystems.getTeleporterRoom() ) {
-					for (int s=0; s < squaresH*squaresV; s++) {
+					for ( int s=0; s < squaresH*squaresV; s++ ) {
 						int decorX = roomX + (s%squaresH)*squareSize + squareSize/2;
 						int decorY = roomY + (s/squaresH)*squareSize + squareSize/2;
 
