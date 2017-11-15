@@ -8054,7 +8054,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int unknownOmicron = 0;
 		private int unknownPi = 0;
 		private int unknownRho = 0;
-		private int unknownSigma = 0;
+		private int overloadTicks = 0;
 		private int unknownTau = 0;
 		private int unknownUpsilon = 0;
 		private int deltaPosX = 0, deltaPosY = 0;
@@ -8100,7 +8100,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			unknownOmicron = srcPod.getUnknownOmicron();
 			unknownPi = srcPod.getUnknownPi();
 			unknownRho = srcPod.getUnknownRho();
-			unknownSigma = srcPod.getUnknownSigma();
+			overloadTicks = srcPod.getOverloadTicks();
 			unknownTau = srcPod.getUnknownTau();
 			unknownUpsilon = srcPod.getUnknownUpsilon();
 			deltaPosX = srcPod.getDeltaPositionX();
@@ -8306,7 +8306,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Might be facing, to rotate the entire drone?
 		 *
 		 * Observed values: Hacking (U:-89 L:179 R:8.745 D:89); Combat drones
-		 * have strange values.
+		 * have strange values. Boarder (Ion Drone) body in flight is rotated
+		 * as expected (Eastward:0 SW:121), and turret its value is synched.
 		 *
 		 * When not set, this is 0.
 		 *
@@ -8329,8 +8330,27 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setUnknownRho( int n ) { unknownRho = n; }
 		public int getUnknownRho() { return unknownRho; }
 
-		public void setUnknownSigma( int n ) { unknownSigma = n; }
-		public int getUnknownSigma() { return unknownSigma; }
+		/**
+		 * Sets time elapsed while this drone is stunned, with a chance of
+		 * exploding.
+		 *
+		 * This value begins decrementing from a positive integer after taking
+		 * ion damage (e.g., from an Anti-Combat Drone). After reaching 0, the
+		 * drone returns to normal.
+		 *
+		 * While stunned, the drone will halt movement, it'll be covered in
+		 * arcs of electricity, and the turret will spin rapidly. It may
+		 * explode at a random moment prior to reaching 0 - at which point,
+		 * this value will be set to 0.
+		 *
+		 * When not set, this is 0.
+		 *
+		 * Observed values: 4378 (Combat drone shot by Anti-Combat Drone)
+		 *
+		 * TODO: It's unclear what determines if/when an explosion occurs.
+		 */
+		public void setOverloadTicks( int n ) { overloadTicks = n; }
+		public int getOverloadTicks() { return overloadTicks; }
 
 		/**
 		 * Unknown.
@@ -8408,7 +8428,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			result.append(String.format("Omicron?:          %7s\n", prettyInt(unknownOmicron)));
 			result.append(String.format("Pi?:               %7d\n", unknownPi));
 			result.append(String.format("Rho?:              %7d\n", unknownRho));
-			result.append(String.format("Sigma?:            %7d\n", unknownSigma));
+			result.append(String.format("Overload Ticks:    %7d (Decrements to 0 while shocked by ion weapons)\n", overloadTicks));
 			result.append(String.format("Tau?:              %7d\n", unknownTau));
 			result.append(String.format("Upsilon?:          %7d\n", unknownUpsilon));
 			result.append(String.format("Delta Position:    %7d,%7d (Current - Previous + 1)\n", deltaPosX, deltaPosY));
@@ -8623,6 +8643,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * visible. Then they vanish. The moment the drone pauses at the
 		 * destination, this is set to 1000.
 		 *
+		 * When not set, this is MIN_INT. This happens when stationary while stunned.
+		 *
+		 * Observed values: 153 (stunned drift begins), 153000 (mid drift),
+		 * 153000000 (near end of drift).
+		 *
 		 * TODO: Modify this value in the editor. In CheatEngine, changing
 		 * this has no effect, appearing to be read-only field for reference.
 		 *
@@ -8634,6 +8659,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the angle to display exhaust flames thrusting toward.
 		 *
+		 * When not set, this is MIN_INT.
+		 *
 		 * TODO: Modify this value in the editor. In CheatEngine, changing
 		 * this DOES work.
 		 *
@@ -8644,6 +8671,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public void setExhaustAngle( int n ) { exhaustAngle = n; }
 		public int getExhaustAngle() { return exhaustAngle; }
 
+		/**
+		 * Unknown.
+		 *
+		 * When not set, this is MIN_INT.
+		 */
 		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
 		public int getUnknownEpsilon() { return unknownEpsilon; }
 
@@ -9860,7 +9892,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		dronePod.setUnknownOmicron( readMinMaxedInt(in) );
 		dronePod.setUnknownPi( readInt(in) );
 		dronePod.setUnknownRho( readInt(in) );
-		dronePod.setUnknownSigma( readInt(in) );
+		dronePod.setOverloadTicks( readInt(in) );
 		dronePod.setUnknownTau( readInt(in) );
 		dronePod.setUnknownUpsilon( readInt(in) );
 		dronePod.setDeltaPositionX( readInt(in) );
@@ -9898,9 +9930,9 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			ZigZagDronePodInfo zigPodInfo = new ZigZagDronePodInfo();
 			zigPodInfo.setLastWaypointX( readInt(in) );
 			zigPodInfo.setLastWaypointY( readInt(in) );
-			zigPodInfo.setTransitTicks( readInt(in) );
-			zigPodInfo.setExhaustAngle( readInt(in) );
-			zigPodInfo.setUnknownEpsilon( readInt(in) );
+			zigPodInfo.setTransitTicks( readMinMaxedInt(in) );
+			zigPodInfo.setExhaustAngle( readMinMaxedInt(in) );
+			zigPodInfo.setUnknownEpsilon( readMinMaxedInt(in) );
 			extendedInfo = zigPodInfo;
 		}
 		else if ( DroneType.DEFENSE.equals(droneType) ) {
@@ -9915,9 +9947,9 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			ZigZagDronePodInfo zigPodInfo = new ZigZagDronePodInfo();
 			zigPodInfo.setLastWaypointX( readInt(in) );
 			zigPodInfo.setLastWaypointY( readInt(in) );
-			zigPodInfo.setTransitTicks( readInt(in) );
-			zigPodInfo.setExhaustAngle( readInt(in) );
-			zigPodInfo.setUnknownEpsilon( readInt(in) );
+			zigPodInfo.setTransitTicks( readMinMaxedInt(in) );
+			zigPodInfo.setExhaustAngle( readMinMaxedInt(in) );
+			zigPodInfo.setUnknownEpsilon( readMinMaxedInt(in) );
 			extendedInfo = zigPodInfo;
 		}
 		else {
@@ -9957,7 +9989,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		writeMinMaxedInt( out, dronePod.getUnknownOmicron() );
 		writeInt( out, dronePod.getUnknownPi() );
 		writeInt( out, dronePod.getUnknownRho() );
-		writeInt( out, dronePod.getUnknownSigma() );
+		writeInt( out, dronePod.getOverloadTicks() );
 		writeInt( out, dronePod.getUnknownTau() );
 		writeInt( out, dronePod.getUnknownUpsilon() );
 		writeInt( out, dronePod.getDeltaPositionX() );
@@ -10001,9 +10033,9 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			ZigZagDronePodInfo zigPodInfo = dronePod.getExtendedInfo( ZigZagDronePodInfo.class );
 			writeInt( out, zigPodInfo.getLastWaypointX() );
 			writeInt( out, zigPodInfo.getLastWaypointY() );
-			writeInt( out, zigPodInfo.getTransitTicks() );
-			writeInt( out, zigPodInfo.getExhaustAngle() );
-			writeInt( out, zigPodInfo.getUnknownEpsilon() );
+			writeMinMaxedInt( out, zigPodInfo.getTransitTicks() );
+			writeMinMaxedInt( out, zigPodInfo.getExhaustAngle() );
+			writeMinMaxedInt( out, zigPodInfo.getUnknownEpsilon() );
 		}
 		else if ( extendedInfo instanceof EmptyDronePodInfo ) {
 			// No-op.
