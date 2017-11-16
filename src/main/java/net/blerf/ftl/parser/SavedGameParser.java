@@ -1946,20 +1946,20 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		BombProjectileInfo bombInfo = new BombProjectileInfo();
 
 		bombInfo.setUnknownAlpha( readInt(in) );
-		bombInfo.setUnknownBeta( readInt(in) );
+		bombInfo.setFuseTicks( readInt(in) );
 		bombInfo.setUnknownGamma( readInt(in) );
 		bombInfo.setUnknownDelta( readInt(in) );
-		bombInfo.setUnknownEpsilon( readBool(in) );
+		bombInfo.setArrived( readBool(in) );
 
 		return bombInfo;
 	}
 
 	public void writeBombProjectileInfo( OutputStream out, BombProjectileInfo bombInfo ) throws IOException {
 		writeInt( out, bombInfo.getUnknownAlpha() );
-		writeInt( out, bombInfo.getUnknownBeta() );
+		writeInt( out, bombInfo.getFuseTicks() );
 		writeInt( out, bombInfo.getUnknownGamma() );
 		writeInt( out, bombInfo.getUnknownDelta() );
-		writeBool( out, bombInfo.getUnknownEpsilon() );
+		writeBool( out, bombInfo.hasArrived() );
 	}
 
 	private LaserProjectileInfo readLaserProjectileInfo( FileInputStream in ) throws IOException {
@@ -2408,6 +2408,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
+		 * Observed values 0 (Always!?).
+		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
@@ -2705,7 +2707,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 				if ( first ) { first = false; }
 				else { result.append(",\n"); }
 				result.append(String.format("BeaconId: %2d\n", beaconId++));
-				result.append( beacon.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+				result.append( beacon.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nQuests...\n");
@@ -2725,7 +2727,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nCurrent Encounter...\n");
 			if ( encounter != null ) {
-				result.append(encounter.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( encounter.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\n");
@@ -2733,17 +2735,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append("\nNearby Ship...\n");
 			if ( nearbyShipState != null ) {
-				result.append(nearbyShipState.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( nearbyShipState.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nNearby Ship AI...\n");
 			if ( nearbyShipAI != null ) {
-				result.append(nearbyShipAI.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( nearbyShipAI.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nEnvironment Hazards...\n");
 			if ( environment != null ) {
-				result.append(environment.toString().replaceAll("(^|\n)(.+)", "$1  $2"));
+				result.append( environment.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
 
 			result.append("\nProjectiles...\n");
@@ -7886,10 +7888,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 	public static class BombProjectileInfo extends ExtendedProjectileInfo {
 		private int unknownAlpha = 0;
-		private int unknownBeta = 0;
+		private int fuseTicks = 400;
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
-		private boolean unknownEpsilon = false;
+		private boolean arrived = false;
 
 
 		/**
@@ -7905,10 +7907,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		protected BombProjectileInfo( BombProjectileInfo srcInfo ) {
 			super( srcInfo );
 			unknownAlpha = srcInfo.getUnknownAlpha();
-			unknownBeta = srcInfo.getUnknownBeta();
+			fuseTicks = srcInfo.getFuseTicks();
 			unknownGamma = srcInfo.getUnknownGamma();
 			unknownDelta = srcInfo.getUnknownDelta();
-			unknownEpsilon = srcInfo.getUnknownEpsilon();
+			arrived = srcInfo.hasArrived();
 		}
 
 		@Override
@@ -7923,13 +7925,25 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getUnknownAlpha() { return unknownAlpha; }
 
 		/**
-		 * Unknown.
+		 * Sets time elapsed while this bomb is about to detonate.
 		 *
-		 * Observed values: 400 (pending/newly spawned); then one of: 356, -205,
-		 * -313, -535.
+		 * After fading into a room, this decrements ticks from 400. At 0, the
+		 * bomb's casing (flightAnimId) disappears, and the explosion anim
+		 * plays. This value continues decrementing to some negative number
+		 * (varies by weapon), until the explosion completes, and the
+		 * projectile is gone.
+		 *
+		 * Changing this from a positive value to a higher one will delay the
+		 * detonation. Once negative, the explosion will have already started,
+		 * and setting a new positive value will only make the casing visible
+		 * amidst the blast for whatever time is left of that animation.
+		 *
+		 * Observed values: 400 (During fade-in), 356, -205, -313, -535.
+		 *
+		 * #setArrived(boolean)
 		 */
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public int getUnknownBeta() { return unknownBeta; }
+		public void setFuseTicks( int n ) { fuseTicks = n; }
+		public int getFuseTicks() { return fuseTicks; }
 
 		/**
 		 * Unknown.
@@ -7948,12 +7962,22 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getUnknownDelta() { return unknownDelta; }
 
 		/**
-		 * Unknown.
+		 * Sets whether this bomb has begun fading in.
 		 *
-		 * Observed values: false (when pending), true (once it materializes).
+		 * When FTL sees this is false, the value will become true, and the
+		 * bomb will begin fading into a room. If set to false once more, the
+		 * fade will start over. Fuse ticks will cease decrementing while this
+		 * is false or while the fade is still in progress.
+		 *
+		 * When FTL sees this is true, the bomb casing is fully opaque and fuse
+		 * ticks immediately resume decrementing.
+		 *
+		 * Newly spawned projectiles have this set to false.
+		 *
+		 * @see #setFuseTicks(int)
 		 */
-		public void setUnknownEpsilon( boolean b ) { unknownEpsilon = b; }
-		public boolean getUnknownEpsilon() { return unknownEpsilon; }
+		public void setArrived( boolean b ) { arrived = b; }
+		public boolean hasArrived() { return arrived; }
 
 		@Override
 		public String toString() {
@@ -7961,10 +7985,10 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 			result.append(String.format("Type:               Bomb Info\n"));
 			result.append(String.format("Alpha?:             %7d\n", unknownAlpha));
-			result.append(String.format("Beta?:              %7d\n", unknownBeta));
+			result.append(String.format("Fuse Ticks:         %7d (Explodes at 0)\n", fuseTicks));
 			result.append(String.format("Gamma?:             %7d\n", unknownGamma));
 			result.append(String.format("Delta?:             %7d\n", unknownDelta));
-			result.append(String.format("Epsilon?:           %7b\n", unknownEpsilon));
+			result.append(String.format("Arrived:            %7b\n", arrived));
 
 			return result.toString();
 		}
