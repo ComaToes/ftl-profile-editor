@@ -3392,6 +3392,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				try { doorRef.get().setUnknownEpsilon( editorPanel.parseInt(EPSILON) ); }
 				catch ( NumberFormatException e ) {}
 
+				doorRef.fireReferenceChange();
+
 				clearSidePanel();
 			}
 		};
