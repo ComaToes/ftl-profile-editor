@@ -36,7 +36,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 	private static final int SHIP_LOCKED = 0;
 	private static final int SHIP_UNLOCKED = 1;
 
-	private static final Logger log = LogManager.getLogger(ProfileShipUnlockPanel.class);
+	private static final Logger log = LogManager.getLogger( ProfileShipUnlockPanel.class );
 
 	private FTLFrame frame;
 
@@ -46,15 +46,15 @@ public class ProfileShipUnlockPanel extends JPanel {
 
 
 	public ProfileShipUnlockPanel( FTLFrame frame ) {
-		this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
+		this.setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
 		this.frame = frame;
 
 		log.trace( "Creating Ship Unlock panel" );
 
 		// Unlocks.
 		JPanel shipsPanel = new JPanel();
-		shipsPanel.setLayout( new GridLayout(0, 3) );
-		shipsPanel.setBorder( BorderFactory.createTitledBorder("Ship Unlocks") );
+		shipsPanel.setLayout( new GridLayout( 0, 3 ) );
+		shipsPanel.setBorder( BorderFactory.createTitledBorder( "Ship Unlocks" ) );
 		this.add( shipsPanel );
 
 		for ( String baseId : DataManager.get().getPlayerShipBaseIds() ) {
@@ -65,7 +65,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 		// Layout achievements.
 		JPanel shipAchsPanel = new JPanel();
 		shipAchsPanel.setLayout( new GridLayout(0, 3) );
-		shipAchsPanel.setBorder( BorderFactory.createTitledBorder("Ship Achievements") );
+		shipAchsPanel.setBorder( BorderFactory.createTitledBorder( "Ship Achievements" ) );
 		this.add( shipAchsPanel );
 
 		for ( String baseId : DataManager.get().getPlayerShipBaseIds() ) {
@@ -86,7 +86,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 		String shipClass = variantAShip.getShipClass();
 
 		JPanel panel = new JPanel();
-		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
+		panel.setLayout( new BoxLayout( panel, BoxLayout.X_AXIS ) );
 		panel.setBorder( BorderFactory.createTitledBorder( shipClass ) );
 
 		IconCycleButton shipABox = ImageUtilities.createCycleButton( "img/ship/"+ variantAShip.getGraphicsBaseName() +"_base.png", false );
@@ -140,8 +140,8 @@ public class ProfileShipUnlockPanel extends JPanel {
 				IconCycleButton box = ImageUtilities.createCycleButton( "img/" + shipAch.getImagePath(), true );
 				box.setToolTipText( shipAch.getName() );
 
-				String achDesc = shipAch.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
-				box.addMouseListener( new StatusbarMouseListener(frame, achDesc) );
+				String achDesc = shipAch.getDescription().replaceAll( "(\r\n|\r|\n)+", " " );
+				box.addMouseListener( new StatusbarMouseListener( frame, achDesc ) );
 
 				shipAchBoxes.put( shipAch, box );
 				panel.add( box );

@@ -35,7 +35,7 @@ import org.apache.logging.log4j.Logger;
 
 public class StatsSubPanel extends JPanel implements ActionListener {
 
-	private static final Logger log = LogManager.getLogger(StatsSubPanel.class);
+	private static final Logger log = LogManager.getLogger( StatsSubPanel.class );
 
 	private int COLUMN_COUNT = 0;
 	private final int DESC_COL = COLUMN_COUNT++;
@@ -49,14 +49,14 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	private final String NAME = "Name";
 	private final String SCORE = "Score";
 
-	private HashMap<JButton,String> editMap = new HashMap<JButton,String>();
-	private HashMap<String,StatRow> rowMap = new HashMap<String,StatRow>();
+	private HashMap<JButton, String> editMap = new HashMap<JButton, String>();
+	private HashMap<String, StatRow> rowMap = new HashMap<String, StatRow>();
 
 	GridBagConstraints gridC = null;
 
 
 	public StatsSubPanel() {
-		super(new GridBagLayout());
+		super( new GridBagLayout() );
 		removeAll();
 	}
 
@@ -71,7 +71,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 		gridC.fill = GridBagConstraints.NONE;
 		gridC.weightx = 1.0;
 		gridC.weighty = 0.0;
-		gridC.insets = new Insets(2, 4, 2, 4);
+		gridC.insets = new Insets( 2, 4, 2, 4 );
 		gridC.gridwidth = 1;
 		gridC.gridx = 0;
 		gridC.gridy = 0;
@@ -101,12 +101,12 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 		gridC.gridx = GAP_COL;
 		gridC.anchor = GridBagConstraints.CENTER;
 		gridC.weightx = 0.0;
-		this.add( Box.createHorizontalStrut(5), gridC );
+		this.add( Box.createHorizontalStrut( 5 ), gridC );
 
 		gridC.gridx = EDIT_COL;
 		gridC.anchor = GridBagConstraints.CENTER;
 		gridC.weightx = 0.0;
-		row.editBtn.addActionListener(this);
+		row.editBtn.addActionListener( this );
 		this.add( row.editBtn, gridC );
 
 		editMap.put( row.editBtn, row.desc );
@@ -122,7 +122,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 		gridC.gridwidth = GridBagConstraints.REMAINDER;
 		gridC.gridx = 0;
 
-		this.add( Box.createVerticalStrut(12), gridC );
+		this.add( Box.createVerticalStrut( 12 ), gridC );
 		gridC.gridy++;
 	}
 
@@ -144,19 +144,19 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	}
 
 	public String getRace( String desc ) {
-		return getRow(desc).race;
+		return getRow( desc ).race;
 	}
 
 	public boolean isMale( String desc ) {
-		return getRow(desc).male;
+		return getRow( desc ).male;
 	}
 
 	public String getName( String desc ) {
-		return getRow(desc).name;
+		return getRow( desc ).name;
 	}
 
 	public int getScore( String desc ) {
-		return getRow(desc).score;
+		return getRow( desc ).score;
 	}
 
 	/**
@@ -205,10 +205,10 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 
 	public void actionPerformed( ActionEvent e ) {
 		Object source = e.getSource();
-		if ( editMap.containsKey(source) ) {
+		if ( editMap.containsKey( source ) ) {
 			final StatRow row = getRow( editMap.get(source) );
 
-			JPanel popupPanel = new JPanel(new BorderLayout());
+			JPanel popupPanel = new JPanel( new BorderLayout() );
 
 			final FieldEditorPanel editorPanel = new FieldEditorPanel( true );
 			editorPanel.addRow( RACE, FieldEditorPanel.ContentType.COMBO );
@@ -228,48 +228,48 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 				editorPanel.getCombo(RACE).setSelectedItem( row.race );
 				editorPanel.setBoolAndReminder( MALE, row.male );
 			} else {
-				editorPanel.getCombo(RACE).setEnabled(false);
-				editorPanel.getBoolean(MALE).setEnabled(false);
+				editorPanel.getCombo(RACE).setEnabled( false );
+				editorPanel.getBoolean(MALE).setEnabled( false );
 			}
 
 			if ( row.name != null ) {
 				editorPanel.setStringAndReminder( NAME, row.name );
 			} else {
-				editorPanel.getString(NAME).setEnabled(false);
+				editorPanel.getString(NAME).setEnabled( false );
 			}
 
 			editorPanel.setIntAndReminder( SCORE, row.score );
-			popupPanel.add(new JLabel(row.desc), BorderLayout.NORTH);
-			popupPanel.add(editorPanel, BorderLayout.CENTER);
+			popupPanel.add( new JLabel(row.desc), BorderLayout.NORTH );
+			popupPanel.add( editorPanel, BorderLayout.CENTER );
 
 			JPanel ctrlPanel = new JPanel();
-			ctrlPanel.setLayout(new BoxLayout(ctrlPanel, BoxLayout.X_AXIS));
-			ctrlPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-			ctrlPanel.add(Box.createHorizontalGlue());
-			JButton popupOkBtn = new JButton("OK");
-			ctrlPanel.add(popupOkBtn);
-			ctrlPanel.add(Box.createHorizontalGlue());
-			JButton popupCancelBtn = new JButton("Cancel");
-			ctrlPanel.add(popupCancelBtn);
-			ctrlPanel.add(Box.createHorizontalGlue());
-			popupPanel.add(ctrlPanel, BorderLayout.SOUTH);
-			popupOkBtn.setPreferredSize(popupCancelBtn.getPreferredSize());
+			ctrlPanel.setLayout( new BoxLayout( ctrlPanel, BoxLayout.X_AXIS ) );
+			ctrlPanel.setBorder( BorderFactory.createEmptyBorder( 10,10,10,10 ) );
+			ctrlPanel.add( Box.createHorizontalGlue() );
+			JButton popupOkBtn = new JButton( "OK" );
+			ctrlPanel.add( popupOkBtn );
+			ctrlPanel.add( Box.createHorizontalGlue() );
+			JButton popupCancelBtn = new JButton( "Cancel" );
+			ctrlPanel.add( popupCancelBtn );
+			ctrlPanel.add( Box.createHorizontalGlue() );
+			popupPanel.add( ctrlPanel, BorderLayout.SOUTH );
+			popupOkBtn.setPreferredSize( popupCancelBtn.getPreferredSize() );
 
-			final JDialog popup = new JDialog((java.awt.Frame)this.getTopLevelAncestor(), "Edit Score", true);
-			popup.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			popup.getContentPane().add(popupPanel);
+			final JDialog popup = new JDialog( (java.awt.Frame)this.getTopLevelAncestor(), "Edit Score", true );
+			popup.setDefaultCloseOperation( JDialog.DISPOSE_ON_CLOSE );
+			popup.getContentPane().add( popupPanel );
 			popup.pack();
-			popup.setLocationRelativeTo(null);
+			popup.setLocationRelativeTo( null );
 
 			popupCancelBtn.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					popup.setVisible(false);
+				public void actionPerformed( ActionEvent e ) {
+					popup.setVisible( false );
 					popup.dispose();
 				}
 			});
 
 			popupOkBtn.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
+				public void actionPerformed( ActionEvent e ) {
 					String newString = null;
 
 					if ( row.race != null ) {
@@ -283,17 +283,17 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 						row.name = editorPanel.getString(NAME).getText();
 
 					newString = editorPanel.getInt(SCORE).getText();
-					try { row.score = Integer.parseInt(newString); }
+					try { row.score = Integer.parseInt( newString ); }
 					catch (NumberFormatException f) {}
 
 					row.makeSane();
 
-					popup.setVisible(false);
+					popup.setVisible( false );
 					popup.dispose();
 				}
 			});
 
-			popup.setVisible(true);
+			popup.setVisible( true );
 		}
 	}
 
@@ -318,27 +318,27 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 			this.name = name;
 			this.score = score;
 
-			descLbl = new JLabel(desc);
+			descLbl = new JLabel( desc );
 			nameLbl = new JLabel();
-			nameLbl.setHorizontalTextPosition(SwingConstants.RIGHT);
-			scoreLbl = new JLabel(Integer.toString(score));
-			editBtn = new JButton("Edit");
-			editBtn.setMargin(new Insets(0,0,0,0));
+			nameLbl.setHorizontalTextPosition( SwingConstants.RIGHT );
+			scoreLbl = new JLabel( Integer.toString( score ) );
+			editBtn = new JButton( "Edit" );
+			editBtn.setMargin( new Insets( 0,0,0,0 ) );
 		}
 
 		public void makeSane() {
-			descLbl.setText(desc);
+			descLbl.setText( desc );
 
 			ImageIcon icon = null;
 			if ( race != null ) {
 				String imgRace = race;
 
-				if ( CrewType.HUMAN.getId().equals(race) ) {
+				if ( CrewType.HUMAN.getId().equals( race ) ) {
 					// Human females have a distinct sprite (Other races look the same either way).
 					if ( !male )
 						imgRace = "female";
 				}
-				else if ( CrewType.GHOST.getId().equals(race) ) {
+				else if ( CrewType.GHOST.getId().equals( race ) ) {
 					// Ghosts look like translucent humans.
 					if ( male )
 						imgRace = "human";
@@ -346,16 +346,16 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 						imgRace = "female";
 				}
 
-				icon = getCrewIcon(imgRace);
+				icon = getCrewIcon( imgRace );
 			}
-			nameLbl.setIcon(icon);
+			nameLbl.setIcon( icon );
 
 			if ( name != null )
-				nameLbl.setText(name);
+				nameLbl.setText( name );
 			else
-				nameLbl.setText("");
+				nameLbl.setText( "" );
 
-			scoreLbl.setText(Integer.toString(score));
+			scoreLbl.setText( Integer.toString( score ) );
 		}
 	}
 }

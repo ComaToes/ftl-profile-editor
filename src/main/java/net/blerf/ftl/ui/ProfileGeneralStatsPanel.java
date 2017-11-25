@@ -33,7 +33,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ProfileGeneralStatsPanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger(ProfileGeneralStatsPanel.class);
+	private static final Logger log = LogManager.getLogger( ProfileGeneralStatsPanel.class );
 
 	private static final int MAX_SCORE_PANELS = 5;
 
@@ -52,30 +52,30 @@ public class ProfileGeneralStatsPanel extends JPanel {
 	public ProfileGeneralStatsPanel( FTLFrame frame ) {
 		this.frame = frame;
 
-		this.setLayout( new GridLayout(0, 2) );
+		this.setLayout( new GridLayout( 0, 2 ) );
 
 		topScoresPanel = new JPanel();
-		topScoresPanel.setLayout( new BoxLayout(topScoresPanel, BoxLayout.Y_AXIS ) );
-		topScoresPanel.setBorder( BorderFactory.createTitledBorder("Top Scores") );
+		topScoresPanel.setLayout( new BoxLayout( topScoresPanel, BoxLayout.Y_AXIS ) );
+		topScoresPanel.setBorder( BorderFactory.createTitledBorder( "Top Scores" ) );
 		this.add( topScoresPanel );
 
 		JPanel statsSubPanelsHolder = new JPanel();
-		statsSubPanelsHolder.setLayout( new BoxLayout(statsSubPanelsHolder, BoxLayout.Y_AXIS) );
+		statsSubPanelsHolder.setLayout( new BoxLayout( statsSubPanelsHolder, BoxLayout.Y_AXIS ) );
 		this.add( statsSubPanelsHolder );
 		
 		sessionRecordsPanel = new StatsSubPanel();
 		sessionRecordsPanel.addFillRow();
-		sessionRecordsPanel.setBorder( BorderFactory.createTitledBorder("Session Records") );
+		sessionRecordsPanel.setBorder( BorderFactory.createTitledBorder( "Session Records" ) );
 		statsSubPanelsHolder.add( sessionRecordsPanel );
 		
 		crewRecordsPanel = new StatsSubPanel();
 		crewRecordsPanel.addFillRow();
-		crewRecordsPanel.setBorder( BorderFactory.createTitledBorder("Crew Records") );
+		crewRecordsPanel.setBorder( BorderFactory.createTitledBorder( "Crew Records" ) );
 		statsSubPanelsHolder.add( crewRecordsPanel );
 
 		totalStatsPanel = new StatsSubPanel();
 		totalStatsPanel.addFillRow();
-		totalStatsPanel.setBorder( BorderFactory.createTitledBorder("Totals") );
+		totalStatsPanel.setBorder( BorderFactory.createTitledBorder( "Totals" ) );
 		statsSubPanelsHolder.add( totalStatsPanel );
 	}
 
@@ -114,14 +114,14 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		sessionRecordsPanel.removeAll();
 		for ( StatType type : sessionStatTypes ) {
 			int n = stats.getIntRecord( type );
-			sessionRecordsPanel.addRow(type.toString(), null, false, null, n);
+			sessionRecordsPanel.addRow( type.toString(), null, false, null, n );
 		}
 		sessionRecordsPanel.addFillRow();
 
 		crewRecordsPanel.removeAll();
 		for ( StatType type : crewStatTypes ) {
 			CrewRecord r = stats.getCrewRecord( type );
-			crewRecordsPanel.addRow(type.toString(), r.getRace(), r.isMale(), r.getName(), r.getValue());
+			crewRecordsPanel.addRow( type.toString(), r.getRace(), r.isMale(), r.getName(), r.getValue() );
 		}
 		crewRecordsPanel.addFillRow();
 
@@ -131,7 +131,7 @@ public class ProfileGeneralStatsPanel extends JPanel {
 				totalStatsPanel.addBlankRow();  // Cosmetic spacer.
 
 			int n = stats.getIntRecord( type );
-			totalStatsPanel.addRow(type.toString(), null, false, null, n);
+			totalStatsPanel.addRow( type.toString(), null, false, null, n );
 		}
 		totalStatsPanel.addFillRow();
 
@@ -161,18 +161,18 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		}
 
 		for ( StatType type : sessionStatTypes ) {
-			stats.setIntRecord( type, sessionRecordsPanel.getScore(type.toString()) );
+			stats.setIntRecord( type, sessionRecordsPanel.getScore( type.toString() ) );
 		}
 		for ( StatType type : crewStatTypes ) {
-			String crewName = crewRecordsPanel.getName(type.toString());
-			String race = crewRecordsPanel.getRace(type.toString());
-			boolean male = crewRecordsPanel.isMale(type.toString());
-			int n = crewRecordsPanel.getScore(type.toString());
+			String crewName = crewRecordsPanel.getName( type.toString() );
+			String race = crewRecordsPanel.getRace( type.toString() );
+			boolean male = crewRecordsPanel.isMale( type.toString() );
+			int n = crewRecordsPanel.getScore( type.toString() );
 			CrewRecord r = new CrewRecord( crewName, race, male, n );
 			stats.setCrewRecord( type, r );
 		}
 		for ( StatType type : totalStatTypes ) {
-			stats.setIntRecord( type, totalStatsPanel.getScore(type.toString()) );
+			stats.setIntRecord( type, totalStatsPanel.getScore( type.toString() ) );
 		}
 	}
 }
