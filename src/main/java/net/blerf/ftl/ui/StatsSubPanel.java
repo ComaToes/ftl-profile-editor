@@ -26,6 +26,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import net.blerf.ftl.constants.AdvancedFTLConstants;
+import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser.CrewType;
 
@@ -52,7 +54,9 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	private HashMap<JButton, String> editMap = new HashMap<JButton, String>();
 	private HashMap<String, StatRow> rowMap = new HashMap<String, StatRow>();
 
-	GridBagConstraints gridC = null;
+	private GridBagConstraints gridC = null;
+
+	private FTLConstants ftlConstants = new AdvancedFTLConstants();
 
 
 	public StatsSubPanel() {
@@ -75,6 +79,18 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 		gridC.gridwidth = 1;
 		gridC.gridx = 0;
 		gridC.gridy = 0;
+	}
+
+	/**
+	 * Sets which FTL constants to use.
+	 *
+	 * A newly constructed StatsSubPanel defaults to AdvancedFTLConstants.
+	 *
+	 * @see net.blerf.ftl.constants.AdvancedFTLConstants
+	 * @see net.blerf.ftl.constants.OriginalFTLConstants
+	 */
+	public void setFTLConstants( FTLConstants c ) {
+		ftlConstants = c;
 	}
 
 	public void addRow( String desc, String race, boolean male, String name, int score ) {
@@ -217,15 +233,11 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 			editorPanel.addRow( SCORE, FieldEditorPanel.ContentType.INTEGER );
 
 			if ( row.race != null ) {
-				editorPanel.getCombo(RACE).addItem( CrewType.CRYSTAL.getId() );
-				editorPanel.getCombo(RACE).addItem( CrewType.ENERGY.getId() );
-				editorPanel.getCombo(RACE).addItem( CrewType.ENGI.getId() );
-				editorPanel.getCombo(RACE).addItem( CrewType.GHOST.getId() );
-				editorPanel.getCombo(RACE).addItem( CrewType.HUMAN.getId() );
-				editorPanel.getCombo(RACE).addItem( CrewType.MANTIS.getId() );
-				editorPanel.getCombo(RACE).addItem( CrewType.ROCK.getId() );
-				editorPanel.getCombo(RACE).addItem( CrewType.SLUG.getId() );
-				editorPanel.getCombo(RACE).setSelectedItem( row.race );
+				for ( CrewType crewType : ftlConstants.getCrewTypes() ) {
+					editorPanel.getCombo(RACE).addItem( crewType );
+				}
+				editorPanel.getCombo(RACE).setSelectedItem( CrewType.findById( row.race ) );
+
 				editorPanel.setBoolAndReminder( MALE, row.male );
 			} else {
 				editorPanel.getCombo(RACE).setEnabled( false );
@@ -273,18 +285,15 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 					String newString = null;
 
 					if ( row.race != null ) {
-						newString = (String)editorPanel.getCombo(RACE).getSelectedItem();
-						if ( CrewType.findById( newString ) != null ) {
-							row.race = newString;
-							row.male = editorPanel.getBoolean(MALE).isSelected();
-						}
+						row.race = ((CrewType)editorPanel.getCombo(RACE).getSelectedItem()).getId();
+						row.male = editorPanel.getBoolean(MALE).isSelected();
 					}
 					if ( row.name != null )
 						row.name = editorPanel.getString(NAME).getText();
 
 					newString = editorPanel.getInt(SCORE).getText();
 					try { row.score = Integer.parseInt( newString ); }
-					catch (NumberFormatException f) {}
+					catch ( NumberFormatException f ) {}
 
 					row.makeSane();
 

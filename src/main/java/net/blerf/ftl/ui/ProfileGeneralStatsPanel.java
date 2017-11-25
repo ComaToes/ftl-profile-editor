@@ -18,6 +18,9 @@ import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import net.blerf.ftl.constants.AdvancedFTLConstants;
+import net.blerf.ftl.constants.FTLConstants;
+import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.CrewRecord;
 import net.blerf.ftl.model.Score;
 import net.blerf.ftl.model.Stats;
@@ -90,7 +93,16 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		                            StatType.MOST_SKILL_MASTERIES};
 		StatType[] totalStatTypes = {StatType.TOTAL_SHIPS_DEFEATED, StatType.TOTAL_BEACONS_EXPLORED,
 		                             StatType.TOTAL_SCRAP_COLLECTED, StatType.TOTAL_CREW_HIRED,
-                                 StatType.TOTAL_GAMES_PLAYED, StatType.TOTAL_VICTORIES};
+		                             StatType.TOTAL_GAMES_PLAYED, StatType.TOTAL_VICTORIES};
+
+		FTLConstants ftlConstants = null;
+
+		if ( p.getHeaderAlpha() == 4 ) {
+			ftlConstants = new OriginalFTLConstants();
+		} else {
+			ftlConstants = new AdvancedFTLConstants();
+		}
+
 		Stats stats = p.getStats();
 
 		int i = 0;
@@ -112,6 +124,7 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		}
 
 		sessionRecordsPanel.removeAll();
+		sessionRecordsPanel.setFTLConstants( ftlConstants );
 		for ( StatType type : sessionStatTypes ) {
 			int n = stats.getIntRecord( type );
 			sessionRecordsPanel.addRow( type.toString(), null, false, null, n );
@@ -119,6 +132,7 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		sessionRecordsPanel.addFillRow();
 
 		crewRecordsPanel.removeAll();
+		crewRecordsPanel.setFTLConstants( ftlConstants );
 		for ( StatType type : crewStatTypes ) {
 			CrewRecord r = stats.getCrewRecord( type );
 			crewRecordsPanel.addRow( type.toString(), r.getRace(), r.isMale(), r.getName(), r.getValue() );
@@ -126,6 +140,7 @@ public class ProfileGeneralStatsPanel extends JPanel {
 		crewRecordsPanel.addFillRow();
 
 		totalStatsPanel.removeAll();
+		totalStatsPanel.setFTLConstants( ftlConstants );
 		for ( StatType type : totalStatTypes ) {
 			if ( type == StatType.TOTAL_GAMES_PLAYED )
 				totalStatsPanel.addBlankRow();  // Cosmetic spacer.
