@@ -29,14 +29,9 @@ import javax.swing.event.ChangeListener;
 
 import net.blerf.ftl.ui.RegexDocument;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class FieldEditorPanel extends JPanel {
 	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO, SPINNER };
-
-	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
 
 	private Map<String, JTextArea> wrappedLabelMap = new HashMap<String, JTextArea>();
 	private Map<String, JLabel> labelMap = new HashMap<String, JLabel>();
@@ -83,13 +78,13 @@ public class FieldEditorPanel extends JPanel {
 	}
 
 	public void setValueWidth( int width ) {
-		valueStrut.setMinimumSize( new Dimension(width, 0) );
-		valueStrut.setPreferredSize( new Dimension(width, 0) );
+		valueStrut.setMinimumSize( new Dimension( width, 0 ) );
+		valueStrut.setPreferredSize( new Dimension( width, 0 ) );
 	}
 
 	public void setReminderWidth( int width ) {
-		reminderStrut.setMinimumSize( new Dimension(width, 0) );
-		reminderStrut.setPreferredSize( new Dimension(width, 0) );
+		reminderStrut.setMinimumSize( new Dimension( width, 0 ) );
+		reminderStrut.setPreferredSize( new Dimension( width, 0 ) );
 	}
 
 	/**
@@ -138,7 +133,7 @@ public class FieldEditorPanel extends JPanel {
 			gridC.anchor = GridBagConstraints.WEST;
 			JTextField valueField = new JTextField();
 			valueField.setHorizontalAlignment( JTextField.RIGHT );
-			valueField.setDocument( new RegexDocument("[0-9]*") );
+			valueField.setDocument( new RegexDocument( "[0-9]*" ) );
 			intMap.put( valueName, valueField );
 			this.add( valueField, gridC );
 		}
@@ -154,19 +149,19 @@ public class FieldEditorPanel extends JPanel {
 			JPanel panel = new JPanel();
 			panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
 			final JSlider valueSlider = new JSlider( JSlider.HORIZONTAL );
-			valueSlider.setPreferredSize( new Dimension(50, valueSlider.getPreferredSize().height) );
+			valueSlider.setPreferredSize( new Dimension( 50, valueSlider.getPreferredSize().height ) );
 			sliderMap.put( valueName, valueSlider );
-			panel.add(valueSlider);
-			final JTextField valueField = new JTextField(3);
+			panel.add( valueSlider );
+			final JTextField valueField = new JTextField( 3 );
 			valueField.setMaximumSize( valueField.getPreferredSize() );
 			valueField.setHorizontalAlignment( JTextField.RIGHT );
 			valueField.setEditable( false );
-			panel.add(valueField);
+			panel.add( valueField );
 			this.add( panel, gridC );
 
 			valueSlider.addChangeListener(new ChangeListener() {
 				@Override
-				public void stateChanged(ChangeEvent e) {
+				public void stateChanged( ChangeEvent e ) {
 					valueField.setText( ""+valueSlider.getValue() );
 				}
 			});
@@ -205,7 +200,7 @@ public class FieldEditorPanel extends JPanel {
 		gridC.gridwidth = GridBagConstraints.REMAINDER;
 		gridC.gridx = 0;
 
-		this.add(Box.createVerticalStrut(12), gridC);
+		this.add( Box.createVerticalStrut( 12 ), gridC );
 		gridC.gridy++;
 	}
 
@@ -235,7 +230,7 @@ public class FieldEditorPanel extends JPanel {
 
 	public void setStringAndReminder( String valueName, String s ) {
 		JTextField valueField = stringMap.get( valueName );
-		if ( valueField != null ) valueField.setText(s);
+		if ( valueField != null ) valueField.setText( s );
 		if ( remindersVisible ) setReminder( valueName, s );
 	}
 
@@ -253,7 +248,7 @@ public class FieldEditorPanel extends JPanel {
 	}
 	public void setBoolAndReminder( String valueName, boolean b, String s ) {
 		JCheckBox valueCheck = boolMap.get( valueName );
-		if ( valueCheck != null ) valueCheck.setSelected(b);
+		if ( valueCheck != null ) valueCheck.setSelected( b );
 		if ( remindersVisible ) setReminder( valueName, s );
 	}
 
@@ -262,7 +257,7 @@ public class FieldEditorPanel extends JPanel {
 	}
 	public void setSliderAndReminder( String valueName, int n, String s ) {
 		JSlider valueSlider = sliderMap.get( valueName );
-		if ( valueSlider != null ) valueSlider.setValue(n);
+		if ( valueSlider != null ) valueSlider.setValue( n );
 		if ( remindersVisible ) setReminder( valueName, s );
 	}
 
@@ -271,7 +266,7 @@ public class FieldEditorPanel extends JPanel {
 	}
 	public void setComboAndReminder( String valueName, Object o, String s ) {
 		JComboBox valueCombo = comboMap.get( valueName );
-		if ( valueCombo != null ) valueCombo.setSelectedItem(o);
+		if ( valueCombo != null ) valueCombo.setSelectedItem( o );
 		if ( remindersVisible ) setReminder( valueName, s );
 	}
 
@@ -280,7 +275,7 @@ public class FieldEditorPanel extends JPanel {
 	}
 	public void setSpinnerAndReminder( String valueName, Object o, String s ) {
 		JSpinner valueSpinner = spinnerMap.get( valueName );
-		if ( valueSpinner != null ) valueSpinner.setValue(o);
+		if ( valueSpinner != null ) valueSpinner.setValue( o );
 		if ( remindersVisible ) setReminder( valueName, s );
 	}
 
@@ -337,7 +332,7 @@ public class FieldEditorPanel extends JPanel {
 	 * Parses an int field's text as an integer.
 	 */
 	public int parseInt( String valueName ) throws NumberFormatException {
-		return Integer.parseInt( getInt(valueName).getText() );
+		return Integer.parseInt( getInt( valueName ).getText() );
 	}
 
 	/**
@@ -353,22 +348,22 @@ public class FieldEditorPanel extends JPanel {
 
 	public void reset() {
 		for ( JTextArea valueArea : wrappedLabelMap.values() )
-			valueArea.setText("");
+			valueArea.setText( "" );
 
 		for ( JLabel valueLbl : labelMap.values() )
-			valueLbl.setText("");
+			valueLbl.setText( "" );
 
 		for ( JTextField valueField : stringMap.values() )
-			valueField.setText("");
+			valueField.setText( "" );
 
 		for ( JTextField valueField : intMap.values() )
-			valueField.setText("");
+			valueField.setText( "" );
 
 		for ( JCheckBox valueCheck : boolMap.values() )
 			valueCheck.setSelected( false );
 
 		for ( JSlider valueSlider : sliderMap.values() )
-			valueSlider.setValue(0);
+			valueSlider.setValue( 0 );
 
 		for ( JComboBox valueCombo : comboMap.values() )
 			valueCombo.removeAllItems();
@@ -393,7 +388,7 @@ public class FieldEditorPanel extends JPanel {
 		}
 
 		for ( JLabel valueReminder : reminderMap.values() )
-			valueReminder.setText("");
+			valueReminder.setText( "" );
 	}
 
 	public void removeAll() {
@@ -418,7 +413,7 @@ public class FieldEditorPanel extends JPanel {
 
 		// No default width for col 0.
 		gridC.gridx = 0;
-		this.add( Box.createVerticalStrut(1), gridC );
+		this.add( Box.createVerticalStrut( 1 ), gridC );
 		gridC.gridx++;
 		this.add( valueStrut, gridC );
 		gridC.gridx++;
@@ -427,6 +422,6 @@ public class FieldEditorPanel extends JPanel {
 			gridC.gridy++;
 		}
 
-		gridC.insets = new Insets(2, 4, 2, 4);
+		gridC.insets = new Insets( 2, 4, 2, 4 );
 	}
 }
