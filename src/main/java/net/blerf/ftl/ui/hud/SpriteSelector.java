@@ -105,16 +105,16 @@ public class SpriteSelector extends JComponent {
 	}
 
 	public void reset() {
-		this.setVisible(false);
-		setDescriptionVisible(false);
-		setCriteria(null);
-		setCallback(null);
+		this.setVisible( false );
+		setDescriptionVisible( false );
+		setCriteria( null );
+		setCallback( null );
 		setMousePoint( -1, -1 );
 	}
 
 	@Override
 	public void paintComponent( Graphics g ) {
-		super.paintComponent(g);
+		super.paintComponent( g );
 
 		Graphics2D g2d = (Graphics2D)g;
 		Color prevColor = g2d.getColor();
@@ -122,7 +122,7 @@ public class SpriteSelector extends JComponent {
 		if ( paintDescription && spriteCriteria != null ) {
 			String desc = spriteCriteria.getDescription();
 			if ( desc != null ) {
-				LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics(desc, g2d);
+				LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics( desc, g2d );
 				int descHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
 				int descX = 8;
 				int descY = descHeight + 6;

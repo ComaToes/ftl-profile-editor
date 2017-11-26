@@ -37,7 +37,7 @@ class HTMLEditorTransferHandler extends TransferHandler {
 
 		HTMLEditorKit.ParserCallback parserCallback = new HTMLEditorKit.ParserCallback() {
 			public void handleText( final char[] data, final int pos ) {
-				fragmentList.add( new String(data) );
+				fragmentList.add( new String( data ) );
 			}
 
 			public void handleStartTag( HTML.Tag tag, MutableAttributeSet attribute, int pos ) {
@@ -47,7 +47,7 @@ class HTMLEditorTransferHandler extends TransferHandler {
 			}
 
 			public void handleSimpleTag( HTML.Tag t, MutableAttributeSet a, final int pos ) {
-				if ( t.equals(HTML.Tag.BR) ) {
+				if ( t.equals( HTML.Tag.BR ) ) {
 					fragmentList.add( "\n" );
 				}
 			}
@@ -125,10 +125,10 @@ class HTMLEditorTransferHandler extends TransferHandler {
 		}
 
 		public Object getTransferData( DataFlavor flavor ) throws UnsupportedFlavorException, IOException {
-			if ( flavor.equals(supportedFlavors[0]) ) {
+			if ( flavor.equals( supportedFlavors[0] ) ) {
 				return htmlData;
 			}
-			if ( flavor.equals(supportedFlavors[1]) ) {
+			if ( flavor.equals( supportedFlavors[1] ) ) {
 				return plainData;
 			}
 			throw new UnsupportedFlavorException( flavor );

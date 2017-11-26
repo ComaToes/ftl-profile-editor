@@ -41,7 +41,7 @@ import org.apache.logging.log4j.Logger;
 
 public class SavedGameHangarPanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger(SavedGameHangarPanel.class);
+	private static final Logger log = LogManager.getLogger( SavedGameHangarPanel.class );
 
 	private FTLFrame frame;
 	private JComboBox shipCombo = null;
@@ -63,14 +63,14 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarC.fill = GridBagConstraints.NONE;
 		hangarC.weightx = 0.0;
 		hangarC.weighty = 0.0;
-		hangarC.insets = new Insets(4, 4, 4, 4);
+		hangarC.insets = new Insets( 4, 4, 4, 4 );
 		hangarC.gridx = 0;
 		hangarC.gridy = 0;
 
 		JPanel borderPanel = new JPanel( new BorderLayout() );
-		borderPanel.setBorder( BorderFactory.createTitledBorder("Change Ship") );
-		JPanel hangarPanel = new JPanel(new GridBagLayout());
-		hangarPanel.setBorder( BorderFactory.createEmptyBorder(4, 4, 4, 4) );
+		borderPanel.setBorder( BorderFactory.createTitledBorder( "Change Ship" ) );
+		JPanel hangarPanel = new JPanel( new GridBagLayout() );
+		hangarPanel.setBorder( BorderFactory.createEmptyBorder( 4, 4, 4, 4 ) );
 
 		hangarC.gridwidth = 2;
 		hangarC.gridx = 0;
@@ -84,7 +84,7 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarPanel.add( noticeBLbl, hangarC );
 
 		hangarC.fill = GridBagConstraints.HORIZONTAL;
-		hangarC.insets = new Insets(8, 4, 8, 4);
+		hangarC.insets = new Insets( 8, 4, 8, 4 );
 		hangarC.gridwidth = 1;
 		hangarC.gridx = 0;
 		hangarC.gridy++;
@@ -116,7 +116,7 @@ public class SavedGameHangarPanel extends JPanel {
 		hangarC.gridx = 0;
 		hangarC.gridy++;
 		stealNearbyShipBtn = new JButton( "Steal Nearby Ship" );
-		stealNearbyShipBtn.addMouseListener( new StatusbarMouseListener(frame, "Abandon the player ship and commandeer one nearby.") );
+		stealNearbyShipBtn.addMouseListener( new StatusbarMouseListener( frame, "Abandon the player ship and commandeer one nearby." ) );
 		hangarPanel.add( stealNearbyShipBtn, hangarC );
 
 		borderPanel.add( hangarPanel, BorderLayout.CENTER );
@@ -136,17 +136,17 @@ public class SavedGameHangarPanel extends JPanel {
 		this.add( Box.createVerticalGlue(), thisC );
 
 		createShipBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				createShip( ((ShipBlueprint)shipCombo.getSelectedItem()), false );
+			public void actionPerformed( ActionEvent e ) {
+				createShip( (ShipBlueprint)shipCombo.getSelectedItem(), false );
 			}
 		});
 		createAutoBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				createShip( ((ShipBlueprint)autoCombo.getSelectedItem()), true );
+			public void actionPerformed( ActionEvent e ) {
+				createShip( (ShipBlueprint)autoCombo.getSelectedItem(), true );
 			}
 		});
 		stealNearbyShipBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				stealNearbyShip();
 			}
 		});
@@ -169,7 +169,7 @@ public class SavedGameHangarPanel extends JPanel {
 		nag += "The player ship is about to be replaced with a new one.\n";
 		nag += "Some ships lack shield oval and floor outline images.\n";
 		nag += "Are you sure you want to do this?";
-		int response = JOptionPane.showConfirmDialog(frame, nag, "Change Player Ship", JOptionPane.YES_NO_OPTION);
+		int response = JOptionPane.showConfirmDialog( frame, nag, "Change Player Ship", JOptionPane.YES_NO_OPTION );
 		if ( response != JOptionPane.YES_OPTION ) return;
 
 		SavedGameParser.ShipState shipState = new SavedGameParser.ShipState( "The Nameless One", shipBlueprint, auto );
@@ -193,14 +193,14 @@ public class SavedGameHangarPanel extends JPanel {
 		nagBuf.append( "Some ships lack shield oval and floor outline images.\n" );
 		nagBuf.append( "\n" );
 		nagBuf.append( "Are you sure you want to do this?" );
-		int response = JOptionPane.showConfirmDialog(frame, nagBuf.toString(), "Steal Nearby Ship", JOptionPane.YES_NO_OPTION);
+		int response = JOptionPane.showConfirmDialog( frame, nagBuf.toString(), "Steal Nearby Ship", JOptionPane.YES_NO_OPTION );
 		if ( response != JOptionPane.YES_OPTION ) return;
 
 		// Apply all other pending changes.
 		frame.updateGameState( gameState );
 
 		if ( gameState.getNearbyShipState() == null ) {
-			JOptionPane.showMessageDialog(frame, "There is no nearby ship to steal.", "Steal Nearby Ship", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog( frame, "There is no nearby ship to steal.", "Steal Nearby Ship", JOptionPane.WARNING_MESSAGE );
 			return;
 		}
 

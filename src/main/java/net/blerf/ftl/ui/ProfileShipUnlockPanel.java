@@ -90,28 +90,28 @@ public class ProfileShipUnlockPanel extends JPanel {
 		panel.setBorder( BorderFactory.createTitledBorder( shipClass ) );
 
 		IconCycleButton shipABox = ImageUtilities.createCycleButton( "img/ship/"+ variantAShip.getGraphicsBaseName() +"_base.png", false );
-		shipABox.addMouseListener( new StatusbarMouseListener(frame, "Type-A: "+ variantAShip.getName()) );
+		shipABox.addMouseListener( new StatusbarMouseListener( frame, "Type-A: "+ variantAShip.getName() ) );
 		shipABoxes.put( baseId, shipABox );
 		panel.add( shipABox );
 
 		if ( variantBShip != null ) {
 			IconCycleButton shipBBox = ImageUtilities.createDummyCycleButton();
-			shipBBox.addMouseListener( new StatusbarMouseListener(frame, "Type-B: "+ variantBShip.getName() +" (To unlock, choose two ship achievements below.)") );
+			shipBBox.addMouseListener( new StatusbarMouseListener( frame, "Type-B: "+ variantBShip.getName() +" (To unlock, choose two ship achievements below.)" ) );
 			panel.add( shipBBox );
 		} else {
 			IconCycleButton shipBBox = ImageUtilities.createDummyCycleButton();
-			shipBBox.addMouseListener( new StatusbarMouseListener(frame, "Type-B: N/A") );
+			shipBBox.addMouseListener( new StatusbarMouseListener( frame, "Type-B: N/A" ) );
 			panel.add( shipBBox );
 		}
 
 		if ( variantCShip != null ) {
 			IconCycleButton shipCBox = ImageUtilities.createCycleButton( "img/ship/"+ variantCShip.getGraphicsBaseName() +"_base.png", false );
-			shipCBox.addMouseListener( new StatusbarMouseListener(frame, "Type-C: "+ variantCShip.getName()) );
+			shipCBox.addMouseListener( new StatusbarMouseListener( frame, "Type-C: "+ variantCShip.getName() ) );
 			shipCBoxes.put( baseId, shipCBox );
 			panel.add( shipCBox );
 		} else {
 			IconCycleButton shipCBox = ImageUtilities.createDummyCycleButton();
-			shipCBox.addMouseListener( new StatusbarMouseListener(frame, "Type-C: N/A") );
+			shipCBox.addMouseListener( new StatusbarMouseListener( frame, "Type-C: N/A" ) );
 			shipCBoxes.put( baseId, shipCBox );
 			panel.add( shipCBox );
 		}

@@ -37,7 +37,7 @@ import org.apache.logging.log4j.Logger;
 
 public class SavedGameStateVarsPanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger(SavedGameStateVarsPanel.class);
+	private static final Logger log = LogManager.getLogger( SavedGameStateVarsPanel.class );
 
 	private FTLFrame frame;
 	private ArrayList<String> allVars = new ArrayList<String>();
@@ -51,12 +51,12 @@ public class SavedGameStateVarsPanel extends JPanel {
 		this.frame = frame;
 
 		varsOnePanel = new FieldEditorPanel( true );
-		varsOnePanel.setBorder( BorderFactory.createTitledBorder("") );
+		varsOnePanel.setBorder( BorderFactory.createTitledBorder( "" ) );
 		varsOnePanel.addBlankRow();
 		varsOnePanel.addFillRow();
 
 		varsTwoPanel = new FieldEditorPanel( true );
-		varsTwoPanel.setBorder( BorderFactory.createTitledBorder("") );
+		varsTwoPanel.setBorder( BorderFactory.createTitledBorder( "" ) );
 		varsTwoPanel.addBlankRow();
 		varsTwoPanel.addFillRow();
 
@@ -103,9 +103,9 @@ public class SavedGameStateVarsPanel extends JPanel {
 				FieldEditorPanel tmpPanel = (i < (allVars.size()+1)/2 ? varsOnePanel : varsTwoPanel);
 				tmpPanel.addRow( id, FieldEditorPanel.ContentType.INTEGER );
 				if ( gameState.hasStateVar(id) ) {
-					tmpPanel.setIntAndReminder(id, gameState.getStateVar(id));
+					tmpPanel.setIntAndReminder( id, gameState.getStateVar( id ) );
 				}
-				tmpPanel.getInt(id).addMouseListener( new StatusbarMouseListener(frame, StateVar.getDescription(id)) );
+				tmpPanel.getInt(id).addMouseListener( new StatusbarMouseListener( frame, StateVar.getDescription( id ) ) );
 			}
 			varsOnePanel.addBlankRow();
 			varsOnePanel.addFillRow();
@@ -124,13 +124,13 @@ public class SavedGameStateVarsPanel extends JPanel {
 
 		for ( int i=0; i < allVars.size(); i++ ) {
 			String id = allVars.get(i);
-			FieldEditorPanel tmpPanel = (i < (allVars.size()+1)/2 ? varsOnePanel : varsTwoPanel);
+			FieldEditorPanel tmpPanel = ( i < (allVars.size()+1)/2 ) ? varsOnePanel : varsTwoPanel;
 
-			newString = tmpPanel.getInt(id).getText();
+			newString = tmpPanel.getInt( id ).getText();
 			if ( newString.length() > 0 ) {
 				try {
 					int value = Integer.parseInt(newString);
-					gameState.setStateVar(id, value);
+					gameState.setStateVar( id, value );
 				}
 				catch ( NumberFormatException e ) {}
 			}

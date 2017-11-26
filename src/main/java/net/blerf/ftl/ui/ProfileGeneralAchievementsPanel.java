@@ -37,7 +37,7 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 
 	private static final String NEWBIE_TIP_LEVEL = "Newbie Tip Level";
 
-	private static final Logger log = LogManager.getLogger(ProfileGeneralAchievementsPanel.class);
+	private static final Logger log = LogManager.getLogger( ProfileGeneralAchievementsPanel.class );
 
 	private FTLFrame frame;
 
@@ -47,7 +47,7 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 
 
 	public ProfileGeneralAchievementsPanel( FTLFrame frame ) {
-		this.setLayout( new BoxLayout(this, BoxLayout.Y_AXIS) );
+		this.setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
 		this.frame = frame;
 
 		log.trace( "Creating General Achievements panel" );
@@ -62,10 +62,10 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 		this.add( Box.createVerticalStrut( 5 ) );
 
 		newbiePanel = new FieldEditorPanel( true );
-		newbiePanel.setBorder( BorderFactory.createTitledBorder("Hangar Menu") );
+		newbiePanel.setBorder( BorderFactory.createTitledBorder( "Hangar Menu" ) );
 		newbiePanel.addRow( NEWBIE_TIP_LEVEL, FieldEditorPanel.ContentType.COMBO );
 
-		newbiePanel.getCombo(NEWBIE_TIP_LEVEL).addMouseListener( new StatusbarMouseListener(frame, "Pending tips to display for new players.") );
+		newbiePanel.getCombo(NEWBIE_TIP_LEVEL).addMouseListener( new StatusbarMouseListener( frame, "Pending tips to display for new players." ) );
 
 		for ( NewbieTipLevel level : NewbieTipLevel.values() ) {
 			newbiePanel.getCombo(NEWBIE_TIP_LEVEL).addItem( level );
@@ -77,19 +77,19 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 
 	private JPanel createAchievementsSubPanel( String title, List<Achievement> achievements, int offset ) {
 		JPanel panel = new JPanel();
-		panel.setBorder( BorderFactory.createTitledBorder(title) );
-		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
+		panel.setBorder( BorderFactory.createTitledBorder( title ) );
+		panel.setLayout( new BoxLayout( panel, BoxLayout.X_AXIS ) );
 		
 		// TODO: Magic number 7.
-		for (int i=0; i < 7; i++) {
+		for ( int i=0; i < 7; i++ ) {
 			Achievement ach = achievements.get( i+offset );
 			log.trace( "Setting icons for cycle button. Base image: " + "img/" + ach.getImagePath() );
 
 			IconCycleButton box = ImageUtilities.createCycleButton( "img/" + ach.getImagePath(), true );
 			box.setToolTipText( ach.getName() );
 
-			String achDesc = ach.getDescription().replaceAll("(\r\n|\r|\n)+", " ");
-			box.addMouseListener( new StatusbarMouseListener(frame, achDesc) );
+			String achDesc = ach.getDescription().replaceAll( "(\r\n|\r|\n)+", " " );
+			box.addMouseListener( new StatusbarMouseListener( frame, achDesc ) );
 
 			generalAchBoxes.put( ach, box );
 			panel.add( box );

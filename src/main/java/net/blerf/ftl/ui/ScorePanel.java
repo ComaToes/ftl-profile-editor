@@ -46,7 +46,7 @@ public class ScorePanel extends JPanel {
 	private static final String DLC_ENABLED = "DLC Enabled";
 	private static final String REMOVE = "Remove";
 
-	private static final Logger log = LogManager.getLogger(ScorePanel.class);
+	private static final Logger log = LogManager.getLogger( ScorePanel.class );
 
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = null;
 	private boolean blank = true;
@@ -83,7 +83,7 @@ public class ScorePanel extends JPanel {
 	 */
 	public ScorePanel( int rank, Score s ) {
 		super();
-		this.setBorder( BorderFactory.createTitledBorder("") );
+		this.setBorder( BorderFactory.createTitledBorder( "" ) );
 		this.setLayout( new GridBagLayout() );
 
 		GridBagConstraints c = new GridBagConstraints();
@@ -106,9 +106,9 @@ public class ScorePanel extends JPanel {
 		c.gridx = 1;
 		c.gridy = 3;
 		JPanel victoryPanel = new JPanel( new BorderLayout() );
-		victoryLbl.setBorder( BorderFactory.createEmptyBorder(0, 0, 0, 5) );
+		victoryLbl.setBorder( BorderFactory.createEmptyBorder( 0, 0, 0, 5 ) );
 		victoryPanel.add( victoryLbl, BorderLayout.EAST );
-		victoryPanel.setPreferredSize( new java.awt.Dimension(0, 0) );
+		victoryPanel.setPreferredSize( new java.awt.Dimension( 0, 0 ) );
 		this.add( victoryPanel, c );
 
 		c.fill = GridBagConstraints.HORIZONTAL;
@@ -147,9 +147,9 @@ public class ScorePanel extends JPanel {
 		c.gridx = 4;
 		c.gridy = 3;
 		JPanel dlcPanel = new JPanel( new BorderLayout() );
-		dlcLbl.setBorder( BorderFactory.createEmptyBorder(0, 5, 0, 0) );
+		dlcLbl.setBorder( BorderFactory.createEmptyBorder( 0, 5, 0, 0 ) );
 		dlcPanel.add( dlcLbl, BorderLayout.EAST );
-		dlcPanel.setPreferredSize( new java.awt.Dimension(0, 0) );
+		dlcPanel.setPreferredSize( new java.awt.Dimension( 0, 0 ) );
 		this.add( dlcPanel, c );
 
 		c.weightx = 1.0;
@@ -166,7 +166,7 @@ public class ScorePanel extends JPanel {
 		c.gridx = 6;
 		c.gridy = 0;
 		editBtn = new JButton( "Edit" );
-		editBtn.setMargin( new Insets(0,0,0,0) );
+		editBtn.setMargin( new Insets( 0,0,0,0 ) );
 		this.add( editBtn, c );
 
 		// Force a minimum height with an invisible component.
@@ -236,7 +236,7 @@ public class ScorePanel extends JPanel {
 
 	public void setShipName( String s ) {
 		shipName = s;
-		shipNameLbl.setText(shipName);
+		shipNameLbl.setText( shipName );
 	}
 	public String getShipName() { return shipName; }
 
@@ -276,31 +276,31 @@ public class ScorePanel extends JPanel {
 
 	public void setValue( int n ) {
 		value = n;
-		valueLbl.setText(""+value);
+		valueLbl.setText( ""+value );
 	}
 	public int getValue() { return value; }
 
 	public void setSector( int n ) {
 		sector = n;
-		sectorLbl.setText(""+sector);
+		sectorLbl.setText( ""+sector );
 	}
 	public int getSector() { return sector; }
 
 	public void setDifficulty( Difficulty d ) {
 		difficulty = d;
-		difficultyLbl.setText(d.toString());
+		difficultyLbl.setText( d.toString() );
 	}
 	public Difficulty getDifficulty() { return difficulty; }
 
 	public void setVictory( boolean b ) {
 		victory = b;
-		victoryLbl.setText(victory ? "Victory" : "");
+		victoryLbl.setText( victory ? "Victory" : "" );
 	}
 	public boolean isVictory() { return victory; }
 
 	public void setDLCEnabled( boolean b ) {
 		dlcEnabled = b;
-		dlcLbl.setText(dlcEnabled ? "Advanced" : "");
+		dlcLbl.setText( dlcEnabled ? "Advanced" : "" );
 	}
 	public boolean isDLCEnabled() { return dlcEnabled; }
 
@@ -309,7 +309,7 @@ public class ScorePanel extends JPanel {
 		Map<String, ShipBlueprint> playerShipMap = DataManager.get().getPlayerShips();
 		Map<String, ShipBlueprint> autoShipMap = DataManager.get().getAutoShips();
 
-		JPanel popupPanel = new JPanel(new BorderLayout());
+		JPanel popupPanel = new JPanel( new BorderLayout() );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( true );
 		editorPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
@@ -324,18 +324,18 @@ public class ScorePanel extends JPanel {
 			editorPanel.getBoolean(REMOVE).setSelected( blank );
 		}
 
-		editorPanel.getCombo(SHIP_ID).addItem("");
+		editorPanel.getCombo(SHIP_ID).addItem( "" );
 		for ( ShipBlueprint blueprint : playerShipMap.values() )
-			editorPanel.getCombo(SHIP_ID).addItem(blueprint);
-		editorPanel.getCombo(SHIP_ID).addItem("");
+			editorPanel.getCombo(SHIP_ID).addItem( blueprint );
+		editorPanel.getCombo(SHIP_ID).addItem( "" );
 		for ( ShipBlueprint blueprint : autoShipMap.values() )
-			editorPanel.getCombo(SHIP_ID).addItem(blueprint);
+			editorPanel.getCombo(SHIP_ID).addItem( blueprint );
 
 		if ( playerShipMap.containsKey(shipId) ) {
-			editorPanel.setComboAndReminder( SHIP_ID, playerShipMap.get(shipId) );
+			editorPanel.setComboAndReminder( SHIP_ID, playerShipMap.get( shipId ) );
 		} else if ( autoShipMap.containsKey(shipId) ) {
-			editorPanel.setComboAndReminder( SHIP_ID, autoShipMap.get(shipId) );
-		} else if ( "".equals(shipId) == false ) {
+			editorPanel.setComboAndReminder( SHIP_ID, autoShipMap.get( shipId ) );
+		} else if ( "".equals( shipId ) == false ) {
 			// Some unrecognized id. Add it as a string.
 			editorPanel.getCombo(SHIP_ID).addItem( shipId );
 			editorPanel.setComboAndReminder( SHIP_ID, shipId );
@@ -347,7 +347,7 @@ public class ScorePanel extends JPanel {
 		editorPanel.getCombo(SHIP_ID).setEnabled( shipIdEditingEnabled );
 
 		for ( Difficulty d : Difficulty.values() )
-			editorPanel.getCombo(DIFFICULTY).addItem(d);
+			editorPanel.getCombo(DIFFICULTY).addItem( d );
 
 		editorPanel.setStringAndReminder( SHIP_NAME, getShipName() );
 		editorPanel.setIntAndReminder( VALUE, getValue() );
@@ -358,33 +358,33 @@ public class ScorePanel extends JPanel {
 		popupPanel.add(editorPanel, BorderLayout.CENTER);
 
 		JPanel ctrlPanel = new JPanel();
-		ctrlPanel.setLayout(new BoxLayout(ctrlPanel, BoxLayout.X_AXIS));
-		ctrlPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-		ctrlPanel.add(Box.createHorizontalGlue());
-		JButton popupOkBtn = new JButton("OK");
-		ctrlPanel.add(popupOkBtn);
-		ctrlPanel.add(Box.createHorizontalGlue());
-		JButton popupCancelBtn = new JButton("Cancel");
-		ctrlPanel.add(popupCancelBtn);
-		ctrlPanel.add(Box.createHorizontalGlue());
-		popupPanel.add(ctrlPanel, BorderLayout.SOUTH);
-		popupOkBtn.setPreferredSize(popupCancelBtn.getPreferredSize());
+		ctrlPanel.setLayout( new BoxLayout( ctrlPanel, BoxLayout.X_AXIS ) );
+		ctrlPanel.setBorder( BorderFactory.createEmptyBorder( 10,10,10,10 ) );
+		ctrlPanel.add( Box.createHorizontalGlue() );
+		JButton popupOkBtn = new JButton( "OK" );
+		ctrlPanel.add( popupOkBtn );
+		ctrlPanel.add( Box.createHorizontalGlue() );
+		JButton popupCancelBtn = new JButton( "Cancel" );
+		ctrlPanel.add( popupCancelBtn );
+		ctrlPanel.add( Box.createHorizontalGlue() );
+		popupPanel.add( ctrlPanel, BorderLayout.SOUTH );
+		popupOkBtn.setPreferredSize( popupCancelBtn.getPreferredSize() );
 
-		final JDialog popup = new JDialog((java.awt.Frame)this.getTopLevelAncestor(), "Edit Score", true);
-		popup.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		popup.getContentPane().add(popupPanel);
+		final JDialog popup = new JDialog( (java.awt.Frame)this.getTopLevelAncestor(), "Edit Score", true );
+		popup.setDefaultCloseOperation( JDialog.DISPOSE_ON_CLOSE );
+		popup.getContentPane().add( popupPanel );
 		popup.pack();
-		popup.setLocationRelativeTo(null);
+		popup.setLocationRelativeTo( null );
 
 		popupCancelBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				popup.setVisible(false);
+			public void actionPerformed( ActionEvent e ) {
+				popup.setVisible( false );
 				popup.dispose();
 			}
 		});
 
 		popupOkBtn.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( ActionEvent e ) {
 				String newString = null;
 
 				setShipName( editorPanel.getString(SHIP_NAME).getText() );
@@ -395,11 +395,11 @@ public class ScorePanel extends JPanel {
 				}
 
 				newString = editorPanel.getInt(VALUE).getText();
-				try { setValue(Integer.parseInt(newString)); }
+				try { setValue( Integer.parseInt( newString ) ); }
 				catch (NumberFormatException f) {}
 
 				newString = editorPanel.getInt(SECTOR).getText();
-				try { setSector(Integer.parseInt(newString)); }
+				try { setSector( Integer.parseInt( newString ) ); }
 				catch (NumberFormatException f) {}
 
 				setDifficulty( (Difficulty)editorPanel.getCombo(DIFFICULTY).getSelectedItem() );

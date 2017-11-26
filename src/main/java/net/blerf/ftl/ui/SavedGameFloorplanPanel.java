@@ -138,7 +138,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final int squareSize = 35;
 	private static final int tileEdge = 1;
 	private static final int jambLength = 5;
-	private static final Logger log = LogManager.getLogger(SavedGameFloorplanPanel.class);
+	private static final Logger log = LogManager.getLogger( SavedGameFloorplanPanel.class );
 
 	private GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 	private GraphicsDevice gs = ge.getDefaultScreenDevice();
@@ -216,7 +216,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		shipPanel = new JLayeredPane();
 		shipPanel.setBackground( new Color( 212, 208, 200 ) );
-		shipPanel.setOpaque(true);
+		shipPanel.setOpaque( true );
 		shipPanel.setPreferredSize( new Dimension( 50, 50 ) );
 
 		sidePanel = new JPanel();
@@ -224,17 +224,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.setBorder( BorderFactory.createEmptyBorder( 4, 4, 4, 6 ) );
 
 		baseLbl = new JLabel();
-		baseLbl.setOpaque(false);
+		baseLbl.setOpaque( false );
 		baseLbl.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( baseLbl, BASE_LAYER );
 
 		floorLbl = new JLabel();
-		floorLbl.setOpaque(false);
+		floorLbl.setOpaque( false );
 		floorLbl.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( floorLbl, FLOOR_LAYER );
 
 		wallLbl = new JLabel();
-		wallLbl.setOpaque(false);
+		wallLbl.setOpaque( false );
 		wallLbl.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( wallLbl, WALL_LAYER );
 
@@ -410,73 +410,73 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		JPanel selectPanel = new JPanel();
 		selectPanel.setLayout( new BoxLayout( selectPanel, BoxLayout.X_AXIS ) );
-		selectPanel.setBorder( BorderFactory.createTitledBorder("Select") );
-		final JButton selectRoomBtn = new JButton("Room");
+		selectPanel.setBorder( BorderFactory.createTitledBorder( "Select" ) );
+		final JButton selectRoomBtn = new JButton( "Room" );
 		selectRoomBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectRoomBtn );
 		selectPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton selectSystemBtn = new JButton("System");
+		final JButton selectSystemBtn = new JButton( "System" );
 		selectSystemBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectSystemBtn );
 		selectPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton selectCrewBtn = new JButton("Crew");
+		final JButton selectCrewBtn = new JButton( "Crew" );
 		selectCrewBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectCrewBtn );
 		selectPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton selectBreachBtn = new JButton("Breach");
+		final JButton selectBreachBtn = new JButton( "Breach" );
 		selectBreachBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectBreachBtn );
 		selectPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton selectFireBtn = new JButton("Fire");
+		final JButton selectFireBtn = new JButton( "Fire" );
 		selectFireBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectFireBtn );
 
 		JPanel addPanel = new JPanel();
 		addPanel.setLayout( new BoxLayout( addPanel, BoxLayout.X_AXIS ) );
-		addPanel.setBorder( BorderFactory.createTitledBorder("Add") );
-		final JButton addCrewBtn = new JButton("Crew");
+		addPanel.setBorder( BorderFactory.createTitledBorder( "Add" ) );
+		final JButton addCrewBtn = new JButton( "Crew" );
 		addCrewBtn.setMargin( ctrlInsets );
 		addPanel.add( addCrewBtn );
 		addPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton addBreachBtn = new JButton("Breach");
+		final JButton addBreachBtn = new JButton( "Breach" );
 		addBreachBtn.setMargin( ctrlInsets );
 		addPanel.add( addBreachBtn );
 		addPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton addFireBtn = new JButton("Fire");
+		final JButton addFireBtn = new JButton( "Fire" );
 		addFireBtn.setMargin( ctrlInsets );
 		addPanel.add( addFireBtn );
 
 		JPanel resetPanel = new JPanel();
 		resetPanel.setLayout( new BoxLayout( resetPanel, BoxLayout.X_AXIS ) );
-		resetPanel.setBorder( BorderFactory.createTitledBorder("Reset") );
-		final JButton resetOxygenBtn = new JButton("Oxygen");
+		resetPanel.setBorder( BorderFactory.createTitledBorder( "Reset" ) );
+		final JButton resetOxygenBtn = new JButton( "Oxygen" );
 		resetOxygenBtn.setMargin( ctrlInsets );
 		resetPanel.add( resetOxygenBtn );
 		resetPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton resetSystemsBtn = new JButton("Systems");
+		final JButton resetSystemsBtn = new JButton( "Systems" );
 		resetSystemsBtn.setMargin( ctrlInsets );
 		resetPanel.add( resetSystemsBtn );
 		resetPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton resetIntrudersBtn = new JButton("Intruders");
+		final JButton resetIntrudersBtn = new JButton( "Intruders" );
 		resetIntrudersBtn.setMargin( ctrlInsets );
 		resetPanel.add( resetIntrudersBtn );
 		resetPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton resetBreachesBtn = new JButton("Breaches");
+		final JButton resetBreachesBtn = new JButton( "Breaches" );
 		resetBreachesBtn.setMargin( ctrlInsets );
 		resetPanel.add( resetBreachesBtn );
 		resetPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton resetFiresBtn = new JButton("Fires");
+		final JButton resetFiresBtn = new JButton( "Fires" );
 		resetFiresBtn.setMargin( ctrlInsets );
 		resetPanel.add( resetFiresBtn );
 
 		JPanel otherPanel = new JPanel();
 		otherPanel.setLayout( new BoxLayout( otherPanel, BoxLayout.X_AXIS ) );
-		otherPanel.setBorder( BorderFactory.createTitledBorder("Other") );
-		final JButton otherGeneralBtn = new JButton("General");
+		otherPanel.setBorder( BorderFactory.createTitledBorder( "Other" ) );
+		final JButton otherGeneralBtn = new JButton( "General" );
 		otherGeneralBtn.setMargin( ctrlInsets );
 		otherPanel.add( otherGeneralBtn );
 		otherPanel.add( Box.createHorizontalStrut( 5 ) );
-		final JButton otherAugmentsBtn = new JButton("Augments");
+		final JButton otherAugmentsBtn = new JButton( "Augments" );
 		otherAugmentsBtn.setMargin( ctrlInsets );
 		otherPanel.add( otherAugmentsBtn );
 
@@ -525,7 +525,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					clearSidePanel();
 					for ( SpriteReference<RoomState> roomRef : roomRefs ) {
 						if ( roomRef.get().getOxygen() != 100 ) {
-							roomRef.get().setOxygen(100);
+							roomRef.get().setOxygen( 100 );
 							roomRef.fireReferenceChange();
 						}
 					}
@@ -534,11 +534,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 				else if ( source == resetSystemsBtn ) {
 					clearSidePanel();
 					for ( SpriteReference<SystemState> systemRef : systemRefs ) {
-						systemRef.get().setDamagedBars(0);
-						systemRef.get().setIonizedBars(0);
-						systemRef.get().setRepairProgress(0);
-						systemRef.get().setDamageProgress(0);
-						systemRef.get().setDeionizationTicks(Integer.MIN_VALUE);
+						systemRef.get().setDamagedBars( 0 );
+						systemRef.get().setIonizedBars( 0 );
+						systemRef.get().setRepairProgress( 0 );
+						systemRef.get().setDamageProgress( 0 );
+						systemRef.get().setDeionizationTicks( Integer.MIN_VALUE );
 						systemRef.get().setTemporaryCapacityCap( 1000 );
 						systemRef.get().setTemporaryCapacityLoss( 0 );
 						systemRef.get().setTemporaryCapacityDivisor( 1 );
@@ -728,14 +728,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 			squareRegionRoomIdMap.clear();
 			squareRegionSquareIdMap.clear();
 			blockedRegions.clear();
-			baseLbl.setIcon(null);
-			floorLbl.setIcon(null);
+			baseLbl.setIcon( null );
+			floorLbl.setIcon( null );
 
 			for ( JComponent roomDecor : roomDecorations )
 				shipPanel.remove( roomDecor );
 			roomDecorations.clear();
 
-			wallLbl.setIcon(null);
+			wallLbl.setIcon( null );
 			return;
 		}
 
@@ -822,7 +822,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 
 			// Load the fuselage image.
-			baseLbl.setIcon(null);
+			baseLbl.setIcon( null );
 			InputStream in = null;
 			try {
 				String baseImagePath = null;
@@ -841,8 +841,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				in = DataManager.get().getResourceInputStream( baseImagePath );
 				BufferedImage baseImage = ImageIO.read( in );
 				in.close();
-				baseLbl.setIcon( new ImageIcon(baseImage) );
-				baseLbl.setSize( new Dimension(baseImage.getWidth(), baseImage.getHeight()) );
+				baseLbl.setIcon( new ImageIcon( baseImage ) );
+				baseLbl.setSize( new Dimension( baseImage.getWidth(), baseImage.getHeight() ) );
 			}
 			catch ( FileNotFoundException e ) {
 				log.warn( "No ship base image for ("+ shipGfxBaseName +")" );
@@ -851,19 +851,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 				log.error( "Failed to load ship base image ("+ shipGfxBaseName +")", e );
 			}
 			finally {
-				try {if (in != null) in.close();}
+				try {if ( in != null ) in.close();}
 				catch ( IOException e ) {}
 			}
 
 			// Load the interior image.
-			floorLbl.setIcon(null);
+			floorLbl.setIcon( null );
 			floorLbl.setBounds( 0, 0, 50, 50 );
 			try {
-				in = DataManager.get().getResourceInputStream("img/ship/"+ shipGfxBaseName +"_floor.png");
+				in = DataManager.get().getResourceInputStream( "img/ship/"+ shipGfxBaseName +"_floor.png" );
 				BufferedImage floorImage = ImageIO.read( in );
 				in.close();
-				floorLbl.setIcon( new ImageIcon(floorImage) );
-				floorLbl.setSize( new Dimension(floorImage.getWidth(), floorImage.getHeight()) );
+				floorLbl.setIcon( new ImageIcon( floorImage ) );
+				floorLbl.setSize( new Dimension( floorImage.getWidth(), floorImage.getHeight() ) );
 
 				if ( shipChassis.getOffsets() != null ) {
 					Offset floorOffset = shipChassis.getOffsets().floorOffset;
@@ -879,7 +879,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				log.error( "Failed to load ship floor image ("+ shipGfxBaseName +")", e );
 			}
 			finally {
-				try {if (in != null) in.close();}
+				try {if ( in != null ) in.close();}
 				catch ( IOException e ) {}
 			}
 
@@ -905,8 +905,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 					// FTL 1.5.4+ reportedly no longer scales, and even lets decor extend beyond room walls.
 
 					BufferedImage decorImage = ImageUtilities.getScaledImage( "img/ship/interior/"+ roomImgPath +".png", squaresH*squareSize, squaresV*squareSize, cachedImages );
-					JLabel decorLbl = new JLabel( new ImageIcon(decorImage) );
-					decorLbl.setOpaque(false);
+					JLabel decorLbl = new JLabel( new ImageIcon( decorImage ) );
+					decorLbl.setOpaque( false );
 					decorLbl.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
 					roomDecorations.add( decorLbl );
 					shipPanel.add( decorLbl, DECOR_LAYER );
@@ -918,8 +918,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 						int decorY = roomY + (s/squaresH)*squareSize + squareSize/2;
 
 						BufferedImage decorImage = ImageUtilities.getScaledImage( "img/ship/interior/teleporter_off.png", 20, 20, cachedImages );
-						JLabel decorLbl = new JLabel( new ImageIcon(decorImage) );
-						decorLbl.setOpaque(false);
+						JLabel decorLbl = new JLabel( new ImageIcon( decorImage ) );
+						decorLbl.setOpaque( false );
 						decorLbl.setSize( squaresH*squareSize, squaresV*squareSize );
 						placeSprite( decorX, decorY, decorLbl );
 						roomDecorations.add( decorLbl );
@@ -933,32 +933,30 @@ public class SavedGameFloorplanPanel extends JPanel {
 			Graphics2D wallG = (Graphics2D)wallImage.createGraphics();
 			drawWalls( wallG, originX, originY, shipLayout );
 			wallG.dispose();
-			wallLbl.setIcon( new ImageIcon(wallImage) );
-			wallLbl.setSize( new Dimension(wallImage.getWidth(), wallImage.getHeight()) );
+			wallLbl.setIcon( new ImageIcon( wallImage ) );
+			wallLbl.setSize( new Dimension( wallImage.getWidth(), wallImage.getHeight() ) );
 		}
 
 		// Add Drones.
 		List<DroneState> droneList = shipState.getDroneList();
-		Integer blueprintDroneSlots = shipBlueprint.getDroneSlots();
 
-		if ( blueprintDroneSlots == null )       // TODO: Magic number (not set in autoBlueprints.xml).
-			blueprintDroneSlots = new Integer(3);  // In-game GUI shows 2 or 3.
+		// TODO: Magic number (when null: it's omitted in autoBlueprints.xml).
+		// In-game GUI shows 2 or 3.
+		int blueprintDroneSlots = 3;
+		if ( shipBlueprint.getDroneSlots() != null ) blueprintDroneSlots = shipBlueprint.getDroneSlots().intValue();
 
 		int actualDroneSlots = droneList.size();
-		if ( blueprintDroneSlots != null ) {
-			if ( blueprintDroneSlots.intValue() >= droneList.size() ) {
-				actualDroneSlots = blueprintDroneSlots.intValue();
-			} else {
-				log.warn( String.format("Ship state has %d drones, but its blueprint only expects %d", droneList.size(), shipBlueprint.getDroneSlots()) );
-			}
+		if ( blueprintDroneSlots >= droneList.size() ) {
+			actualDroneSlots = blueprintDroneSlots;
+		} else {
+			log.warn( String.format("Ship state has %d drones, but its blueprint only expects %d", droneList.size(), shipBlueprint.getDroneSlots()) );
 		}
 
 		for ( int i=0; i < actualDroneSlots; i++ ) {
 			// It's fine if droneState is null. Empty slot.
 			SpriteReference<DroneState> droneRef = new SpriteReference<DroneState>( null );
-			if ( droneList.size() > i ) {
-				droneRef.set( new DroneState( droneList.get(i) ) );
-			}
+			if ( droneList.size() > i ) droneRef.set( new DroneState( droneList.get( i ) ) );
+
 			droneRefs.add( droneRef );
 
 			int droneBoxX = 100 + i*75;
@@ -970,37 +968,30 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Add Weapons.
 		List<ShipChassis.WeaponMount> weaponMounts = shipChassis.getWeaponMountList();
 		List<WeaponState> weaponList = shipState.getWeaponList();
-		Integer blueprintWeaponSlots = shipBlueprint.getWeaponSlots();
 
-		if ( blueprintWeaponSlots == null ) {     // TODO: Magic number (not set in autoBlueprints.xml).
-			blueprintWeaponSlots = new Integer(4);  // But rebel_long's chassis has extra mounts!
-		}                                         // In-game GUI shows 3 or 4.
+		// TODO: Magic number (when null: it's omitted in autoBlueprints.xml).
+		// In-game GUI shows 3 or 4.
+		// rebel_long's chassis has extra mounts!
+		int blueprintWeaponSlots = 4;
+		if ( shipBlueprint.getWeaponSlots() != null ) blueprintWeaponSlots = shipBlueprint.getWeaponSlots();
 
-		int actualWeaponSlots = weaponMounts.size();
-		if ( blueprintWeaponSlots != null ) {     // Check in case magic number is removed someday.
-			if ( weaponMounts.size() < blueprintWeaponSlots.intValue() ) {
-				log.warn( String.format("Ship blueprint expects %d mounts, but its chassis only has %d", shipBlueprint.getWeaponSlots(), weaponMounts.size()) );
-			}
+		// Blueprint may restrict usable chassis mounts.
+		int actualWeaponSlots = Math.min( weaponMounts.size(), blueprintWeaponSlots );
 
-			// Blueprint may restrict usable chassis mounts.
-			actualWeaponSlots = Math.min( weaponMounts.size(), blueprintWeaponSlots.intValue() );
-		}
-
-		if ( weaponList.size() > weaponMounts.size() ) {
-			log.warn( String.format("Ship state has %d weapons, but its chassis only has %d", weaponList.size(), weaponMounts.size()) );
+		if ( weaponList.size() > weaponMounts.size() || blueprintWeaponSlots > weaponMounts.size() ) {
+			log.warn( String.format("Ship state has %d weapons, the ship blueprint expects %d mounts, the chassis only has %d mounts", weaponList.size(), blueprintWeaponSlots, weaponMounts.size()) );
 		}
 
 		for ( int i=0; i < actualWeaponSlots; i++ ) {
 			ShipChassis.WeaponMount weaponMount = null;
 
-			if ( weaponMounts.size() > i ) weaponMount = weaponMounts.get(i);
+			if ( weaponMounts.size() > i ) weaponMount = weaponMounts.get( i );
 			if ( weaponMount == null ) continue;  // *shrug* Truncate extra weapons.
 
 			// It's fine if weaponState is null. Empty slot.
 			SpriteReference<WeaponState> weaponRef = new SpriteReference<WeaponState>( null );
-			if ( weaponList.size() > i ) {
-				weaponRef.set( weaponList.get(i) );
-			}
+			if ( weaponList.size() > i ) weaponRef.set( weaponList.get( i ) );
+
 			weaponRefs.add( weaponRef );
 
 			addWeaponSprite( weaponMount, i, weaponRef );
@@ -1017,7 +1008,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
 			int oxygen = shipState.getRoom(i).getOxygen();
 
-			SpriteReference<RoomState> roomRef = new SpriteReference<RoomState>( new RoomState( shipState.getRoom(i) ) );
+			SpriteReference<RoomState> roomRef = new SpriteReference<RoomState>( new RoomState( shipState.getRoom( i ) ) );
 			roomRefs.add( roomRef );
 
 			RoomSprite roomSprite = new RoomSprite( roomRef, i );
@@ -1079,8 +1070,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 					break;
 				}
 			}
-			if ( squareRegionSquareIdMap.containsKey(squareRect) )
-				squareId = squareRegionSquareIdMap.get(squareRect).intValue();
+			if ( squareRegionSquareIdMap.containsKey( squareRect ) )
+				squareId = squareRegionSquareIdMap.get( squareRect ).intValue();
 
 			addBreachSprite( breachX, breachY, roomId, squareId, breachEntry.getValue().intValue() );
 		}
@@ -1174,7 +1165,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				shipViewport.setViewPosition(new Point(0,0));
+				shipViewport.setViewPosition( new Point( 0,0 ) );
 			}
 		});
 	}
@@ -1218,7 +1209,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					for ( Map.Entry<Rectangle, Integer> regionEntry : squareRegionSquareIdMap.entrySet() ) {
 						if ( regionEntry.getKey().contains( droneBodySprite.getLocation() ) ) {
 							droneState.setBodyRoomSquare( regionEntry.getValue().intValue() );
-							droneState.setBodyRoomId( squareRegionRoomIdMap.get(regionEntry.getKey()).intValue() );
+							droneState.setBodyRoomId( squareRegionRoomIdMap.get( regionEntry.getKey() ).intValue() );
 							break;
 						}
 					}
@@ -2979,7 +2970,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getSlider(RESERVE_CAPACITY).setValue( shipReserveCapacity );
 		editorPanel.getSlider(RESERVE_POWER).setMaximum( shipReserveCapacity );
 		// Reserve power's value is set later.
-		editorPanel.getSlider(RESERVE_POWER).setEnabled(false);
+		editorPanel.getSlider(RESERVE_POWER).setEnabled( false );
 		editorPanel.getSlider(CAPACITY).setMaximum( maxSystemCapacity );
 		editorPanel.getSlider(CAPACITY).setValue( systemRef.get().getCapacity() );
 		// Nothing for power here.
@@ -2993,7 +2984,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt(DEIONIZATION_TICKS).setText( ""+systemRef.get().getDeionizationTicks() );
 
 		if ( isSubsystem ) {
-			editorPanel.getSlider(RESERVE_CAPACITY).setEnabled(false);
+			editorPanel.getSlider(RESERVE_CAPACITY).setEnabled( false );
 			editorPanel.getSlider(RESERVE_POWER).setValue( excludedReservePool );
 			editorPanel.getSlider(POWER).setMaximum( systemRef.get().getCapacity() );
 			editorPanel.getSlider(POWER).setValue( systemRef.get().getPower() );
@@ -4096,7 +4087,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			this.roomId = roomId;
 
 			// No preferred size.
-			this.setOpaque(true);
+			this.setOpaque( true );
 
 			roomRef.addSprite( this );
 			referenceChanged();
@@ -4236,7 +4227,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			this.roomId = roomId;
 			this.squareId = squareId;
 			this.health = health;
-			this.setOpaque(false);
+			this.setOpaque( false );
 		}
 
 		public void setRoomId( int n ) { roomId = n; }
@@ -4269,7 +4260,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			this.roomId = roomId;
 			this.squareId = squareId;
 			this.health = health;
-			this.setOpaque(false);
+			this.setOpaque( false );
 		}
 
 		public void setRoomId( int n ) { roomId = n; }

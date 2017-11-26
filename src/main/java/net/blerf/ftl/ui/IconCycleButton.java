@@ -13,6 +13,7 @@ import javax.swing.SwingConstants;
  * A button that cycles through an array of icons when clicked.
  */
 public class IconCycleButton extends JButton implements ActionListener {
+
 	private Icon[] icons;
 	private int state = 0;
 
@@ -36,7 +37,7 @@ public class IconCycleButton extends JButton implements ActionListener {
 		return state;
 	}
 
-	public void actionPerformed(ActionEvent e) {
+	public void actionPerformed( ActionEvent e ) {
 		setSelectedState( (state+1) % icons.length );
 	}
 }

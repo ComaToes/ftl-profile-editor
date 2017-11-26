@@ -41,7 +41,7 @@ import org.apache.logging.log4j.Logger;
 
 public class StoreShelfPanel extends JPanel implements ActionListener {
 
-	private static final Logger log = LogManager.getLogger(StoreShelfPanel.class);
+	private static final Logger log = LogManager.getLogger( StoreShelfPanel.class );
 
 	private static final String SHELF_TYPE = "Type";
 	private static final String ITEM_ZERO = "#0 Item";
@@ -99,17 +99,17 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 
 		editorPanel.addRow( SHELF_TYPE, FieldEditorPanel.ContentType.COMBO );
 
-		for (int i=0; i < itemTypes.length; i++) {
+		for ( int i=0; i < itemTypes.length; i++ ) {
 			editorPanel.getCombo(SHELF_TYPE).addItem( itemTypes[i] );
 		}
 
-		for (int i=0; i < SLOTS.length; i++) {
+		for ( int i=0; i < SLOTS.length; i++ ) {
 			editorPanel.addRow( SLOTS[i], FieldEditorPanel.ContentType.COMBO );
 			editorPanel.addRow( AVAIL[i], FieldEditorPanel.ContentType.BOOLEAN );
 			editorPanel.addRow( EXTRA[i], FieldEditorPanel.ContentType.INTEGER );
 
-			editorPanel.getBoolean(AVAIL[i]).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether this item has already been bought.") );
-			editorPanel.getInt(EXTRA[i]).addMouseListener( new StatusbarMouseListener(frame, "Misc info (DroneCtrl system only, specifying bonus drone).") );
+			editorPanel.getBoolean(AVAIL[i]).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether this item has already been bought." ) );
+			editorPanel.getInt(EXTRA[i]).addMouseListener( new StatusbarMouseListener( frame, "Misc info (DroneCtrl system only, specifying bonus drone)." ) );
 
 			editorPanel.getCombo(SLOTS[i]).addItem( "" );
 		}
@@ -127,7 +127,7 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 
 		List<String> badIds = new ArrayList<String>();
 
-		for (int i=0; i < SLOTS.length; i++) {
+		for ( int i=0; i < SLOTS.length; i++ ) {
 			if ( shelf.getItems().size() > i ) {
 				if ( lookupMap != null ) {
 					String itemId = shelf.getItems().get(i).getItemId();
@@ -167,7 +167,7 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 
 		for (int i=0; i < SLOTS.length; i++) {
 			Object selectedItem = editorPanel.getCombo(SLOTS[i]).getSelectedItem();
-			if ( "".equals(selectedItem) == false && itemLookups.get(selectedType) != null ) {
+			if ( "".equals(selectedItem) == false && itemLookups.get( selectedType ) != null ) {
 				// Do a reverse lookup on the map to get an item id.
 				for ( Object entry : itemLookups.get(selectedType).entrySet() ) {
 					if ( ((Map.Entry)entry).getValue().equals( selectedItem ) ) {
@@ -177,7 +177,7 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 						StoreItem newItem = new StoreItem( id );
 						newItem.setAvailable( available );
 
-						try { newItem.setExtraData( editorPanel.parseInt(EXTRA[i]) ); }
+						try { newItem.setExtraData( editorPanel.parseInt( EXTRA[i] ) ); }
 						catch ( NumberFormatException e ) {}
 
 						result.add( newItem );

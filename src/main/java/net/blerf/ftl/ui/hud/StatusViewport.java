@@ -13,7 +13,7 @@ import javax.swing.JViewport;
 
 
 public class StatusViewport extends JViewport {
-	private Color statusBgColor = new Color(212, 208, 200);
+	private Color statusBgColor = new Color( 212, 208, 200 );
 	private String statusString = null;
 
 	public void setStatusString( String s ) {
@@ -26,12 +26,12 @@ public class StatusViewport extends JViewport {
 
 	@Override
 	public void paintChildren( Graphics g ) {
-		super.paintChildren(g);
+		super.paintChildren( g );
 		Graphics2D g2d = (Graphics2D)g;
 		Color prevColor = g2d.getColor();
 
 		if ( statusString != null ) {
-			LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics(statusString, g2d);
+			LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics( statusString, g2d );
 			int statusWidth = g2d.getFontMetrics().stringWidth(statusString);
 			int statusHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
 			int statusX = 8;

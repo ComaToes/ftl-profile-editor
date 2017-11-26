@@ -10,8 +10,10 @@ import java.io.File;
  * Existing directories are always shown.
  */
 public class ExtensionFileFilter extends FileFilter {
+
 	private String desc = null;
 	private String[] exts = null;
+
 
 	/**
 	 * Constructor.
@@ -19,7 +21,7 @@ public class ExtensionFileFilter extends FileFilter {
 	 * @param description the description of this filter
 	 * @param suffixes an array of extensions to check, or null for all files
 	 */
-	public ExtensionFileFilter(String description, String[] suffixes) {
+	public ExtensionFileFilter( String description, String[] suffixes ) {
 		desc = description;
 		exts = suffixes;
 	}
@@ -27,14 +29,14 @@ public class ExtensionFileFilter extends FileFilter {
 	@Override
 	public boolean accept( File file ) {
 		if ( file.exists() ) {
-			if (file.isDirectory() ) return true;
+			if ( file.isDirectory() ) return true;
 			if ( !file.isFile() ) return false;
 		}
 		if ( exts == null ) return true;
 
 		String filename = file.getName();
-		for (int i=0; i < exts.length; i++) {
-			if ( filename.endsWith(exts[i]) ) return true;
+		for ( int i=0; i < exts.length; i++ ) {
+			if ( filename.endsWith( exts[i] ) ) return true;
 		}
 		return false;
 	}

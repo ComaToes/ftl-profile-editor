@@ -56,7 +56,7 @@ import org.apache.logging.log4j.Logger;
 
 public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
-	private static final Logger log = LogManager.getLogger(SavedGameSectorTreePanel.class);
+	private static final Logger log = LogManager.getLogger( SavedGameSectorTreePanel.class );
 
 	private static final String ALGORITHM = "RNG Algorithm";
 	private static final String TREE_TYPE = "Preview";
@@ -113,7 +113,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		treeEditHolderPanel.add( treeEditPanel, BorderLayout.CENTER );
 
 		genPanel =  new FieldEditorPanel( true );
-		genPanel.setBorder( BorderFactory.createTitledBorder("") );
+		genPanel.setBorder( BorderFactory.createTitledBorder( "" ) );
 		genPanel.addRow( ALGORITHM, FieldEditorPanel.ContentType.COMBO );
 		genPanel.addBlankRow();
 		genPanel.addRow( TREE_TYPE, FieldEditorPanel.ContentType.COMBO );
@@ -126,13 +126,13 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		genPanel.addBlankRow();
 		genPanel.addFillRow();
 
-		genPanel.getCombo(ALGORITHM).addMouseListener( new StatusbarMouseListener(frame, "An algorithm of the OS the saved game was created under, or native for the current OS.") );
-		genPanel.getCombo(TREE_TYPE).addMouseListener( new StatusbarMouseListener(frame, "The type of tree to generate.") );
-		genPanel.getInt(SECTOR_TREE_SEED).addMouseListener( new StatusbarMouseListener(frame, "A per-game constant that seeds the random generation of the sector tree.") );
-		genApplyBtn.addMouseListener( new StatusbarMouseListener(frame, "Generate a sector tree with the given algorithm, type, and seed.") );
+		genPanel.getCombo(ALGORITHM).addMouseListener( new StatusbarMouseListener( frame, "An algorithm of the OS the saved game was created under, or native for the current OS." ) );
+		genPanel.getCombo(TREE_TYPE).addMouseListener( new StatusbarMouseListener( frame, "The type of tree to generate." ) );
+		genPanel.getInt(SECTOR_TREE_SEED).addMouseListener( new StatusbarMouseListener( frame, "A per-game constant that seeds the random generation of the sector tree." ) );
+		genApplyBtn.addMouseListener( new StatusbarMouseListener( frame, "Generate a sector tree with the given algorithm, type, and seed." ) );
 
 		miscPanel =  new FieldEditorPanel( true );
-		miscPanel.setBorder( BorderFactory.createTitledBorder("") );
+		miscPanel.setBorder( BorderFactory.createTitledBorder( "" ) );
 		miscRandomSeedBtn = new JButton( "Random Seed" );
 		miscPanel.addComponent( miscRandomSeedBtn );
 		miscPanel.addBlankRow();
@@ -141,8 +141,8 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		miscPanel.addBlankRow();
 		miscPanel.addFillRow();
 
-		miscRandomSeedBtn.addMouseListener( new StatusbarMouseListener(frame, "Generate an entirely new sector tree.") );
-		miscRestoreBtn.addMouseListener( new StatusbarMouseListener(frame, "Restore the sector tree that was last opened/saved.") );
+		miscRandomSeedBtn.addMouseListener( new StatusbarMouseListener( frame, "Generate an entirely new sector tree." ) );
+		miscRestoreBtn.addMouseListener( new StatusbarMouseListener( frame, "Restore the sector tree that was last opened/saved." ) );
 
 		StringBuilder noticeBuf = new StringBuilder();
 		noticeBuf.append( "Saved games contain a seed for building the sector tree, " );
@@ -227,7 +227,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 		if ( source == genApplyBtn ) {
 			try {
-				int newSeed = genPanel.parseInt(SECTOR_TREE_SEED);
+				int newSeed = genPanel.parseInt( SECTOR_TREE_SEED );
 
 				seedChanged = ( newSeed != originalSectorTreeSeed );
 				setSeed( newSeed );
@@ -295,7 +295,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 				tree.setNextVisitedRow( 0 );
 			}
 		}
-		else if ( TREE_TYPE_EXPANDED.equals(genPanel.getCombo(TREE_TYPE).getSelectedItem()) ) {
+		else if ( TREE_TYPE_EXPANDED.equals( genPanel.getCombo(TREE_TYPE).getSelectedItem() ) ) {
 
 			List<List<SectorDot>> dotColumns = expandedTreeGen.generateSectorTree( newSeed, dlcEnabled );
 
@@ -362,7 +362,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 		// Scroll back to the top. (The notice area's wrap pulls the viewport down?)
 
-		SavedGameSectorTreePanel.this.scrollRectToVisible( new Rectangle(0,0,0,0) );
+		SavedGameSectorTreePanel.this.scrollRectToVisible( new Rectangle( 0,0,0,0 ) );
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {

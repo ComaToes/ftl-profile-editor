@@ -36,7 +36,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ImageUtilities {
 
-	private static final Logger log = LogManager.getLogger(ImageUtilities.class);
+	private static final Logger log = LogManager.getLogger( ImageUtilities.class );
 
 	private static final int maxIconWidth = 64;
 	private static final int maxIconHeight = 64;
@@ -116,7 +116,7 @@ public class ImageUtilities {
 		BufferedImage lockedImage = gc.createCompatibleImage( baseImage.getWidth(), baseImage.getHeight(), Transparency.TRANSLUCENT );
 		Graphics2D lockedG = lockedImage.createGraphics();
 		lockedG.drawImage( baseImage, 0, 0, null );
-		lockedG.setColor( new Color(0, 0, 0, 150) );
+		lockedG.setColor( new Color( 0, 0, 0, 150 ) );
 		lockedG.fillRect( 0, 0, baseImage.getWidth(), baseImage.getHeight() );
 		if ( lockImage != null ) {
 			int lockOffsetX = (baseImage.getWidth() - lockImage.getWidth()) / 2;
@@ -250,7 +250,7 @@ public class ImageUtilities {
 			h = Math.abs(h);
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
 			Graphics2D g2d = (Graphics2D)result.createGraphics();
-			g2d.setColor( new Color(150, 150, 200) );
+			g2d.setColor( new Color( 150, 150, 200 ) );
 			g2d.fillRect( 0, 0, w-1, h-1 );
 			g2d.dispose();
 		}
@@ -302,7 +302,7 @@ public class ImageUtilities {
 		InputStream in = null;
 		try {
 			in = DataManager.get().getResourceInputStream( innerPath );
-			BufferedImage origImage = ImageIO.read(in);
+			BufferedImage origImage = ImageIO.read( in );
 			int width = origImage.getWidth();
 			int height = origImage.getHeight();
 
@@ -316,7 +316,8 @@ public class ImageUtilities {
 
 			if ( origImage.getWidth() == width && origImage.getHeight() == height ) {
 				result = origImage;
-			} else {
+			}
+			else {
 				BufferedImage scaledImage = gc.createCompatibleImage( width, height, Transparency.TRANSLUCENT );
 				Graphics2D g2d = scaledImage.createGraphics();
 				g2d.setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
@@ -342,7 +343,7 @@ public class ImageUtilities {
 		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
 			result = gc.createCompatibleImage( maxW, maxH, Transparency.OPAQUE );
 			Graphics2D g2d = (Graphics2D)result.createGraphics();
-			g2d.setColor( new Color(150, 150, 200) );
+			g2d.setColor( new Color( 150, 150, 200 ) );
 			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
 			g2d.dispose();
 		}
@@ -384,7 +385,7 @@ public class ImageUtilities {
 		if ( cachedImages != null ) {
 			cacheMap = cachedImages.get( innerPath );
 			if ( cacheMap != null ) result = cacheMap.get( keyRect );
-			if (result != null) return result;
+			if ( result != null ) return result;
 			log.trace( "Image not in cache, loading and cropping...: "+ innerPath );
 		}
 
@@ -411,7 +412,7 @@ public class ImageUtilities {
 		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
 			Graphics2D g2d = (Graphics2D)result.createGraphics();
-			g2d.setColor( new Color(150, 150, 200) );
+			g2d.setColor( new Color( 150, 150, 200 ) );
 			g2d.fillRect( 0, 0, w-1, h-1 );
 			g2d.dispose();
 		}
@@ -526,7 +527,7 @@ public class ImageUtilities {
 		}
 
 		public int hashCode() {
-			return ( java.util.Arrays.hashCode(scaleFactors) ^ java.util.Arrays.hashCode(offsets) );
+			return ( java.util.Arrays.hashCode( scaleFactors ) ^ java.util.Arrays.hashCode( offsets ) );
 		}
 	}
 }

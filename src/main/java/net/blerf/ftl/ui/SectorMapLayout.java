@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class SectorMapLayout implements LayoutManager2 {
 
-	private static final Logger log = LogManager.getLogger(SectorMapLayout.class);
+	private static final Logger log = LogManager.getLogger( SectorMapLayout.class );
 
 	private ArrayList<Component> beaconList = new ArrayList<Component>();
 	private ArrayList<Component> miscBoxList = new ArrayList<Component>();
@@ -50,21 +50,21 @@ public class SectorMapLayout implements LayoutManager2 {
 
 	public void setColumnSize( int col, int size ) {
 		if ( size < 1 ) return;
-		columnSizeMap.put( new Integer(col), new Integer(size) );
+		columnSizeMap.put( new Integer( col ), new Integer( size ) );
 	}
 	public int getColumnSize( int n ) {
 		if ( n < 0 || n >= columnCount)
-			throw new ArrayIndexOutOfBoundsException(String.format("Attempted to get size of column %d out of %d", n, columnCount));
+			throw new ArrayIndexOutOfBoundsException( String.format("Attempted to get size of column %d out of %d", n, columnCount) );
 
 		if ( n < columnCount-1 ) {
-			Integer size = columnSizeMap.get( new Integer(n) );
+			Integer size = columnSizeMap.get( new Integer( n ) );
 			return (size != null ? size.intValue() : defaultColumnSize);
 		}
 		else {  // Subtract all prior columns from the total to determine the last column.
 			int col = 0;
 			int b = 0;
-			while (b < beaconList.size() && col < columnCount-1) {
-				b += getColumnSize(col);
+			while ( b < beaconList.size() && col < columnCount-1 ) {
+				b += getColumnSize( col );
 				col++;
 			}
 			return (beaconList.size() - b);
@@ -72,15 +72,15 @@ public class SectorMapLayout implements LayoutManager2 {
 	}
 
 	public int getCtrlColumn( Component comp ) {
-		return (columnCtrlList.contains(comp) ? columnCtrlList.indexOf(comp) : -1);
+		return (columnCtrlList.contains( comp ) ? columnCtrlList.indexOf( comp ) : -1);
 	}
 
 	private void updateColumnCount() {
 		columnCount = 0;
-		for (int i=0; i < beaconList.size(); ) {
+		for ( int i=0; i < beaconList.size(); ) {
 			// Avoid getColumnSize() until columnCount has been set.
 
-			Integer size = columnSizeMap.get( new Integer(columnCount) );
+			Integer size = columnSizeMap.get( new Integer( columnCount ) );
 			i += (size != null ? size.intValue() : defaultColumnSize);
 			columnCount++;
 		}
@@ -90,7 +90,7 @@ public class SectorMapLayout implements LayoutManager2 {
 	 * Returns the beacon id at which a component was placed, or -1.
 	 */
 	public int getBeaconId( Component comp ) {
-		if ( beaconList.contains( comp) )
+		if ( beaconList.contains( comp ) )
 			return beaconList.indexOf( comp );
 
 		SectorMapConstraints compC = constraintsMap.get( comp );
@@ -101,7 +101,7 @@ public class SectorMapLayout implements LayoutManager2 {
 	}
 
 	public Component getMiscBoxAtBeaconId( int beaconId ) {
-		for (Component comp : miscBoxList) {
+		for ( Component comp : miscBoxList ) {
 			SectorMapConstraints compC = constraintsMap.get( comp );
 			if ( compC.getBeaconId() == beaconId ) {
 				return comp;
@@ -142,8 +142,8 @@ public class SectorMapLayout implements LayoutManager2 {
 		int nextColAt = colSize;
 		int colPosition = 0;
 
-		for (int b=0; b < beaconList.size(); b++) {
-			Component comp = beaconList.get(b);
+		for ( int b=0; b < beaconList.size(); b++ ) {
+			Component comp = beaconList.get( b );
 
 			if ( nextColAt == b ) {
 				col++;
@@ -160,8 +160,8 @@ public class SectorMapLayout implements LayoutManager2 {
 			colPosition++;
 		}
 
-		for (int i=0; i < miscBoxList.size(); i++) {
-			Component comp = miscBoxList.get(i);
+		for ( int i=0; i < miscBoxList.size(); i++ ) {
+			Component comp = miscBoxList.get( i );
 			SectorMapConstraints compC = constraintsMap.get( comp );
 
 			if ( compC.getBeaconId() < beaconList.size() ) {
@@ -190,8 +190,8 @@ public class SectorMapLayout implements LayoutManager2 {
 			}
 		}
 
-		for (int i=0; i < columnCtrlList.size(); i++) {
-			Component comp = columnCtrlList.get(i);
+		for ( int i=0; i < columnCtrlList.size(); i++ ) {
+			Component comp = columnCtrlList.get( i );
 
 			if ( i < columnCount ) {  // No need for controls on the final column.
 				int ctrlX = beaconZoneX + i*colWidth + colWidth/2 - comp.getPreferredSize().width/2;
@@ -215,15 +215,19 @@ public class SectorMapLayout implements LayoutManager2 {
 		if ( SectorMapConstraints.BEACON.equals( compC.type ) ) {
 			if ( !beaconList.contains( comp ) )
 				beaconList.add( comp );
-		} else if ( SectorMapConstraints.MISC_BOX.equals( compC.type ) ) {
+		}
+		else if ( SectorMapConstraints.MISC_BOX.equals( compC.type ) ) {
 			if ( !miscBoxList.contains( comp ) )
 				miscBoxList.add( comp );
-		} else if ( SectorMapConstraints.PLAYER_SHIP.equals( compC.type ) ) {
+		}
+		else if ( SectorMapConstraints.PLAYER_SHIP.equals( compC.type ) ) {
 			playerShipComp = comp;
-		} else if ( SectorMapConstraints.COLUMN_CTRL.equals( compC.type ) ) {
+		}
+		else if ( SectorMapConstraints.COLUMN_CTRL.equals( compC.type ) ) {
 			if ( !columnCtrlList.contains( comp ) )
 				columnCtrlList.add( comp );
-		} else if ( SectorMapConstraints.BACKGROUND.equals( compC.type ) ) {
+		}
+		else if ( SectorMapConstraints.BACKGROUND.equals( compC.type ) ) {
 			bgComp = comp;
 		}
 	}
@@ -269,7 +273,7 @@ public class SectorMapLayout implements LayoutManager2 {
 			this.type = type;
 		}
 		public void setBeaconId( int n ) {
-			if ( MISC_BOX.equals(type) || PLAYER_SHIP.equals(type) )
+			if ( MISC_BOX.equals(type) || PLAYER_SHIP.equals( type ) )
 				beaconId = n;
 		}
 		public int getBeaconId() { return beaconId; }

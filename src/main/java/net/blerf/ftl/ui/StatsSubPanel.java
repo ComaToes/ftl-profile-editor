@@ -155,7 +155,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	private StatRow getRow( String desc ) {
 		StatRow result = rowMap.get( desc );
 		if ( result == null )
-			throw new IndexOutOfBoundsException("Requested stat was not found ("+ desc +")");
+			throw new IndexOutOfBoundsException( "Requested stat was not found ("+ desc +")" );
 		return result;
 	}
 
@@ -222,7 +222,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	public void actionPerformed( ActionEvent e ) {
 		Object source = e.getSource();
 		if ( editMap.containsKey( source ) ) {
-			final StatRow row = getRow( editMap.get(source) );
+			final StatRow row = getRow( editMap.get( source ) );
 
 			JPanel popupPanel = new JPanel( new BorderLayout() );
 
