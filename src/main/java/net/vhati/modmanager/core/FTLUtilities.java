@@ -1,5 +1,5 @@
 // Copied from a snapshot of Slipstream Mod Manager after 1.7.
-// https://github.com/Vhati/Slipstream-Mod-Manager/blob/b980f4cdf64667799c013b8fd9025bcb0d389717/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/abff136aa4374e018820e9f15813f019218069f8/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
 
 package net.vhati.modmanager.core;
 
@@ -13,13 +13,19 @@ import javax.swing.filechooser.FileFilter;
 
 public class FTLUtilities {
 
+	/** Steam's application ID for FTL. */
+	public static final String STEAM_APPID_FTL = "212680";
+
+
 	/**
 	 * Confirms the FTL resources dir exists and contains the dat files.
+	 *
+	 * Note: Do d.getCanonicalFile() to resolve any symlinks first!
 	 */
 	public static boolean isDatsDirValid( File d ) {
 		if ( !d.exists() || !d.isDirectory() ) return false;
-		if ( !new File(d, "data.dat").exists() ) return false;
-		if ( !new File(d, "resource.dat").exists() ) return false;
+		if ( !new File( d, "data.dat" ).exists() ) return false;
+		if ( !new File( d, "resource.dat" ).exists() ) return false;
 		return true;
 	}
 
@@ -32,8 +38,12 @@ public class FTLUtilities {
 		String humblePath = "FTL/resources";
 
 		String xdgDataHome = System.getenv("XDG_DATA_HOME");
-		if (xdgDataHome == null)
+		if ( xdgDataHome == null )
 			xdgDataHome = System.getProperty("user.home") +"/.local/share";
+
+		String winePrefix = System.getProperty("WINEPREFIX");
+		if ( winePrefix == null )
+			winePrefix = System.getProperty("user.home") +"/.wine";
 
 		File[] candidates = new File[] {
 			// Windows - Steam
@@ -47,17 +57,27 @@ public class FTLUtilities {
 			new File( new File(""+System.getenv("ProgramFiles")), humblePath ),
 			// Linux - Steam
 			new File( xdgDataHome +"/Steam/SteamApps/common/FTL Faster Than Light/data/resources" ),
-			new File( xdgDataHome +"/.steam/steam/SteamApps/common/FTL Faster Than Light/data/resources" ),
+			new File( xdgDataHome +"/Steam/steamapps/common/FTL Faster Than Light/data/resources" ),
+			new File( System.getProperty("user.home") +"/.steam/steam/SteamApps/common/FTL Faster Than Light/data/resources" ),
 			new File( System.getProperty("user.home") +"/.steam/steam/steamapps/common/FTL Faster Than Light/data/resources" ),
 			// OSX - Steam
 			new File( System.getProperty("user.home") +"/Library/Application Support/Steam/SteamApps/common/FTL Faster Than Light/FTL.app/Contents/Resources" ),
 			// OSX
-			new File( "/Applications/FTL.app/Contents/Resources" )
+			new File( "/Applications/FTL.app/Contents/Resources" ),
+			// Linux Wine
+			new File( winePrefix +"/drive_c/Program Files (x86)/"+ gogPath ),
+			new File( winePrefix +"/drive_c/Program Files/"+ gogPath ),
+			new File( winePrefix +"/drive_c/Program Files (x86)/"+ humblePath ),
+			new File( winePrefix +"/drive_c/Program Files/"+ humblePath )
 		};
 
 		File result = null;
 
 		for ( File candidate : candidates ) {
+			// Resolve symlinks.
+			try {candidate = candidate.getCanonicalFile();}
+			catch ( IOException e ) {continue;}
+
 			if ( isDatsDirValid( candidate ) ) {
 				result = candidate;
 				break;
@@ -81,10 +101,11 @@ public class FTLUtilities {
 		message += "You will now be prompted to locate FTL manually.\n";
 		message += "Select '(FTL dir)/resources/data.dat'.\n";
 		message += "Or 'FTL.app', if you're on OSX.";
-		JOptionPane.showMessageDialog( parentComponent,  message, "Find FTL", JOptionPane.INFORMATION_MESSAGE );
+		JOptionPane.showMessageDialog( parentComponent, message, "Find FTL", JOptionPane.INFORMATION_MESSAGE );
 
 		final JFileChooser fc = new JFileChooser();
 		fc.setDialogTitle( "Find data.dat or FTL.app" );
+		fc.setFileHidingEnabled( false );
 		fc.addChoosableFileFilter(new FileFilter() {
 			@Override
 			public String getDescription() {
@@ -158,20 +179,77 @@ public class FTLUtilities {
 
 
 	/**
-	 * Spawns the game (FTLGame.exe or FTL.app).
+	 * Returns the executable that will launch Steam, or null.
 	 *
-	 * @param exeFile see findGameExe()
+	 * On Windows, Steam.exe.
+	 * On Linux, steam is a script. ( http://moritzmolch.com/815 )
+	 * On OSX, Steam.app is the grandparent dir itself (a bundle).
+	 *
+	 * The args to launch FTL are: ["-applaunch", STEAM_APPID_FTL]
+	 */
+	public static File findSteamExe() {
+		File result = null;
+
+		if ( System.getProperty("os.name").startsWith("Windows") ) {
+			File[] candidates = new File[] {
+				new File( new File(""+System.getenv("ProgramFiles(x86)")), "Steam/Steam.exe" ),
+				new File( new File(""+System.getenv("ProgramFiles")), "Steam/Steam.exe" )
+			};
+
+			for ( File candidate : candidates ) {
+				if ( candidate.exists() ) {
+					result = candidate;
+					break;
+				}
+			}
+		}
+		else if ( System.getProperty("os.name").equals("Linux") ) {
+			File candidate = new File( "/usr/bin/steam" );
+
+			if ( candidate.exists() ) result = candidate;
+		}
+		else if ( System.getProperty("os.name").contains("OS X") ) {
+			File candidate = new File( "/Applications/Steam.app" );
+
+			if ( candidate.exists() ) result = candidate;
+		}
+
+		return result;
+	}
+
+
+	/**
+	 * Launches an executable.
+	 *
+	 * On Windows, *.exe.
+	 * On Linux, a binary or script.
+	 * On OSX, an *.app bundle dir.
+	 *
+	 * @param exeFile see findGameExe() or findSteamExe()
+	 * @param exeArgs arguments for the executable
 	 * @return a Process object, or null
 	 */
-	public static Process launchGame( File exeFile ) throws IOException {
+	public static Process launchExe( File exeFile, String... exeArgs ) throws IOException {
 		if ( exeFile == null ) return null;
+		if ( exeArgs == null ) exeArgs = new String[0];
 
 		Process result = null;
 		ProcessBuilder pb = null;
 		if ( System.getProperty("os.name").contains("OS X") ) {
-			pb = new ProcessBuilder( "open", "-a", exeFile.getAbsolutePath() );
-		} else {
-			pb = new ProcessBuilder( exeFile.getAbsolutePath() );
+			String[] args = new String[3 + exeArgs.length];
+			args[0] = "open";
+			args[1] = "-a";
+			args[2] = exeFile.getAbsolutePath();
+			System.arraycopy( exeArgs, 0, args, 3, exeArgs.length );
+
+			pb = new ProcessBuilder( args );
+		}
+		else {
+			String[] args = new String[1 + exeArgs.length];
+
+			System.arraycopy( exeArgs, 0, args, 1, exeArgs.length );
+
+			pb = new ProcessBuilder( args );
 		}
 		if ( pb != null ) {
 			pb.directory( exeFile.getParentFile() );
