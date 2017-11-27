@@ -3054,13 +3054,27 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Sets the basename to use when loading ship images.
-		 * See 'img/ship/basename_*.png'.
-		 *
-		 * Values in the wild:
-		 *   jelly_croissant_pirate, rebel_long_pirate...
 		 *
 		 * It often resembles the layout id, but they're not interchangeable.
 		 * The proper shipLayoutId comes from the ShipBlueprint.
+		 *
+		 * FTL 1.01-1.03.3 used the following path for all ships.
+		 * FTL 1.5.4 used this path for player ships only.
+		 * "img/ship/{shipGfxBaseName}_base.png"
+		 *
+		 * FTL 1.5.4 used the following path for enemy ships only.
+		 * "img/ships_glow/{shipGfxBaseName}_base.png"
+		 *
+		 * The basename is combined with suffixes:
+		 *   _base = Background hull layer.
+		 *   _cloak = Foreground hull layer when cloaked.
+		 *   _floor = Decorative floorplan outline layer.
+		 *   _gib[0-9] = Post-destruction hull fragments.
+		 *
+		 * The "_floor" image is displayed below the programmatically painted
+		 * grid of squares. It is typically only present for player ships.
+		 *
+		 * Observed values: jelly_croissant_pirate, rebel_long_pirate.
 		 */
 		public void setShipGraphicsBaseName( String shipGfxBaseName ) {
 			this.shipGfxBaseName = shipGfxBaseName;
@@ -4262,7 +4276,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		public static SystemType findById( String id ) {
 			for ( SystemType s : values() ) {
-				if ( s.getId().equals(id) ) return s;
+				if ( s.getId().equals( id ) ) return s;
 			}
 			return null;
 		}
@@ -4328,8 +4342,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Power bars appear at the bottom of the stack.
 		 *
-		 * Note: For Weapons and DroneCtrl systems, this value must be set
-		 * whenever a weapon/drone is armed/disarmed and vice versa.
+		 * Note: For Weapons and DroneCtrl systems, this value ideally would
+		 * be set whenever a weapon/drone is armed/disarmed and vice versa.
+		 *
+		 * FTL seems to recalculate Weapons system power upon loading, so this
+		 * value can be sloppily set to 0 or ignored while editing.
 		 *
 		 * @see #setBatteryPower(int)
 		 */
@@ -5145,7 +5162,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	public static class DroneState {
 		private String droneId = null;
 		private boolean armed = false;
-		private boolean playerControlled = true;
+		private boolean playerControlled = false;
 		private int bodyX = -1, bodyY = -1;
 		private int bodyRoomId = -1;
 		private int bodyRoomSquare = -1;
@@ -8061,25 +8078,25 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private int goalPosX = 0, goalPosY = 0;
 
 		// This block was formerly a length 6 array named beta.
-		private int unknownEpsilon = 0;
-		private int unknownZeta = 0;
-		private int unknownEta = 0;
-		private int unknownTheta = 0;
-		private int unknownIota = 0;
-		private int unknownKappa = 0;
+		private int unknownEpsilon = Integer.MIN_VALUE;
+		private int unknownZeta = Integer.MIN_VALUE;
+		private int unknownEta = Integer.MIN_VALUE;
+		private int unknownTheta = Integer.MIN_VALUE;
+		private int unknownIota = Integer.MIN_VALUE;
+		private int unknownKappa = Integer.MIN_VALUE;
 
 		// This block was formerly a length 14 array named gamma.
-		private int unknownLambda = 0;
+		private int unknownLambda = -1000;
 		private int unknownMu = 0;
 		private int cooldownTicks = 0;
 		private int orbitAngle = 0;
 		private int turretAngle = 0;
 		private int unknownXi = 0;
-		private int unknownOmicron = 0;
+		private int unknownOmicron = Integer.MAX_VALUE;
 		private int unknownPi = 0;
 		private int unknownRho = 0;
 		private int overloadTicks = 0;
-		private int unknownTau = 0;
+		private int unknownTau = -1000;
 		private int unknownUpsilon = 0;
 		private int deltaPosX = 0, deltaPosY = 0;
 
@@ -8530,6 +8547,12 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 	}
 
+	/**
+	 * Generic drone pod info consisting of an int array.
+	 *
+	 * No longer used, this had allowed read/write of various drones' unknown
+	 * structures each with different lengths.
+	 */
 	public static class IntegerDronePodInfo extends ExtendedDronePodInfo {
 		private int[] unknownAlpha;
 
@@ -9076,6 +9099,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Sets extended drone info, which varies by DroneType.
+		 *
+		 * For BATTLE and REPAIR, this should be null.
 		 */
 		public void setDronePod( DronePodState pod ) { dronePod = pod; }
 		public DronePodState getDronePod() { return dronePod; }

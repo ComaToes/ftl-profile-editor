@@ -4,6 +4,10 @@ package net.blerf.ftl.constants;
 /**
  * Constants to track which newbie tips need showing.
  *
+ * Messages are defined in misc.xml.
+ *   SHIPS_UNLOCKED = "tutorial_list_open"
+ *   SHIP_LIST_INTRO = "list_tutorial" and "list_tutorial_2"
+ *
  * After a tip is seen once, the level increments.
  *
  * When FTL 1.5.4+ migrates "prof.sav" to create "ae_prof.sav", the level is
