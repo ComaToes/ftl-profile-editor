@@ -97,7 +97,7 @@ public class ProfileGeneralStatsPanel extends JPanel {
 
 		FTLConstants ftlConstants = null;
 
-		if ( p.getHeaderAlpha() == 4 ) {
+		if ( p.getFileFormat() == 4 ) {
 			ftlConstants = new OriginalFTLConstants();
 		} else {
 			ftlConstants = new AdvancedFTLConstants();

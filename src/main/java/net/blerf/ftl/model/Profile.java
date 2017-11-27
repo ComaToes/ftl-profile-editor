@@ -12,7 +12,7 @@ import net.blerf.ftl.model.Stats.StatType;
 
 public class Profile {
 
-	private int unknownHeaderAlpha;
+	private int fileFormat;
 	private List<AchievementRecord> achievements;
 	private Map<String, ShipAvailability> shipUnlockMap;
 	private Stats stats;
@@ -30,7 +30,7 @@ public class Profile {
 	 * copy-constructed as well.
 	 */
 	public Profile( Profile srcProfile ) {
-		unknownHeaderAlpha = srcProfile.getHeaderAlpha();
+		fileFormat = srcProfile.getFileFormat();
 
 		achievements = new ArrayList<AchievementRecord>();
 		for ( AchievementRecord rec : srcProfile.getAchievements() ) {
@@ -49,16 +49,17 @@ public class Profile {
 
 
 	/**
-	 * Sets the magic number indicating file format, apparently.
+	 * Sets the magic number indicating file format.
 	 *
-	 * 4 = Profile, FTL 1.01-1.03.3
-	 * 9 = AE Profile, FTL 1.5.4+
+	 * Observed values:
+	 *   4 = Profile, FTL 1.01-1.03.3
+	 *   9 = AE Profile, FTL 1.5.4+
 	 */
-	public void setHeaderAlpha( int n ) {
-		this.unknownHeaderAlpha = n;
+	public void setFileFormat( int n ) {
+		fileFormat = n;
 	}
-	public int getHeaderAlpha() {
-		return unknownHeaderAlpha;
+	public int getFileFormat() {
+		return fileFormat;
 	}
 
 	/**
@@ -99,7 +100,7 @@ public class Profile {
 
 	public static Profile createEmptyProfile() {
 		Profile profile = new Profile();
-		profile.setHeaderAlpha( 4 );
+		profile.setFileFormat( 4 );
 		profile.setAchievements( new ArrayList<AchievementRecord>() );
 		profile.setShipUnlockMap( new LinkedHashMap<String, ShipAvailability>() );
 
@@ -141,13 +142,13 @@ public class Profile {
 		                            StatType.MOST_SKILL_MASTERIES};
 
 		String formatDesc = null;
-		switch ( unknownHeaderAlpha ) {
+		switch ( fileFormat ) {
 			case( 4 ): formatDesc = "Profile, FTL 1.01-1.03.3"; break;
 			case( 9 ): formatDesc = "AE Profile, FTL 1.5.4+"; break;
 			default: formatDesc = "???"; break;
 		}
 
-		result.append(String.format("File Format:            %4d (%s)\n", unknownHeaderAlpha, formatDesc));
+		result.append(String.format("File Format:            %4d (%s)\n", fileFormat, formatDesc));
 		result.append(String.format("Newbie Tip Level:       %4s\n", newbieTipLevel.toString()));
 
 		result.append("\nShip Unlocks...\n");

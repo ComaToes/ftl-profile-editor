@@ -52,14 +52,14 @@ public class ProfileParser extends Parser {
 	public Profile readProfile( InputStream in ) throws IOException {
 		Profile p = new Profile();
 
-		int headerAlpha = readInt(in);
-		if ( headerAlpha == 4 ) {
+		int fileFormat = readInt(in);
+		if ( fileFormat == 4 ) {
 			// FTL 1.03.3 and earlier.
-			p.setHeaderAlpha( headerAlpha );
+			p.setFileFormat( fileFormat );
 		}
-		else if ( headerAlpha == 9 ) {
+		else if ( fileFormat == 9 ) {
 			// FTL 1.5.4+.
-			p.setHeaderAlpha( headerAlpha );
+			p.setFileFormat( fileFormat );
 
 			int newbieFlag = readInt(in);
 			if ( newbieFlag == 0 ) {
@@ -76,22 +76,22 @@ public class ProfileParser extends Parser {
 			}
 		}
 		else {
-			throw new IOException( "Unexpected first byte ("+ headerAlpha +") for a PROFILE." );
+			throw new IOException( "Unexpected first byte ("+ fileFormat +") for a PROFILE." );
 		}
 
-		p.setAchievements( readAchievements(in, headerAlpha) );
+		p.setAchievements( readAchievements( in, fileFormat ) );
 
-		p.setShipUnlockMap( readShipUnlocks(in, headerAlpha) );
+		p.setShipUnlockMap( readShipUnlocks( in, fileFormat ) );
 
-		p.setStats( readStats(in, headerAlpha) );
+		p.setStats( readStats( in, fileFormat ) );
 
 		return p;
 	}
 
 	public void writeProfile( OutputStream out, Profile p ) throws IOException {
-		writeInt( out, p.getHeaderAlpha() );
+		writeInt( out, p.getFileFormat() );
 
-		if ( p.getHeaderAlpha() == 9 ) {
+		if ( p.getFileFormat() == 9 ) {
 			int newbieFlag = 0;
 			if ( p.getNewbieTipLevel() == NewbieTipLevel.SHIPS_UNLOCKED ) {
 				newbieFlag = 0;
@@ -111,14 +111,14 @@ public class ProfileParser extends Parser {
 			writeInt( out, newbieFlag );
 		}
 
-		writeAchievements( out, p.getAchievements(), p.getHeaderAlpha() );
+		writeAchievements( out, p.getAchievements(), p.getFileFormat() );
 
-		writeShipUnlocks( out, p.getShipUnlockMap(), p.getHeaderAlpha() );
+		writeShipUnlocks( out, p.getShipUnlockMap(), p.getFileFormat() );
 
-		writeStats( out, p.getStats(), p.getHeaderAlpha() );
+		writeStats( out, p.getStats(), p.getFileFormat() );
 	}
 
-	private List<AchievementRecord> readAchievements( InputStream in, int headerAlpha ) throws IOException {
+	private List<AchievementRecord> readAchievements( InputStream in, int fileFormat ) throws IOException {
 		int achievementCount = readInt(in);
 
 		List<AchievementRecord> achievements = new ArrayList<AchievementRecord>( achievementCount );
@@ -134,7 +134,7 @@ public class ProfileParser extends Parser {
 			else if ( diffFlag == 1 ) {
 				diff = Difficulty.NORMAL;
 			}
-			else if ( diffFlag == 2 && headerAlpha == 9 ) {
+			else if ( diffFlag == 2 && fileFormat == 9 ) {
 				diff = Difficulty.HARD;
 			}
 			else {
@@ -149,7 +149,7 @@ public class ProfileParser extends Parser {
 
 			AchievementRecord rec = new AchievementRecord( achId, diff );
 
-			if ( headerAlpha == 9 ) {
+			if ( fileFormat == 9 ) {
 				boolean needsVariantFlags = ach.isVictory();
 
 				if ( needsVariantFlags ) {
@@ -191,7 +191,7 @@ public class ProfileParser extends Parser {
 		return achievements;
 	}
 
-	private void writeAchievements( OutputStream out, List<AchievementRecord> achievements, int headerAlpha ) throws IOException {
+	private void writeAchievements( OutputStream out, List<AchievementRecord> achievements, int fileFormat ) throws IOException {
 		List<String> shipBaseIds = new ArrayList<String>();  // TODO: Magic strings.
 		shipBaseIds.add( "PLAYER_SHIP_HARD" );
 		shipBaseIds.add( "PLAYER_SHIP_STEALTH" );
@@ -202,7 +202,7 @@ public class ProfileParser extends Parser {
 		shipBaseIds.add( "PLAYER_SHIP_ROCK" );
 		shipBaseIds.add( "PLAYER_SHIP_ENERGY" );
 		shipBaseIds.add( "PLAYER_SHIP_CRYSTAL" );
-		if ( headerAlpha == 9 ) {
+		if ( fileFormat == 9 ) {
 			shipBaseIds.add( "PLAYER_SHIP_ANAEROBIC" );
 		}
 
@@ -217,7 +217,7 @@ public class ProfileParser extends Parser {
 			}
 
 			// FTL 1.01-1.03.3 profiles have no quest or victory achievements.
-			if ( headerAlpha == 4 && ( ach.isVictory() || ach.isQuest() ) ) {
+			if ( fileFormat == 4 && ( ach.isVictory() || ach.isQuest() ) ) {
 				continue;
 			}
 
@@ -242,7 +242,7 @@ public class ProfileParser extends Parser {
 			else if ( rec.getDifficulty() == Difficulty.NORMAL ) {
 				diffFlag = 1;
 			}
-			else if ( rec.getDifficulty() == Difficulty.HARD && headerAlpha == 9 ) {
+			else if ( rec.getDifficulty() == Difficulty.HARD && fileFormat == 9 ) {
 				diffFlag = 2;
 			}
 			else {
@@ -252,7 +252,7 @@ public class ProfileParser extends Parser {
 			}
 			writeInt( out, diffFlag );
 
-			if ( headerAlpha == 9 ) {
+			if ( fileFormat == 9 ) {
 				boolean needsVariantFlags = DataManager.get().getAchievement( rec.getAchievementId() ).isVictory();
 
 				if ( needsVariantFlags ) {
@@ -287,7 +287,7 @@ public class ProfileParser extends Parser {
 		}
 	}
 
-	private Map<String, ShipAvailability> readShipUnlocks( InputStream in, int headerAlpha ) throws IOException {
+	private Map<String, ShipAvailability> readShipUnlocks( InputStream in, int fileFormat ) throws IOException {
 		List<String> unlockableShipIds = new ArrayList<String>();
 		unlockableShipIds.add( "PLAYER_SHIP_HARD" );
 		unlockableShipIds.add( "PLAYER_SHIP_STEALTH" );
@@ -298,12 +298,12 @@ public class ProfileParser extends Parser {
 		unlockableShipIds.add( "PLAYER_SHIP_ROCK" );
 		unlockableShipIds.add( "PLAYER_SHIP_ENERGY" );
 		unlockableShipIds.add( "PLAYER_SHIP_CRYSTAL" );
-		if ( headerAlpha == 4 ) {
+		if ( fileFormat == 4 ) {
 			unlockableShipIds.add( "UNKNOWN_ALPHA" );
 			unlockableShipIds.add( "UNKNOWN_BETA" );
 			unlockableShipIds.add( "UNKNOWN_GAMMA" );
 		}
-		else if ( headerAlpha == 9 ) {
+		else if ( fileFormat == 9 ) {
 			unlockableShipIds.add( "PLAYER_SHIP_ANAEROBIC" );
 			unlockableShipIds.add( "UNKNOWN_BETA" );
 			unlockableShipIds.add( "UNKNOWN_GAMMA" );
@@ -316,7 +316,7 @@ public class ProfileParser extends Parser {
 			ShipAvailability shipAvail = new ShipAvailability( shipId );
 			shipAvail.setUnlockedA( readBool(in) );
 
-			if ( headerAlpha == 9 ) {
+			if ( fileFormat == 9 ) {
 				shipAvail.setUnlockedC( readBool(in) );
 			}
 
@@ -326,7 +326,7 @@ public class ProfileParser extends Parser {
 		return shipUnlockMap;
 	}
 
-	private void writeShipUnlocks( OutputStream out, Map<String, ShipAvailability> shipUnlockMap, int headerAlpha ) throws IOException {
+	private void writeShipUnlocks( OutputStream out, Map<String, ShipAvailability> shipUnlockMap, int fileFormat ) throws IOException {
 		List<String> unlockableShipIds = new ArrayList<String>();
 		unlockableShipIds.add( "PLAYER_SHIP_HARD" );
 		unlockableShipIds.add( "PLAYER_SHIP_STEALTH" );
@@ -337,12 +337,12 @@ public class ProfileParser extends Parser {
 		unlockableShipIds.add( "PLAYER_SHIP_ROCK" );
 		unlockableShipIds.add( "PLAYER_SHIP_ENERGY" );
 		unlockableShipIds.add( "PLAYER_SHIP_CRYSTAL" );
-		if ( headerAlpha == 4 ) {
+		if ( fileFormat == 4 ) {
 			unlockableShipIds.add( "UNKNOWN_ALPHA" );
 			unlockableShipIds.add( "UNKNOWN_BETA" );
 			unlockableShipIds.add( "UNKNOWN_GAMMA" );
 		}
-		else if ( headerAlpha == 9 ) {
+		else if ( fileFormat == 9 ) {
 			unlockableShipIds.add( "PLAYER_SHIP_ANAEROBIC" );
 			unlockableShipIds.add( "UNKNOWN_BETA" );
 			unlockableShipIds.add( "UNKNOWN_GAMMA" );
@@ -361,18 +361,18 @@ public class ProfileParser extends Parser {
 
 			writeBool( out, unlockedA );
 
-			if ( headerAlpha == 9 ) {
+			if ( fileFormat == 9 ) {
 				writeBool( out, unlockedC );
 			}
 		}
 	}
 
-	private Stats readStats( InputStream in, int headerAlpha ) throws IOException {
+	private Stats readStats( InputStream in, int fileFormat ) throws IOException {
 		Stats stats = new Stats();
 
 		// Top Scores
-		stats.setTopScores( readScoreList(in, headerAlpha) );
-		stats.setShipBest( readScoreList(in, headerAlpha) );
+		stats.setTopScores( readScoreList( in, fileFormat ) );
+		stats.setShipBest( readScoreList( in, fileFormat ) );
 
 		// Stats
 		stats.setIntRecord( StatType.MOST_SHIPS_DEFEATED, readInt(in) );
@@ -395,9 +395,9 @@ public class ProfileParser extends Parser {
 		return stats;
 	}
 
-	private void writeStats( OutputStream out, Stats stats, int headerAlpha ) throws IOException {
-		writeScoreList( out, stats.getTopScores(), headerAlpha );
-		writeScoreList( out, stats.getShipBest(), headerAlpha );
+	private void writeStats( OutputStream out, Stats stats, int fileFormat ) throws IOException {
+		writeScoreList( out, stats.getTopScores(), fileFormat );
+		writeScoreList( out, stats.getShipBest(), fileFormat );
 
 		writeInt( out, stats.getIntRecord( StatType.MOST_SHIPS_DEFEATED ) );
 		writeInt( out, stats.getIntRecord( StatType.TOTAL_SHIPS_DEFEATED ) );
@@ -433,10 +433,10 @@ public class ProfileParser extends Parser {
 		writeBool( out, rec.isMale() );
 	}
 
-	private List<Score> readScoreList( InputStream in, int headerAlpha ) throws IOException {
+	private List<Score> readScoreList( InputStream in, int fileFormat ) throws IOException {
 		int scoreCount = readInt(in);
 
-		List<Score> scores = new ArrayList<Score>(scoreCount);
+		List<Score> scores = new ArrayList<Score>( scoreCount );
 
 		for ( int i=0; i < scoreCount; i++ ) {
 			String shipName = readString(in);
@@ -450,19 +450,19 @@ public class ProfileParser extends Parser {
 
 			int diffFlag = readInt(in);
 			Difficulty diff;
-			if ( diffFlag == 0 && headerAlpha == 4 ) {
+			if ( diffFlag == 0 && fileFormat == 4 ) {
 				diff = Difficulty.NORMAL;
 			}
-			else if ( diffFlag == 1 && headerAlpha == 4 ) {
+			else if ( diffFlag == 1 && fileFormat == 4 ) {
 				diff = Difficulty.EASY;
 			}
-			else if ( diffFlag == 0 && headerAlpha == 9 ) {
+			else if ( diffFlag == 0 && fileFormat == 9 ) {
 				diff = Difficulty.EASY;
 			}
-			else if ( diffFlag == 1 && headerAlpha == 9 ) {
+			else if ( diffFlag == 1 && fileFormat == 9 ) {
 				diff = Difficulty.NORMAL;
 			}
-			else if ( diffFlag == 2 && headerAlpha == 9 ) {
+			else if ( diffFlag == 2 && fileFormat == 9 ) {
 				diff = Difficulty.HARD;
 			}
 			else {
@@ -471,7 +471,7 @@ public class ProfileParser extends Parser {
 
 			Score score = new Score( shipName, shipId, value, sector, diff, victory );
 
-			if ( headerAlpha == 9 ) {
+			if ( fileFormat == 9 ) {
 				score.setDLCEnabled( readBool(in) );
 			}
 
@@ -481,7 +481,7 @@ public class ProfileParser extends Parser {
 		return scores;
 	}
 
-	private void writeScoreList( OutputStream out, List<Score> scores, int headerAlpha ) throws IOException {
+	private void writeScoreList( OutputStream out, List<Score> scores, int fileFormat ) throws IOException {
 		writeInt( out, scores.size() );
 
 		for ( Score score : scores ) {
@@ -492,19 +492,19 @@ public class ProfileParser extends Parser {
 			writeInt( out, (score.isVictory() ? 1 : 0) );
 
 			int diffFlag = 0;
-			if ( score.getDifficulty() == Difficulty.NORMAL && headerAlpha == 4 ) {
+			if ( score.getDifficulty() == Difficulty.NORMAL && fileFormat == 4 ) {
 				diffFlag = 0;
 			}
-			else if ( score.getDifficulty() == Difficulty.EASY && headerAlpha == 4 ) {
+			else if ( score.getDifficulty() == Difficulty.EASY && fileFormat == 4 ) {
 				diffFlag = 1;
 			}
-			else if ( score.getDifficulty() == Difficulty.EASY && headerAlpha == 9 ) {
+			else if ( score.getDifficulty() == Difficulty.EASY && fileFormat == 9 ) {
 				diffFlag = 0;
 			}
-			else if ( score.getDifficulty() == Difficulty.NORMAL && headerAlpha == 9 ) {
+			else if ( score.getDifficulty() == Difficulty.NORMAL && fileFormat == 9 ) {
 				diffFlag = 1;
 			}
-			else if ( score.getDifficulty() == Difficulty.HARD && headerAlpha == 9 ) {
+			else if ( score.getDifficulty() == Difficulty.HARD && fileFormat == 9 ) {
 				diffFlag = 2;
 			}
 			else {
@@ -514,7 +514,7 @@ public class ProfileParser extends Parser {
 			}
 			writeInt( out, diffFlag );
 
-			if ( headerAlpha == 9 ) {
+			if ( fileFormat == 9 ) {
 				writeBool( out, score.isDLCEnabled() );
 			}
 		}

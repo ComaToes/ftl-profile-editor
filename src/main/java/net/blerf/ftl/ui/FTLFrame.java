@@ -508,14 +508,14 @@ public class FTLFrame extends JFrame {
 						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
 					}
 
-					if ( !sillyMistake && profile.getHeaderAlpha() == 4 &&
+					if ( !sillyMistake && profile.getFileFormat() == 4 &&
 					     "ae_prof.sav".equals( chosenFile.getName() ) ) {
 
 						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is NOT an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
 						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
 					}
 
-					if ( !sillyMistake && profile.getHeaderAlpha() == 9 &&
+					if ( !sillyMistake && profile.getFileFormat() == 9 &&
 					     "prof.sav".equals( chosenFile.getName() ) ) {
 
 						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
@@ -1299,11 +1299,16 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void updateProfile( Profile p ) {
-		profileShipUnlockPanel.updateProfile( p );
-		profileGeneralAchsPanel.updateProfile( p );
-		profileGeneralStatsPanel.updateProfile( p );
-		profileShipStatsPanel.updateProfile( p );
-		// profileDumpPanel doesn't modify anything.
+
+		if ( p == null ) {
+		}
+		else if ( p.getFileFormat() == 4 || p.getFileFormat() == 9 ) {
+			profileShipUnlockPanel.updateProfile( p );
+			profileGeneralAchsPanel.updateProfile( p );
+			profileGeneralStatsPanel.updateProfile( p );
+			profileShipStatsPanel.updateProfile( p );
+			// profileDumpPanel doesn't modify anything.
+		}
 
 		loadProfile( p );
 	}
