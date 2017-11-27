@@ -925,7 +925,7 @@ public class SavedGameParser extends Parser {
 
 			crew.setUnknownPhi( readBool(in) );
 
-			if ( "crystal".equals(crew.getRace()) ) {
+			if ( "crystal".equals( crew.getRace() ) ) {
 				crew.setLockdownRechargeTicks( readInt(in) );
 				crew.setLockdownRechargeTicksGoal( readInt(in) );
 				crew.setUnknownOmega( readInt(in) );
@@ -1004,7 +1004,7 @@ public class SavedGameParser extends Parser {
 
 			writeBool( out, crew.getUnknownPhi() );
 
-			if ( "crystal".equals(crew.getRace()) ) {
+			if ( "crystal".equals( crew.getRace() ) ) {
 				writeInt( out, crew.getLockdownRechargeTicks() );
 				writeInt( out, crew.getLockdownRechargeTicksGoal() );
 				writeInt( out, crew.getUnknownOmega() );
@@ -1020,7 +1020,7 @@ public class SavedGameParser extends Parser {
 		// ship, capacity will be zero, and the system will only
 		// occupy the 4 bytes that declared the capacity. And the
 		// next system will begin 24 bytes sooner.
-		if (capacity > 0) {
+		if ( capacity > 0 ) {
 			system.setCapacity( capacity );
 			system.setPower( readInt(in) );
 			system.setDamagedBars( readInt(in) );
@@ -2015,7 +2015,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		public static StateVar findById( String id ) {
 			for ( StateVar v : values() ) {
-				if ( v.getId().equals(id) ) return v;
+				if ( v.getId().equals( id ) ) return v;
 			}
 			return null;
 		}
@@ -2392,7 +2392,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * FTL 1.01-1.03.3. (Observed game-ending values: 5, 7, potentially 9.)
 		 *
 		 * Since FTL 1.5.4, the flagship must idle at the federation base for
-		 * a few turns before tge game ends.
+		 * a few turns before the game ends.
 		 *
 		 * If moving, this will be the beacon it's departing from.
 		 */
@@ -3217,8 +3217,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public <T extends ExtendedSystemInfo> List<T> getExtendedSystemInfoList( Class<T> infoClass ) {
 			List<T> result = new ArrayList<T>( 1 );
 			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-				if ( infoClass.isInstance(info) ) {
-					result.add( infoClass.cast(info) );
+				if ( infoClass.isInstance( info ) ) {
+					result.add( infoClass.cast( info ) );
 				}
 			}
 			return result;
@@ -3230,8 +3230,8 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public <T extends ExtendedSystemInfo> T getExtendedSystemInfo( Class<T> infoClass ) {
 			T result = null;
 			for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-				if ( infoClass.isInstance(info) ) {
-					result = infoClass.cast(info);
+				if ( infoClass.isInstance( info ) ) {
+					result = infoClass.cast( info );
 					break;
 				}
 			}
@@ -3257,7 +3257,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * @param breachHealth 0 to 100.
 		 */
 		public void setBreach( int x, int y, int breachHealth ) {
-			breachMap.put( new Point(x, y), new Integer(breachHealth) );
+			breachMap.put( new Point( x, y ), new Integer(breachHealth) );
 		}
 
 		public Map<Point, Integer> getBreachMap() { return breachMap; }
@@ -3274,11 +3274,11 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 */
 		public void setDoor( int wallX, int wallY, int vertical, DoorState d ) {
 			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
-			doorMap.put(doorCoord, d);
+			doorMap.put( doorCoord, d );
 		}
 		public DoorState getDoor( int wallX, int wallY, int vertical ) {
 			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
-			return doorMap.get(doorCoord);
+			return doorMap.get( doorCoord );
 		}
 
 		/**
@@ -3317,21 +3317,21 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 		public void addWeapon( WeaponState w ) {
-			weaponList.add(w);
+			weaponList.add( w );
 		}
 
 		public List<WeaponState> getWeaponList() { return weaponList; }
 
 
 		public void addDrone( DroneState d ) {
-			droneList.add(d);
+			droneList.add( d );
 		}
 
 		public List<DroneState> getDroneList() { return droneList; }
 
 
 		public void addAugmentId( String augmentId ) {
-			augmentIdList.add(augmentId);
+			augmentIdList.add( augmentId );
 		}
 
 		public List<String> getAugmentIdList() { return augmentIdList; }
@@ -3356,7 +3356,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			// The blueprint fetching might vary if auto == true.
 			// See autoBlueprints.xml vs blueprints.xml.
-			ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+			ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintId );
 			ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
 			ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
@@ -3564,7 +3564,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		public static CrewType findById( String id ) {
 			for ( CrewType race : values() ) {
-				if ( race.getId().equals(id) ) return race;
+				if ( race.getId().equals( id ) ) return race;
 			}
 			return null;
 		}
@@ -3963,7 +3963,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets temporary bonus health from a foreign Mind Control system.
 		 *
-		 * Values:
+		 * Observed values:
 		 *   15 = Mind Ctrl Level 2.
 		 *   30 = Mind Ctrl Level 3.
 		 *
@@ -3992,7 +3992,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets a multiplier to apply to damage dealt by this crew.
 		 *
-		 * Values:
+		 * Observed values:
 		 *   1250 (1.25) = Mind Ctrl Level 2.
 		 *   2000 (2.00) = Mind Ctrl Level 3.
 		 *
@@ -4247,7 +4247,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		ARTILLERY ("artillery",  false),
 		BATTERY   ("battery",    true),
 		CLONEBAY  ("clonebay",   false),
-		MIND      ("mind",      false),
+		MIND      ("mind",       false),
 		HACKING   ("hacking",    false);
 
 		private String id;
@@ -4260,7 +4260,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public boolean isSubsystem() { return subsystem; }
 		public String toString() { return id; }
 
-		public static SystemType findById(String id) {
+		public static SystemType findById( String id ) {
 			for ( SystemType s : values() ) {
 				if ( s.getId().equals(id) ) return s;
 			}
@@ -4865,7 +4865,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Sets nominal max door health.
 		 * This is the value to which the current max will eventually reset.
 		 *
-		 * Values:
+		 * Observed values:
 		 *   04 = Level 0 (un-upgraded or damaged Doors system).
 		 *   08 = Level 1 (???)
 		 *   12 = Level 2 (confirmed)
@@ -4906,7 +4906,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets hacking drone lockdown status.
 		 *
-		 * Values:
+		 * Observed values:
 		 *   0 = N/A
 		 *   1 = Hacking drone pod passively attached.
 		 *   2 = Hacking drone pod attached and disrupting.
@@ -5085,7 +5085,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			WeaponBlueprint weaponBlueprint = DataManager.get().getWeapon(weaponId);
+			WeaponBlueprint weaponBlueprint = DataManager.get().getWeapon( weaponId );
 			String cooldownString = ( weaponBlueprint!=null ? weaponBlueprint.getCooldown()+"" : "?" );
 
 			result.append(String.format("WeaponId:       %s\n", weaponId));
@@ -5130,7 +5130,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		public static DroneType findById( String id ) {
 			for ( DroneType d : values() ) {
-				if ( d.getId().equals(id) ) return d;
+				if ( d.getId().equals( id ) ) return d;
 			}
 			return null;
 		}
@@ -9716,8 +9716,8 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 			DroneType droneType = DroneType.findById( droneBlueprint.getType() );
 			if ( droneType == null ) throw new IOException( String.format("DroneBlueprint \"%s\" has an unrecognized type: %s", droneId, droneBlueprint.getType()) );
 
-			if ( DroneType.REPAIR.equals(droneType) ||
-			     DroneType.BATTLE.equals(droneType) ) {
+			if ( DroneType.REPAIR.equals( droneType ) ||
+			     DroneType.BATTLE.equals( droneType ) ) {
 				// No drone pod for these types.
 			}
 			else {
@@ -9925,7 +9925,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 		dronePod.setDeathAnim( readAnim(in) );
 
 		ExtendedDronePodInfo extendedInfo = null;
-		if ( DroneType.BOARDER.equals(droneType) ) {
+		if ( DroneType.BOARDER.equals( droneType ) ) {
 			BoarderDronePodInfo boarderPodInfo = new BoarderDronePodInfo();
 			boarderPodInfo.setUnknownAlpha( readInt(in) );
 			boarderPodInfo.setUnknownBeta( readInt(in) );
@@ -9938,7 +9938,7 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			boarderPodInfo.setBodyRoomSquare( readInt(in) );
 			extendedInfo = boarderPodInfo;
 		}
-		else if ( DroneType.HACKING.equals(droneType) ) {
+		else if ( DroneType.HACKING.equals( droneType ) ) {
 			HackingDronePodInfo hackingPodInfo = new HackingDronePodInfo();
 			hackingPodInfo.setUnknownAlpha( readInt(in) );
 			hackingPodInfo.setUnknownBeta( readInt(in) );
@@ -9948,8 +9948,8 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			hackingPodInfo.setExtensionAnim( readAnim(in) );
 			extendedInfo = hackingPodInfo;
 		}
-		else if ( DroneType.COMBAT.equals(droneType) || 
-		          DroneType.BEAM.equals(droneType) ) {
+		else if ( DroneType.COMBAT.equals( droneType ) || 
+		          DroneType.BEAM.equals( droneType ) ) {
 
 			ZigZagDronePodInfo zigPodInfo = new ZigZagDronePodInfo();
 			zigPodInfo.setLastWaypointX( readInt(in) );
@@ -9959,15 +9959,15 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 			zigPodInfo.setUnknownEpsilon( readMinMaxedInt(in) );
 			extendedInfo = zigPodInfo;
 		}
-		else if ( DroneType.DEFENSE.equals(droneType) ) {
+		else if ( DroneType.DEFENSE.equals( droneType ) ) {
 			extendedInfo = new EmptyDronePodInfo();
 		}
-		else if ( DroneType.SHIELD.equals(droneType) ) {
+		else if ( DroneType.SHIELD.equals( droneType ) ) {
 			ShieldDronePodInfo shieldPodInfo = new ShieldDronePodInfo();
 			shieldPodInfo.setUnknownAlpha( readInt(in) );
 			extendedInfo = shieldPodInfo;
 		}
-		else if ( DroneType.SHIP_REPAIR.equals(droneType) ) {
+		else if ( DroneType.SHIP_REPAIR.equals( droneType ) ) {
 			ZigZagDronePodInfo zigPodInfo = new ZigZagDronePodInfo();
 			zigPodInfo.setLastWaypointX( readInt(in) );
 			zigPodInfo.setLastWaypointY( readInt(in) );
