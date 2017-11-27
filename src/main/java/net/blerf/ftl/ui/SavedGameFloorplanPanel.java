@@ -23,6 +23,8 @@ import java.awt.Stroke;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
@@ -641,12 +643,23 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		this.add( centerPanel, BorderLayout.CENTER );
 
+		// As scrollpane resizes, adjust the view's size to fill the viewport.
+		// No need for AncestorListener to track tab switching. Event fires even if hidden.
+		shipScroll.addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentResized( ComponentEvent e ) {
+				fitViewToViewport();
+			}
+		});
+
 		sideScroll = new JScrollPane( sidePanel );
 		sideScroll.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_ALWAYS );
 		sideScroll.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
 		sideScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 		sideScroll.setVisible( false );
 		this.add( sideScroll, BorderLayout.EAST );
+
+		fitViewToViewport();
 	}
 
 	public void setShipState( SavedGameParser.SavedGameState gameState, SavedGameParser.ShipState shipState ) {
@@ -736,6 +749,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			roomDecorations.clear();
 
 			wallLbl.setIcon( null );
+
+			fitViewToViewport();
+			shipPanel.revalidate();
+			shipViewport.repaint();
 			return;
 		}
 
@@ -1145,17 +1162,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			addCrewSprite( crewX, crewY, crewRef );
 		}
 
-		// Adjust scrollable area.
-		int shipPanelWidth = 0, shipPanelHeight = 0;
-		for ( Component c : shipPanel.getComponents() ) {
-			shipPanelWidth = Math.max( c.getX()+c.getWidth(), shipPanelWidth );
-			shipPanelHeight = Math.max( c.getY()+c.getHeight(), shipPanelHeight );
-		}
-		shipPanel.setPreferredSize( new Dimension( shipPanelWidth, shipPanelHeight ) );
-
-		defaultSelector.setSize( shipPanelWidth, shipPanelHeight );
-		miscSelector.setSize( shipPanelWidth, shipPanelHeight );
-		squareSelector.setSize( shipPanelWidth, shipPanelHeight );
+		fitViewToViewport();
 
 		defaultSelector.setVisible( true );
 
@@ -1323,6 +1330,42 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 		});
 		squareSelector.setVisible( true );
+	}
+
+	/**
+	 * Ensures the view (and selectors) are at least as large as the viewport.
+	 *
+	 * Without this method, the view may be undersized for the viewport,
+	 * leaving dead space to the right and below the view.
+	 *
+	 * The view will be made large enough to enclose all non-selector child
+	 * components' bounds. Selectors will be given the same size.
+	 *
+	 * Note: After fitting, trigger layout and painting:
+	 *   shipPanel.revalidate();
+	 *   shipViewport.repaint();
+	 */
+	private void fitViewToViewport() {
+		// Calculate needed dimensions for all non-selector components.
+
+		int neededWidth = 0, neededHaight = 0;
+		for ( Component c : shipPanel.getComponents() ) {
+			if ( c == defaultSelector || c == miscSelector || c == squareSelector ) continue;
+
+			neededWidth = Math.max( c.getX()+c.getWidth(), neededWidth );
+			neededHaight = Math.max( c.getY()+c.getHeight(), neededHaight );
+		}
+
+		Dimension viewExtents = shipViewport.getExtentSize();
+		// Possibly account for scrollbar thickness?
+
+		int desiredWidth = Math.max( viewExtents.width, neededWidth );
+		int desiredHeight = Math.max( viewExtents.height, neededHaight );
+		shipPanel.setPreferredSize( new Dimension( desiredWidth, desiredHeight ) );
+
+		defaultSelector.setSize( desiredWidth, desiredHeight );
+		miscSelector.setSize( desiredWidth, desiredHeight );
+		squareSelector.setSize( desiredWidth, desiredHeight );
 	}
 
 	private void selectSystem() {
