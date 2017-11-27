@@ -26,6 +26,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -125,6 +126,8 @@ public class FTLFrame extends JFrame {
 	private ArrayList<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
 
+	private JButton profileSaveBtn;
+	private JButton profileDumpBtn;
 	private JTabbedPane profileTabsPane;
 	private ProfileShipUnlockPanel profileShipUnlockPanel;
 	private ProfileGeneralAchievementsPanel profileGeneralAchsPanel;
@@ -157,13 +160,7 @@ public class FTLFrame extends JFrame {
 		this.setSize( 800, 700 );
 		this.setLocationRelativeTo( null );
 		this.setTitle( String.format( "%s v%d", appName, appVersion ) );
-
-		try {
-			this.setIconImage( ImageIO.read( ClassLoader.getSystemResource( "unlock.png" ) ) );
-		}
-		catch ( IOException e ) {
-			log.error( "Error reading \"unlock.png\".", e );
-		}
+		this.setIconImage( unlockIcon.getImage() );
 
 		linkListener = new HyperlinkListener() {
 			@Override
@@ -488,7 +485,7 @@ public class FTLFrame extends JFrame {
 		profileOpenBtn.addMouseListener( new StatusbarMouseListener( this, "Open an existing profile." ) );
 		toolbar.add( profileOpenBtn );
 
-		JButton profileSaveBtn = new JButton( "Save", saveIcon );
+		profileSaveBtn = new JButton( "Save", saveIcon );
 		profileSaveBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
@@ -570,7 +567,7 @@ public class FTLFrame extends JFrame {
 		profileSaveBtn.addMouseListener( new StatusbarMouseListener( this, "Save the current profile." ) );
 		toolbar.add( profileSaveBtn );
 
-		JButton profileDumpBtn = new JButton( "Dump", saveIcon );
+		profileDumpBtn = new JButton( "Dump", saveIcon );
 		profileDumpBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
@@ -1283,6 +1280,9 @@ public class FTLFrame extends JFrame {
 			profileShipStatsPanel.setProfile( p );
 			profileDumpPanel.setText( (p != null ? p.toString() : "") );
 
+			profileSaveBtn.setEnabled( (p != null) );
+			profileDumpBtn.setEnabled( (p != null) );
+
 			profile = p;
 		}
 		catch ( IOException e ) {
@@ -1320,54 +1320,16 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
-		savedGameDumpPanel.setText( (gs != null ? gs.toString() : "") );
+		int[] supportedFormats = new int[] {2, 7, 8, 9};
 
-		if ( gs != null && gs.getHeaderAlpha() == 2 ) {
-			savedGameGeneralPanel.setGameState( gs );
-			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
-			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
-			savedGameHangarPanel.setGameState( gs );
-			savedGameSectorMapPanel.setGameState( gs );
-			savedGameSectorTreePanel.setGameState( gs );
-			savedGameStateVarsPanel.setGameState( gs );
-
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_GENERAL ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_PLAYER_SHIP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_NEARBY_SHIP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_CHANGE_SHIP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_MAP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_TREE ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_STATE_VARS ), true );
-			gameStateSaveBtn.setEnabled( true );
-		}
-		else if ( gs != null && ( gs.getHeaderAlpha() == 7 || gs.getHeaderAlpha() == 8 || gs.getHeaderAlpha() == 9 ) ) {
-			// FTL 1.5.4 is only partially editable.
-
-			savedGameGeneralPanel.setGameState( gs );
-			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
-			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
-			savedGameHangarPanel.setGameState( gs );
-			savedGameSectorMapPanel.setGameState( gs );
-			savedGameSectorTreePanel.setGameState( gs );
-			savedGameStateVarsPanel.setGameState( gs );
-
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_GENERAL ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_PLAYER_SHIP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_NEARBY_SHIP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_CHANGE_SHIP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_MAP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_TREE ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_STATE_VARS ), true );
-			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( SAVE_DUMP ) );
-			gameStateSaveBtn.setEnabled( true );
-		}
-		else {
+		if ( gs == null ) {
+			savedGameDumpPanel.setText( "" );
 			savedGameGeneralPanel.setGameState( null );
 			savedGamePlayerFloorplanPanel.setShipState( null, null );
 			savedGameNearbyFloorplanPanel.setShipState( null, null );
 			savedGameHangarPanel.setGameState( null );
 			savedGameSectorMapPanel.setGameState( null );
-			savedGameSectorTreePanel.setGameState( gs );
+			savedGameSectorTreePanel.setGameState( null );
 			savedGameStateVarsPanel.setGameState( null );
 
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_GENERAL ), false );
@@ -1379,29 +1341,45 @@ public class FTLFrame extends JFrame {
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_STATE_VARS ), false );
 			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( SAVE_DUMP ) );
 			gameStateSaveBtn.setEnabled( false );
-		}
 
-		gameState = gs;
+			gameState = null;
+		}
+		else if ( Arrays.binarySearch( supportedFormats, gs.getHeaderAlpha() ) >= 0 ) {
+			savedGameDumpPanel.setText( gs.toString() );
+			savedGameGeneralPanel.setGameState( gs );
+			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
+			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
+			savedGameHangarPanel.setGameState( gs );
+			savedGameSectorMapPanel.setGameState( gs );
+			savedGameSectorTreePanel.setGameState( gs );
+			savedGameStateVarsPanel.setGameState( gs );
+
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_GENERAL ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_PLAYER_SHIP ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_NEARBY_SHIP ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_CHANGE_SHIP ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_MAP ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_TREE ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_STATE_VARS ), true );
+			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( SAVE_DUMP ) );
+			gameStateSaveBtn.setEnabled( true );
+
+			gameState = gs;
+		}
+		else {
+			log.error( "Unsupported game state file signature: "+ gs.getHeaderAlpha() );
+			showErrorDialog( "Unsupported game state file signature: "+ gs.getHeaderAlpha() );
+
+			loadGameState( null );
+		}
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gs ) {
-		if ( gs != null && gs.getHeaderAlpha() == 2 ) {
-			// savedGameDumpPanel doesn't modify anything.
-			savedGameGeneralPanel.updateGameState( gs );
-			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
-			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
-			// savedGameHangarPanel doesn't modify anything.
-			savedGameSectorMapPanel.updateGameState( gs );
-			savedGameSectorTreePanel.updateGameState( gs );
-			savedGameStateVarsPanel.updateGameState( gs );
+		int[] supportedFormats = new int[] {2, 7, 8, 9};
 
-			// Sync session's redundant ship info with player ship.
-			gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
-			gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
+		if ( gs == null ) {
 		}
-		else if ( gs != null && ( gs.getHeaderAlpha() == 7 | gs.getHeaderAlpha() == 8 || gs.getHeaderAlpha() == 9 ) ) {
-			// FTL 1.5.4 is only partially editable.
-
+		else if ( Arrays.binarySearch( supportedFormats, gs.getHeaderAlpha() ) >= 0 ) {
 			// savedGameDumpPanel doesn't modify anything.
 			savedGameGeneralPanel.updateGameState( gs );
 			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
