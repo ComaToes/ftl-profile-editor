@@ -575,7 +575,12 @@ public class FTLFrame extends JFrame {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 
-				if ( profile == null ) return;
+				if ( profile == stockProfile ) {
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting might be a mistake.\n\nThis is the blank default profile, which the editor uses for eye candy.\nNormally one would OPEN an existing profile first.\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) return;
+
+					fc.setSelectedFile( candidateClassicProfileFile );  // The stock profile is a "prof.sav".
+				}
 
 				JFileChooser dumpChooser = new JFileChooser();
 				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
