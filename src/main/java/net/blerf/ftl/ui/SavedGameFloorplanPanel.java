@@ -756,7 +756,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			return;
 		}
 
-		if ( gameState.getHeaderAlpha() == 2 ) {
+		if ( gameState.getFileFormat() == 2 ) {
 			ftlConstants = new OriginalFTLConstants();
 		} else {
 			ftlConstants = new AdvancedFTLConstants();

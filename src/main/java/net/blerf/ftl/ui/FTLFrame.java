@@ -1320,7 +1320,6 @@ public class FTLFrame extends JFrame {
 	}
 
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
-		int[] supportedFormats = new int[] {2, 7, 8, 9};
 
 		if ( gs == null ) {
 			savedGameDumpPanel.setText( "" );
@@ -1344,7 +1343,7 @@ public class FTLFrame extends JFrame {
 
 			gameState = null;
 		}
-		else if ( Arrays.binarySearch( supportedFormats, gs.getHeaderAlpha() ) >= 0 ) {
+		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9}, gs.getFileFormat() ) >= 0 ) {
 			savedGameDumpPanel.setText( gs.toString() );
 			savedGameGeneralPanel.setGameState( gs );
 			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
@@ -1367,19 +1366,18 @@ public class FTLFrame extends JFrame {
 			gameState = gs;
 		}
 		else {
-			log.error( "Unsupported game state file signature: "+ gs.getHeaderAlpha() );
-			showErrorDialog( "Unsupported game state file signature: "+ gs.getHeaderAlpha() );
+			log.error( "Unsupported game state fileFormat: "+ gs.getFileFormat() );
+			showErrorDialog( "Unsupported game state fileFormat: "+ gs.getFileFormat() );
 
 			loadGameState( null );
 		}
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gs ) {
-		int[] supportedFormats = new int[] {2, 7, 8, 9};
 
 		if ( gs == null ) {
 		}
-		else if ( Arrays.binarySearch( supportedFormats, gs.getHeaderAlpha() ) >= 0 ) {
+		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9}, gs.getFileFormat() ) >= 0 ) {
 			// savedGameDumpPanel doesn't modify anything.
 			savedGameGeneralPanel.updateGameState( gs );
 			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );

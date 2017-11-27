@@ -232,9 +232,9 @@ public class SavedGameHangarPanel extends JPanel {
 
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
-		// This panel doesn't cache anything of the state. It just toggles the UI.
+		// This panel doesn't cache anything of the state. This just toggles the UI.
 
-		if ( gameState != null && gameState.getHeaderAlpha() == 2 ) {
+		if ( gameState != null && gameState.getFileFormat() == 2 ) {
 			shipCombo.setEnabled( true );
 			createShipBtn.setEnabled( true );
 			autoCombo.setEnabled( true );
@@ -242,7 +242,7 @@ public class SavedGameHangarPanel extends JPanel {
 
 			stealNearbyShipBtn.setEnabled( (gameState.getNearbyShipState() != null) );
 		}
-		else if ( gameState != null && ( gameState.getHeaderAlpha() == 7 || gameState.getHeaderAlpha() == 8 || gameState.getHeaderAlpha() == 9 ) ) {
+		else if ( gameState != null && ( gameState.getFileFormat() == 7 || gameState.getFileFormat() == 8 || gameState.getFileFormat() == 9 ) ) {
 			// FTL 1.5.4 is only partially editable.
 
 			shipCombo.setEnabled( false );
