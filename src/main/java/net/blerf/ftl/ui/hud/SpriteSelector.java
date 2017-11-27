@@ -78,7 +78,7 @@ public class SpriteSelector extends JComponent {
 
 	/** Sets the logic which decides sprite color and selectability. */
 	public void setCriteria( SpriteCriteria sc ) {
-		if (sc != null)
+		if ( sc != null )
 			spriteCriteria = sc;
 		else
 			spriteCriteria = defaultCriteria;
@@ -159,7 +159,7 @@ public class SpriteSelector extends JComponent {
 		/** Returns a highlight color when hovering over a sprite, or null for none. */
 		public Color getSpriteColor( SpriteSelector spriteSelector, JComponent sprite ) {
 			if ( sprite == null ) return null;
-			if ( isSpriteValid(spriteSelector, sprite) )
+			if ( isSpriteValid( spriteSelector, sprite ) )
 				return validColor;
 			else
 				return invalidColor;

@@ -139,8 +139,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		mapHolderPanel.add( mapPanel, MAP_LAYER );
 
 		sidePanel = new JPanel();
-		sidePanel.setLayout( new BoxLayout(sidePanel, BoxLayout.Y_AXIS) );
-		sidePanel.setBorder( BorderFactory.createEmptyBorder(4, 4, 4, 6) );
+		sidePanel.setLayout( new BoxLayout( sidePanel, BoxLayout.Y_AXIS ) );
+		sidePanel.setBorder( BorderFactory.createEmptyBorder( 4, 4, 4, 6 ) );
 
 		miscSelector = new SpriteSelector();
 		miscSelector.setOpaque( false );
@@ -184,48 +184,48 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.addMouseListener( miscListener );
 		miscSelector.addMouseMotionListener( miscListener );
 
-		Insets ctrlInsets = new Insets(3, 4, 3, 4);
+		Insets ctrlInsets = new Insets( 3, 4, 3, 4 );
 
 		JPanel selectPanel = new JPanel();
-		selectPanel.setLayout( new BoxLayout(selectPanel, BoxLayout.X_AXIS) );
-		selectPanel.setBorder( BorderFactory.createTitledBorder("Select") );
-		final JButton selectBeaconBtn = new JButton("Beacon");
-		selectBeaconBtn.setMargin(ctrlInsets);
+		selectPanel.setLayout( new BoxLayout( selectPanel, BoxLayout.X_AXIS ) );
+		selectPanel.setBorder( BorderFactory.createTitledBorder( "Select" ) );
+		final JButton selectBeaconBtn = new JButton( "Beacon" );
+		selectBeaconBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectBeaconBtn );
-		selectPanel.add( Box.createHorizontalStrut(5) );
-		final JButton selectPlayerShipBtn = new JButton("Player Ship");
-		selectPlayerShipBtn.setMargin(ctrlInsets);
+		selectPanel.add( Box.createHorizontalStrut( 5 ) );
+		final JButton selectPlayerShipBtn = new JButton( "Player Ship" );
+		selectPlayerShipBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectPlayerShipBtn );
-		selectPanel.add( Box.createHorizontalStrut(5) );
-		final JButton selectStoreBtn = new JButton("Store");
-		selectStoreBtn.setMargin(ctrlInsets);
+		selectPanel.add( Box.createHorizontalStrut( 5 ) );
+		final JButton selectStoreBtn = new JButton( "Store" );
+		selectStoreBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectStoreBtn );
-		selectPanel.add( Box.createHorizontalStrut(5) );
-		final JButton selectQuestBtn = new JButton("Quest");
-		selectQuestBtn.setMargin(ctrlInsets);
+		selectPanel.add( Box.createHorizontalStrut( 5 ) );
+		final JButton selectQuestBtn = new JButton( "Quest" );
+		selectQuestBtn.setMargin( ctrlInsets );
 		selectPanel.add( selectQuestBtn );
 
 		JPanel addPanel = new JPanel();
-		addPanel.setLayout( new BoxLayout(addPanel, BoxLayout.X_AXIS) );
-		addPanel.setBorder( BorderFactory.createTitledBorder("Add") );
-		final JButton addStoreBtn = new JButton("Store");
-		addStoreBtn.setMargin(ctrlInsets);
+		addPanel.setLayout( new BoxLayout( addPanel, BoxLayout.X_AXIS ) );
+		addPanel.setBorder( BorderFactory.createTitledBorder( "Add" ) );
+		final JButton addStoreBtn = new JButton( "Store" );
+		addStoreBtn.setMargin( ctrlInsets );
 		addPanel.add( addStoreBtn );
-		addPanel.add( Box.createHorizontalStrut(5) );
-		final JButton addQuestBtn = new JButton("Quest");
-		addQuestBtn.setMargin(ctrlInsets);
+		addPanel.add( Box.createHorizontalStrut( 5 ) );
+		final JButton addQuestBtn = new JButton( "Quest" );
+		addQuestBtn.setMargin( ctrlInsets );
 		addPanel.add( addQuestBtn );
 
 		JPanel ctrlRowOnePanel = new JPanel();
-		ctrlRowOnePanel.setLayout( new BoxLayout(ctrlRowOnePanel, BoxLayout.X_AXIS) );
+		ctrlRowOnePanel.setLayout( new BoxLayout( ctrlRowOnePanel, BoxLayout.X_AXIS ) );
 		ctrlRowOnePanel.add( selectPanel );
-		ctrlRowOnePanel.add( Box.createHorizontalStrut(15) );
+		ctrlRowOnePanel.add( Box.createHorizontalStrut( 15 ) );
 		ctrlRowOnePanel.add( addPanel );
 
 		JPanel ctrlPanel = new JPanel();
 		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS) );
 		ctrlPanel.add( ctrlRowOnePanel );
-		//ctrlPanel.add( Box.createVerticalStrut(8) );
+		//ctrlPanel.add( Box.createVerticalStrut( 8 ) );
 
 		ActionListener ctrlListener = new ActionListener() {
 			@Override
@@ -281,7 +281,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		mapScroll.setViewportView( mapHolderPanel );
 		centerPanel.add( mapScroll, gridC );
 
-		gridC.insets = new Insets(4, 4, 4, 4);
+		gridC.insets = new Insets( 4, 4, 4, 4 );
 
 		gridC.anchor = GridBagConstraints.CENTER;
 		gridC.fill = GridBagConstraints.HORIZONTAL;
@@ -301,10 +301,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		this.add( sideScroll, BorderLayout.EAST );
 
 		JPanel borderPanel = new JPanel( new BorderLayout() );
-		borderPanel.setBorder( BorderFactory.createTitledBorder("Sector Map") );
+		borderPanel.setBorder( BorderFactory.createTitledBorder( "Sector Map" ) );
 
 
-		//JLabel noticeLbl = new JLabel("The number of beacons in each column can't be determined automatically.");
+		//JLabel noticeLbl = new JLabel( "The number of beacons in each column can't be determined automatically." );
 		//noticeLbl.setHorizontalAlignment( SwingConstants.CENTER );
 		//borderPanel.add( noticeLbl, BorderLayout.NORTH );
 
@@ -314,14 +314,15 @@ public class SavedGameSectorMapPanel extends JPanel {
 				Object source = e.getSource();
 
 				BasicArrowButton srcBtn = (BasicArrowButton)source;
-				IncrementBox iBox = (IncrementBox)(srcBtn).getParent();
+				IncrementBox iBox = (IncrementBox)srcBtn.getParent();
 				int column = mapLayout.getCtrlColumn( iBox );
 				if ( column != -1 ) {
 					int colSize = mapLayout.getColumnSize( column );
-					if ( srcBtn == iBox.decBtn )
+					if ( srcBtn == iBox.decBtn ) {
 						mapLayout.setColumnSize( column, colSize-1 );
-					else if ( srcBtn == iBox.incBtn )
+					} else if ( srcBtn == iBox.incBtn ) {
 						mapLayout.setColumnSize( column, colSize+1 );
+					}
 
 					mapPanel.revalidate();
 					mapViewport.repaint();
@@ -415,9 +416,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 			mapPanel.add( iBox, new SectorMapConstraints( SectorMapConstraints.COLUMN_CTRL ) );
 
 			String message = "Adjust the number of beacons in this column.";
-			iBox.addMouseListener( new StatusbarMouseListener(frame, message) );
-			iBox.decBtn.addMouseListener( new StatusbarMouseListener(frame, message) );
-			iBox.incBtn.addMouseListener( new StatusbarMouseListener(frame, message) );
+			iBox.addMouseListener( new StatusbarMouseListener( frame, message ) );
+			iBox.decBtn.addMouseListener( new StatusbarMouseListener( frame, message ) );
+			iBox.incBtn.addMouseListener( new StatusbarMouseListener( frame, message ) );
 		}
 
 		mapPanel.revalidate();
@@ -451,7 +452,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			String questId = questSprite.getQuestId();
 			int beaconId = mapLayout.getBeaconId( questSprite );
 			if ( beaconId != -1 && questId != null && questId.length() > 0 ) {
-				gameState.getQuestEventMap().put( questSprite.getQuestId(), new Integer(beaconId) );
+				gameState.getQuestEventMap().put( questSprite.getQuestId(), new Integer( beaconId ) );
 			}
 		}
 	}
@@ -485,7 +486,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				return true;
 			}
 		});
-		miscSelector.setVisible(true);
+		miscSelector.setVisible( true );
 	}
 
 	public void selectPlayerShip() {
@@ -515,7 +516,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				return true;
 			}
 		});
-		miscSelector.setVisible(true);
+		miscSelector.setVisible( true );
 	}
 
 	public void selectStore() {
@@ -547,7 +548,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				return true;
 			}
 		});
-		miscSelector.setVisible(true);
+		miscSelector.setVisible( true );
 	}
 
 	public void selectQuest() {
@@ -578,7 +579,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				return true;
 			}
 		});
-		miscSelector.setVisible(true);
+		miscSelector.setVisible( true );
 	}
 
 	private void addStore() {
@@ -610,7 +611,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
 
-					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId(beaconId) == null ) {
+					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId( beaconId ) == null ) {
 						SpriteReference<BeaconState> beaconRef = ((BeaconSprite)sprite).getReference();
 
 						beaconRef.get().setStore( new StoreState() );
@@ -630,7 +631,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				return true;
 			}
 		});
-		miscSelector.setVisible(true);
+		miscSelector.setVisible( true );
 	}
 
 	private void addQuest() {
@@ -663,7 +664,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 					int beaconId = mapLayout.getBeaconId( sprite );
 
 					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId(beaconId) == null ) {
-						QuestSprite questSprite = new QuestSprite("NOTHING");
+						QuestSprite questSprite = new QuestSprite( "NOTHING" );
 						SectorMapConstraints questC = new SectorMapConstraints( SectorMapConstraints.MISC_BOX );
 						questC.setBeaconId( beaconId );
 						questSprites.add( questSprite );
@@ -677,7 +678,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				return true;
 			}
 		});
-		miscSelector.setVisible(true);
+		miscSelector.setVisible( true );
 	}
 
 	private void movePlayerShip( final PlayerShipSprite mobileSprite ) {
@@ -719,14 +720,14 @@ public class SavedGameSectorMapPanel extends JPanel {
 				return false;
 			}
 		});
-		miscSelector.setVisible(true);
+		miscSelector.setVisible( true );
 	}
 
 	private void showSidePanel() {
 		sidePanel.revalidate();
 		int sideWidth = sidePanel.getPreferredSize().width;
 		int vbarWidth = sideScroll.getVerticalScrollBar().getPreferredSize().width;
-		sideScroll.setPreferredSize( new Dimension(sideWidth + vbarWidth, 1) );
+		sideScroll.setPreferredSize( new Dimension( sideWidth + vbarWidth, 1 ) );
 		sideScroll.setVisible( true );
 
 		this.revalidate();
@@ -735,7 +736,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				sideScroll.getVerticalScrollBar().setValue(0);
+				sideScroll.getVerticalScrollBar().setValue( 0 );
 			}
 		});
 	}
@@ -744,7 +745,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sidePanel.revalidate();
 		int sideWidth = sidePanel.getPreferredSize().width;
 		int vbarWidth = sideScroll.getVerticalScrollBar().getPreferredSize().width;
-		sideScroll.setPreferredSize( new Dimension(sideWidth + vbarWidth, 1) );
+		sideScroll.setPreferredSize( new Dimension( sideWidth + vbarWidth, 1 ) );
 
 		this.revalidate();
 		this.repaint();
@@ -778,24 +779,24 @@ public class SavedGameSectorMapPanel extends JPanel {
 		JLabel titleLbl = new JLabel( title );
 		titleLbl.setAlignmentX( Component.CENTER_ALIGNMENT );
 		sidePanel.add( titleLbl );
-		addSidePanelSeparator(4);
+		addSidePanelSeparator( 4 );
 
 		// Keep the editor from growing and creating gaps around it.
-		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
+		editorPanel.setMaximumSize( editorPanel.getPreferredSize() );
 		sidePanel.add( editorPanel );
 
 		if ( extraContent != null ) {
-			sidePanel.add( Box.createVerticalStrut(10) );
+			sidePanel.add( Box.createVerticalStrut( 10 ) );
 			sidePanel.add( extraContent );
 		}
 
-		sidePanel.add( Box.createVerticalStrut(10) );
+		sidePanel.add( Box.createVerticalStrut( 10 ) );
 
 		JPanel applyPanel = new JPanel();
-		applyPanel.setLayout( new BoxLayout(applyPanel, BoxLayout.X_AXIS) );
+		applyPanel.setLayout( new BoxLayout( applyPanel, BoxLayout.X_AXIS ) );
 		JButton cancelBtn = new JButton( "Cancel" );
 		applyPanel.add( cancelBtn );
-		applyPanel.add( Box.createRigidArea( new Dimension(15, 1)) );
+		applyPanel.add( Box.createRigidArea( new Dimension( 15, 1 ) ) );
 		JButton applyBtn = new JButton( "Apply" );
 		applyPanel.add( applyBtn );
 		sidePanel.add( applyPanel );
@@ -820,8 +821,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 	 */
 	private void addSidePanelSeparator( int spacerSize ) {
 		sidePanel.add( Box.createVerticalStrut( spacerSize ) );
-		JSeparator newSep = new JSeparator(JSeparator.HORIZONTAL);
-		newSep.setMaximumSize( new Dimension(Short.MAX_VALUE, newSep.getPreferredSize().height) );
+		JSeparator newSep = new JSeparator( JSeparator.HORIZONTAL );
+		newSep.setMaximumSize( new Dimension( Short.MAX_VALUE, newSep.getPreferredSize().height ) );
 		sidePanel.add( newSep );
 		sidePanel.add( Box.createVerticalStrut( spacerSize ) );
 	}
@@ -831,12 +832,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 	 */
 	private void addSidePanelNote( String s ) {
 		JTextArea labelArea = new JTextArea( s );
-		labelArea.setBackground(null);
-		labelArea.setEditable(false);
-		labelArea.setBorder(null);
-		labelArea.setLineWrap(true);
-		labelArea.setWrapStyleWord(true);
-		labelArea.setFocusable(false);
+		labelArea.setBackground( null );
+		labelArea.setEditable( false );
+		labelArea.setBorder( null );
+		labelArea.setLineWrap( true );
+		labelArea.setWrapStyleWord( true );
+		labelArea.setFocusable( false );
 		sidePanel.add( labelArea );
 	}
 
@@ -865,53 +866,53 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( VISIT_COUNT, FieldEditorPanel.ContentType.SPINNER );
-		editorPanel.getSpinnerField(VISIT_COUNT).addMouseListener( new StatusbarMouseListener(frame, "Number of times the player has been here. If visited, random events won't occur. (All nearby fields need values) Hit enter after typing.") );
+		editorPanel.getSpinnerField(VISIT_COUNT).addMouseListener( new StatusbarMouseListener( frame, "Number of times the player has been here. If visited, random events won't occur. (All nearby fields need values) Hit enter after typing." ) );
 		editorPanel.addRow( STARS_LIST, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(STARS_LIST).setEnabled( false );
-		editorPanel.getCombo(STARS_LIST).addMouseListener( new StatusbarMouseListener(frame, "An image list from which to choose a background starscape. (BG_*)") );
+		editorPanel.getCombo(STARS_LIST).addMouseListener( new StatusbarMouseListener( frame, "An image list from which to choose a background starscape. (BG_*)" ) );
 		editorPanel.addRow( STARS_IMAGE, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(STARS_IMAGE).setEnabled( false );
-		editorPanel.getCombo(STARS_IMAGE).addMouseListener( new StatusbarMouseListener(frame, "Background starscape, a fullscreen image.") );
+		editorPanel.getCombo(STARS_IMAGE).addMouseListener( new StatusbarMouseListener( frame, "Background starscape, a fullscreen image." ) );
 		editorPanel.addRow( SPRITE_LIST, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(SPRITE_LIST).setEnabled( false );
-		editorPanel.getCombo(SPRITE_LIST).addMouseListener( new StatusbarMouseListener(frame, "An image list from which to choose a background sprite. (PLANET_*)") );
+		editorPanel.getCombo(SPRITE_LIST).addMouseListener( new StatusbarMouseListener( frame, "An image list from which to choose a background sprite. (PLANET_*)" ) );
 		editorPanel.addRow( SPRITE_IMAGE, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(SPRITE_IMAGE).setEnabled( false );
-		editorPanel.getCombo(SPRITE_IMAGE).addMouseListener( new StatusbarMouseListener(frame, "Background sprite, which appears in front of the starscape.") );
+		editorPanel.getCombo(SPRITE_IMAGE).addMouseListener( new StatusbarMouseListener( frame, "Background sprite, which appears in front of the starscape." ) );
 		editorPanel.addRow( SPRITE_X, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(SPRITE_X).setEnabled( false );
-		editorPanel.getInt(SPRITE_X).addMouseListener( new StatusbarMouseListener(frame, "Background sprite X position.") );
+		editorPanel.getInt(SPRITE_X).addMouseListener( new StatusbarMouseListener( frame, "Background sprite X position." ) );
 		editorPanel.addRow( SPRITE_Y, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.getInt(SPRITE_Y).setEnabled( false );
-		editorPanel.getInt(SPRITE_Y).addMouseListener( new StatusbarMouseListener(frame, "Background sprite Y position.") );
+		editorPanel.getInt(SPRITE_Y).addMouseListener( new StatusbarMouseListener( frame, "Background sprite Y position." ) );
 		editorPanel.addRow( SPRITE_ROT, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SPRITE_ROT).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(SPRITE_ROT).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.getInt(SPRITE_ROT).setText( "0" );
 		editorPanel.getInt(SPRITE_ROT).setEnabled( false );
-		editorPanel.getInt(SPRITE_ROT).addMouseListener( new StatusbarMouseListener(frame, "Background sprite rotation. (degrees, positive = clockwise)") );
+		editorPanel.getInt(SPRITE_ROT).addMouseListener( new StatusbarMouseListener( frame, "Background sprite rotation. (degrees, positive = clockwise)" ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( SEEN, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener(frame, "The player has been within one hop of this beacon.") );
+		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener( frame, "The player has been within one hop of this beacon." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( ENEMY_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(ENEMY_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "A ship is waiting at this beacon. (All nearby fields need values)") );
+		editorPanel.getBoolean(ENEMY_PRESENT).addMouseListener( new StatusbarMouseListener( frame, "A ship is waiting at this beacon. (All nearby fields need values)" ) );
 		editorPanel.addRow( SHIP_EVENT, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.getCombo(SHIP_EVENT).setEnabled( false );
-		editorPanel.getCombo(SHIP_EVENT).addMouseListener( new StatusbarMouseListener(frame, "A ship event to trigger and forget upon arrival (spawning a new nearby ship).") );
+		editorPanel.getCombo(SHIP_EVENT).addMouseListener( new StatusbarMouseListener( frame, "A ship event to trigger and forget upon arrival (spawning a new nearby ship)." ) );
 		editorPanel.addRow( AUTO_SHIP, FieldEditorPanel.ContentType.STRING );
 		editorPanel.getString(AUTO_SHIP).setEditable( false );
 		editorPanel.getString(AUTO_SHIP).setEnabled( false );
-		editorPanel.getString(AUTO_SHIP).addMouseListener( new StatusbarMouseListener(frame, "The blueprint (or blueprintList) of an auto ship to appear.") );
+		editorPanel.getString(AUTO_SHIP).addMouseListener( new StatusbarMouseListener( frame, "The blueprint (or blueprintList) of an auto ship to appear." ) );
 		editorPanel.addRow( SHIP_EVENT_SEED, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SHIP_EVENT_SEED).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt(SHIP_EVENT_SEED).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.getInt(SHIP_EVENT_SEED).setText( "0" );
 		editorPanel.getInt(SHIP_EVENT_SEED).setEnabled( false );
-		editorPanel.getInt(SHIP_EVENT_SEED).addMouseListener( new StatusbarMouseListener(frame, "A constant that seeds the random generation of the enemy ship.") );
+		editorPanel.getInt(SHIP_EVENT_SEED).addMouseListener( new StatusbarMouseListener( frame, "A constant that seeds the random generation of the enemy ship." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( FLEET, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(FLEET).addMouseListener( new StatusbarMouseListener(frame, "Fleet background sprites.") );
+		editorPanel.getCombo(FLEET).addMouseListener( new StatusbarMouseListener( frame, "Fleet background sprites." ) );
 		editorPanel.addRow( UNDER_ATTACK, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(UNDER_ATTACK).addMouseListener( new StatusbarMouseListener(frame, "The beacon is under attack by rebels (flashing red).") );
+		editorPanel.getBoolean(UNDER_ATTACK).addMouseListener( new StatusbarMouseListener( frame, "The beacon is under attack by rebels (flashing red)." ) );
 
 		editorPanel.getCombo(STARS_LIST).addItem( "" );
 		editorPanel.getCombo(SPRITE_LIST).addItem( "" );
@@ -1000,22 +1001,22 @@ public class SavedGameSectorMapPanel extends JPanel {
 					bgSpriteImageInnerPath = ((BackgroundImage)bgSpriteImageInnerPathObj).getInnerPath();
 				}
 				else if ( bgSpriteImageInnerPathObj instanceof String ) {
-					if ( !"".equals(bgSpriteImageInnerPathObj) && !"null".equals(bgSpriteImageInnerPathObj) )
+					if ( !"".equals( bgSpriteImageInnerPathObj ) && !"null".equals( bgSpriteImageInnerPathObj ) )
 						bgSpriteImageInnerPath = (String)bgSpriteImageInnerPathObj;
 				}
 
-				visitCount = editorPanel.parseSpinnerInt(VISIT_COUNT);
+				visitCount = editorPanel.parseSpinnerInt( VISIT_COUNT );
 
-				try { bgSpritePosX = editorPanel.parseInt(SPRITE_X); }
+				try { bgSpritePosX = editorPanel.parseInt( SPRITE_X ); }
 				catch ( NumberFormatException e ) {}
 
-				try { bgSpritePosY = editorPanel.parseInt(SPRITE_Y); }
+				try { bgSpritePosY = editorPanel.parseInt( SPRITE_Y ); }
 				catch ( NumberFormatException e ) {}
 
-				try { bgSpriteRotation = editorPanel.parseInt(SPRITE_ROT); }
+				try { bgSpriteRotation = editorPanel.parseInt( SPRITE_ROT ); }
 				catch ( NumberFormatException e ) {}
 
-				if ( "NONE".equals(bgSpriteImageInnerPath) ) {
+				if ( "NONE".equals( bgSpriteImageInnerPath ) ) {
 					bgSpritePosX = 0;
 					bgSpritePosY = 0;
 					bgSpriteRotation = 0;
@@ -1051,10 +1052,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 				autoBlueprintId = editorPanel.getString(AUTO_SHIP).getText();
 
 				newString = editorPanel.getInt(SHIP_EVENT_SEED).getText();
-				try { shipEventSeed = Integer.parseInt(newString); }
-				catch (NumberFormatException e) {}
+				try { shipEventSeed = Integer.parseInt( newString ); }
+				catch ( NumberFormatException e ) {}
 
-				if ( enemyPresent && shipEventId != null && autoBlueprintId.length() > 0 && !"null".equals(autoBlueprintId) ) {
+				if ( enemyPresent && shipEventId != null && autoBlueprintId.length() > 0 && !"null".equals( autoBlueprintId ) ) {
 					beaconRef.get().setEnemyPresent( true );
 					beaconRef.get().setShipEventId( shipEventId );
 					beaconRef.get().setAutoBlueprintId( autoBlueprintId );
@@ -1138,7 +1139,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 					}
 				}
 				if ( resize ) {
-					editorPanel.setMaximumSize(editorPanel.getPreferredSize());
+					editorPanel.setMaximumSize( editorPanel.getPreferredSize() );
 					fitSidePanel();
 				}
 			}
@@ -1164,7 +1165,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				boolean resize = false;
 
 				if ( source == visitCountSpinner ) {
-					int visitCount = editorPanel.parseSpinnerInt(VISIT_COUNT);
+					int visitCount = editorPanel.parseSpinnerInt( VISIT_COUNT );
 					if ( visitCount == 0 ) {
 						starsListCombo.setSelectedItem( "" );
 						spriteListCombo.setSelectedItem( "" );
@@ -1190,7 +1191,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		JButton visitBtn = new JButton( "Visit" );
 		visitBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		visitBtn.addMouseListener( new StatusbarMouseListener(frame, "Mark this beacon as visited, using random images.") );
+		visitBtn.addMouseListener( new StatusbarMouseListener( frame, "Mark this beacon as visited, using random images." ) );
 		sidePanel.add(visitBtn);
 
 		visitBtn.addActionListener(new ActionListener() {
@@ -1211,20 +1212,20 @@ public class SavedGameSectorMapPanel extends JPanel {
 					randomImages[i] = defaultLists[i].getImages().get( (int)(Math.random()*defaultLists[i].getImages().size()) );
 				}
 
-				if ( editorPanel.parseSpinnerInt(VISIT_COUNT) == 0 ) {
+				if ( editorPanel.parseSpinnerInt( VISIT_COUNT ) == 0 ) {
 					editorPanel.getSpinner(VISIT_COUNT).setValue( new Integer( 1 ) );
 				}
 
 				for ( int i=0; i < listCombos.length; i++ ) {
-					editorPanel.getCombo(listCombos[i]).setSelectedItem( defaultLists[i] );
+					editorPanel.getCombo( listCombos[i] ).setSelectedItem( defaultLists[i] );
 				}
 
 				// Wait for the image combos to populate.
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
 						for ( int i=0; i < imageCombos.length; i++ ) {
-							editorPanel.getCombo(imageCombos[i]).setSelectedItem( randomImages[i] );
-							if ( imageCombos[i].equals(SPRITE_IMAGE) ) {
+							editorPanel.getCombo( imageCombos[i] ).setSelectedItem( randomImages[i] );
+							if ( imageCombos[i].equals( SPRITE_IMAGE ) ) {
 								int bgSpritePosX = (int)(Math.random() * (SCREEN_WIDTH - randomImages[i].getWidth()));
 								int bgSpritePosY = (int)(Math.random() * (SCREEN_HEIGHT - randomImages[i].getHeight()));
 								int bgSpriteRotation = (Math.random() >= 0.5 ? 0 : 180);
@@ -1238,7 +1239,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 
-		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
+		editorPanel.setMaximumSize( editorPanel.getPreferredSize() );
 		showSidePanel();
 	}
 
@@ -1255,7 +1256,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, null, applyCallback );
 
-		addSidePanelSeparator(6);
+		addSidePanelSeparator( 6 );
 
 		JButton moveBtn = new JButton( "Move To..." );
 		moveBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
@@ -1302,20 +1303,20 @@ public class SavedGameSectorMapPanel extends JPanel {
 		}
 
 		JPanel extraPanel = new JPanel();
-		extraPanel.setLayout( new BoxLayout(extraPanel, BoxLayout.Y_AXIS) );
+		extraPanel.setLayout( new BoxLayout( extraPanel, BoxLayout.Y_AXIS ) );
 
 		JPanel shelfCtrlPanel = new JPanel();
-		shelfCtrlPanel.setLayout( new BoxLayout(shelfCtrlPanel, BoxLayout.X_AXIS) );
+		shelfCtrlPanel.setLayout( new BoxLayout( shelfCtrlPanel, BoxLayout.X_AXIS ) );
 		JButton shelfRemBtn = new JButton( "-1 Shelf" );
-		shelfRemBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove a shelf. (FTL 1.01-1.03.3 is limited to two shelves)") );
+		shelfRemBtn.addMouseListener( new StatusbarMouseListener( frame, "Remove a shelf. (FTL 1.01-1.03.3 is limited to two shelves)" ) );
 		shelfCtrlPanel.add( shelfRemBtn );
-		shelfCtrlPanel.add( Box.createRigidArea( new Dimension(15, 1)) );
+		shelfCtrlPanel.add( Box.createRigidArea( new Dimension( 15, 1 ) ) );
 		JButton shelfAddBtn = new JButton( "+1 Shelf" );
-		shelfAddBtn.addMouseListener( new StatusbarMouseListener(frame, "Add a shelf. (FTL 1.01-1.03.3 is limited to two shelves)") );
+		shelfAddBtn.addMouseListener( new StatusbarMouseListener( frame, "Add a shelf. (FTL 1.01-1.03.3 is limited to two shelves)" ) );
 		shelfCtrlPanel.add( shelfAddBtn );
 		extraPanel.add( shelfCtrlPanel );
 
-		extraPanel.add( Box.createVerticalStrut(10) );
+		extraPanel.add( Box.createVerticalStrut( 10 ) );
 
 		shelfTabsPane.setMaximumSize( new Dimension( Integer.MAX_VALUE, shelfTabsPane.getPreferredSize().height ) );
 		extraPanel.add( shelfTabsPane );
@@ -1323,13 +1324,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				try { beaconRef.get().getStore().setFuel( editorPanel.parseInt(FUEL) ); }
+				try { beaconRef.get().getStore().setFuel( editorPanel.parseInt( FUEL ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { beaconRef.get().getStore().setMissiles( editorPanel.parseInt(MISSILES) ); }
+				try { beaconRef.get().getStore().setMissiles( editorPanel.parseInt( MISSILES ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { beaconRef.get().getStore().setDroneParts( editorPanel.parseInt(DRONE_PARTS) ); }
+				try { beaconRef.get().getStore().setDroneParts( editorPanel.parseInt( DRONE_PARTS ) ); }
 				catch ( NumberFormatException e ) {}
 
 				beaconRef.get().getStore().getShelfList().clear();
@@ -1354,7 +1355,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		};
 		createSidePanel( title, editorPanel, extraPanel, applyCallback );
 
-		addSidePanelSeparator(6);
+		addSidePanelSeparator( 6 );
 
 		JButton removeBtn = new JButton( "Remove" );
 		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
@@ -1393,7 +1394,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 
-		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
+		editorPanel.setMaximumSize( editorPanel.getPreferredSize() );
 		showSidePanel();
 	}
 
@@ -1417,8 +1418,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		// Preselect the file of the current event.
 		editorPanel.getCombo(EVENT).addItem( "" );
 		for ( Map.Entry<String,Encounters> entry : allEncountersMap.entrySet() ) {
-			FTLEvent currentEvent = entry.getValue().getEventById(questSprite.getQuestId());
-			FTLEventList currentEventList = entry.getValue().getEventListById(questSprite.getQuestId());
+			FTLEvent currentEvent = entry.getValue().getEventById( questSprite.getQuestId() );
+			FTLEventList currentEventList = entry.getValue().getEventListById( questSprite.getQuestId() );
 			if ( currentEvent != null || currentEventList != null ) {
 				editorPanel.getCombo(ENCOUNTERS_FILE).setSelectedItem( entry.getKey() );
 
@@ -1489,7 +1490,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 								if ( tmpEventList.getId() != null )
 									eventCombo.addItem( tmpEventList );
 							}
-							editorPanel.setMaximumSize(editorPanel.getPreferredSize());
+							editorPanel.setMaximumSize( editorPanel.getPreferredSize() );
 							fitSidePanel();
 						}
 					}
@@ -1498,7 +1499,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		};
 		editorPanel.getCombo(ENCOUNTERS_FILE).addActionListener( questListener );
 
-		addSidePanelSeparator(6);
+		addSidePanelSeparator( 6 );
 
 		JButton removeBtn = new JButton( "Remove" );
 		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
@@ -1513,7 +1514,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			}
 		});
 
-		editorPanel.setMaximumSize(editorPanel.getPreferredSize());
+		editorPanel.setMaximumSize( editorPanel.getPreferredSize() );
 		showSidePanel();
 	}
 
@@ -1553,7 +1554,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 
@@ -1579,7 +1580,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			this.beaconRef = beaconRef;
 
 			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_store.png", -1*80, -1*40, cachedImages );
-			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
+			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
 
 			beaconRef.addSprite( this );
 			referenceChanged();
@@ -1612,7 +1613,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public QuestSprite( String questId ) {
 			this.questId = questId;
 			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_quest.png", -1*80, -1*40, cachedImages );
-			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
+			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
 		}
 
 		public void setQuestId( String s ) { questId = s; }
@@ -1620,10 +1621,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this);
+			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this );
 		}
 	}
 
@@ -1634,15 +1635,15 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		public PlayerShipSprite() {
 			currentImage = ImageUtilities.getScaledImage( "img/map/map_icon_ship.png", -1*64, -1*64, cachedImages );
-			this.setPreferredSize( new Dimension(currentImage.getWidth(), currentImage.getHeight()) );
+			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
 		}
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this);
+			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this );
 		}
 	}
 

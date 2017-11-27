@@ -273,7 +273,7 @@ public class SectorMapLayout implements LayoutManager2 {
 			this.type = type;
 		}
 		public void setBeaconId( int n ) {
-			if ( MISC_BOX.equals(type) || PLAYER_SHIP.equals( type ) )
+			if ( MISC_BOX.equals( type ) || PLAYER_SHIP.equals( type ) )
 				beaconId = n;
 		}
 		public int getBeaconId() { return beaconId; }
