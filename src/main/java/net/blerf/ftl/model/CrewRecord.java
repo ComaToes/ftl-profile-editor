@@ -49,7 +49,7 @@ public class CrewRecord implements Comparable<CrewRecord> {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 
-		result.append(String.format("Name: %-20s  Race: %-9s  Sex: %s  Score: %4d\n", name, race, (male ? "M" : "F"), value));
+		result.append( String.format( "Name: %-20s  Race: %-9s  Sex: %s  Score: %4d\n", name, race, (male ? "M" : "F"), value ) );
 
 		return result.toString();
 	}

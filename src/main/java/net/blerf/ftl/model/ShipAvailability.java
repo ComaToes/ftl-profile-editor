@@ -45,7 +45,7 @@ public class ShipAvailability {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 
-		result.append(String.format("ShipId: %-25s  Type-A: %-5b  Type-C: %-5b\n", shipId, unlockedA, unlockedC));
+		result.append( String.format( "ShipId: %-25s  Type-A: %-5b  Type-C: %-5b\n", shipId, unlockedA, unlockedC ) );
 
 		return result.toString();
 	}

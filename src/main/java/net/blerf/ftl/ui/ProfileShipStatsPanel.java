@@ -15,13 +15,15 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.AchievementRecord;
@@ -35,16 +37,12 @@ import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.ShipBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
+	private static final Logger log = LogManager.getLogger( ProfileShipStatsPanel.class );
+
 	private static final int ACH_LOCKED = 0;
-
-	private static final Logger log = LogManager.getLogger(ProfileShipStatsPanel.class);
-
 	private static final int MAX_SCORE_PANELS = 4;
 
 	private FTLFrame frame;
@@ -76,7 +74,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 		this.setLayout( new GridLayout(0, 2) );
 
 		JPanel leftPanel = new JPanel( new GridBagLayout() );
-		leftPanel.setBorder( BorderFactory.createTitledBorder("Ship Best") );
+		leftPanel.setBorder( BorderFactory.createTitledBorder( "Ship Best" ) );
 
 		GridBagConstraints leftC = new GridBagConstraints();
 
@@ -112,7 +110,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout( new BoxLayout( rightPanel, BoxLayout.Y_AXIS ) );
-		rightPanel.setBorder( BorderFactory.createTitledBorder("Quest and Victory Achievements") );
+		rightPanel.setBorder( BorderFactory.createTitledBorder( "Quest and Victory Achievements" ) );
 
 		for ( String baseId : DataManager.get().getPlayerShipBaseIds() ) {
 			JPanel panel = createQVAchPanel( baseId );
@@ -150,48 +148,48 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
 		if ( questAch != null ) {
 			IconCycleButton questBox = ImageUtilities.createCycleButton( questImage, true );
-			questBox.addMouseListener( new StatusbarMouseListener(frame, "Quest") );
+			questBox.addMouseListener( new StatusbarMouseListener( frame, "Quest" ) );
 			questBoxes.put( baseId, questBox );
 			panel.add( questBox );
 		} else {
 			IconCycleButton questBox = ImageUtilities.createDummyCycleButton();
-			questBox.addMouseListener( new StatusbarMouseListener(frame, "N/A") );
+			questBox.addMouseListener( new StatusbarMouseListener( frame, "N/A" ) );
 			questBoxes.put( baseId, questBox );
 			panel.add( questBox );
 		}
 
 		if ( victoryAch != null ) {
 			IconCycleButton victoryABox = ImageUtilities.createCycleButton( victoryAImage, true );
-			victoryABox.addMouseListener( new StatusbarMouseListener(frame, "Victory with Type-A: "+ variantAShip.getName()) );
+			victoryABox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-A: "+ variantAShip.getName() ) );
 			victoryABoxes.put( baseId, victoryABox );
 			panel.add( victoryABox );
 		} else {
 			IconCycleButton victoryABox = ImageUtilities.createDummyCycleButton();
-			victoryABox.addMouseListener( new StatusbarMouseListener(frame, "Victory with Type-A: N/A") );
+			victoryABox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-A: N/A" ) );
 			victoryABoxes.put( baseId, victoryABox );
 			panel.add( victoryABox );
 		}
 
 		if ( victoryAch != null && variantBShip != null ) {
 			IconCycleButton victoryBBox = ImageUtilities.createCycleButton( victoryBImage, true );
-			victoryBBox.addMouseListener( new StatusbarMouseListener(frame, "Victory with Type-B: "+ variantBShip.getName()) );
+			victoryBBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-B: "+ variantBShip.getName() ) );
 			victoryBBoxes.put( baseId, victoryBBox );
 			panel.add( victoryBBox );
 		} else {
 			IconCycleButton victoryBBox = ImageUtilities.createDummyCycleButton();
-			victoryBBox.addMouseListener( new StatusbarMouseListener(frame, "Victory with Type-B: N/A") );
+			victoryBBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-B: N/A" ) );
 			victoryBBoxes.put( baseId, victoryBBox );
 			panel.add( victoryBBox );
 		}
 
 		if ( victoryAch != null && variantCShip != null ) {
 			IconCycleButton victoryCBox = ImageUtilities.createCycleButton( victoryCImage, true );
-			victoryCBox.addMouseListener( new StatusbarMouseListener(frame, "Victory with Type-C: "+ variantCShip.getName()) );
+			victoryCBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-C: "+ variantCShip.getName() ) );
 			victoryCBoxes.put( baseId, victoryCBox );
 			panel.add( victoryCBox );
 		} else {
 			IconCycleButton victoryCBox = ImageUtilities.createDummyCycleButton();
-			victoryCBox.addMouseListener( new StatusbarMouseListener(frame, "Victory with Type-C: N/A") );
+			victoryCBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-C: N/A" ) );
 			victoryCBoxes.put( baseId, victoryCBox );
 			panel.add( victoryCBox );
 		}
@@ -208,7 +206,6 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 		if ( cycleState == ACH_LOCKED ) return null;
 		return Difficulty.values()[cycleState-1];  // Adjust array index because of LOCKED.
 	}
-
 
 	@Override
 	public void actionPerformed( ActionEvent e ) {
@@ -291,7 +288,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 			// Ignore panels that changed to another ship? *shrug*
 			// TODO: Handle ScorePanels with setShipIdEditable(true).
 
-			if ( !currentShipId.equals(bsp.getShipId()) ) continue;
+			if ( !currentShipId.equals( bsp.getShipId() ) ) continue;
 
 			Score newScore = bsp.createScore();
 			if ( newScore == null ) continue;

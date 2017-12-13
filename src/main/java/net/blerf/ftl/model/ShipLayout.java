@@ -28,7 +28,7 @@ public class ShipLayout {
 	public void setVertical( int n ) { vertical = n; }
 
 	public void setShieldEllipse( int w, int h, int x, int y ) {
-		shieldEllipse = new Rectangle(x, y, w, h);
+		shieldEllipse = new Rectangle( x, y, w, h );
 	}
 
 	public int getOffsetX() { return offsetX; }
@@ -47,12 +47,12 @@ public class ShipLayout {
 	 * @param squaresV certical count of tiles
 	 */
 	public void setRoom( int roomId, int locationX, int locationY, int squaresH, int squaresV ) {
-		Integer roomIdObj = new Integer(roomId);
-		EnumMap<RoomInfo,Integer> infoMap = new EnumMap<RoomInfo,Integer>(RoomInfo.class);
-		infoMap.put( RoomInfo.LOCATION_X, new Integer(locationX) );
-		infoMap.put( RoomInfo.LOCATION_Y, new Integer(locationY) );
-		infoMap.put( RoomInfo.SQUARES_H, new Integer(squaresH) );
-		infoMap.put( RoomInfo.SQUARES_V, new Integer(squaresV) );
+		Integer roomIdObj = new Integer( roomId );
+		EnumMap<RoomInfo,Integer> infoMap = new EnumMap<RoomInfo,Integer>( RoomInfo.class );
+		infoMap.put( RoomInfo.LOCATION_X, new Integer( locationX ) );
+		infoMap.put( RoomInfo.LOCATION_Y, new Integer( locationY ) );
+		infoMap.put( RoomInfo.SQUARES_H, new Integer( squaresH ) );
+		infoMap.put( RoomInfo.SQUARES_V, new Integer( squaresV ) );
 		roomMap.put( roomIdObj, infoMap );
 	}
 
@@ -67,7 +67,8 @@ public class ShipLayout {
 		try {
 			Integer lastKey = roomMap.lastKey();
 			return lastKey.intValue()+1;
-		} catch (NoSuchElementException e) {
+		}
+		catch ( NoSuchElementException e ) {
 			return 0;
 		}
 	}
@@ -83,9 +84,9 @@ public class ShipLayout {
 	 */
 	public void setDoor( int wallX, int wallY, int vertical, int roomIdA, int roomIdB ) {
 		DoorCoordinate doorCoord = new DoorCoordinate( wallX, wallY, vertical );
-		EnumMap<DoorInfo, Integer> infoMap = new EnumMap<DoorInfo, Integer>(DoorInfo.class);
-		infoMap.put( DoorInfo.ROOM_ID_A, new Integer(roomIdA) );
-		infoMap.put( DoorInfo.ROOM_ID_B, new Integer(roomIdB) );
+		EnumMap<DoorInfo, Integer> infoMap = new EnumMap<DoorInfo, Integer>( DoorInfo.class );
+		infoMap.put( DoorInfo.ROOM_ID_A, new Integer( roomIdA ) );
+		infoMap.put( DoorInfo.ROOM_ID_B, new Integer( roomIdB ) );
 		doorMap.put( doorCoord, infoMap );
 	}
 
@@ -131,7 +132,7 @@ public class ShipLayout {
 
 		@Override
 		public int hashCode() {
-			return mangle(x) | (mangle(y) << 1) | (mangle(v) << 2);
+			return mangle( x ) | (mangle( y ) << 1) | (mangle( v ) << 2);
 		}
 
 		// Use Z-Order Curve to interleve coords' bits for uniqueness.

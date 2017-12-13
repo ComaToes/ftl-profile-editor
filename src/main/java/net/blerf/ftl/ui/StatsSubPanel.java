@@ -14,7 +14,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -26,13 +25,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser.CrewType;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 public class StatsSubPanel extends JPanel implements ActionListener {
@@ -155,7 +154,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 	private StatRow getRow( String desc ) {
 		StatRow result = rowMap.get( desc );
 		if ( result == null )
-			throw new IndexOutOfBoundsException( "Requested stat was not found ("+ desc +")" );
+			throw new IndexOutOfBoundsException( "Requested stat was not found: "+ desc );
 		return result;
 	}
 
@@ -207,10 +206,10 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 			result = new ImageIcon( ImageUtilities.getTrimmedImage( croppedImage, null ) );
 		}
 		catch ( RasterFormatException e ) {
-			log.error( String.format("Failed to load and trim crew icon (%s).", imgRace), e );
+			log.error( String.format( "Failed to load and trim crew icon (%s).", imgRace ), e );
 		}
 		catch ( IOException e ) {
-			log.error( String.format("Failed to load and trim crew icon (%s).", imgRace), e );
+			log.error( String.format( "Failed to load and trim crew icon (%s).", imgRace ), e );
 		}
 		finally {
 			try {if ( in != null ) in.close();}
@@ -234,29 +233,29 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 
 			if ( row.race != null ) {
 				for ( CrewType crewType : ftlConstants.getCrewTypes() ) {
-					editorPanel.getCombo(RACE).addItem( crewType );
+					editorPanel.getCombo( RACE ).addItem( crewType );
 				}
-				editorPanel.getCombo(RACE).setSelectedItem( CrewType.findById( row.race ) );
+				editorPanel.getCombo( RACE ).setSelectedItem( CrewType.findById( row.race ) );
 
 				editorPanel.setBoolAndReminder( MALE, row.male );
 			} else {
-				editorPanel.getCombo(RACE).setEnabled( false );
-				editorPanel.getBoolean(MALE).setEnabled( false );
+				editorPanel.getCombo( RACE ).setEnabled( false );
+				editorPanel.getBoolean( MALE ).setEnabled( false );
 			}
 
 			if ( row.name != null ) {
 				editorPanel.setStringAndReminder( NAME, row.name );
 			} else {
-				editorPanel.getString(NAME).setEnabled( false );
+				editorPanel.getString( NAME ).setEnabled( false );
 			}
 
 			editorPanel.setIntAndReminder( SCORE, row.score );
-			popupPanel.add( new JLabel(row.desc), BorderLayout.NORTH );
+			popupPanel.add( new JLabel( row.desc ), BorderLayout.NORTH );
 			popupPanel.add( editorPanel, BorderLayout.CENTER );
 
 			JPanel ctrlPanel = new JPanel();
 			ctrlPanel.setLayout( new BoxLayout( ctrlPanel, BoxLayout.X_AXIS ) );
-			ctrlPanel.setBorder( BorderFactory.createEmptyBorder( 10,10,10,10 ) );
+			ctrlPanel.setBorder( BorderFactory.createEmptyBorder( 10, 10, 10, 10 ) );
 			ctrlPanel.add( Box.createHorizontalGlue() );
 			JButton popupOkBtn = new JButton( "OK" );
 			ctrlPanel.add( popupOkBtn );
@@ -281,17 +280,18 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 			});
 
 			popupOkBtn.addActionListener(new ActionListener() {
+				@Override
 				public void actionPerformed( ActionEvent e ) {
 					String newString = null;
 
 					if ( row.race != null ) {
-						row.race = ((CrewType)editorPanel.getCombo(RACE).getSelectedItem()).getId();
-						row.male = editorPanel.getBoolean(MALE).isSelected();
+						row.race = ((CrewType)editorPanel.getCombo( RACE ).getSelectedItem()).getId();
+						row.male = editorPanel.getBoolean( MALE ).isSelected();
 					}
 					if ( row.name != null )
-						row.name = editorPanel.getString(NAME).getText();
+						row.name = editorPanel.getString( NAME ).getText();
 
-					newString = editorPanel.getInt(SCORE).getText();
+					newString = editorPanel.getInt( SCORE ).getText();
 					try { row.score = Integer.parseInt( newString ); }
 					catch ( NumberFormatException f ) {}
 
@@ -332,7 +332,7 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 			nameLbl.setHorizontalTextPosition( SwingConstants.RIGHT );
 			scoreLbl = new JLabel( Integer.toString( score ) );
 			editBtn = new JButton( "Edit" );
-			editBtn.setMargin( new Insets( 0,0,0,0 ) );
+			editBtn.setMargin( new Insets( 0, 0, 0, 0 ) );
 		}
 
 		public void makeSane() {

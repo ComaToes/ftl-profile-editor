@@ -100,8 +100,8 @@ public class Score implements Comparable<Score> {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 
-		result.append(String.format("Name: %-25s  ShipId: %-25s  Score: %5d\n", shipName, shipId, value));
-		result.append(String.format("Sector: %d  Difficulty: %-6s  Victory: %-5b  DLC Enabled: %-5b\n", sector, difficulty.toString(), victory, dlcEnabled));
+		result.append( String.format( "Name: %-25s  ShipId: %-25s  Score: %5d\n", shipName, shipId, value ) );
+		result.append( String.format( "Sector: %d  Difficulty: %-6s  Victory: %-5b  DLC Enabled: %-5b\n", sector, difficulty.toString(), victory, dlcEnabled ) );
 
 		return result.toString();
 	}

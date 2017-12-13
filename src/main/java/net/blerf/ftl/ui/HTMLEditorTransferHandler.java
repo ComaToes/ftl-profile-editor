@@ -1,12 +1,5 @@
 package net.blerf.ftl.ui;
 
-import javax.swing.JComponent;
-import javax.swing.JEditorPane;
-import javax.swing.TransferHandler;
-import javax.swing.text.MutableAttributeSet;
-import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.parser.ParserDelegator;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -16,6 +9,13 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.TransferHandler;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.parser.ParserDelegator;
 
 
 class HTMLEditorTransferHandler extends TransferHandler {
@@ -85,9 +85,10 @@ class HTMLEditorTransferHandler extends TransferHandler {
 	public int getSourceActions( JComponent c ) {
 		return TransferHandler.COPY;
 	}
-}
 
-	class HTMLTransferable implements Transferable {
+
+
+	public static class HTMLTransferable implements Transferable {
 
 		private static final DataFlavor[] supportedFlavors;
 
@@ -134,3 +135,4 @@ class HTMLEditorTransferHandler extends TransferHandler {
 			throw new UnsupportedFlavorException( flavor );
 		}
 	}
+}

@@ -455,13 +455,13 @@ public class SectorTree {
 		for ( int c=0; c < newColumns.size(); c++ ) {
 			List<SectorDot> columnDots = newColumns.get( c );
 			if ( columnDots.size() == 0 ) {
-				SectorTreeException ex = new SectorTreeException( String.format("Empty column: %d", c) );
+				SectorTreeException ex = new SectorTreeException( String.format( "Empty column: %d", c ) );
 				ex.setColumn( c );
 				throw ex;
 			}
 
 			if ( columnDots.size() == prevColumnSize ) {
-				SectorTreeException ex = new SectorTreeException( String.format("Column size is not different from preceeding column: %d", c) );
+				SectorTreeException ex = new SectorTreeException( String.format( "Column size is not different from preceeding column: %d", c ) );
 				ex.setColumn( c );
 				throw ex;
 			}
@@ -472,12 +472,12 @@ public class SectorTree {
 			}
 
 			if ( visitedCount > 1 ) {
-				SectorTreeException ex = new SectorTreeException( String.format("Multiple dots in the same column were visited: %d", c) );
+				SectorTreeException ex = new SectorTreeException( String.format( "Multiple dots in the same column were visited: %d", c ) );
 				ex.setColumn( c );
 				throw ex;
 			}
 			else if ( visitedCount > 0 && !prevColumnVisited ) {
-				SectorTreeException ex = new SectorTreeException( String.format("Inaccessible dot was marked visited.", c) );
+				SectorTreeException ex = new SectorTreeException( String.format( "Inaccessible dot was marked visited.", c ) );
 				ex.setColumn( c );
 				for ( int r=0; r < columnDots.size(); r++ ) {
 					if ( columnDots.get( r ).isVisited() ) {

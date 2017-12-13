@@ -54,7 +54,7 @@ public class SectorMapLayout implements LayoutManager2 {
 	}
 	public int getColumnSize( int n ) {
 		if ( n < 0 || n >= columnCount)
-			throw new ArrayIndexOutOfBoundsException( String.format("Attempted to get size of column %d out of %d", n, columnCount) );
+			throw new ArrayIndexOutOfBoundsException( String.format( "Attempted to get size of column %d out of %d", n, columnCount ) );
 
 		if ( n < columnCount-1 ) {
 			Integer size = columnSizeMap.get( new Integer( n ) );
@@ -118,8 +118,9 @@ public class SectorMapLayout implements LayoutManager2 {
 		if ( comp == playerShipComp ) playerShipComp = null;
 		if ( comp == bgComp ) bgComp = null;
 
-		if ( beaconList.size() == 0 )
+		if ( beaconList.size() == 0 ) {
 			columnSizeMap.clear();
+		}
 	}
 
 	public void invalidateLayout( Container target ) {

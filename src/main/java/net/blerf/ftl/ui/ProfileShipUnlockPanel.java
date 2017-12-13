@@ -6,13 +6,15 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.AchievementRecord;
@@ -26,17 +28,14 @@ import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.ShipBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class ProfileShipUnlockPanel extends JPanel {
+
+	private static final Logger log = LogManager.getLogger( ProfileShipUnlockPanel.class );
 
 	private static final int ACH_LOCKED = 0;
 	private static final int SHIP_LOCKED = 0;
 	private static final int SHIP_UNLOCKED = 1;
-
-	private static final Logger log = LogManager.getLogger( ProfileShipUnlockPanel.class );
 
 	private FTLFrame frame;
 
@@ -48,8 +47,6 @@ public class ProfileShipUnlockPanel extends JPanel {
 	public ProfileShipUnlockPanel( FTLFrame frame ) {
 		this.setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
 		this.frame = frame;
-
-		log.trace( "Creating Ship Unlock panel" );
 
 		// Unlocks.
 		JPanel shipsPanel = new JPanel();
@@ -64,7 +61,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 
 		// Layout achievements.
 		JPanel shipAchsPanel = new JPanel();
-		shipAchsPanel.setLayout( new GridLayout(0, 3) );
+		shipAchsPanel.setLayout( new GridLayout( 0, 3 ) );
 		shipAchsPanel.setBorder( BorderFactory.createTitledBorder( "Ship Achievements" ) );
 		this.add( shipAchsPanel );
 

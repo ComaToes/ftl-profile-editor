@@ -120,7 +120,7 @@ public class Profile {
 			stats.setIntRecord( type, 0 );
 		}
 		for ( StatType type : crewStatTypes ) {
-			stats.setCrewRecord( type, new CrewRecord("", "", true, 0) );
+			stats.setCrewRecord( type, new CrewRecord( "", "", true, 0 ) );
 		}
 		profile.setStats( stats );
 
@@ -148,15 +148,15 @@ public class Profile {
 			default: formatDesc = "???"; break;
 		}
 
-		result.append(String.format("File Format:            %4d (%s)\n", fileFormat, formatDesc));
-		result.append(String.format("Newbie Tip Level:       %4s\n", newbieTipLevel.toString()));
+		result.append( String.format( "File Format:            %4d (%s)\n", fileFormat, formatDesc ) );
+		result.append( String.format( "Newbie Tip Level:       %4s\n", newbieTipLevel.toString() ) );
 
-		result.append("\nShip Unlocks...\n");
+		result.append( "\nShip Unlocks...\n" );
 		first = true;
 		for( ShipAvailability shipAvail : shipUnlockMap.values() ) {
-			if (first) { first = false; }
-			else { result.append(",\n"); }
-			result.append( shipAvail.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			if ( first ) { first = false; }
+			else { result.append( ",\n" ); }
+			result.append( shipAvail.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 		}
 
 		result.append("\nStats...\n");
@@ -164,43 +164,43 @@ public class Profile {
 			result.append(String.format("%-25s %5d\n", type.toString(), stats.getIntRecord( type )));
 		}
 
-		result.append("\nCrew Records...\n");
+		result.append( "\nCrew Records...\n" );
 		first = true;
 		for ( StatType type : crewStatTypes ) {
-			if (first) { first = false; }
-			else { result.append(",\n"); }
+			if ( first ) { first = false; }
+			else { result.append( ",\n" ); }
 
 			CrewRecord rec = stats.getCrewRecord( type );
-			result.append(String.format("%s\n", type.toString()));
+			result.append( String.format( "%s\n", type.toString() ) );
 			if ( rec != null ) {
-				result.append( rec.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+				result.append( rec.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			} else {
-				result.append("N/A\n");
+				result.append( "N/A\n" );
 			}
 		}
 
-		result.append("\nTop Scores...\n");
+		result.append( "\nTop Scores...\n" );
 		first = true;
 		for( Score score : stats.getTopScores() ) {
-			if (first) { first = false; }
-			else { result.append(",\n"); }
-			result.append( score.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			if ( first ) { first = false; }
+			else { result.append( ",\n" ); }
+			result.append( score.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 		}
 
-		result.append("\nShip Best...\n");
+		result.append( "\nShip Best...\n" );
 		first = true;
 		for( Score score : stats.getShipBest() ) {
-			if (first) { first = false; }
-			else { result.append(",\n"); }
-			result.append( score.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			if ( first ) { first = false; }
+			else { result.append( ",\n" ); }
+			result.append( score.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 		}
 
-		result.append("\nAchievements...\n");
+		result.append( "\nAchievements...\n" );
 		first = true;
 		for( AchievementRecord rec : achievements ) {
-			if (first) { first = false; }
-			else { result.append(",\n"); }
-			result.append( rec.toString().replaceAll("(^|\n)(.+)", "$1  $2") );
+			if ( first ) { first = false; }
+			else { result.append( ",\n" ); }
+			result.append( rec.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 		}
 
 		return result.toString();

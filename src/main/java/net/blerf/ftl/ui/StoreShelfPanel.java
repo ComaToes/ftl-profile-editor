@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -25,6 +24,9 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.parser.SavedGameParser.CrewType;
@@ -34,9 +36,6 @@ import net.blerf.ftl.parser.SavedGameParser.StoreShelf;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.StatusbarMouseListener;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 public class StoreShelfPanel extends JPanel implements ActionListener {
@@ -100,7 +99,7 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 		editorPanel.addRow( SHELF_TYPE, FieldEditorPanel.ContentType.COMBO );
 
 		for ( int i=0; i < itemTypes.length; i++ ) {
-			editorPanel.getCombo(SHELF_TYPE).addItem( itemTypes[i] );
+			editorPanel.getCombo( SHELF_TYPE ).addItem( itemTypes[i] );
 		}
 
 		for ( int i=0; i < SLOTS.length; i++ ) {
@@ -108,10 +107,10 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 			editorPanel.addRow( AVAIL[i], FieldEditorPanel.ContentType.BOOLEAN );
 			editorPanel.addRow( EXTRA[i], FieldEditorPanel.ContentType.INTEGER );
 
-			editorPanel.getBoolean(AVAIL[i]).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether this item has already been bought." ) );
-			editorPanel.getInt(EXTRA[i]).addMouseListener( new StatusbarMouseListener( frame, "Misc info (DroneCtrl system only, specifying bonus drone)." ) );
+			editorPanel.getBoolean( AVAIL[i] ).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether this item has already been bought." ) );
+			editorPanel.getInt( EXTRA[i] ).addMouseListener( new StatusbarMouseListener( frame, "Misc info (DroneCtrl system only, specifying bonus drone)." ) );
 
-			editorPanel.getCombo(SLOTS[i]).addItem( "" );
+			editorPanel.getCombo( SLOTS[i] ).addItem( "" );
 		}
 
 		this.add( editorPanel, BorderLayout.CENTER );
@@ -133,15 +132,15 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 					String itemId = shelf.getItems().get(i).getItemId();
 					Object itemChoice = lookupMap.get( itemId );
 					if ( itemChoice != null ) {
-						editorPanel.getCombo(SLOTS[i]).setSelectedItem( itemChoice );
+						editorPanel.getCombo( SLOTS[i] ).setSelectedItem( itemChoice );
 					} else {
-						editorPanel.getCombo(SLOTS[i]).setSelectedItem( "" );
+						editorPanel.getCombo( SLOTS[i] ).setSelectedItem( "" );
 						badIds.add( itemId );
 					}
 				}
 
-				editorPanel.getBoolean(AVAIL[i]).setSelected( shelf.getItems().get(i).isAvailable() );
-				editorPanel.getInt(EXTRA[i]).setText( ""+shelf.getItems().get(i).getExtraData() );
+				editorPanel.getBoolean( AVAIL[i] ).setSelected( shelf.getItems().get( i ).isAvailable() );
+				editorPanel.getInt( EXTRA[i] ).setText( ""+shelf.getItems().get( i ).getExtraData() );
 			}
 		}
 
@@ -163,15 +162,17 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 	public List<StoreItem> getItems() {
 		List<StoreItem> result = new ArrayList<StoreItem>( 3 );
 
-		Object selectedType = editorPanel.getCombo(SHELF_TYPE).getSelectedItem();
+		Object selectedType = editorPanel.getCombo( SHELF_TYPE ).getSelectedItem();
 
-		for (int i=0; i < SLOTS.length; i++) {
-			Object selectedItem = editorPanel.getCombo(SLOTS[i]).getSelectedItem();
-			if ( "".equals(selectedItem) == false && itemLookups.get( selectedType ) != null ) {
+		for ( int i=0; i < SLOTS.length; i++ ) {
+
+			Object selectedItem = editorPanel.getCombo( SLOTS[i] ).getSelectedItem();
+			if ( "".equals( selectedItem ) == false && itemLookups.get( selectedType ) != null ) {
+
 				// Do a reverse lookup on the map to get an item id.
-				for ( Object entry : itemLookups.get(selectedType).entrySet() ) {
+				for ( Object entry : itemLookups.get( selectedType ).entrySet() ) {
 					if ( ((Map.Entry)entry).getValue().equals( selectedItem ) ) {
-						boolean available = editorPanel.getBoolean(AVAIL[i]).isSelected();
+						boolean available = editorPanel.getBoolean( AVAIL[i] ).isSelected();
 						String id = (String)((Map.Entry)entry).getKey();
 
 						StoreItem newItem = new StoreItem( id );
@@ -191,7 +192,7 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 
 	@SuppressWarnings("unchecked")
 	public StoreItemType getItemType() {
-		Object selectedType = editorPanel.getCombo(SHELF_TYPE).getSelectedItem();
+		Object selectedType = editorPanel.getCombo( SHELF_TYPE ).getSelectedItem();
 		return (StoreItemType)selectedType;
 	}
 
@@ -199,34 +200,34 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 		setListenerEnabled( false );
 		Map lookupMap = itemLookups.get( itemType );
 
-		editorPanel.getCombo(SHELF_TYPE).setSelectedItem( itemType );
+		editorPanel.getCombo( SHELF_TYPE ).setSelectedItem( itemType );
 
 		for (int i=0; i < SLOTS.length; i++) {
-			editorPanel.getCombo(SLOTS[i]).removeAllItems();
-			editorPanel.getCombo(SLOTS[i]).addItem( "" );
+			editorPanel.getCombo( SLOTS[i] ).removeAllItems();
+			editorPanel.getCombo( SLOTS[i] ).addItem( "" );
 
 			if ( lookupMap != null ) {
 				for ( Object o : lookupMap.values() ) {
-					editorPanel.getCombo(SLOTS[i]).addItem( o );
+					editorPanel.getCombo( SLOTS[i] ).addItem( o );
 				}
 			}
 
-			editorPanel.getBoolean(AVAIL[i]).setSelected( false );
+			editorPanel.getBoolean( AVAIL[i] ).setSelected( false );
 		}
-		setListenerEnabled(true);
+		setListenerEnabled( true );
 	}
 
 	private void setListenerEnabled( boolean b ) {
 		if ( b ) {
-			editorPanel.getCombo(SHELF_TYPE).addActionListener( this );
-			for (int i=0; i < SLOTS.length; i++) {
+			editorPanel.getCombo( SHELF_TYPE ).addActionListener( this );
+			for ( int i=0; i < SLOTS.length; i++ ) {
 				editorPanel.getCombo(SLOTS[i]).addActionListener( this );
 			}
 		}
 		else {
-			editorPanel.getCombo(SHELF_TYPE).removeActionListener( this );
-			for (int i=0; i < SLOTS.length; i++) {
-				editorPanel.getCombo(SLOTS[i]).removeActionListener( this );
+			editorPanel.getCombo( SHELF_TYPE ).removeActionListener( this );
+			for ( int i=0; i < SLOTS.length; i++ ) {
+				editorPanel.getCombo( SLOTS[i] ).removeActionListener( this );
 			}
 		}
 	}
@@ -237,19 +238,19 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 
 		Object source = e.getSource();
 
-		if ( source == editorPanel.getCombo(SHELF_TYPE) ) {
+		if ( source == editorPanel.getCombo( SHELF_TYPE ) ) {
 			// Reset items when the type changes.
 
-			Object selectedType = editorPanel.getCombo(SHELF_TYPE).getSelectedItem();
+			Object selectedType = editorPanel.getCombo( SHELF_TYPE ).getSelectedItem();
 			setItemType( (StoreItemType)selectedType );
 		}
 		else {
 			// Check if the source was a slot combo.
-			for (int i=0; i < SLOTS.length; i++) {
-				JComboBox itemCombo = editorPanel.getCombo(SLOTS[i]);
+			for ( int i=0; i < SLOTS.length; i++ ) {
+				JComboBox itemCombo = editorPanel.getCombo( SLOTS[i] );
 				if ( source == itemCombo ) {
 					// Toggle the avail checkbox to true for items, false for "".
-					editorPanel.getBoolean(AVAIL[i]).setSelected( !"".equals( itemCombo.getSelectedItem() ) );
+					editorPanel.getBoolean( AVAIL[i] ).setSelected( !"".equals( itemCombo.getSelectedItem() ) );
 					break;
 				}
 			}

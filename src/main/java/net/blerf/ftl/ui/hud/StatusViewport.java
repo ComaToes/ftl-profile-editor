@@ -7,7 +7,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.font.LineMetrics;
 import java.util.ArrayList;
-
 import javax.swing.JComponent;
 import javax.swing.JViewport;
 
@@ -32,7 +31,7 @@ public class StatusViewport extends JViewport {
 
 		if ( statusString != null ) {
 			LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics( statusString, g2d );
-			int statusWidth = g2d.getFontMetrics().stringWidth(statusString);
+			int statusWidth = g2d.getFontMetrics().stringWidth( statusString );
 			int statusHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
 			int statusX = 8;
 			int statusY = statusHeight + 6;

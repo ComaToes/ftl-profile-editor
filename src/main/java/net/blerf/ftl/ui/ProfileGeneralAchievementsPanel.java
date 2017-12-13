@@ -5,12 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.constants.NewbieTipLevel;
@@ -24,11 +26,10 @@ import net.blerf.ftl.ui.ImageUtilities;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.Achievement;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class ProfileGeneralAchievementsPanel extends JPanel {
+
+	private static final Logger log = LogManager.getLogger( ProfileGeneralAchievementsPanel.class );
 
 	private static final int ICON_LOCKED = 0;
 	private static final int ICON_EASY = 1;
@@ -36,8 +37,6 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 	private static final int ICON_HARD = 3;
 
 	private static final String NEWBIE_TIP_LEVEL = "Newbie Tip Level";
-
-	private static final Logger log = LogManager.getLogger( ProfileGeneralAchievementsPanel.class );
 
 	private FTLFrame frame;
 
@@ -117,7 +116,7 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 						box.setSelectedState( ICON_HARD );
 					}
 					else {
-						log.warn( String.format("Unexpected difficulty for achievement (\"%s\"): %s. Changed to EASY.", achId, rec.getDifficulty().toString()) );
+						log.warn( String.format( "Unexpected difficulty for achievement (\"%s\"): %s. Changed to EASY.", achId, rec.getDifficulty().toString() ) );
 						box.setSelectedState( ICON_EASY );
 					}
 				}
@@ -152,7 +151,7 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 					difficulty = Difficulty.HARD;
 				}
 				else {
-					log.warn( String.format("Unexpected difficulty for achievement (\"%s\"): %d. Changed to EASY.", achId, box.getSelectedState()) );
+					log.warn( String.format( "Unexpected difficulty for achievement (\"%s\"): %d. Changed to EASY.", achId, box.getSelectedState() ) );
 					difficulty = Difficulty.EASY;
 				}
 
@@ -170,9 +169,9 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 			}
 		}
 
-		p.setAchievements(newAchRecs);
+		p.setAchievements( newAchRecs );
 
-		Object newbieObj = newbiePanel.getCombo(NEWBIE_TIP_LEVEL).getSelectedItem();
+		Object newbieObj = newbiePanel.getCombo( NEWBIE_TIP_LEVEL ).getSelectedItem();
 		p.setNewbieTipLevel( (NewbieTipLevel)newbieObj );
 	}
 }

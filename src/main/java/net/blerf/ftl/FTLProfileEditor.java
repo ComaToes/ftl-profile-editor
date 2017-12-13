@@ -16,19 +16,19 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vhati.modmanager.core.FTLUtilities;
 
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.DefaultDataManager;
 import net.blerf.ftl.ui.FTLFrame;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class FTLProfileEditor {
 
-	private static final Logger log = LogManager.getLogger(FTLProfileEditor.class);
+	private static final Logger log = LogManager.getLogger( FTLProfileEditor.class );
 
 	public static final String APP_NAME = "FTL Profile Editor";
 	public static final int APP_VERSION = 26;
@@ -48,11 +48,11 @@ public class FTLProfileEditor {
 
 	private static void guiInit() {
 		// Don't use the hard drive to buffer streams during ImageIO.read().
-		ImageIO.setUseCache(false);  // Small images don't need extra buffering.
+		ImageIO.setUseCache( false );  // Small images don't need extra buffering.
 
 		log.debug( String.format( "%s v%s", APP_NAME, APP_VERSION ) );
-		log.debug( String.format( "%s %s", System.getProperty("os.name"), System.getProperty("os.version") ) );
-		log.debug( String.format( "%s, %s, %s", System.getProperty("java.vm.name"), System.getProperty("java.version"), System.getProperty("os.arch") ) );
+		log.debug( String.format( "%s %s", System.getProperty( "os.name" ), System.getProperty( "os.version" ) ) );
+		log.debug( String.format( "%s, %s, %s", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) ) );
 
 		File configFile = new File( "ftl-editor.cfg" );
 		File datsDir = null;
@@ -84,10 +84,10 @@ public class FTLProfileEditor {
 		// Look-and-Feel.
 		String useDefaultUI = config.getProperty( "useDefaultUI" );
 
-		if ( useDefaultUI == null || !useDefaultUI.equals("true") ) {
+		if ( useDefaultUI == null || !useDefaultUI.equals( "true" ) ) {
 			try {
 				log.trace( "Using system Look and Feel" );
-				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+				UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName() );
 			}
 			catch ( Exception e ) {
 				log.error( "Error setting system Look and Feel.", e );
@@ -179,7 +179,7 @@ public class FTLProfileEditor {
 			wipMsg += "\n";
 			wipMsg += "If you encounter a read error opening a file, that means the editor saw something \n";
 			wipMsg += "new that it doesn't recognize. Submitting a bug report would be helpful.";
-			JOptionPane.showMessageDialog(null, wipMsg, "Work in Progress", JOptionPane.PLAIN_MESSAGE);
+			JOptionPane.showMessageDialog( null, wipMsg, "Work in Progress", JOptionPane.PLAIN_MESSAGE );
 		}
 
 		// Parse the dats.
@@ -196,7 +196,7 @@ public class FTLProfileEditor {
 
 		try {
 			FTLFrame frame = new FTLFrame( APP_NAME, APP_VERSION );
-			frame.setVisible(true);
+			frame.setVisible( true );
 		}
 		catch ( Exception e ) {
 			log.error( "Exception while creating FTLFrame.", e );
@@ -207,7 +207,7 @@ public class FTLProfileEditor {
 
 
 	private static void showErrorDialog( String message ) {
-		JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+		JOptionPane.showMessageDialog( null, message, "Error", JOptionPane.ERROR_MESSAGE );
 	}
 
 }

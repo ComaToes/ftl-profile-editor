@@ -67,9 +67,9 @@ public class AchievementRecord {
 		String typeBDiffString = (typeBDiff != null ? typeBDiff.toString() : "N/A");
 		String typeCDiffString = (typeCDiff != null ? typeCDiff.toString() : "N/A");
 
-		result.append(String.format("AchId: %-30s  Difficulty: %-6s\n", achievementId, difficulty.toString()));
+		result.append( String.format( "AchId: %-30s  Difficulty: %-6s\n", achievementId, difficulty.toString() ) );
 
-		result.append(String.format("With Type-A: %-6s  With Type-B: %-6s  With Type-C: %-6s\n", typeADiffString, typeBDiffString, typeCDiffString));
+		result.append( String.format( "With Type-A: %-6s  With Type-B: %-6s  With Type-C: %-6s\n", typeADiffString, typeBDiffString, typeCDiffString ) );
 
 		return result.toString();
 	}
@@ -77,7 +77,7 @@ public class AchievementRecord {
 
 	public static AchievementRecord getFromListById( List<AchievementRecord> achList, String achievementId ) {
 		for ( AchievementRecord rec : achList ) {
-			if ( rec.getAchievementId().equals(achievementId) ) {
+			if ( rec.getAchievementId().equals( achievementId ) ) {
 				return rec;
 			}
 		}
@@ -87,7 +87,7 @@ public class AchievementRecord {
 	public static void removeFromListById( List<AchievementRecord> achList, String achievementId ) {
 		for ( ListIterator<AchievementRecord> it = achList.listIterator(); it.hasNext(); ) {
 			AchievementRecord rec = it.next();
-			if ( rec.getAchievementId().equals(achievementId) ) {
+			if ( rec.getAchievementId().equals( achievementId ) ) {
 				it.remove();
 			}
 		}

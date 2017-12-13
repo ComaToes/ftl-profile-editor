@@ -78,13 +78,14 @@ import net.blerf.ftl.ui.SavedGameHangarPanel;
 import net.blerf.ftl.ui.SavedGameSectorMapPanel;
 import net.blerf.ftl.ui.SavedGameSectorTreePanel;
 import net.blerf.ftl.ui.SavedGameStateVarsPanel;
+import net.blerf.ftl.ui.Statusbar;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 
-public class FTLFrame extends JFrame {
+public class FTLFrame extends JFrame implements Statusbar {
 
 	private static final Logger log = LogManager.getLogger( FTLFrame.class );
 
@@ -1400,6 +1401,7 @@ public class FTLFrame extends JFrame {
 		loadGameState( gs );
 	}
 
+	@Override
 	public void setStatusText( String text ) {
 		if ( text.length() > 0 ) {
 			statusLbl.setText( text );

@@ -19,7 +19,7 @@ public class DumpPanel extends JPanel {
 
 		dumpArea = new JTextArea( "" );
 		dumpArea.setEditable( false );
-		dumpArea.setFont( new Font( "Monospaced", Font.PLAIN, dumpArea.getFont().getSize() ) );
+		dumpArea.setFont( new Font( Font.MONOSPACED, Font.PLAIN, dumpArea.getFont().getSize() ) );
 		//dumpArea.setOpaque( false );
 		dumpArea.setBackground( new Color( 212, 208, 200 ) );
 		JScrollPane dumpScrollPane = new JScrollPane( dumpArea );

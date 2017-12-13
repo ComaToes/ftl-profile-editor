@@ -11,12 +11,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
@@ -29,9 +31,6 @@ import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.StatusbarMouseListener;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 public class ProfileGeneralStatsPanel extends JPanel {

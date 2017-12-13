@@ -2,7 +2,6 @@ package net.blerf.ftl.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -37,6 +36,7 @@ public class IconCycleButton extends JButton implements ActionListener {
 		return state;
 	}
 
+	@Override
 	public void actionPerformed( ActionEvent e ) {
 		setSelectedState( (state+1) % icons.length );
 	}

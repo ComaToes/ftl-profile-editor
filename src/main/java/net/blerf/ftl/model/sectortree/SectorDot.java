@@ -45,21 +45,21 @@ public class SectorDot {
 	 */
 	public boolean isSimilarTo( SectorDot otherDot ) {
 		if ( sectorType != null ) {
-			if ( !sectorType.equals(otherDot.getType()) ) return false;
+			if ( !sectorType.equals( otherDot.getType() ) ) return false;
 		}
 		else if ( otherDot.getType() != null ) {
 			return false;
 		}
 
 		if ( sectorId != null ) {
-			if ( !sectorId.equals(otherDot.getSectorId()) ) return false;
+			if ( !sectorId.equals( otherDot.getSectorId() ) ) return false;
 		}
 		else if ( otherDot.getSectorId() != null ) {
 			return false;
 		}
 
 		if ( sectorTitle != null ) {
-			if ( !sectorTitle.equals(otherDot.getTitle()) ) return false;
+			if ( !sectorTitle.equals( otherDot.getTitle() ) ) return false;
 		}
 		else if ( otherDot.getTitle() != null ) {
 			return false;

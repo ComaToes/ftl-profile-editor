@@ -20,18 +20,17 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.IconCycleButton;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 public class ImageUtilities {
@@ -96,7 +95,8 @@ public class ImageUtilities {
 		BufferedImage baseImage;
 		if ( origImage.getWidth() == maxIconWidth && origImage.getHeight() == maxIconHeight ) {
 			baseImage = origImage;
-		} else {
+		}
+		else {
 			BufferedImage paddedImage = gc.createCompatibleImage( maxIconWidth, maxIconHeight, Transparency.TRANSLUCENT );
 			Graphics2D paddedG = paddedImage.createGraphics();
 			int padOffsetX = (paddedImage.getWidth() - origImage.getWidth()) / 2;
@@ -129,7 +129,7 @@ public class ImageUtilities {
 		if ( cycleDifficulty == true ) {                  // Locked / Easy / Normal / Hard.
 			Difficulty[] difficulties = Difficulty.values();
 			labels = new String[ difficulties.length ];
-			for (int i=difficulties.length-1; i >= 0; i--) {
+			for ( int i=difficulties.length-1; i >= 0; i-- ) {
 				labels[i] = difficulties[i].toString();
 			}
 		}
@@ -141,7 +141,7 @@ public class ImageUtilities {
 		icons[0] = new ImageIcon( lockedImage );
 
 		// Create the other icons, drawing any non-null labels.
-		for (int i=0; i < labels.length; i++) {
+		for ( int i=0; i < labels.length; i++ ) {
 			String label = labels[i];
 			BufferedImage tempImage = gc.createCompatibleImage( baseImage.getWidth(), baseImage.getHeight(), Transparency.TRANSLUCENT );
 			Graphics2D tempG = tempImage.createGraphics();
@@ -235,7 +235,7 @@ public class ImageUtilities {
 			log.error( "Failed to load and scale image: "+ innerPath, e );
 		}
 		catch ( FileNotFoundException e ) {
-			log.error( String.format("Failed to load and scale image (\"%s\"). Its innerPath was not found.", innerPath) );
+			log.error( String.format( "Failed to load and scale image (\"%s\"). Its innerPath was not found.", innerPath ) );
 		}
 		catch ( IOException e ) {
 			log.error( "Failed to load and scale image: "+ innerPath, e );
@@ -246,8 +246,8 @@ public class ImageUtilities {
 		}
 
 		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
-			w = Math.abs(w);
-			h = Math.abs(h);
+			w = Math.abs( w );
+			h = Math.abs( h );
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
 			Graphics2D g2d = (Graphics2D)result.createGraphics();
 			g2d.setColor( new Color( 150, 150, 200 ) );
@@ -330,7 +330,7 @@ public class ImageUtilities {
 			log.error( "Failed to load and proportionally scale image: "+ innerPath, e );
 		}
 		catch ( FileNotFoundException e ) {
-			log.error( String.format("Failed to load and proportionally scale image (\"%s\"). Its innerPath was not found.", innerPath) );
+			log.error( String.format( "Failed to load and proportionally scale image (\"%s\"). Its innerPath was not found.", innerPath ) );
 		}
 		catch ( IOException e ) {
 			log.error( "Failed to load and proportionally scale image: "+ innerPath, e );
@@ -399,7 +399,7 @@ public class ImageUtilities {
 			log.error( "Failed to load and crop image: "+ innerPath, e );
 		}
 		catch ( FileNotFoundException e ) {
-			log.error( String.format("Failed to load and crop image (\"%s\"). Its innerPath was not found.", innerPath) );
+			log.error( String.format( "Failed to load and crop image (\"%s\"). Its innerPath was not found.", innerPath ) );
 		}
 		catch ( IOException e ) {
 			log.error( "Failed to load and crop image: "+ innerPath, e );
@@ -485,8 +485,8 @@ public class ImageUtilities {
 		int origW = srcImage.getWidth(), origH = srcImage.getHeight();
 		int lowX = Integer.MAX_VALUE, lowY = Integer.MAX_VALUE;
 		int highX = -1, highY = -1;
-		for (int testY=0; testY < origH; testY++) {
-			for (int testX=0; testX < origW; testX++) {
+		for ( int testY=0; testY < origH; testY++ ) {
+			for ( int testX=0; testX < origW; testX++ ) {
 				int pixel = result.getRGB( testX, testY );
 				int alpha = (pixel >> 24) & 0xFF;  // 24:A, 16:R, 8:G, 0:B.
 				if ( alpha != 0 ) {
@@ -497,7 +497,7 @@ public class ImageUtilities {
 				}
 			}
 		}
-		log.trace( String.format("Image Trimmed to Bounds: %d,%d %dx%d", lowX, lowY, highX, highY) );
+		log.trace( String.format( "Image Trimmed to Bounds: %d,%d %dx%d", lowX, lowY, highX, highY ) );
 		if ( lowX >= 0 && lowY >= 0 && highX < origW && highY < origH && lowX < highX && lowY < highY ) {
 			result = result.getSubimage( lowX, lowY, highX-lowX+1, highY-lowY+1 );
 		}

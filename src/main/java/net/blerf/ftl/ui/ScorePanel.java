@@ -14,7 +14,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -25,17 +24,19 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.Score;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.xml.ShipBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class ScorePanel extends JPanel {
+
+	private static final Logger log = LogManager.getLogger( ScorePanel.class );
 
 	private static final String SHIP_NAME = "Ship Name";
 	private static final String SHIP_ID = "Ship Id";
@@ -45,8 +46,6 @@ public class ScorePanel extends JPanel {
 	private static final String VICTORY = "Victory";
 	private static final String DLC_ENABLED = "DLC Enabled";
 	private static final String REMOVE = "Remove";
-
-	private static final Logger log = LogManager.getLogger( ScorePanel.class );
 
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = null;
 	private boolean blank = true;
@@ -180,6 +179,7 @@ public class ScorePanel extends JPanel {
 		this.add( Box.createVerticalStrut( 80 ), c );
 
 		editBtn.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed( ActionEvent e ) {
 				showEditPopup();
 			}
@@ -195,7 +195,8 @@ public class ScorePanel extends JPanel {
 			setVictory( s.isVictory() );
 			setDLCEnabled( s.isDLCEnabled() );
 			setBlank( false );
-		} else {
+		}
+		else {
 			setBlank( true );
 		}
 	}
@@ -231,7 +232,7 @@ public class ScorePanel extends JPanel {
 	}
 
 	public void setRank( int n ) {
-		this.setBorder( BorderFactory.createTitledBorder("#"+n) );
+		this.setBorder( BorderFactory.createTitledBorder( "#"+ n ) );
 	}
 
 	public void setShipName( String s ) {
@@ -242,13 +243,13 @@ public class ScorePanel extends JPanel {
 
 	public void setShipId( String s ) {
 		if ( s == null ) s = "";
-		if ( s.equals(shipId) ) return;
+		if ( s.equals( shipId ) ) return;
 		shipId = s;
 
 		shipImage = null;
 		shipImageLbl.setIcon( null );
 
-		if ( !shipId.equals("") ) {
+		if ( shipId.length() > 0 ) {
 
 			ShipBlueprint ship = DataManager.get().getShip( shipId );
 			if ( ship != null ) {
@@ -324,30 +325,35 @@ public class ScorePanel extends JPanel {
 			editorPanel.getBoolean(REMOVE).setSelected( blank );
 		}
 
-		editorPanel.getCombo(SHIP_ID).addItem( "" );
-		for ( ShipBlueprint blueprint : playerShipMap.values() )
-			editorPanel.getCombo(SHIP_ID).addItem( blueprint );
-		editorPanel.getCombo(SHIP_ID).addItem( "" );
-		for ( ShipBlueprint blueprint : autoShipMap.values() )
-			editorPanel.getCombo(SHIP_ID).addItem( blueprint );
+		editorPanel.getCombo( SHIP_ID ).addItem( "" );
+		for ( ShipBlueprint blueprint : playerShipMap.values() ) {
+			editorPanel.getCombo( SHIP_ID ).addItem( blueprint );
+		}
+		editorPanel.getCombo( SHIP_ID ).addItem( "" );
+		for ( ShipBlueprint blueprint : autoShipMap.values() ) {
+			editorPanel.getCombo( SHIP_ID ).addItem( blueprint );
+		}
 
-		if ( playerShipMap.containsKey(shipId) ) {
+		if ( playerShipMap.containsKey( shipId ) ) {
 			editorPanel.setComboAndReminder( SHIP_ID, playerShipMap.get( shipId ) );
-		} else if ( autoShipMap.containsKey(shipId) ) {
+		}
+		else if ( autoShipMap.containsKey( shipId ) ) {
 			editorPanel.setComboAndReminder( SHIP_ID, autoShipMap.get( shipId ) );
-		} else if ( "".equals( shipId ) == false ) {
+		}
+		else if ( "".equals( shipId ) == false ) {
 			// Some unrecognized id. Add it as a string.
-			editorPanel.getCombo(SHIP_ID).addItem( shipId );
+			editorPanel.getCombo( SHIP_ID ).addItem( shipId );
 			editorPanel.setComboAndReminder( SHIP_ID, shipId );
-		} else {
+		}
+		else {
 			// It's blank.
 			editorPanel.setComboAndReminder( SHIP_ID, "" );
 		}
 
-		editorPanel.getCombo(SHIP_ID).setEnabled( shipIdEditingEnabled );
+		editorPanel.getCombo( SHIP_ID ).setEnabled( shipIdEditingEnabled );
 
 		for ( Difficulty d : Difficulty.values() )
-			editorPanel.getCombo(DIFFICULTY).addItem( d );
+			editorPanel.getCombo( DIFFICULTY ).addItem( d );
 
 		editorPanel.setStringAndReminder( SHIP_NAME, getShipName() );
 		editorPanel.setIntAndReminder( VALUE, getValue() );
@@ -359,7 +365,7 @@ public class ScorePanel extends JPanel {
 
 		JPanel ctrlPanel = new JPanel();
 		ctrlPanel.setLayout( new BoxLayout( ctrlPanel, BoxLayout.X_AXIS ) );
-		ctrlPanel.setBorder( BorderFactory.createEmptyBorder( 10,10,10,10 ) );
+		ctrlPanel.setBorder( BorderFactory.createEmptyBorder( 10, 10, 10, 10 ) );
 		ctrlPanel.add( Box.createHorizontalGlue() );
 		JButton popupOkBtn = new JButton( "OK" );
 		ctrlPanel.add( popupOkBtn );
@@ -377,6 +383,7 @@ public class ScorePanel extends JPanel {
 		popup.setLocationRelativeTo( null );
 
 		popupCancelBtn.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed( ActionEvent e ) {
 				popup.setVisible( false );
 				popup.dispose();
@@ -384,30 +391,31 @@ public class ScorePanel extends JPanel {
 		});
 
 		popupOkBtn.addActionListener(new ActionListener() {
+			@Override
 			public void actionPerformed( ActionEvent e ) {
 				String newString = null;
 
-				setShipName( editorPanel.getString(SHIP_NAME).getText() );
+				setShipName( editorPanel.getString( SHIP_NAME ).getText() );
 
-				Object shipObj = editorPanel.getCombo(SHIP_ID).getSelectedItem();
+				Object shipObj = editorPanel.getCombo( SHIP_ID ).getSelectedItem();
 				if ( shipObj instanceof ShipBlueprint ) {
 					setShipId( ((ShipBlueprint)shipObj).getId() );
 				}
 
-				newString = editorPanel.getInt(VALUE).getText();
+				newString = editorPanel.getInt( VALUE ).getText();
 				try { setValue( Integer.parseInt( newString ) ); }
-				catch (NumberFormatException f) {}
+				catch ( NumberFormatException f ) {}
 
-				newString = editorPanel.getInt(SECTOR).getText();
+				newString = editorPanel.getInt( SECTOR ).getText();
 				try { setSector( Integer.parseInt( newString ) ); }
-				catch (NumberFormatException f) {}
+				catch ( NumberFormatException f ) {}
 
-				setDifficulty( (Difficulty)editorPanel.getCombo(DIFFICULTY).getSelectedItem() );
-				setVictory( editorPanel.getBoolean(VICTORY).isSelected() );
-				setDLCEnabled( editorPanel.getBoolean(DLC_ENABLED).isSelected() );
+				setDifficulty( (Difficulty)editorPanel.getCombo( DIFFICULTY ).getSelectedItem() );
+				setVictory( editorPanel.getBoolean( VICTORY ).isSelected() );
+				setDLCEnabled( editorPanel.getBoolean( DLC_ENABLED ).isSelected() );
 
 				if ( blankable ) {
-					setBlank( editorPanel.getBoolean(REMOVE).isSelected() );
+					setBlank( editorPanel.getBoolean( REMOVE ).isSelected() );
 				} else {
 					setBlank( false );
 				}
@@ -430,7 +438,8 @@ public class ScorePanel extends JPanel {
 			setVictory( s.isVictory() );
 			setDLCEnabled( s.isDLCEnabled() );
 			setBlank( false );
-		} else {
+		}
+		else {
 			setBlank( true );
 		}
 	}
