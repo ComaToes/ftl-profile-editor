@@ -11,11 +11,11 @@
 	</properties>
 
 	<!--
-	Don't include meta-packages as dependencies.
-	They cause the "jar-with-dependencies" task
-	to throw an error about "Negative Time",
-	probably for setting timestamps on their
-	non-existent class files.
+		Don't include meta-packages as dependencies.
+		They cause the "jar-with-dependencies" task
+		to throw an error about "Negative Time",
+		probably for setting timestamps on their
+		non-existent class files.
 	-->
 	<dependencies>
 		<dependency>
@@ -31,7 +31,7 @@
 		<dependency>
 			<groupId>org.jdom</groupId>
 			<artifactId>jdom2</artifactId>
-			<version>2.0.5</version>
+			<version>2.0.6</version>
 		</dependency>
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
@@ -42,6 +42,11 @@
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>platform</artifactId>
 			<version>3.5.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.beust</groupId>
+			<artifactId>jcommander</artifactId>
+			<version>1.35</version>
 		</dependency>
 	</dependencies>
   
@@ -58,7 +63,11 @@
 			</configuration>
 		</plugin>
 		<plugin>
-			<!-- Assembly 2.4 needed its own dependencies pinned to get around a tar bug. -->
+			<!--
+				Assembly 2.4.0 needed its own dependencies pinned to get
+				around a Plexus Archiver tar bug. And Assembly 2.4.1 fixed
+				fileSet lineEnding bug that ate the final newlines.
+			-->
 
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-assembly-plugin</artifactId>
@@ -97,7 +106,7 @@
 						<descriptors>
 							<descriptor>src/main/assembly/dist-win.xml</descriptor>
 						</descriptors>
-						<finalName>${project.name} v${project.version}-Win</finalName>
+						<finalName>FTLProfileEditor_v${project.version}-Win</finalName>
 						<appendAssemblyId>false</appendAssemblyId>
 					</configuration>
 				</execution>
@@ -111,7 +120,7 @@
 						<descriptors>
 							<descriptor>src/main/assembly/dist-unix.xml</descriptor>
 						</descriptors>
-						<finalName>${project.name} v${project.version}-Unix</finalName>
+						<finalName>FTLProfileEditor_v${project.version}-Unix</finalName>
 						<appendAssemblyId>false</appendAssemblyId>
 					</configuration>
 				</execution>
