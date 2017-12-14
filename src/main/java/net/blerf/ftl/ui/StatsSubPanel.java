@@ -218,8 +218,10 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 		return result;
 	}
 
+	@Override
 	public void actionPerformed( ActionEvent e ) {
 		Object source = e.getSource();
+
 		if ( editMap.containsKey( source ) ) {
 			final StatRow row = getRow( editMap.get( source ) );
 
@@ -238,7 +240,8 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 				editorPanel.getCombo( RACE ).setSelectedItem( CrewType.findById( row.race ) );
 
 				editorPanel.setBoolAndReminder( MALE, row.male );
-			} else {
+			}
+			else {
 				editorPanel.getCombo( RACE ).setEnabled( false );
 				editorPanel.getBoolean( MALE ).setEnabled( false );
 			}

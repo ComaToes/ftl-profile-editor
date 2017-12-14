@@ -17,6 +17,7 @@ import javax.swing.JComponent;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
@@ -191,6 +192,24 @@ public class FieldEditorPanel extends JPanel {
 			this.add( valueReminder, gridC );
 		}
 
+		gridC.gridy++;
+	}
+
+	public void addSeparatorRow() {
+		gridC.fill = GridBagConstraints.HORIZONTAL;
+		gridC.weighty = 0.0;
+		gridC.gridwidth = GridBagConstraints.REMAINDER;
+		gridC.gridx = 0;
+
+		JPanel panel = new JPanel();
+		panel.setLayout( new BoxLayout( panel, BoxLayout.Y_AXIS ) );
+		panel.add( Box.createVerticalStrut( 8 ) );
+		JSeparator sep = new JSeparator();
+		sep.setPreferredSize( new Dimension( 1, sep.getPreferredSize().height ) );
+		panel.add( sep );
+		panel.add( Box.createVerticalStrut( 8 ) );
+
+		this.add( panel, gridC );
 		gridC.gridy++;
 	}
 

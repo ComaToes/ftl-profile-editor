@@ -51,6 +51,9 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.basic.BasicArrowButton;
 
+import net.blerf.ftl.constants.AdvancedFTLConstants;
+import net.blerf.ftl.constants.FTLConstants;
+import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.parser.SavedGameParser.BeaconState;
@@ -123,6 +126,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private SpriteSelector miscSelector = null;
 	private ActionListener columnCtrlListener = null;
+
+	private FTLConstants ftlConstants = new AdvancedFTLConstants();
 
 
 	public SavedGameSectorMapPanel( FTLFrame frame ) {
@@ -360,6 +365,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 			mapPanel.revalidate();
 			mapViewport.repaint();
 			return;
+		}
+
+		if ( gameState.getFileFormat() == 2 ) {
+			ftlConstants = new OriginalFTLConstants();
+		} else {
+			ftlConstants = new AdvancedFTLConstants();
 		}
 
 		int beaconId;
@@ -1296,7 +1307,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final List<StoreShelfPanel> shelfPanels = new ArrayList<StoreShelfPanel>();
 
 		for ( StoreShelf shelf : beaconRef.get().getStore().getShelfList() ) {
-			StoreShelfPanel shelfPanel = new StoreShelfPanel( frame );
+			StoreShelfPanel shelfPanel = new StoreShelfPanel( frame, ftlConstants );
 			shelfPanel.setShelf( shelf );
 			shelfPanels.add( shelfPanel );
 			shelfTabsPane.addTab( "Shelf #"+ (shelfPanels.size()-1), shelfPanel );
@@ -1375,7 +1386,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		shelfAddBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				StoreShelfPanel shelfPanel = new StoreShelfPanel( frame );
+				StoreShelfPanel shelfPanel = new StoreShelfPanel( frame, ftlConstants );
 				shelfPanels.add( shelfPanel );
 				shelfTabsPane.addTab( "Shelf #"+ (shelfPanels.size()-1), shelfPanel );
 				shelfTabsPane.setSelectedIndex( shelfPanels.size()-1 );
