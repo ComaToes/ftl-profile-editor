@@ -76,7 +76,7 @@ Troubleshooting
     Edit or create "ftl-editor.cfg" with notepad, in the editor's folder,
     with the following line.
 
-    useDefaultUI=true
+    use_default_ui=true
 
 * Error reading profile. [...] Initial int not expected value: 2...
     You likely tried to open a saved game while in the "Profile" tab.
