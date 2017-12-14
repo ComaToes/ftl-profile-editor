@@ -15,8 +15,22 @@ ECHO.
 ECHO When it exits, logs will be presented in multiple notepad windows.
 ECHO.
 ECHO.
-PAUSE
 ECHO.
+
+
+ECHO Some users reported interface glitches if they had custom Windows themes.
+ECHO Setting 'use_default_ui=true' in ftl-editor.cfg is a workaround.
+ECHO.
+SET /P YN="Create a new ftl-editor.cfg to do this? (y/N): "
+ECHO.
+
+IF /I [%YN%]==[y] (
+  ECHO Creating a new config.
+  ECHO use_default_ui=true>ftl-editor.cfg
+  ECHO.
+)
+ECHO.
+
 
 ECHO Running the Editor...
 ECHO.
