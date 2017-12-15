@@ -23,15 +23,19 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -57,6 +61,9 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.vhati.ftldat.FTLDat;
 import net.vhati.modmanager.core.FTLUtilities;
 
@@ -80,9 +87,6 @@ import net.blerf.ftl.ui.SavedGameSectorTreePanel;
 import net.blerf.ftl.ui.SavedGameStateVarsPanel;
 import net.blerf.ftl.ui.Statusbar;
 import net.blerf.ftl.ui.StatusbarMouseListener;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 public class FTLFrame extends JFrame implements Statusbar {
@@ -112,19 +116,19 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource( "save.gif" ) );
 	private ImageIcon unlockIcon = new ImageIcon( ClassLoader.getSystemResource( "unlock.png" ) );
 	private ImageIcon aboutIcon = new ImageIcon( ClassLoader.getSystemResource( "about.gif" ) );
-	private ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource( "update.gif" ) );
-	private ImageIcon releaseNotesIcon = new ImageIcon( ClassLoader.getSystemResource( "release-notes.png" ) );
+	private final ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource( "update.gif" ) );
+	private final ImageIcon releaseNotesIcon = new ImageIcon( ClassLoader.getSystemResource( "release-notes.png" ) );
 
-	private URL aboutPage = ClassLoader.getSystemResource( "about.html" );
-	private URL latestVersionTemplate = ClassLoader.getSystemResource( "update.html" );
-	private URL releaseNotesTemplate = ClassLoader.getSystemResource( "release-notes.html" );
+	private URL aboutPageURL = ClassLoader.getSystemResource( "about.html" );
+	private URL latestVersionTemplateURL = ClassLoader.getSystemResource( "update.html" );
+	private URL releaseNotesTemplateURL = ClassLoader.getSystemResource( "release-notes.html" );
 
-	private String latestVersionUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/latest-version.txt";
-	private String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
+	private final String latestVersionUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/latest-version.txt";
+	private final String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
-	private String forumThreadUrl = "http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959";
+	private String forumThreadUrl = "http://subsetgames.com/forum/viewtopic.php?f=7&t=10959";
 
-	private ArrayList<JButton> updatesButtonList = new ArrayList<JButton>();
+	private List<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
 
 	private JButton profileSaveBtn;
@@ -149,8 +153,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 
-	private String appName;
-	private int appVersion;
+	private final String appName;
+	private final int appVersion;
 
 
 	public FTLFrame( String appName, int appVersion ) {
@@ -420,8 +424,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 						FTLFrame.this.loadProfile( p );
 					}
 					catch( Exception f ) {
-						log.error( String.format("Error reading profile (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error reading profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
+						log.error( String.format( "Error reading profile (\"%s\").", chosenFile.getName() ), f );
+						showErrorDialog( String.format( "Error reading profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 						exception = f;
 					}
 					finally {
@@ -442,8 +446,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 							}
 
 							errBuf.append( "<br/>" );
-							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a> (Signup is free).<br/>" );
-							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free).<br/>" );
+							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a>.<br/>" );
+							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a>.<br/>" );
 							errBuf.append( "<br/>" );
 							errBuf.append( "On GitHub, set the issue title as \"Profile Parser Error\".<br/>" );
 							errBuf.append( "<br/>" );
@@ -466,12 +470,12 @@ public class FTLFrame extends JFrame implements Statusbar {
 								appendStackTrace( reportBuf, exception );
 							}
 
-							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
-							reportBuf.append( String.format("OS: %s %s\n", System.getProperty( "os.name" ), System.getProperty( "os.version" )) );
-							reportBuf.append( String.format("VM: %s, %s, %s\n", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" )) );
+							reportBuf.append( String.format( "Editor Version: %s\n", appVersion ) );
+							reportBuf.append( String.format( "OS: %s %s\n", System.getProperty( "os.name" ), System.getProperty( "os.version" ) ) );
+							reportBuf.append( String.format( "VM: %s, %s, %s\n", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) ) );
 							reportBuf.append( "[/code]\n" );
 							reportBuf.append( "\n" );
-							reportBuf.append( String.format("File (\"%s\")...\n", chosenFile.getName()) );
+							reportBuf.append( String.format( "File (\"%s\")...\n", chosenFile.getName() ) );
 							reportBuf.append( "[code]\n" );
 							reportBuf.append( hexBuf );
 							reportBuf.append( "\n[/code]\n" );
@@ -555,8 +559,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 						parser.writeProfile( out, profile );
 					}
 					catch( IOException f ) {
-						log.error( String.format("Error saving profile (\"%s\")", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error saving profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
+						log.error( String.format( "Error saving profile (\"%s\")", chosenFile.getName() ), f );
+						showErrorDialog( String.format( "Error saving profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
@@ -617,8 +621,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 						out.close();
 					}
 					catch( IOException f ) {
-						log.error( String.format("Error dumping profile (\"%s\")", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error dumping profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
+						log.error( String.format( "Error dumping profile (\"%s\")", chosenFile.getName() ), f );
+						showErrorDialog( String.format( "Error dumping profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
@@ -682,7 +686,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 					}
 					catch( IOException f ) {
 						log.error( "Extracting dats failed", f );
-						showErrorDialog( String.format("Error extracting dats:\n%s: %s", f.getClass().getSimpleName(), f.getMessage()) );
+						showErrorDialog( String.format( "Error extracting dats:\n%s: %s", f.getClass().getSimpleName(), f.getMessage() ) );
 					}
 				}
 			}
@@ -791,8 +795,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 						}
 					}
 					catch( Exception f ) {
-						log.error( String.format("Reading game state (\"%s\") failed", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error reading game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
+						log.error( String.format( "Reading game state (\"%s\") failed", chosenFile.getName() ), f );
+						showErrorDialog( String.format( "Error reading game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 						exception = f;
 					}
 					finally {
@@ -805,8 +809,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 							StringBuilder errBuf = new StringBuilder();
 							errBuf.append( "Your saved game could not be interpreted correctly.<br/>" );
 							errBuf.append( "<br/>" );
-							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a> (Signup is free).<br/>");
-							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a> (Signup there is also free).<br/>" );
+							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a>.<br/>");
+							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a>.<br/>" );
 							errBuf.append( "<br/>" );
 							errBuf.append( "On GitHub, set the issue title as \"SavedGame Parser Error\".<br/>" );
 							errBuf.append( "<br/>" );
@@ -824,12 +828,12 @@ public class FTLFrame extends JFrame implements Statusbar {
 								appendStackTrace( reportBuf, exception );
 							}
 
-							reportBuf.append( String.format("Editor Version: %s\n", appVersion) );
-							reportBuf.append( String.format("OS: %s %s\n", System.getProperty( "os.name" ), System.getProperty( "os.version" )) );
-							reportBuf.append( String.format("VM: %s, %s, %s\n", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" )) );
+							reportBuf.append( String.format( "Editor Version: %s\n", appVersion ) );
+							reportBuf.append( String.format( "OS: %s %s\n", System.getProperty( "os.name" ), System.getProperty( "os.version" ) ) );
+							reportBuf.append( String.format( "VM: %s, %s, %s\n", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) ) );
 							reportBuf.append( "[/code]\n" );
 							reportBuf.append( "\n" );
-							reportBuf.append( String.format("File (\"%s\")...\n", chosenFile.getName()) );
+							reportBuf.append( String.format( "File (\"%s\")...\n", chosenFile.getName() ) );
 							reportBuf.append( "[code]\n" );
 							reportBuf.append( hexBuf );
 							reportBuf.append( "\n[/code]\n" );
@@ -899,8 +903,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 						parser.writeSavedGame( out, gameState );
 					}
 					catch( IOException f ) {
-						log.error( String.format("Error saving game state (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error saving game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
+						log.error( String.format( "Error saving game state (\"%s\").", chosenFile.getName() ), f );
+						showErrorDialog( String.format( "Error saving game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
@@ -956,8 +960,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 						out.close();
 					}
 					catch( IOException f ) {
-						log.error( String.format("Error dumping game state (\"%s\").", chosenFile.getName()), f );
-						showErrorDialog( String.format("Error dumping game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage()) );
+						log.error( String.format( "Error dumping game state (\"%s\").", chosenFile.getName() ), f );
+						showErrorDialog( String.format( "Error dumping game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
 					finally {
 						try {if ( out != null ) out.close();}
@@ -984,8 +988,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 		aboutButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				JDialog aboutDialog = createAboutDialog();
-				aboutDialog.setVisible( true );
+				showAboutDialog();
 			}
 		});
 		aboutButton.addMouseListener( new StatusbarMouseListener( this, "View information about this tool and links for information/bug reports" ) );
@@ -994,7 +997,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 	public JButton createUpdatesButton() {
 		JButton updatesButton = new JButton( "Updates" );
-		updatesButton.setEnabled(false);
+		updatesButton.setEnabled( false );
 		updatesButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
@@ -1006,202 +1009,229 @@ public class FTLFrame extends JFrame implements Statusbar {
 		return updatesButton;
 	}
 
-	// TODO: May need to reimplement the http client.
-	// System.exit() interrupts daemon threads, but blocked sockets need explicit close().
-	// Java's built-in URLConnections don't expose sockets to allow that.
-
-	private void checkForUpdate() {
-		URL url = null;
-		InputStream inStream = null;
+	/**
+	 * Returns string content of a bundled resource url, decoded as UTF-8.
+	 */
+	private String readResourceText( URL url ) throws IOException {
 		BufferedReader in = null;
 		String line = null;
 		try {
-			log.debug( "Checking for latest version." );
-
-			url = new URL( latestVersionUrl );
-			HttpURLConnection httpConn = (HttpURLConnection)url.openConnection();
-			httpConn.setConnectTimeout( 5000 );
-			httpConn.setReadTimeout( 10000 );
-			httpConn.connect();
-
-			int responseCode = httpConn.getResponseCode();
-			if ( responseCode != HttpURLConnection.HTTP_OK ) {
-				log.info( "While checking for updates, server returned an error (code "+ responseCode +")" );
-				return;
+			StringBuilder buf = new StringBuilder();
+			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent(), "UTF-8" ) );
+			while ( (line = in.readLine()) != null ) {
+				buf.append( line ).append( "\n" );
 			}
+			in.close();
 
-			inStream = httpConn.getInputStream();
-			in = new BufferedReader( new InputStreamReader( inStream, Charset.forName( "UTF-8" ).newDecoder() ) );
+			return buf.toString();
+		}
+		finally {
+			try {if ( in != null ) in.close();}
+			catch( IOException e ) {}
+		}
+	}
 
+	// TODO: May need to reimplement the http client with nio.
+	// System.exit() interrupts daemon threads, but blocked sockets need explicit close().
+	// Java's built-in URLConnections don't expose sockets to allow that.
+
+	/**
+	 * Returns an InputStream to read an HTTP URL.
+	 */
+	private InputStream fetchURL( URL url ) throws SocketTimeoutException, UnknownHostException, IOException {
+		HttpURLConnection httpConn = (HttpURLConnection)url.openConnection();
+		httpConn.setConnectTimeout( 5000 );
+		httpConn.setReadTimeout( 10000 );
+		httpConn.connect();
+
+		int responseCode = httpConn.getResponseCode();
+		if ( responseCode != HttpURLConnection.HTTP_OK ) {
+			throw new IOException( String.format( "Download request failed for \"%s\": HTTP Code %d (%s)", httpConn.getURL(), responseCode, httpConn.getResponseMessage() ) );
+		}
+
+		return httpConn.getInputStream();
+	}
+
+	private void checkForUpdate() {
+
+		InputStream is = null;
+		BufferedReader in = null;
+		try {
+			log.debug( "Checking for latest version" );
+
+			is = fetchURL( new URL( latestVersionUrl ) );
+
+			in = new BufferedReader( new InputStreamReader( is, "UTF-8" ) );
 			int latestVersion = Integer.parseInt( in.readLine() );
 			in.close();
 
+			String releaseTemplate;
+			int minHistory;
+			final String dialogTitle;
+			final Color updatesBtnColor;
+			final ImageIcon updatesBtnIcon;
+			final String statusMessage;
 
 			if ( latestVersion > appVersion ) {
 				log.debug( "New version available" );
 
-				final String historyHtml = getVersionHistoryHtml( latestVersionTemplate, appVersion );
-
-				final Runnable newCallback = new Runnable() {
-					@Override
-					public void run() {
-						JDialog updatesDialog = createHtmlDialog( "Update Available", historyHtml );
-						updatesDialog.setVisible( true );
-					}
-				};
-				// Make changes from the GUI thread.
-				Runnable r = new Runnable() {
-					@Override
-					public void run() {
-						updatesCallback = newCallback;
-						for ( JButton updatesButton : updatesButtonList ) {
-							updatesButton.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
-							updatesButton.setIcon( updateIcon );
-							updatesButton.setEnabled( true );
-						}
-						setStatusText( "A new version has been released." );
-					}
-				};
-				SwingUtilities.invokeLater( r );
+				releaseTemplate = readResourceText( latestVersionTemplateURL );
+				minHistory = appVersion;
+				dialogTitle = "Update Available";
+				updatesBtnColor = new Color( 0xff, 0xaa, 0xaa );
+				updatesBtnIcon = updateIcon;
+				statusMessage = "A new version has been released.";
 			}
 			else {
 				log.debug( "Already up-to-date" );
 
-				final String historyHtml = getVersionHistoryHtml( releaseNotesTemplate, 0 );
-
-				// Replacement behavior for the updates button.
-				final Runnable newCallback = new Runnable() {
-					@Override
-					public void run() {
-						JDialog updatesDialog = createHtmlDialog( "Release Notes", historyHtml );
-						updatesDialog.setVisible( true );
-					}
-				};
-				// Make changes from the GUI thread.
-				Runnable r = new Runnable() {
-					@Override
-					public void run() {
-						updatesCallback = newCallback;
-						Color defaultColor = UIManager.getColor( "Button.background" );
-						for ( JButton updatesButton : updatesButtonList ) {
-							if ( defaultColor != null )
-								updatesButton.setBackground( defaultColor );
-							updatesButton.setIcon( releaseNotesIcon );
-							updatesButton.setEnabled( true );
-						}
-						setStatusText( "No new updates." );
-					}
-				};
-				SwingUtilities.invokeLater( r );
+				releaseTemplate = readResourceText( releaseNotesTemplateURL );
+				minHistory = 0;
+				dialogTitle = "Release Notes";
+				updatesBtnColor = UIManager.getColor( "Button.background" );
+				updatesBtnIcon = releaseNotesIcon;
+				statusMessage = "No new updates.";
 			}
-		}
-		catch ( java.net.SocketTimeoutException e ) {
-			log.error( "Socket timed out while checking for updates" );
-		}
-		catch ( java.net.UnknownHostException e ) {
-			log.error( "Checking for latest version failed. Unknown Host: "+ e.getMessage() );
-			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\nUnknown Host: "+ e.getMessage() );
+
+			final String historyHtml = getVersionHistoryHtml( releaseTemplate, minHistory );
+
+			final Runnable newCallback = new Runnable() {
+				@Override
+				public void run() {
+					JDialog updatesDlg = new JDialog( FTLFrame.this, dialogTitle, true );
+
+					JEditorPane editor = new JEditorPane( "text/html", historyHtml );
+					editor.setEditable( false );
+					editor.setCaretPosition( 0 );
+					editor.setTransferHandler( new HTMLEditorTransferHandler() );
+					editor.addHyperlinkListener( linkListener );
+					updatesDlg.setContentPane( new JScrollPane( editor ) );
+
+					//updatesDlg.pack();
+					updatesDlg.setSize( 600, 450 );
+					updatesDlg.setLocationRelativeTo( FTLFrame.this );
+					updatesDlg.setVisible( true );
+				}
+			};
+
+			// Make changes from the GUI thread.
+			Runnable r = new Runnable() {
+				@Override
+				public void run() {
+					updatesCallback = newCallback;
+					for ( JButton updatesBtn : updatesButtonList ) {
+						updatesBtn.setBackground( updatesBtnColor );
+						updatesBtn.setIcon( updatesBtnIcon );
+						updatesBtn.setEnabled( true );
+					}
+					setStatusText( statusMessage );
+				}
+			};
+			SwingUtilities.invokeLater( r );
+
 		}
 		catch ( Exception e ) {
 			log.error( "Checking for latest version failed", e );
-			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e );
+			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e.toString() );
 		}
 		finally {
 			try {if ( in != null ) in.close();}
 			catch ( IOException e ) {}
 
-			try {if ( inStream != null ) inStream.close();}
+			try {if ( is != null ) is.close();}
 			catch ( IOException e ) {}
 		}
 	}
 
-	private String getVersionHistoryHtml( URL templateUrl, int sinceVersion ) throws IOException {
+	/**
+	 * Returns a Map of versions (in descending order) and their lists of changes.
+	 */
+	private Map<Integer, List<String>> fetchVersionHistory() throws IOException {
+		Map<Integer, List<String>> historyMap = new LinkedHashMap<Integer, List<String>>();
+
+		InputStream is = null;
+		BufferedReader in = null;
+		String line = null;
+		try {
+			is = fetchURL( new URL( versionHistoryUrl ) );
+			in = new BufferedReader( new InputStreamReader( is, "UTF-8" ) );
+
+			while ( (line = in.readLine()) != null ) {
+				int releaseVersion = Integer.parseInt( line );
+				List<String> releaseChangeList = new ArrayList<String>();
+				historyMap.put( new Integer( releaseVersion ), releaseChangeList );
+
+				while ( (line = in.readLine()) != null && !line.equals( "" ) ) {
+					releaseChangeList.add( line );
+				}
+
+				// Must've either hit a blank or done.
+			}
+			in.close();
+
+			return historyMap;
+		}
+		finally {
+			try {if ( in != null ) in.close();}
+			catch ( IOException e ) {}
+
+			try {if ( is != null ) is.close();}
+			catch ( IOException e ) {}
+		}
+	}
+
+	/**
+	 * Returns an HTML summary of changes since a given version.
+	 *
+	 * @see #fetchVersionHistory()
+	 */
+	private String getVersionHistoryHtml( String releaseTemplate, int sinceVersion ) throws IOException {
 
 		// Buffer for presentation-ready html.
 		StringBuilder historyBuf = new StringBuilder();
 
-		URL url = null;
-		BufferedReader in = null;
-		String line = null;
-		try {
-			// Fetch the template.
-			StringBuilder templateBuf = new StringBuilder();
-			url = templateUrl;
-			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent() ) );
-			while ( (line = in.readLine()) != null ) {
-				templateBuf.append(line).append( "\n" );
+		// Fetch the changelog.
+		Map<Integer, List<String>> historyMap = fetchVersionHistory();
+
+		StringBuilder releaseBuf = new StringBuilder();
+
+		for ( Map.Entry<Integer, List<String>> releaseEntry : historyMap.entrySet() ) {
+			if ( releaseEntry.getKey().intValue() <= sinceVersion ) break;
+
+			releaseBuf.setLength( 0 );
+
+			for ( String change : releaseEntry.getValue() ) {
+				releaseBuf.append( "<li>" ).append( change ).append( "</li>\n" );
 			}
-			in.close();
-			String historyTemplate = templateBuf.toString();
 
-			// Fetch the changelog, templating each revision.
-			url = new URL( versionHistoryUrl );
-			in = new BufferedReader( new InputStreamReader( (InputStream)url.getContent(), Charset.forName( "UTF-8" ).newDecoder() ) );
+			if ( releaseBuf.length() > 0 ) {
+				Map<String, String> placeholderMap = new HashMap<String, String>();
+				placeholderMap.put( "{version}", String.format( "v%s", releaseEntry.getKey() ) );
+				placeholderMap.put( "{items}", releaseBuf.toString() );
 
-			int releaseVersion = 0;
-			StringBuilder releaseBuf = new StringBuilder();
-			String releaseDesc = null;
-			while ( (line = in.readLine()) != null ) {
-				releaseVersion = Integer.parseInt( line );
-				if ( releaseVersion <= sinceVersion ) break;
-
-				releaseBuf.setLength( 0 );
-				while ( (line = in.readLine()) != null && !line.equals( "" ) ) {
-					releaseBuf.append( "<li>" ).append( line ).append( "</li>\n" );
+				String releaseDesc = releaseTemplate;
+				for ( Map.Entry<String, String> dictEntry : placeholderMap.entrySet() ) {
+					releaseDesc = releaseDesc.replaceAll( Pattern.quote( dictEntry.getKey() ), Matcher.quoteReplacement( dictEntry.getValue() ) );
 				}
-				// Must've either hit a blank or done.
-
-				if ( releaseBuf.length() > 0 ) {
-					String[] placeholders = new String[] { "{version}", "{items}" };
-					String[] values = new String[] { "v"+releaseVersion, releaseBuf.toString() };
-					releaseDesc = historyTemplate;
-					for ( int i=0; i < placeholders.length; i++ )
-						releaseDesc = releaseDesc.replaceAll(Pattern.quote(placeholders[i]), Matcher.quoteReplacement( values[i] ) );
-					historyBuf.append( releaseDesc );
-				}
+				historyBuf.append( releaseDesc );
 			}
-			in.close();
-		}
-		finally {
-			try {if ( in != null ) in.close();}
-			catch ( IOException e ) {}
 		}
 
 		return historyBuf.toString();
-	}
-
-	private JDialog createHtmlDialog( String title, String content ) {
-
-		JDialog dlg = new JDialog( this, title, true );
-		JPanel panel = new JPanel();
-		panel.setLayout( new BoxLayout( panel, BoxLayout.Y_AXIS ) );
-
-		JEditorPane editor = new JEditorPane( "text/html", content );
-		editor.setEditable( false );
-		editor.setCaretPosition( 0 );
-		editor.addHyperlinkListener( linkListener );
-		editor.setTransferHandler( new HTMLEditorTransferHandler() );
-		panel.add( new JScrollPane( editor ) );
-
-		dlg.setContentPane( panel );
-		dlg.setSize( 600, 400 );
-		dlg.setLocationRelativeTo( this );
-
-		return dlg;
 	}
 
 	/**
 	 * Formats an exception, appending lines to a bug report buffer.
 	 */
 	private void appendStackTrace( StringBuilder reportBuf, Throwable exception ) {
-		reportBuf.append( String.format("Exception: %s\n", exception.toString()) );
+		reportBuf.append( String.format( "Exception: %s\n", exception.toString() ) );
 		reportBuf.append( "\n" );
 
 		reportBuf.append( "Stack Trace...\n" );
 		StackTraceElement[] traceElements = exception.getStackTrace();
 		int traceDepth = 5;
 		for ( int i=0; i < traceDepth && i < traceElements.length; i++ ) {
-			reportBuf.append( String.format("  %s\n", traceElements[i].toString()) );
+			reportBuf.append( String.format( "  %s\n", traceElements[i].toString() ) );
 		}
 /*
 		Throwable currentCause = exception;
@@ -1211,11 +1241,11 @@ public class FTLFrame extends JFrame implements Statusbar {
 		// remaining lines are redundant.
 
 		while ( currentCause.getCause() != currentCause && null != (currentCause=currentCause.getCause()) ) {
-			reportBuf.append( String.format("Caused by: %s\n", currentCause.toString()) );
+			reportBuf.append( String.format( "Caused by: %s\n", currentCause.toString() ) );
 			StackTraceElement[] causeElements = currentCause.getStackTrace();
 			int causeDepth = 3;
 			for ( int i=0; i < causeDepth && i < causeElements.length; i++ ) {
-				reportBuf.append( String.format("  %s\n", causeElements[i].toString()) );
+				reportBuf.append( String.format( "  %s\n", causeElements[i].toString() ) );
 			}
 		}
 */
@@ -1227,7 +1257,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 		JDialog dlg = new JDialog( this, title, true );
 		JPanel panel = new JPanel( new BorderLayout() );
 
-		Font reportFont = new Font( "Monospaced", Font.PLAIN, 13 );
+		Font reportFont = new Font( Font.MONOSPACED, Font.PLAIN, 13 );
 
 		JEditorPane messageEditor = new JEditorPane( "text/html", message );
 		messageEditor.setEditable( false );
@@ -1250,27 +1280,24 @@ public class FTLFrame extends JFrame implements Statusbar {
 		return dlg;
 	}
 
-	private JDialog createAboutDialog() {
-
-		JDialog dlg = new JDialog( this, "About", true );
-		JPanel panel = new JPanel();
-		panel.setLayout( new BoxLayout(panel, BoxLayout.Y_AXIS) );
-
+	private void showAboutDialog() {
 		try {
-			JEditorPane editor = new JEditorPane( aboutPage );
+			JDialog aboutDlg = new JDialog( FTLFrame.this, "About", true );
+
+			JEditorPane editor = new JEditorPane( aboutPageURL );
 			editor.setEditable( false );
+			editor.setMargin( new Insets( 0, 48, 25, 48 ) );
 			editor.addHyperlinkListener( linkListener );
-			panel.add( editor );
-		}
-		catch ( IOException e ) {
-			log.error( e );
-		}
+			aboutDlg.setContentPane( editor );
 
-		dlg.setContentPane( panel );
-		dlg.setSize( 300, 320 );
-		dlg.setLocationRelativeTo( this );
-
-		return dlg;
+			//aboutDlg.setSize( 300, 320 );
+			aboutDlg.pack();
+			aboutDlg.setLocationRelativeTo( FTLFrame.this );
+			aboutDlg.setVisible( true );
+		}
+		catch( IOException f ) {
+			log.error( "Failed to show the about dialog", f );
+		}
 	}
 
 	public void loadProfile( Profile p ) {

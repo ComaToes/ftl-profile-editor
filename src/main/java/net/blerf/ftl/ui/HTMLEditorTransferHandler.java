@@ -18,6 +18,12 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.parser.ParserDelegator;
 
 
+/**
+ * A basic handler for HTML content.
+ *
+ * The clipboard will be filled with both HTML and plain text that was
+ * extracted from among the tags (BR tags are treated as line breaks).
+ */
 class HTMLEditorTransferHandler extends TransferHandler {
 
 	public HTMLEditorTransferHandler() {

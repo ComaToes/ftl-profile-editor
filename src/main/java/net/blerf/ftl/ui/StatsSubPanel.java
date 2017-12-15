@@ -206,10 +206,10 @@ public class StatsSubPanel extends JPanel implements ActionListener {
 			result = new ImageIcon( ImageUtilities.getTrimmedImage( croppedImage, null ) );
 		}
 		catch ( RasterFormatException e ) {
-			log.error( String.format( "Failed to load and trim crew icon (%s).", imgRace ), e );
+			log.error( String.format( "Failed to load and trim crew icon (%s)", imgRace ), e );
 		}
 		catch ( IOException e ) {
-			log.error( String.format( "Failed to load and trim crew icon (%s).", imgRace ), e );
+			log.error( String.format( "Failed to load and trim crew icon (%s)", imgRace ), e );
 		}
 		finally {
 			try {if ( in != null ) in.close();}
