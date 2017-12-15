@@ -24,7 +24,7 @@ Requirements
     http://www.java.com/en/download/
 
   FTL (1.01-1.03.3 or 1.5.4-1.5.13, Windows/OSX/Linux, Steam/GOG/Standalone).
-    http://www.ftlgame.com/
+    https://subsetgames.com/
 
 
 Setup

@@ -1,7 +1,7 @@
 ftl-profile-editor
 ==================
 
-A 3rd-party tool to edit user files for [FTL](http://www.ftlgame.com/). It depends on resources from the game directory, but the game itself will not be modified.
+A 3rd-party tool to edit user files for [FTL](https://subsetgames.com/). It depends on resources from the game directory, but the game itself will not be modified.
 
 With this, you can unlock any or all ships and achievements in your user profile, or tweak most aspects of saved games: crew, systems, weapons, fires, breaches, etc.
 
@@ -14,9 +14,9 @@ Note:
 
 To download compiled binaries, [click here](https://sourceforge.net/projects/ftleditor/).
 
-Comments can be made in a forum thread [here](http://www.ftlgame.com/forum/viewtopic.php?f=7&t=10959).
+Comments can be made in a forum thread [here](https://subsetgames.com/forum/viewtopic.php?f=7&t=10959).
 
-I can accept PayPal donations [here](http://vhati.github.io/donate.html).
+I can accept PayPal donations [here](https://vhati.github.io/donate.html).
 That would be fantastic.
 
 
@@ -36,7 +36,7 @@ Requirements
 * Java (1.6 or higher).
     * http://www.java.com/en/download/
 * FTL (1.01-1.03.3 or 1.5.4-1.5.13, Windows/OSX/Linux, Steam/GOG/Standalone).
-    * http://www.ftlgame.com/
+    * https://subsetgames.com/
 * WinXP SP1 can't run Java 1.7.
     * (1.7 was built with VisualStudio 2010, causing a DecodePointer error.)
     * To get 1.6, you may have to google "jdk-6u45-windows-i586.exe".
