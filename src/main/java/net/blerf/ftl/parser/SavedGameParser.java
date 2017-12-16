@@ -3,7 +3,7 @@
 // http://en.wikipedia.org/wiki/List_of_Greek_mythological_figures#Personified_concepts
 
 // For reference on weapons and projectiles, see the "Complete Weapon Attribute Table":
-// http://www.ftlgame.com/forum/viewtopic.php?f=12&t=24600
+// https://subsetgames.com/forum/viewtopic.php?f=12&t=24600
 
 
 package net.blerf.ftl.parser;
@@ -26,6 +26,9 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.constants.FTLConstants;
@@ -39,13 +42,10 @@ import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class SavedGameParser extends Parser {
 
-	private static final Logger log = LogManager.getLogger(SavedGameParser.class);
+	private static final Logger log = LogManager.getLogger( SavedGameParser.class );
 
 
 	public SavedGameParser() {
@@ -57,7 +57,7 @@ public class SavedGameParser extends Parser {
 		FileInputStream in = null;
 		try {
 			in = new FileInputStream( savFile );
-			gameState = readSavedGame(in);
+			gameState = readSavedGame( in );
 		}
 		finally {
 			try {if ( in != null ) in.close();}
@@ -1430,14 +1430,14 @@ public class SavedGameParser extends Parser {
 		else throw new RuntimeException( "Unknown store item type: "+ itemType );
 
 		List<StoreItem> items = shelf.getItems();
-		for ( int i=0; i < 3; i++ ) {
+		for ( int i=0; i < 3; i++ ) {  // TODO: Magic number.
 			if ( items.size() > i ) {
-				int available = (items.get(i).isAvailable() ? 1 : 0);
+				int available = (items.get( i ).isAvailable() ? 1 : 0);
 				writeInt( out, available );
-				writeString( out, items.get(i).getItemId() );
+				writeString( out, items.get( i ).getItemId() );
 
 				if ( fileFormat == 8 || fileFormat == 9 ) {
-					writeInt( out, items.get(i).getExtraData() );
+					writeInt( out, items.get( i ).getExtraData() );
 				}
 			}
 			else {
@@ -2256,7 +2256,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Reloading a saved game from the end of the previous sector, and
 		 * exiting again will yield a different seed. So sectors' layout seeds
-		 * aren't pretetermined at the start of the game.
+		 * aren't predetermined at the start of the game.
 		 *
 		 * Changing this may affect the beacon count. The game will generate
 		 * additional beacons if it expects them (and probably truncate the
@@ -3269,7 +3269,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * @param x the 0-based Nth floor-square from the left (plus ShipLayout X_OFFSET)
 		 * @param y the 0-based Nth floor-square from the top (plus ShipLayout Y_OFFSET)
-		 * @param breachHealth 0 to 100.
+		 * @param breachHealth 0-100.
 		 */
 		public void setBreach( int x, int y, int breachHealth ) {
 			breachMap.put( new Point( x, y ), new Integer(breachHealth) );
@@ -4783,7 +4783,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Squares adjacent to a fire grow closer to igniting as
 		 * time passes. Then a new fire spawns in them at full health.
 		 *
-		 * @param n 0 to 100.
+		 * @param n 0-100
 		 */
 		public void setIgnitionProgress( int n ) { ignitionProgress = n; }
 		public int getIgnitionProgress() { return ignitionProgress; }
@@ -5541,20 +5541,25 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 
 
+	/**
+	 * A store, which contains supplies and item shelves of various types.
+	 *
+	 * FTL 1.01-1.03.3 always had two StoreShelf objects.
+	 * If more are added, only the first two will be saved.
+	 * If fewer, writeBeacon() will add dummy shelves with no items.
+	 *
+	 * FTL 1.5.4 can have a variable number of shelves, but zero
+	 * crashes the game. So writeBeacon() will add a dummy shelf.
+	 *
+	 * TODO: Find out what happens if more than four shelves are added.
+	 */
 	public static class StoreState {
 		private int fuel = 0, missiles = 0, droneParts = 0;
-		private List<StoreShelf> shelfList = new ArrayList<StoreShelf>(3);
+		private List<StoreShelf> shelfList = new ArrayList<StoreShelf>( 4 );  // TODO: Magic number.
 
 
 		/**
 		 * Constructs a StoreState.
-		 *
-		 * FTL 1.01-1.03.3 always had two StoreShelf objects.
-		 * If more are added, only the first two will be saved.
-		 * If fewer, writeBeacon() will add dummy shelves with no items.
-		 *
-		 * FTL 1.5.4 it can have a variable number of shelves, but zero
-		 * crashes the game. So writeBeacon() will add a dummy shelf.
 		 */
 		public StoreState() {
 		}
@@ -5615,7 +5620,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 	public static class StoreShelf {
 		private StoreItemType itemType = StoreItemType.WEAPON;
-		private List<StoreItem> items = new ArrayList<StoreItem>(3);
+		private List<StoreItem> items = new ArrayList<StoreItem>( 3 );  // TODO: Magic number.
 
 
 		/**
@@ -5665,7 +5670,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	}
 
 	/**
-	 * An item in a store that either can be bought or has been bought already.
+	 * An item in a store which either can be bought or has been bought already.
 	 */
 	public static class StoreItem {
 		private String itemId = null;

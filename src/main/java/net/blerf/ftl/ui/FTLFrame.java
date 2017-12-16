@@ -64,7 +64,7 @@ import javax.swing.filechooser.FileFilter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import net.vhati.ftldat.FTLDat;
+import net.vhati.ftldat.PackUtilities;
 import net.vhati.modmanager.core.FTLUtilities;
 
 import net.blerf.ftl.model.Profile;
@@ -378,7 +378,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 						in = new FileInputStream( chosenFile );
 
 						// Hash whole file, then go back to the beginning.
-						String readHash = FTLDat.calcStreamMD5( in );
+						String readHash = PackUtilities.calcStreamMD5( in );
 						in.getChannel().position( 0 );
 
 						// Read the content in advance, in case an error ocurs.
@@ -411,7 +411,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 						// Hash result.
 						ByteArrayInputStream mockIn = new ByteArrayInputStream( mockOut.toByteArray() );
-						String writeHash = FTLDat.calcStreamMD5( mockIn );
+						String writeHash = PackUtilities.calcStreamMD5( mockIn );
 						mockIn.close();
 
 						// Compare hashes.
@@ -679,8 +679,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 						JOptionPane.showMessageDialog( FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE );
 
-						DataManager.get().extractDataDat( extractDir );
-						DataManager.get().extractResourceDat( extractDir );
+						DataManager.get().extractResources( extractDir );
 
 						JOptionPane.showMessageDialog( FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE );
 					}

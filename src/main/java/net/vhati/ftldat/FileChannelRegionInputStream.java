@@ -1,4 +1,5 @@
-// Copied from Slipstream Mod Manager 1.4.
+// Copied from a snapshot of Slipstream Mod Manager after 1.9.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/8912fec70ed865d1bb58231214d85f487b4ca8f4/src/main/java/net/vhati/ftldat/FileChannelRegionInputStream.java
 
 package net.vhati.ftldat;
 

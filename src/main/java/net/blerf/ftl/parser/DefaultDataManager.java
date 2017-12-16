@@ -16,9 +16,10 @@ import javax.xml.bind.JAXBException;
 
 import org.jdom2.JDOMException;
 
-import net.vhati.ftldat.FTLDat;
-import net.vhati.ftldat.FTLDat.FolderPack;
-import net.vhati.ftldat.FTLDat.FTLPack;
+import net.vhati.ftldat.AbstractPack;
+import net.vhati.ftldat.FolderPack;
+import net.vhati.ftldat.FTLPack;
+import net.vhati.ftldat.PackContainer;
 
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DatParser;
@@ -48,7 +49,7 @@ import org.apache.logging.log4j.Logger;
 
 public class DefaultDataManager extends DataManager {
 	
-	private static final Logger log = LogManager.getLogger(DefaultDataManager.class);
+	private static final Logger log = LogManager.getLogger( DefaultDataManager.class );
 
 	private List<String> stdBlueprintsFileNames;
 	private List<String> dlcBlueprintsFileNames;
@@ -111,33 +112,42 @@ public class DefaultDataManager extends DataManager {
 	private Map<String, SectorType> stdSectorTypeIdMap;
 	private Map<String, SectorType> dlcSectorTypeIdMap;
 
-	private File dataDatFile = null;
-	private File resDatFile = null;
-	private FTLDat.FTLPack dataP = null;
-	private FTLDat.FTLPack resP = null;
-
+	private PackContainer packContainer = null;
 	private	DatParser datParser = null;
+
+	private File datsDir = null;
 
 
 	public DefaultDataManager( File datsDir ) throws IOException, JAXBException, JDOMException {
-		
-		log.trace( "DataManager initialising" );
-		
+
+		this.datsDir = datsDir;
+
 		boolean meltdown = false;
-		ArrayList<InputStream> streams = new ArrayList<InputStream>();
+		List<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
-			dataDatFile = new File( datsDir, "data.dat" );
-			resDatFile = new File( datsDir, "resource.dat" );
+			File dataDatFile = new File( datsDir, "data.dat" );
+			File resourceDatFile = new File( datsDir, "resource.dat" );
 
-			dataP = new FTLDat.FTLPack( dataDatFile, "r" );
-			resP = new FTLDat.FTLPack( resDatFile, "r" );
+			packContainer = new PackContainer();
+			if ( dataDatFile.exists() && resourceDatFile.exists() ) {  // FTL 1.01-1.5.13.
+				AbstractPack dataPack = new FTLPack( dataDatFile, "r" );
+				packContainer.setPackFor( "data/", dataPack );
+
+				AbstractPack resourcePack = new FTLPack( resourceDatFile, "r" );
+				packContainer.setPackFor( "audio/", resourcePack );
+				packContainer.setPackFor( "fonts/", resourcePack );
+				packContainer.setPackFor( "img/", resourcePack );
+			}
+			else {
+				throw new IOException( String.format( "Could not find both \"%s\" and \"%s\"", dataDatFile.getName(), resourceDatFile.getName() ) );
+			}
 
 			datParser = new DatParser();
 
 			log.info( "Reading Achievements..." );
 			log.debug( "Reading \"data/achievements.xml\"..." );
-			InputStream achStream = getDataInputStream( "data/achievements.xml" );
+			InputStream achStream = getResourceInputStream( "data/achievements.xml" );
 			streams.add( achStream );
 			List<Achievement> achievements = datParser.readAchievements( achStream, "achievements.xml" );
 
@@ -154,20 +164,20 @@ public class DefaultDataManager extends DataManager {
 
 			allBlueprints = new LinkedHashMap<String, Blueprints>();
 			for ( String blueprintsFileName : stdBlueprintsFileNames ) {
-				if ( !hasDataInputStream( "data/"+ blueprintsFileName ) ) continue;
+				if ( !hasResourceInputStream( "data/"+ blueprintsFileName ) ) continue;
 
 				log.debug( String.format( "Reading \"data/%s\"...", blueprintsFileName ) );
-				InputStream tmpStream = getDataInputStream( "data/"+ blueprintsFileName );
+				InputStream tmpStream = getResourceInputStream( "data/"+ blueprintsFileName );
 				streams.add( tmpStream );
 				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName );
 				allBlueprints.put( blueprintsFileName, tmpBlueprints );
 			}
 
 			for ( String blueprintsFileName : dlcBlueprintsFileNames ) {
-				if ( !hasDataInputStream( "data/"+ blueprintsFileName ) ) continue;
+				if ( !hasResourceInputStream( "data/"+ blueprintsFileName ) ) continue;
 
 				log.debug( String.format( "Reading \"data/%s\"...", blueprintsFileName ) );
-				InputStream tmpStream = getDataInputStream( "data/"+ blueprintsFileName );
+				InputStream tmpStream = getResourceInputStream( "data/"+ blueprintsFileName );
 				streams.add( tmpStream );
 				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName );
 				allBlueprints.put( blueprintsFileName, tmpBlueprints );
@@ -198,17 +208,17 @@ public class DefaultDataManager extends DataManager {
 			allEvents = new LinkedHashMap<String, Encounters>();
 			for ( String eventsFileName : stdEventsFileNames ) {
 				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
-				InputStream tmpStream = getDataInputStream( "data/"+ eventsFileName );
+				InputStream tmpStream = getResourceInputStream( "data/"+ eventsFileName );
 				streams.add( tmpStream );
 				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName );
 				allEvents.put( eventsFileName, tmpEncounters );
 			}
 
 			for ( String eventsFileName : dlcEventsFileNames ) {
-				if ( !hasDataInputStream( "data/"+ eventsFileName ) ) continue;
+				if ( !hasResourceInputStream( "data/"+ eventsFileName ) ) continue;
 
 				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
-				InputStream tmpStream = getDataInputStream( "data/"+ eventsFileName );
+				InputStream tmpStream = getResourceInputStream( "data/"+ eventsFileName );
 				streams.add( tmpStream );
 				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName );
 				allEvents.put( eventsFileName, tmpEncounters );
@@ -216,13 +226,13 @@ public class DefaultDataManager extends DataManager {
 
 			log.info( "Reading Crew Names..." );
 			log.debug( "Reading \"data/names.xml\"..." );
-			InputStream crewNamesStream = getDataInputStream( "data/names.xml" );
+			InputStream crewNamesStream = getResourceInputStream( "data/names.xml" );
 			streams.add( crewNamesStream );
 			List<CrewNameList> crewNameLists = datParser.readCrewNames( crewNamesStream, "names.xml" );
 
 			log.info( "Reading Sector Data..." );
 			log.debug( "Reading \"data/sector_data.xml\"..." );
-			InputStream sectorDataStream = getDataInputStream( "data/sector_data.xml" );
+			InputStream sectorDataStream = getResourceInputStream( "data/sector_data.xml" );
 			streams.add( sectorDataStream );
 			SectorData tmpSectorData = datParser.readSectorData( sectorDataStream, "sector_data.xml" );
 			sectorDescriptionIdMap = new LinkedHashMap<String, SectorDescription>();
@@ -247,7 +257,7 @@ public class DefaultDataManager extends DataManager {
 
 			log.info( "Reading Background Image Lists..." );
 			log.debug( "Reading \"data/events_imageList.xml\"..." );
-			InputStream imageListsStream = getDataInputStream( "data/events_imageList.xml" );
+			InputStream imageListsStream = getResourceInputStream( "data/events_imageList.xml" );
 			streams.add( imageListsStream );
 			List<BackgroundImageList> imageLists = datParser.readImageLists( imageListsStream, "events_imageList.xml" );
 
@@ -619,69 +629,85 @@ public class DefaultDataManager extends DataManager {
 
 	@Override
 	public void close() {
-		try {if (dataP != null) dataP.close();}
-		catch ( IOException e ) {}
-
-		try {if (resP != null) resP.close();}
-		catch ( IOException e ) {}
+		if ( packContainer != null ) {
+			for ( AbstractPack pack : packContainer.getPacks() ) {
+				try {pack.close();}
+				catch ( IOException e ) {}
+			}
+		}
 	}
 
 	@Override	
-	public boolean hasDataInputStream( String innerPath ) {
-		return dataP.contains( innerPath );
-	}
-
-	@Override	
-	public InputStream getDataInputStream( String innerPath ) throws IOException {
-		return dataP.getInputStream( innerPath );
-	}
-
-	@Override
 	public boolean hasResourceInputStream( String innerPath ) {
-		return resP.contains( innerPath );
+		AbstractPack pack = packContainer.getPackFor( innerPath );
+		if ( pack != null && pack.contains( innerPath ) ) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
-	@Override
+	@Override	
 	public InputStream getResourceInputStream( String innerPath ) throws IOException {
-		return resP.getInputStream( innerPath );
+		AbstractPack pack = packContainer.getPackFor( innerPath );
+		if ( pack != null ) {
+			return pack.getInputStream( innerPath );
+		}
+		else {
+			throw new IOException( String.format( "Unexpected innerPath: %s", innerPath ) );
+		}
 	}
 
-	@Override
-	public void extractDataDat( File extractDir ) throws IOException {
-		extractDat( dataP, extractDir );
-	}
-
-	@Override
-	public void extractResourceDat( File extractDir ) throws IOException {
-		extractDat( resP, extractDir );
-	}
-
-	private void extractDat( FTLDat.FTLPack srcP, File extractDir ) throws IOException {
-		log.info( String.format( "Extracting resources \"%s\" into \"%s\".", srcP.getName(), extractDir.getPath() ) );
-
-		FTLDat.FolderPack dstP = null;
+	public void extractResources( File extractDir ) throws IOException {
+		AbstractPack dstPack = null;
+		List<AbstractPack> srcPacks = new ArrayList<AbstractPack>( 2 );
 		InputStream is = null;
+
+
 		try {
+			File dataDatFile = new File( datsDir, "data.dat" );
+			File resourceDatFile = new File( datsDir, "resource.dat" );
+
+			if ( dataDatFile.exists() && resourceDatFile.exists() ) {  // FTL 1.01-1.5.13.
+				AbstractPack dataPack = new FTLPack( dataDatFile, "r" );
+				AbstractPack resourcePack = new FTLPack( resourceDatFile, "r" );
+				srcPacks.add( dataPack );
+				srcPacks.add( resourcePack );
+			}
+			else {
+				throw new FileNotFoundException( String.format( "Could not find both \"%s\" and \"%s\"", dataDatFile.getName(), resourceDatFile.getName() ) );
+			}
+
 			if ( !extractDir.exists() ) extractDir.mkdirs();
 
-			dstP = new FTLDat.FolderPack( extractDir );
+			dstPack = new FolderPack( extractDir );
 
-			List<String> innerPaths = srcP.list();
-			for ( String innerPath : innerPaths ) {
-				if ( dstP.contains( innerPath ) ) {
-					log.info( "While extracting resources, this file was overwritten: "+ innerPath );
-					dstP.remove( innerPath );
+			for ( AbstractPack srcPack : srcPacks ) {
+				log.info( String.format( "Extracting \"%s\" into \"%s\".", srcPack.getName(), extractDir.getPath() ) );
+				List<String> innerPaths = srcPack.list();
+
+				for ( String innerPath : innerPaths ) {
+					if ( dstPack.contains( innerPath ) ) {
+						log.info( "While extracting resources, this file was overwritten: "+ innerPath );
+						dstPack.remove( innerPath );
+					}
+					is = srcPack.getInputStream( innerPath );
+					dstPack.add( innerPath, is );
 				}
-				is = srcP.getInputStream( innerPath );
-				dstP.add( innerPath, is );
+				srcPack.close();
 			}
 		}
 		finally {
 			try {if ( is != null ) is.close();}
-			catch ( IOException ex ) {}
+			catch ( IOException e ) {}
 
-			try {if ( dstP != null ) dstP.close();}
-			catch ( IOException ex ) {}
+			try {if ( dstPack != null ) dstPack.close();}
+			catch ( IOException e ) {}
+
+			for ( AbstractPack pack : srcPacks ) {
+				try {pack.close();}
+				catch ( IOException ex ) {}
+			}
 		}
 	}
 
@@ -933,7 +959,7 @@ public class DefaultDataManager extends DataManager {
 		if ( result == null ) {  // Wasn't cached; try parsing it.
 			InputStream in = null;
 			try {
-				in = getDataInputStream("data/"+ id +".txt");
+				in = getResourceInputStream("data/"+ id +".txt");
 				result = datParser.readLayout(in, id +".txt");
 				shipLayouts.put( id, result );
 			}
@@ -960,7 +986,7 @@ public class DefaultDataManager extends DataManager {
 			InputStream in = null;
 			try {
 				log.debug( String.format( "Reading ship chassis (data/%s.xml)...", id ) );
-				in = getDataInputStream( "data/"+ id +".xml" );
+				in = getResourceInputStream( "data/"+ id +".xml" );
 				result = datParser.readChassis(in, id +".xml");
 				shipChassisMap.put( id, result );
 			}

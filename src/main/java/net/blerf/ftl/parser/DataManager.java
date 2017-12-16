@@ -61,14 +61,6 @@ public abstract class DataManager implements Closeable {
 		return dlcEnabledByDefault;
 	}
 
-	public boolean hasDataInputStream( String innerPath ) {
-		throw new UnsupportedOperationException();
-	}
-
-	public InputStream getDataInputStream( String innerPath ) throws IOException {
-		throw new UnsupportedOperationException();
-	}
-
 	public boolean hasResourceInputStream( String innerPath ) {
 		throw new UnsupportedOperationException();
 	}
@@ -77,11 +69,7 @@ public abstract class DataManager implements Closeable {
 		throw new UnsupportedOperationException();
 	}
 
-	public void extractDataDat( File extractDir ) throws IOException {
-		throw new UnsupportedOperationException();
-	}
-
-	public void extractResourceDat( File extractDir ) throws IOException {
+	public void extractResources( File extractDir ) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 
