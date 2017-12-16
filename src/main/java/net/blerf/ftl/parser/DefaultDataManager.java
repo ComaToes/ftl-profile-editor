@@ -665,25 +665,12 @@ public class DefaultDataManager extends DataManager {
 
 
 		try {
-			File dataDatFile = new File( datsDir, "data.dat" );
-			File resourceDatFile = new File( datsDir, "resource.dat" );
-
-			if ( dataDatFile.exists() && resourceDatFile.exists() ) {  // FTL 1.01-1.5.13.
-				AbstractPack dataPack = new FTLPack( dataDatFile, "r" );
-				AbstractPack resourcePack = new FTLPack( resourceDatFile, "r" );
-				srcPacks.add( dataPack );
-				srcPacks.add( resourcePack );
-			}
-			else {
-				throw new FileNotFoundException( String.format( "Could not find both \"%s\" and \"%s\"", dataDatFile.getName(), resourceDatFile.getName() ) );
-			}
-
 			if ( !extractDir.exists() ) extractDir.mkdirs();
 
 			dstPack = new FolderPack( extractDir );
 
-			for ( AbstractPack srcPack : srcPacks ) {
-				log.info( String.format( "Extracting \"%s\" into \"%s\".", srcPack.getName(), extractDir.getPath() ) );
+			for ( AbstractPack srcPack : packContainer.getPacks() ) {
+				log.info( String.format( "Extracting \"%s\" into \"%s\"", srcPack.getName(), extractDir.getPath() ) );
 				List<String> innerPaths = srcPack.list();
 
 				for ( String innerPath : innerPaths ) {
@@ -704,10 +691,7 @@ public class DefaultDataManager extends DataManager {
 			try {if ( dstPack != null ) dstPack.close();}
 			catch ( IOException e ) {}
 
-			for ( AbstractPack pack : srcPacks ) {
-				try {pack.close();}
-				catch ( IOException ex ) {}
-			}
+			// DataMagager's still using the resources, so son't close them.
 		}
 	}
 
