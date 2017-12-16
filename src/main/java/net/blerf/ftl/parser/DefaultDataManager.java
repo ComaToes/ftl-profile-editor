@@ -115,12 +115,8 @@ public class DefaultDataManager extends DataManager {
 	private PackContainer packContainer = null;
 	private	DatParser datParser = null;
 
-	private File datsDir = null;
-
 
 	public DefaultDataManager( File datsDir ) throws IOException, JAXBException, JDOMException {
-
-		this.datsDir = datsDir;
 
 		boolean meltdown = false;
 		List<InputStream> streams = new ArrayList<InputStream>();
@@ -660,9 +656,7 @@ public class DefaultDataManager extends DataManager {
 
 	public void extractResources( File extractDir ) throws IOException {
 		AbstractPack dstPack = null;
-		List<AbstractPack> srcPacks = new ArrayList<AbstractPack>( 2 );
 		InputStream is = null;
-
 
 		try {
 			if ( !extractDir.exists() ) extractDir.mkdirs();
