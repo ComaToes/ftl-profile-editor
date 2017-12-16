@@ -303,7 +303,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else if ( sprite instanceof DroneBoxSprite ) {
 					if ( ftlConstants instanceof AdvancedFTLConstants ) {  // TODO: Remove this.
-						JOptionPane.showMessageDialog( SavedGameFloorplanPanel.this.frame, "Drone editing is not possible yet for Advanced Edition saved games.", "Work in Progress", JOptionPane.WARNING_MESSAGE );
+						JOptionPane.showMessageDialog( SavedGameFloorplanPanel.this.frame, "Drone editing is not possible yet for Advanced Edition saved games.\n\nHowever, cargo (General tab) and stores (Sector Map tab) can be edited.", "Work in Progress", JOptionPane.WARNING_MESSAGE );
 					}
 					else {
 						SpriteReference<DroneState> droneRef = ((DroneBoxSprite)sprite).getReference();
@@ -312,7 +312,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else if ( sprite instanceof WeaponSprite ) {
 					if ( ftlConstants instanceof AdvancedFTLConstants ) {  // TODO: Remove this.
-						JOptionPane.showMessageDialog( SavedGameFloorplanPanel.this.frame, "Weapon editing is not possible yet for Advanced Edition saved games.", "Work in Progress", JOptionPane.WARNING_MESSAGE );
+						JOptionPane.showMessageDialog( SavedGameFloorplanPanel.this.frame, "Weapon editing is not possible yet for Advanced Edition saved games.\n\nHowever, cargo (General tab) and stores (Sector Map tab) can be edited.", "Work in Progress", JOptionPane.WARNING_MESSAGE );
 					}
 					else {
 						SpriteReference<WeaponState> weaponRef = ((WeaponSprite)sprite).getReference();
@@ -1370,7 +1370,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void selectSystem() {
 		if ( ftlConstants instanceof AdvancedFTLConstants ) {  // TODO: Remove this.
-			JOptionPane.showMessageDialog( frame, "System editing is not possible yet for Advanced Edition saved games.", "Work in Progress", JOptionPane.WARNING_MESSAGE );
+			JOptionPane.showMessageDialog( frame, "System editing is not possible yet for Advanced Edition saved games.\n\nHowever, stores (Sector Map tab) can be edited.", "Work in Progress", JOptionPane.WARNING_MESSAGE );
 			return;
 		}
 
