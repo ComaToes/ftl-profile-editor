@@ -13,7 +13,7 @@ import net.blerf.ftl.parser.sectormap.GeneratedBeacon;
 public class GeneratedSectorMap {
 
 	protected Dimension preferredSize = null;
-	protected int rebelFleetFudge = 100;  // Arbitrary default.
+	protected Integer rebelFleetFudge = null;
 	protected List<GeneratedBeacon> genBeaconList = new ArrayList<GeneratedBeacon>();
 
 
@@ -21,9 +21,11 @@ public class GeneratedSectorMap {
 	}
 
 	/**
-	 * Sets the size expected to display the entire map, or null.
+	 * Sets the size recommended to display the entire map, or null.
 	 *
-	 * The map size changed in FTL 1.5.4.
+	 * This can vary across FTL versions.
+	 *
+	 * @see net.blerf.ftl.parser.sectormap.RandomSectorMapGenerator
 	 */
 	public void setPreferredSize( Dimension newSize ) {
 		preferredSize = newSize;
@@ -33,11 +35,18 @@ public class GeneratedSectorMap {
 		return preferredSize;
 	}
 
-	public void setRebelFleetFudge( int n ) {
+	/**
+	 * Sets the generated rebelFleetFudge, or null.
+	 *
+	 * This generated value is unimportant, since the saved game overrides it.
+	 *
+	 * @see net.blerf.ftl.parser.SavedGameParser.SavedGameState#setRebelFleetFudge(int)
+	 */
+	public void setRebelFleetFudge( Integer n ) {
 		rebelFleetFudge = n;
 	}
 
-	public int getRebelFleetFudge() {
+	public Integer getRebelFleetFudge() {
 		return rebelFleetFudge;
 	}
 

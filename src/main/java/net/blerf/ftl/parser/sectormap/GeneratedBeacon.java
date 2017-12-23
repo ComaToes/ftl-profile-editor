@@ -20,11 +20,12 @@ public class GeneratedBeacon {
 	protected int y = 0;
 
 	/**
-	 * Sets time elapsed while the beacon's 'under attack' throbber oscillates.
+	 * Sets time elapsed while this beacon's 'under attack' throbber
+	 * oscillates.
 	 *
 	 * This counts from 0 (normal) to 1000 (glowing) to 2000 (gone again).
 	 *
-	 * FTL randomly generates this, and it's never actually saved.
+	 * FTL randomly assigns values to beacons, so they won't glow in sync.
 	 *
 	 * @see SavedGameParser.BeaconState#setUnderAttack(boolean)
 	 */
@@ -32,17 +33,9 @@ public class GeneratedBeacon {
 	public int getThrobTicks() { return throbTicks; }
 
 	/**
-	 * Sets the pixel location of this slot.
+	 * Sets the pixel location of this beacon.
 	 *
-	 * This offset is from a point within the sector map window. There's no
-	 * good landmark, but for a Windows 1286x745 screenshot (with titlebar),
-	 * the origin is at (389, 146) just below the 'B' and 'E' of "Beacon Map".
-	 * FTL caps Y values at 415.
-	 *
-	 * The overall dimensions of the sector map, from that origin to the
-	 * inside of bottom/left borders of the popup, is 700x488.
-	 *
-	 * FTL randomly generates this, and it's never actually saved.
+	 * This offset is from a point within the sector map window.
 	 */
 	public void setLocation( int newX, int newY ) { x = newX; y = newY; }
 	public Point getLocation() { return new Point( x, y ); }
