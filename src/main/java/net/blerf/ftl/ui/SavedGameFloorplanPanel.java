@@ -1209,18 +1209,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for ( SpriteReference<DroneState> droneRef : droneRefs ) {
 			if ( droneRef.get() != null ) {
 				DroneState droneState = new DroneState( droneRef.get() );
-
-				if ( droneRef.get().getBodyX() >= 0 && droneRef.get().getBodyY() >= 0 ) {
-					DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
-
-					for ( Map.Entry<Rectangle, Integer> regionEntry : squareRegionSquareIdMap.entrySet() ) {
-						if ( regionEntry.getKey().contains( droneBodySprite.getLocation() ) ) {
-							droneState.setBodyRoomSquare( regionEntry.getValue().intValue() );
-							droneState.setBodyRoomId( squareRegionRoomIdMap.get( regionEntry.getKey() ).intValue() );
-							break;
-						}
-					}
-				}
 				droneList.add( droneState );
 			}
 		}
@@ -3985,23 +3973,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 							if ( occupied == false ) {
 								bodyX = shipLayout.getOffsetX()*squareSize + roomLocX*squareSize + (s%squaresH)*squareSize + squareSize/2;
 								bodyY = shipLayout.getOffsetY()*squareSize + roomLocY*squareSize + (s/squaresH)*squareSize + squareSize/2;
+								droneRef.get().setBodyX( bodyX );
+								droneRef.get().setBodyY( bodyY );
+								droneRef.get().setBodyRoomId( droneSystemRoomId[0] );
+								droneRef.get().setBodyRoomSquare( s );
 								break;
 							}
 						}
 					}
 				}
 				if ( droneRef.get().isArmed() && needsBody && (bodyX < 0 || bodyY < 0) ) {
-					droneRef.get().setArmed( false );  // Couldn't add the body!?
-					// TODO: This setter definitely shouldn't be here.
-				}
-				if ( !droneRef.get().isArmed() ) {  // Drones that aren't armed are hidden.
-					// TODO: Check extended info class in case drone is unarmed but deployed (show body).
-					// TODO: Do away with setter calls here.
-
-					droneRef.get().setBodyX( -1 );
-					droneRef.get().setBodyY( -1 );
-					bodyX = droneRef.get().getBodyX();
-					bodyY = droneRef.get().getBodyY();
+					log.warn( "Failed to place an armed drone's body in a room: "+ droneRef.get().getDroneId() );
 				}
 
 				if ( needsBody && imgRace != null ) {
