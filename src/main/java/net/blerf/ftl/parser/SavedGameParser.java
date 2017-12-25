@@ -241,7 +241,38 @@ public class SavedGameParser extends Parser {
 
 				// Flagship state is set much later.
 
-				readZeus( in, gameState, fileFormat );
+				int projectileCount = readInt(in);
+				for ( int i=0; i < projectileCount; i++ ) {
+					gameState.addProjectile( readProjectile(in) );
+				}
+
+				readExtendedShipInfo( in, gameState.getPlayerShipState(), fileFormat );
+
+				if ( gameState.getNearbyShipState() != null ) {
+					readExtendedShipInfo( in, gameState.getNearbyShipState(), fileFormat );
+				}
+
+				gameState.setUnknownNu( readInt(in) );
+
+				if ( gameState.getNearbyShipState() != null ) {
+					gameState.setUnknownXi( new Integer(readInt(in)) );
+				}
+
+				gameState.setAutofire( readBool(in) );
+
+				RebelFlagshipState flagship = new RebelFlagshipState();
+
+				flagship.setUnknownAlpha( readInt(in) );
+				flagship.setPendingStage( readInt(in) );
+				flagship.setUnknownGamma( readInt(in) );
+				flagship.setUnknownDelta( readInt(in) );
+
+				int flagshipOccupancyCount = readInt(in);
+				for ( int i=0; i < flagshipOccupancyCount; i++ ) {
+					flagship.setPreviousOccupancy( i, readInt(in) );
+				}
+
+				gameState.setRebelFlagshipState( flagship );
 			}
 
 			// The stream should end here.
@@ -405,7 +436,37 @@ public class SavedGameParser extends Parser {
 
 			// Flagship state is set much later.
 
-			writeZeus( out, gameState, fileFormat );
+			writeInt( out, gameState.getProjectileList().size() );
+			for ( ProjectileState projectile : gameState.getProjectileList() ) {
+				writeProjectile( out, projectile );
+			}
+
+			writeExtendedShipInfo( out, gameState.getPlayerShipState(), fileFormat );
+
+			if ( gameState.getNearbyShipState() != null ) {
+				writeExtendedShipInfo( out, gameState.getNearbyShipState(), fileFormat );
+			}
+
+			writeInt( out, gameState.getUnknownNu() );
+
+			if ( gameState.getNearbyShipState() != null ) {
+				writeInt( out, gameState.getUnknownXi().intValue() );
+			}
+
+			writeBool( out, gameState.getAutofire() );
+
+			RebelFlagshipState flagship = gameState.getRebelFlagshipState();
+
+			writeInt( out, flagship.getUnknownAlpha() );
+			writeInt( out, flagship.getPendingStage() );
+			writeInt( out, flagship.getUnknownGamma() );
+			writeInt( out, flagship.getUnknownDelta() );
+
+			writeInt( out, flagship.getOccupancyMap().size() );
+			for (Map.Entry<Integer, Integer> entry : flagship.getOccupancyMap().entrySet()) {
+				int occupantCount = entry.getValue().intValue();
+				writeInt( out, occupantCount );
+			}
 		}
 	}
 
@@ -2079,13 +2140,24 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public SavedGameState() {
 		}
 
+		/**
+		 * Sets the magic number indicating file format.
+		 *
+		 * Observed values:
+		 *   2 = Saved Game, FTL 1.01-1.03.3
+		 *   7 = Saved Game, FTL 1.5.4-1.5.10
+		 *   8 = Saved Game, FTL 1.5.12
+		 *   9 = Saved Game, FTL 1.5.13
+		 */
+		public void setFileFormat( int n ) { fileFormat = n; }
+		public int getFileFormat() { return fileFormat; }
 
 		/**
 		 * Sets the difficulty.
 		 *
 		 * EASY
 		 * NORMAL
-		 * HARD    (FTL 1.5.4+)
+		 * HARD (FTL 1.5.4+)
 		 */
 		public void setDifficulty( Difficulty d ) { difficulty = d; }
 		public Difficulty getDifficulty() { return difficulty; }
@@ -2138,18 +2210,25 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			return (int)((totalScrapCollected + 10*totalBeaconsExplored + 20*totalShipsDefeated) * diffMod);
 		}
 
-		/** Sets redundant player ship name. */
+		/**
+		 * Sets a redundant player ship name.
+		 */
 		public void setPlayerShipName( String shipName) {
 			playerShipName = shipName;
 		}
 		public String getPlayerShipName() { return playerShipName; }
 
-		/** Sets redundant player ship blueprint. */
+		/**
+		 * Sets a redundant player ship blueprint.
+		 */
 		public void setPlayerShipBlueprintId( String shipBlueprintId ) {
 			playerShipBlueprintId = shipBlueprintId;
 		}
 		public String getPlayerShipBlueprintId() { return playerShipBlueprintId; }
 
+		/**
+		 * Adds cargo to the player ship (N/A for enemy ships).
+		 */
 		public void addCargoItemId( String cargoItemId ) {
 			cargoIdList.add( cargoItemId );
 		}
@@ -2162,46 +2241,37 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Sets the current sector's number (0-based).
 		 *
-		 * It's uncertain how soon sector-dependent events
-		 * will take notice of changes. On the map, the
-		 * number, all visible hazards, and
-		 * point-of-interest labels will immediately
-		 * change, but not the beacons' pixel positions.
+		 * On the map, the displayed sector number, all visible hazards, and
+		 * point-of-interest labels will immediately change, but not the
+		 * beacons' pixel positions.
 		 *
-		 * Ship encounters will not be immediately
-		 * affected (TODO: turn #0 into #5, jump to the
-		 * next sector, and see if the ships there are
-		 * tough).
+		 * Previously-visited beacons with lingering ship encounters will
+		 * retain their events.
 		 *
-		 * Modifying this will not change the sector tree.
+		 * Modifying this will not affect the sector tree.
 		 *
-		 * TODO: Determine long-term effects of this.
-		 * The Last Stand is baked into the sector tree,
-		 * but weird things might happen at or above #7.
+		 * TODO: Determine long-term effects of this. The Last Stand is baked
+		 * into the sector tree, but weird things might happen at or above #7.
+		 *
+		 * @see #addBeacon(BeaconState)
+		 * @see #setSectorLayoutSeed(int)
+		 * @see #setSectorTreeSeed(int)
 		 */
 		public void setSectorNumber( int n ) { sectorNumber = n; }
 		public int getSectorNumber() { return sectorNumber; }
 
 		/**
-		 * Sets the magic number indicating file format.
-		 *
-		 * Observed values:
-		 *   2 = Saved Game, FTL 1.01-1.03.3
-		 *   7 = Saved Game, FTL 1.5.4-1.5.10
-		 *   8 = Saved Game, FTL 1.5.12
-		 *   9 = Saved Game, FTL 1.5.13
-		 */
-		public void setFileFormat( int n ) { fileFormat = n; }
-		public int getFileFormat() { return fileFormat; }
-
-		/**
 		 * Toggles FTL:AE content.
 		 *
-		 * Note: Bad things may happen if you change the value
-		 * from true to false, if this saved game depends on
-		 * AE resources.
+		 * Note: Bad things may happen if you change the value from true to
+		 * false, if this saved game depends on AE resources.
+		 *
+		 * Sector tree reconstruction will be affected by changes to available
+		 * sectors.
 		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setSectorLayoutSeed(int)
 		 */
 		public void setDLCEnabled( boolean b ) { dlcEnabled = b; }
 		public boolean isDLCEnabled() { return dlcEnabled; }
@@ -2215,7 +2285,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public int getUnknownBeta() { return unknownBeta; }
 
 		/**
-		 * Sets a state var.
+		 * Sets the value of a state var.
 		 *
 		 * State vars are mostly used to test candidacy for achievements.
 		 *
@@ -2225,13 +2295,20 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 			stateVars.put( stateVarId, new Integer(stateVarValue) );
 		}
 
+		/**
+		 * Returns true if a state var has been set, false otherwise.
+		 */
 		public boolean hasStateVar( String stateVarId ) {
 			return stateVars.containsKey( stateVarId );
 		}
 
+		/**
+		 * Returns the value of a state var.
+		 *
+		 * If the state var has not been set, a NullPointerException will be
+		 * thrown.
+		 */
 		public int getStateVar( String stateVarId ) {
-			// Don't ask for vars that aren't present!
-
 			Integer result = stateVars.get( stateVarId );
 			return result.intValue();
 		}
@@ -2243,8 +2320,14 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 		public ShipState getPlayerShipState() { return playerShipState; }
 
-		// TODO: See what havoc can occur when seeds change.
-		// (Arrays might change size and overflow, etc)
+		/**
+		 * Sets the seed for generating the sector tree.
+		 *
+		 * Note: When this is changed, you MUST reset sector visitation.
+		 *
+		 * @see #setSectorVisitation(List)
+		 * @see net.blerf.ftl.parser.sectortree.RandomSectorTreeGenerator
+		 */
 		public void setSectorTreeSeed( int n ) { sectorTreeSeed = n; }
 		public int getSectorTreeSeed() { return sectorTreeSeed; }
 
@@ -2252,7 +2335,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * Sets the seed for randomness in the current sector.
 		 *
 		 * This determines the graphical positioning of beacons, as well as
-		 * their environments (like nebula/storm) and events.
+		 * their environment hazards (like nebula/storm) and events.
 		 *
 		 * Reloading a saved game from the end of the previous sector, and
 		 * exiting again will yield a different seed. So sectors' layout seeds
@@ -2262,38 +2345,44 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * additional beacons if it expects them (and probably truncate the
 		 * excess if there are too many).
 		 *
-		 * Note: The RNG algorithm FTL uses to interpret seeds will vary with
-		 * each platform. Results will be inconsistent if a saved game is
-		 * resumed on another operating system..
+		 * Note: The RNG algorithm that FTL uses to interpret seeds will vary
+		 * with each platform. Results will be inconsistent if a saved game is
+		 * resumed on another operating system.
+		 *
+		 * @see #addBeacon(BeaconState)
 		 */
 		public void setSectorLayoutSeed( int n ) { sectorLayoutSeed = n; }
 		public int getSectorLayoutSeed() { return sectorLayoutSeed; }
 
 		/**
-		 * Sets the fleet position on the map.
+		 * Sets the raw fleet position on the map.
 		 *
-		 * This is always a negative value that, when added to
-		 * rebelFleetFudge, equals how far in from the right the
-		 * warning circle has encroached (image has ~50px margin).
+		 * This is always a negative value that, when added to rebelFleetFudge,
+		 * equals how far in from the right the warning circle has encroached.
 		 *
-		 * Most sectors start with large negative value to keep
-		 * this off-screen and increment toward 0 from there.
+		 * Most sectors start with large negative value to keep this off-screen
+		 * and increment toward 0 from there.
 		 *
 		 * In FTL 1.01-1.03.3, The Last Stand sector used a constant -25 and
 		 * moderate rebelFleetFudge value to cover the map. In other sectors,
 		 * This was always observed in multiples of 25.
 		 *
-		 * Note: After loading a saved game from FTL 1.03.3 into FTL 1.5.4,
+		 * The image is 'img/map/map_warningcircle_point.png' (650px wide, with
+		 * a ~50px margin).
+		 *
+		 * TODO: After loading a saved game from FTL 1.03.3 into FTL 1.5.4,
 		 * this value was observed going from -250 to -459. The fudge was
 		 * unchanged. The significance of this is unknown.
 		 *
 		 * @param n pixels from the map's right edge
-		 *          (see 'img/map/map_warningcircle_point.png', 650px wide)
+		 * @see #setRebelFleetFudge(int)
 		 */
 		public void setRebelFleetOffset( int n ) { rebelFleetOffset = n; }
 		public int getRebelFleetOffset() { return rebelFleetOffset; }
 
 		/**
+		 * Sets an intra-sector constant adjusting initial fleet encroachment.
+		 *
 		 * This is always a positive number around 75-310 that,
 		 * when added to rebelFleetOffset, equals how far in
 		 * from the right the warning circle has encroached.
@@ -2303,12 +2392,15 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * each sector. Except in The Last Stand, in which it is
 		 * always 200 (the warning circle will extend beyond
 		 * the righthand edge of the map, covering everything).
+		 *
+		 * @see #setRebelFleetOffset(int)
 		 */
 		public void setRebelFleetFudge( int n ) { rebelFleetFudge = n; }
 		public int getRebelFleetFudge() { return rebelFleetFudge; }
 
 		/**
 		 * Delays/alerts the rebel fleet (-/+).
+		 *
 		 * This adjusts the thickness of the warning zone.
 		 * Example: Hiring a merc ship to distract sets -2.
 		 */
@@ -2450,6 +2542,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 * booleans to the dots: top-to-bottom for each column,
 		 * left-to-right.
 		 *
+		 * @see #setSectorTreeSeed(int)
 		 * @see net.blerf.ftl.model.SectorDot#setVisited(boolean)
 		 * @see net.blerf.ftl.model.SectorTree#setSectorVisitation(List)
 		 */
@@ -2469,15 +2562,17 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 
 		/**
 		 * Adds a beacon to the sector map.
-		 * Beacons are indexed top-to-bottom for each column,
-		 * left-to-right. They're randomly offset a little
-		 * when shown on screen to disguise the columns.
 		 *
-		 * The grid is approsimately 6 x 4, but each column
-		 * can vary.
+		 * Beacons are indexed top-to-bottom for each column, left-to-right.
+		 * They're randomly offset a little when shown on screen to disguise
+		 * the columns.
 		 *
-		 * Indexes can range from 0 to... presumably 23, but
-		 * the sector layout seed may generate fewer.
+		 * The grid is approximately 6 x 4, but each column may be smaller.
+		 *
+		 * Indexes can range from 0 to 23, but the sector layout seed may
+		 * generate fewer.
+		 *
+		 * @see #setSectorLayoutSeed(int)
 		 */
 		public void addBeacon( BeaconState beacon ) {
 			beaconList.add( beacon );
@@ -5320,6 +5415,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		public String toString() { return title; }
 	}
 
+	/**
+	 * A beacon on the sector map.
+	 *
+	 * Beacon states do not contain their randomly determined values until they
+	 * are actually visited.
+	 *
+	 * FTL uses the sector layout seed to decide pending events and such upon
+	 * entering the sector. Any distress, stores, etc. events get signs when
+	 * seen (or hazard icons when the map is revealed).
+	 *
+	 * @see SavedGameState#setSectorLayoutSeed(int)
+	 */
 	public static class BeaconState {
 		private int visitCount = 0;
 		private String bgStarscapeImageInnerPath = null;
@@ -5339,14 +5446,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		private boolean underAttack = false;
 
 		private StoreState store = null;
-
-		// Randomly generated events at unvisited beacons are not
-		// stored in the beacons themselves. They're tentatively
-		// placed on the sector map in-game, and any that would
-		// be distress, shops, etc get signs when seen (or hazard
-		// icons when the map is revealed). What and where these
-		// events are is determined by the SavedGameGameState's
-		// sector layout seed.
 
 
 		/**
@@ -7963,7 +8062,7 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		 *
 		 * Observed values: 400 (During fade-in), 356, -205, -313, -535.
 		 *
-		 * #setArrived(boolean)
+		 * @see #setArrived(boolean)
 		 */
 		public void setFuseTicks( int n ) { fuseTicks = n; }
 		public int getFuseTicks() { return fuseTicks; }
@@ -9641,88 +9740,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		}
 
 		writeInt( out, n );
-	}
-
-
-	/**
-	 * Reads additional SavedGameState fields.
-	 *
-	 * This method does not involve a dedicated class.
-	 */
-	private void readZeus( FileInputStream in, SavedGameState gameState, int fileFormat ) throws IOException {
-System.err.println(String.format("\nZeus: @%d", in.getChannel().position()));
-
-		int projectileCount = readInt(in);
-		for ( int i=0; i < projectileCount; i++ ) {
-			gameState.addProjectile( readProjectile(in) );
-		}
-
-		readExtendedShipInfo( in, gameState.getPlayerShipState(), fileFormat );
-
-		if ( gameState.getNearbyShipState() != null ) {
-			readExtendedShipInfo( in, gameState.getNearbyShipState(), fileFormat );
-		}
-
-		gameState.setUnknownNu( readInt(in) );
-
-		if ( gameState.getNearbyShipState() != null ) {
-			gameState.setUnknownXi( new Integer(readInt(in)) );
-		}
-
-		gameState.setAutofire( readBool(in) );
-
-		RebelFlagshipState flagship = new RebelFlagshipState();
-
-		flagship.setUnknownAlpha( readInt(in) );
-		flagship.setPendingStage( readInt(in) );
-		flagship.setUnknownGamma( readInt(in) );
-		flagship.setUnknownDelta( readInt(in) );
-
-		int flagshipOccupancyCount = readInt(in);
-		for ( int i=0; i < flagshipOccupancyCount; i++ ) {
-			flagship.setPreviousOccupancy( i, readInt(in) );
-		}
-
-		gameState.setRebelFlagshipState( flagship );
-	}
-
-	/**
-	 * Writes additional SavedGameState fields.
-	 *
-	 * This method does not involve a dedicated class.
-	 */
-	public void writeZeus( OutputStream out, SavedGameState gameState, int fileFormat ) throws IOException {
-		writeInt( out, gameState.getProjectileList().size() );
-		for ( ProjectileState projectile : gameState.getProjectileList() ) {
-			writeProjectile( out, projectile );
-		}
-
-		writeExtendedShipInfo( out, gameState.getPlayerShipState(), fileFormat );
-
-		if ( gameState.getNearbyShipState() != null ) {
-			writeExtendedShipInfo( out, gameState.getNearbyShipState(), fileFormat );
-		}
-
-		writeInt( out, gameState.getUnknownNu() );
-
-		if ( gameState.getNearbyShipState() != null ) {
-			writeInt( out, gameState.getUnknownXi().intValue() );
-		}
-
-		writeBool( out, gameState.getAutofire() );
-
-		RebelFlagshipState flagship = gameState.getRebelFlagshipState();
-
-		writeInt( out, flagship.getUnknownAlpha() );
-		writeInt( out, flagship.getPendingStage() );
-		writeInt( out, flagship.getUnknownGamma() );
-		writeInt( out, flagship.getUnknownDelta() );
-
-		writeInt( out, flagship.getOccupancyMap().size() );
-		for (Map.Entry<Integer, Integer> entry : flagship.getOccupancyMap().entrySet()) {
-			int occupantCount = entry.getValue().intValue();
-			writeInt( out, occupantCount );
-		}
 	}
 
 	/**
