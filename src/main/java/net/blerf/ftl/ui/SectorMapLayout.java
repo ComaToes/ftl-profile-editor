@@ -3,10 +3,13 @@ package net.blerf.ftl.ui;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.LayoutManager2;
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,74 +18,79 @@ import org.apache.logging.log4j.Logger;
 /**
  * A layout for an FTL sector map.
  *
- * A list of beacons and map boxes are wrapped vertically,
- * over a background, and above each column is a component
- * that should hold buttons to adjust the beacon count in
- * that column.
+ * Beacons and associted components will be scattered over a background.
+ *
+ * Scatter locations should be decided by a GeneratedSectorMap.
+ *
+ * @see net.blerf.ftl.parser.sectormap.GeneratedSectorMap
  */
 public class SectorMapLayout implements LayoutManager2 {
 
 	private static final Logger log = LogManager.getLogger( SectorMapLayout.class );
 
-	private ArrayList<Component> beaconList = new ArrayList<Component>();
-	private ArrayList<Component> miscBoxList = new ArrayList<Component>();
-	private ArrayList<Component> columnCtrlList = new ArrayList<Component>();
-	private Component playerShipComp = null;
-	private Component bgComp = null;
+	// These numbers were copied from RandomSectorMapGenerator's size for FTL 1.5.4.
+	private static final int DEFAULT_BEACON_ZONE_W = 700;
+	private static final int DEFAULT_BEACON_ZONE_H = 488;
 
-	private int defaultColumnSize = 4;
-	private LinkedHashMap<Integer, Integer> columnSizeMap = new LinkedHashMap<Integer, Integer>();
-	private HashMap<Component, SectorMapConstraints> constraintsMap = new HashMap<Component, SectorMapConstraints>();
+	protected List<Point> beaconLocationList = new ArrayList<Point>();
 
-	int ctrlZoneH = 50;
-	int beaconZoneX = 0;
-	int beaconZoneY = 0;
-	int beaconZoneW = 480;  // Divided by 6 is 80.
-	int beaconZoneH = 320;  // Divided by 4 is 80. Divide by current columnSize for rowHeights.
+	protected List<Component> beaconList = new ArrayList<Component>();
+	protected List<Component> miscBoxList = new ArrayList<Component>();
+	protected Component playerShipComp = null;
+	protected Component bgComp = null;
 
-	int columnCount = 0;  // Determined by invalidateLayout().
+	protected Map<Component, SectorMapConstraints> constraintsMap = new HashMap<Component, SectorMapConstraints>();
 
-	public void SectorMapLayout() {
+	protected Insets margin = new Insets( 20, 0, 0, 60 );
+	protected int beaconZoneW = DEFAULT_BEACON_ZONE_W;
+	protected int beaconZoneH = DEFAULT_BEACON_ZONE_H;
+
+
+	public SectorMapLayout() {
 	}
 
-	public void setDefaultColumnSize( int n ) { defaultColumnSize = n; }
-	public int getDefaultColumnSize() { return defaultColumnSize; }
-
-	public void setColumnSize( int col, int size ) {
-		if ( size < 1 ) return;
-		columnSizeMap.put( new Integer( col ), new Integer( size ) );
+	/**
+	 * Sets space for margin between the map's border and the beacons.
+	 */
+	public void setMargin( Insets m ) {
+		margin = new Insets( m.top, m.left, m.bottom, m.right );
 	}
-	public int getColumnSize( int n ) {
-		if ( n < 0 || n >= columnCount)
-			throw new ArrayIndexOutOfBoundsException( String.format( "Attempted to get size of column %d out of %d", n, columnCount ) );
 
-		if ( n < columnCount-1 ) {
-			Integer size = columnSizeMap.get( new Integer( n ) );
-			return (size != null ? size.intValue() : defaultColumnSize);
+	public Insets getMargin() {
+		return margin;
+	}
+
+	/**
+	 * Sets the expected range of x/y values for beacon locations.
+	 *
+	 * If null, hardcoded defaults will be used.
+	 */
+	public void setBeaconRegionSize( Dimension d ) {
+		if ( d != null ) {
+			beaconZoneW = d.width;
+			beaconZoneH = d.height;
 		}
-		else {  // Subtract all prior columns from the total to determine the last column.
-			int col = 0;
-			int b = 0;
-			while ( b < beaconList.size() && col < columnCount-1 ) {
-				b += getColumnSize( col );
-				col++;
-			}
-			return (beaconList.size() - b);
+		else {
+			beaconZoneW = DEFAULT_BEACON_ZONE_W;
+			beaconZoneH = DEFAULT_BEACON_ZONE_H;
 		}
 	}
 
-	public int getCtrlColumn( Component comp ) {
-		return (columnCtrlList.contains( comp ) ? columnCtrlList.indexOf( comp ) : -1);
+	public Dimension getBeaconRegionSize() {
+		return new Dimension( beaconZoneW, beaconZoneH );
 	}
 
-	private void updateColumnCount() {
-		columnCount = 0;
-		for ( int i=0; i < beaconList.size(); ) {
-			// Avoid getColumnSize() until columnCount has been set.
+	/**
+	 * Sets x/y pixel offsets to use for components, where index == beaconId.
+	 *
+	 * @ param newLocations a list of points, or null
+	 * @see net.blerf.ftl.parser.sectormap.GeneratedBeacon
+	 */
+	public void setBeaconLocations( List<Point> newLocations ) {
+		beaconLocationList.clear();
 
-			Integer size = columnSizeMap.get( new Integer( columnCount ) );
-			i += (size != null ? size.intValue() : defaultColumnSize);
-			columnCount++;
+		if ( newLocations != null ) {
+			beaconLocationList.addAll( newLocations );
 		}
 	}
 
@@ -90,13 +98,14 @@ public class SectorMapLayout implements LayoutManager2 {
 	 * Returns the beacon id at which a component was placed, or -1.
 	 */
 	public int getBeaconId( Component comp ) {
-		if ( beaconList.contains( comp ) )
+		if ( beaconList.contains( comp ) ) {
 			return beaconList.indexOf( comp );
+		}
 
 		SectorMapConstraints compC = constraintsMap.get( comp );
-		if ( compC != null && compC.getBeaconId() < beaconList.size() )
+		if ( compC != null && compC.getBeaconId() < beaconList.size() ) {
 			return compC.getBeaconId();
-
+		}
 		return -1;
 	}
 
@@ -110,55 +119,50 @@ public class SectorMapLayout implements LayoutManager2 {
 		return null;
 	}
 
+	@Override
 	public void removeLayoutComponent( Component comp ) {
 		constraintsMap.remove( comp );
 		beaconList.remove( comp );
 		miscBoxList.remove( comp );
-		columnCtrlList.remove( comp );
 		if ( comp == playerShipComp ) playerShipComp = null;
 		if ( comp == bgComp ) bgComp = null;
-
-		if ( beaconList.size() == 0 ) {
-			columnSizeMap.clear();
-		}
 	}
 
+	@Override
 	public void invalidateLayout( Container target ) {
-		updateColumnCount();
 	}
 
+	@Override
 	public void layoutContainer( Container parent ) {
 		if ( bgComp != null ) {
 			bgComp.setSize( bgComp.getPreferredSize() );
-			bgComp.setLocation( beaconZoneX, beaconZoneY );
+			bgComp.setLocation( margin.left, margin.top );
 		}
 
 		if ( beaconList.size() == 0 ) return;
-		if ( columnCount == 0 ) updateColumnCount();  // If there are beacons, this must be outdated.
-
-		int colWidth = beaconZoneW / columnCount;  // Add half colWidth to get centers.
-
-		int col = 0;
-		int colSize = getColumnSize( 0 );
-		int nextColAt = colSize;
-		int colPosition = 0;
 
 		for ( int b=0; b < beaconList.size(); b++ ) {
 			Component comp = beaconList.get( b );
 
-			if ( nextColAt == b ) {
-				col++;
-				colSize = getColumnSize( col );
-				nextColAt += colSize;
-				colPosition = 0;
+			int beaconLocX;
+			int beaconLocY;
+
+			if ( b < beaconLocationList.size() ) {
+				Point beaconLoc = beaconLocationList.get( b );
+				beaconLocX = beaconLoc.x;
+				beaconLocY = beaconLoc.y;
+			}
+			else {
+				int overflowCellW = 50;
+				int overflowCellH = beaconZoneH / (beaconList.size() - beaconLocationList.size());
+				beaconLocX = beaconZoneW - overflowCellW/2;
+				beaconLocY = (b - beaconLocationList.size()) * overflowCellH + overflowCellH/2;
 			}
 
-			int beaconX = beaconZoneX + col*colWidth + colWidth/2 - comp.getPreferredSize().width/2;
-			int beaconY = beaconZoneY + colPosition * beaconZoneH/colSize + beaconZoneH/colSize/2 - comp.getPreferredSize().height/2;
+			int beaconX = margin.left + beaconLocX - comp.getPreferredSize().width/2;
+			int beaconY = margin.top + beaconLocY - comp.getPreferredSize().height/2;
 			comp.setSize( comp.getPreferredSize() );
 			comp.setLocation( beaconX, beaconY );
-
-			colPosition++;
 		}
 
 		for ( int i=0; i < miscBoxList.size(); i++ ) {
@@ -168,8 +172,8 @@ public class SectorMapLayout implements LayoutManager2 {
 			if ( compC.getBeaconId() < beaconList.size() ) {
 				Component beaconComp = beaconList.get( compC.getBeaconId() );
 
-				int miscBoxX = beaconComp.getX()+beaconComp.getWidth()/3;
-				int miscBoxY = beaconComp.getY()+beaconComp.getHeight()/3 - comp.getPreferredSize().height/2;
+				int miscBoxX = beaconComp.getX() + beaconComp.getWidth()/2;
+				int miscBoxY = beaconComp.getY() - beaconComp.getHeight()/3 - comp.getPreferredSize().height/2;
 
 				comp.setSize( comp.getPreferredSize() );
 				comp.setLocation( miscBoxX, miscBoxY );
@@ -183,31 +187,16 @@ public class SectorMapLayout implements LayoutManager2 {
 			if ( compC.getBeaconId() < beaconList.size() ) {
 				Component beaconComp = beaconList.get( compC.getBeaconId() );
 
-				int playerShipX = beaconComp.getX()+beaconComp.getWidth()/2 - comp.getPreferredSize().width/4;
-				int playerShipY = beaconComp.getY()+beaconComp.getHeight()/2 - comp.getPreferredSize().height/2;
+				int playerShipX = beaconComp.getX() + beaconComp.getWidth()/2 - comp.getPreferredSize().width/4;
+				int playerShipY = beaconComp.getY() + beaconComp.getHeight()/2 - comp.getPreferredSize().height/2;
 
 				comp.setSize( comp.getPreferredSize() );
 				comp.setLocation( playerShipX, playerShipY );
 			}
 		}
-
-		for ( int i=0; i < columnCtrlList.size(); i++ ) {
-			Component comp = columnCtrlList.get( i );
-
-			if ( i < columnCount ) {  // No need for controls on the final column.
-				int ctrlX = beaconZoneX + i*colWidth + colWidth/2 - comp.getPreferredSize().width/2;
-				int ctrlY = beaconZoneH + 10;
-
-				comp.setSize( comp.getPreferredSize() );
-				comp.setLocation( ctrlX, ctrlY );
-				comp.setVisible( true );
-			}
-			else {  // Hide extra controls.
-				comp.setVisible( false );
-			}
-		}
 	}
 
+	@Override
 	public void addLayoutComponent( Component comp, Object constraints ) {
 		if ( constraints instanceof SectorMapConstraints == false ) return;
 		SectorMapConstraints compC = (SectorMapConstraints)constraints;
@@ -224,29 +213,36 @@ public class SectorMapLayout implements LayoutManager2 {
 		else if ( SectorMapConstraints.PLAYER_SHIP.equals( compC.type ) ) {
 			playerShipComp = comp;
 		}
-		else if ( SectorMapConstraints.COLUMN_CTRL.equals( compC.type ) ) {
-			if ( !columnCtrlList.contains( comp ) )
-				columnCtrlList.add( comp );
-		}
 		else if ( SectorMapConstraints.BACKGROUND.equals( compC.type ) ) {
 			bgComp = comp;
 		}
 	}
 
+	@Override
 	public void addLayoutComponent( String name, Component comp ) {
 	}
+
+	@Override
 	public Dimension minimumLayoutSize( Container parent ) {
-		return new Dimension( beaconZoneW, beaconZoneH + ctrlZoneH );
+		return new Dimension( margin.left + beaconZoneW + margin.right, margin.top + beaconZoneH + margin.bottom );
 	}
+
+	@Override
 	public Dimension preferredLayoutSize( Container parent ) {
-		return new Dimension( beaconZoneW, beaconZoneH + ctrlZoneH );
+		return new Dimension( margin.left + beaconZoneW + margin.right, margin.top + beaconZoneH + margin.bottom );
 	}
+
+	@Override
 	public Dimension maximumLayoutSize( Container target ) {
 		return new Dimension( Short.MAX_VALUE, Short.MAX_VALUE );
 	}
+
+	@Override
 	public float getLayoutAlignmentX( Container target ) {
 		return 0.5f;
 	}
+
+	@Override
 	public float getLayoutAlignmentY( Container target ) {
 		return 0.5f;
 	}
@@ -257,14 +253,12 @@ public class SectorMapLayout implements LayoutManager2 {
 	//   BEACON:      -
 	//   MISC_BOX:    beaconId
 	//   PLAYER_SHIP: beaconId
-	//   COLUMN_CTRL: -
 	//   BACKGROUND:  -
 	//
 	public static class SectorMapConstraints {
 		public static final String BEACON = "BEACON";
 		public static final String MISC_BOX = "MISC_BOX";
 		public static final String PLAYER_SHIP = "PLAYER_SHIP";
-		public static final String COLUMN_CTRL = "COLUMN_CTRL";
 		public static final String BACKGROUND = "BACKGROUND";
 
 		public String type = BEACON;

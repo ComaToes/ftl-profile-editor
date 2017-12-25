@@ -6,4 +6,6 @@ public interface RandRNG {
 	public void srand( int newSeed );
 
 	public int rand();
+
+	public void setName( String newName );
 }

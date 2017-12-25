@@ -37,6 +37,15 @@ public class RandomSectorMapGenerator {
 
 	private static final Logger log = LogManager.getLogger( RandomSectorMapGenerator.class );
 
+	/**
+	 * The threshold for re-rolling a map with disconnected beacons.
+	 *
+	 * This value is a guess, but it seems to work.
+	 *
+	 * @see #calculateIsolation(GeneratedSectorMap)
+	 */
+	public static final double ISOLATION_THRESHOLD = 150d;
+
 
 	/**
 	 * Generates the sector map.
@@ -120,7 +129,7 @@ public class RandomSectorMapGenerator {
 			n = rng.rand();
 			genMap.setRebelFleetFudge( new Integer( n % 250 + 50 ) );
 
-			do {
+			while ( true ) {
 				if ( generations >= 50 ) {
 					throw new IllegalStateException( String.format( "Sector map generation failed %d times!?", generations ) );
 				}
@@ -166,7 +175,14 @@ public class RandomSectorMapGenerator {
 				genMap.setGeneratedBeaconList( genBeaconList );
 				generations++;
 
-			} while ( !testMinDistance( genMap, 150d ) );
+				double isolation = calculateIsolation( genMap );
+				if ( isolation > ISOLATION_THRESHOLD ) {
+					log.info( String.format( "Re-rolling sector map because attempt #%d has isolated beacons (threshold dist %5.2f): %5.2f", generations, ISOLATION_THRESHOLD, isolation ) );
+				}
+				else {
+					break;  // Success!
+				}
+			}
 
 			return genMap;
 		}
@@ -176,7 +192,7 @@ public class RandomSectorMapGenerator {
 	}
 
 	/**
-	 * Returns true if every beacon has a neighbor nearby.
+	 * Returns the most isolated beacon's distance to its nearest neighbor.
 	 *
 	 * FTL 1.5.4 introduced a check to re-generate invalid maps. The changelog
 	 * said, "Maps will no longer have disconnected beacons, everything will be
@@ -185,7 +201,9 @@ public class RandomSectorMapGenerator {
 	 * TODO: This code's a guess. The exact algorithm and threshold have not
 	 * been verified, but it seems to work.
 	 */
-	public boolean testMinDistance( GeneratedSectorMap genMap, double threshold ) {
+	public double calculateIsolation( GeneratedSectorMap genMap ) {
+		double result = 0;
+
 		List<GeneratedBeacon> genBeaconList = genMap.getGeneratedBeaconList();
 
 		for ( int i=0; i < genBeaconList.size(); i++ ) {
@@ -211,12 +229,11 @@ public class RandomSectorMapGenerator {
 
 			//if ( measured ) log.info( String.format( "%5.2f", minDist ) );
 
-			if ( measured && minDist > threshold ) {
-				log.info( String.format( "SectorMap has isolated beacons (threshold dist %5.2f): %5.2f", threshold, minDist ) );
-				return false;
+			if ( measured ) {
+				result = Math.max( result, minDist );
 			}
 		}
 
-		return true;
+		return result;
 	}
 }

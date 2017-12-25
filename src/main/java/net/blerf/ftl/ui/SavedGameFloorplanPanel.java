@@ -1301,25 +1301,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 	}
 
-	private void selectRoom() {
-		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
-			private final String desc = "Select: Room";
-
-			@Override
-			public String getDescription() { return desc; }
-		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
-			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
-				SpriteReference<RoomState> roomRef = roomRefs.get( roomId );  // Nth room.
-				showRoomEditor( roomRef, squareId );
-				return true;
-			}
-		});
-		squareSelector.setVisible( true );
-	}
-
 	/**
 	 * Ensures the view (and selectors) are at least as large as the viewport.
 	 *
@@ -1354,6 +1335,25 @@ public class SavedGameFloorplanPanel extends JPanel {
 		defaultSelector.setSize( desiredWidth, desiredHeight );
 		miscSelector.setSize( desiredWidth, desiredHeight );
 		squareSelector.setSize( desiredWidth, desiredHeight );
+	}
+
+	private void selectRoom() {
+		squareSelector.reset();
+		squareSelector.setCriteria(new SquareCriteria() {
+			private final String desc = "Select: Room";
+
+			@Override
+			public String getDescription() { return desc; }
+		});
+		squareSelector.setCallback(new SquareSelectionCallback() {
+			@Override
+			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+				SpriteReference<RoomState> roomRef = roomRefs.get( roomId );  // Nth room.
+				showRoomEditor( roomRef, squareId );
+				return true;
+			}
+		});
+		squareSelector.setVisible( true );
 	}
 
 	private void selectSystem() {

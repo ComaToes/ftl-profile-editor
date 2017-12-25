@@ -55,7 +55,6 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String CARGO_FOUR = "#4";
 	private static final String[] cargoSlots = new String[] { CARGO_ONE, CARGO_TWO, CARGO_THREE, CARGO_FOUR };
 
-	private static final String SECTOR_LAYOUT_SEED = "Sector Layout Seed";
 	private static final String REBEL_FLEET_OFFSET = "Rebel Fleet Offset";
 	private static final String REBEL_FLEET_FUDGE = "Rebel Fleet Fudge";
 	private static final String REBEL_PURSUIT_MOD = "Rebel Pursuit Mod";
@@ -151,6 +150,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		sessionPanel.addBlankRow();
 		sessionPanel.addFillRow();
 
+		sessionPanel.getBoolean(DLC).setEnabled( false );
+
 		sessionPanel.getBoolean(DLC).addMouseListener( new StatusbarMouseListener(frame, "Toggle FTL:AE content (changing to false may be dangerous).") );
 		sessionPanel.getCombo(DIFFICULTY).addMouseListener( new StatusbarMouseListener(frame, "Difficulty (FTL 1.01-1.03.3 did not have HARD).") );
 		sessionPanel.getInt(TOP_BETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown session field. Always 0?") );
@@ -166,8 +167,6 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		sectorPanel = new FieldEditorPanel( true );
 		sectorPanel.setBorder( BorderFactory.createTitledBorder("Sector") );
-		sectorPanel.addRow( SECTOR_LAYOUT_SEED, FieldEditorPanel.ContentType.INTEGER );
-		sectorPanel.getInt(SECTOR_LAYOUT_SEED).setDocument( new RegexDocument("-?[0-9]*") );
 		sectorPanel.addRow( REBEL_FLEET_OFFSET, FieldEditorPanel.ContentType.INTEGER );
 		sectorPanel.getInt(REBEL_FLEET_OFFSET).setDocument( new RegexDocument("-?[0-9]*") );
 		sectorPanel.addRow( REBEL_FLEET_FUDGE, FieldEditorPanel.ContentType.INTEGER );
@@ -179,7 +178,6 @@ public class SavedGameGeneralPanel extends JPanel {
 		sectorPanel.addBlankRow();
 		sectorPanel.addFillRow();
 
-		sectorPanel.getInt(SECTOR_LAYOUT_SEED).addMouseListener( new StatusbarMouseListener(frame, "A per-sector constant that seeds the random generation of the map, events, etc. (potentially dangerous).") );
 		sectorPanel.getInt(REBEL_FLEET_OFFSET).addMouseListener( new StatusbarMouseListener(frame, "A large negative var (-750,-250,...,-n*25, approaching 0) + fudge = the fleet circle's leading edge.") );
 		sectorPanel.getInt(REBEL_FLEET_FUDGE).addMouseListener( new StatusbarMouseListener(frame, "A random per-sector constant (usually around 75-310) + offset = the fleet circle's edge.") );
 		sectorPanel.getInt(REBEL_PURSUIT_MOD).addMouseListener( new StatusbarMouseListener(frame, "Delay/alert the fleet, changing the warning zone thickness (e.g., merc distraction = -2).") );
@@ -469,7 +467,6 @@ public class SavedGameGeneralPanel extends JPanel {
 				}
 			}
 
-			sectorPanel.setIntAndReminder( SECTOR_LAYOUT_SEED, gameState.getSectorLayoutSeed() );
 			sectorPanel.setIntAndReminder( REBEL_FLEET_OFFSET, gameState.getRebelFleetOffset() );
 			sectorPanel.setIntAndReminder( REBEL_FLEET_FUDGE, gameState.getRebelFleetFudge() );
 			sectorPanel.setIntAndReminder( REBEL_PURSUIT_MOD, gameState.getRebelPursuitMod() );
@@ -637,9 +634,6 @@ public class SavedGameGeneralPanel extends JPanel {
 				gameState.addCargoItemId( ((DroneBlueprint)cargoObj).getId() );
 			}
 		}
-
-		try { gameState.setSectorLayoutSeed( sectorPanel.parseInt(SECTOR_LAYOUT_SEED) ); }
-		catch ( NumberFormatException e ) {}
 
 		try { gameState.setRebelFleetOffset( sectorPanel.parseInt(REBEL_FLEET_OFFSET) ); }
 		catch ( NumberFormatException e ) {}

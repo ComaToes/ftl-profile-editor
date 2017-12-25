@@ -55,6 +55,16 @@ public class GNULibCRandom implements RandRNG {
 
 	protected final RandState unsafeState = new RandState();
 
+	protected String name = null;
+
+
+	public GNULibCRandom() {
+		this( null );
+	}
+
+	public GNULibCRandom( String name ) {
+		this.name = name;
+	}
 
 	@Override
 	public void srand( int newSeed ) {
@@ -64,6 +74,16 @@ public class GNULibCRandom implements RandRNG {
 	@Override
 	public int rand() {
 		return random_r( unsafeState );
+	}
+
+	@Override
+	public void setName( String newName ) {
+		name = newName;
+	}
+
+	@Override
+	public String toString() {
+		return (name != null ? name : super.toString());
 	}
 
 

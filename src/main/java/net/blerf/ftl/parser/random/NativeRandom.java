@@ -17,11 +17,16 @@ import net.blerf.ftl.parser.random.RandRNG;
 public class NativeRandom implements RandRNG {
 
 	protected int seed = 1;
+	protected String name = null;
 
 
 	public NativeRandom() {
+		this( null );
 	}
 
+	public NativeRandom( String name ) {
+		this.name = name;
+	}
 
 	@Override
 	public void srand( int newSeed ) {
@@ -32,6 +37,16 @@ public class NativeRandom implements RandRNG {
 	@Override
 	public int rand() {
 		return CLibrary.INSTANCE.rand();
+	}
+
+	@Override
+	public void setName( String newName ) {
+		name = newName;
+	}
+
+	@Override
+	public String toString() {
+		return (name != null ? name : super.toString());
 	}
 
 

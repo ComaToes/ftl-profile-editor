@@ -10,9 +10,12 @@ import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
@@ -23,6 +26,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
@@ -51,6 +55,9 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.basic.BasicArrowButton;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.constants.OriginalFTLConstants;
@@ -62,6 +69,14 @@ import net.blerf.ftl.parser.SavedGameParser.FleetPresence;
 import net.blerf.ftl.parser.SavedGameParser.StoreShelf;
 import net.blerf.ftl.parser.SavedGameParser.StoreState;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
+import net.blerf.ftl.parser.random.GNULibCRandom;
+import net.blerf.ftl.parser.random.MsRandom;
+import net.blerf.ftl.parser.random.NativeRandom;
+import net.blerf.ftl.parser.random.RandRNG;
+import net.blerf.ftl.parser.sectormap.GeneratedBeacon;
+import net.blerf.ftl.parser.sectormap.GeneratedSectorMap;
+import net.blerf.ftl.parser.sectormap.GridSectorMapGenerator;
+import net.blerf.ftl.parser.sectormap.RandomSectorMapGenerator;
 import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.ImageUtilities;
@@ -87,11 +102,11 @@ import net.blerf.ftl.xml.ShipEvent;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class SavedGameSectorMapPanel extends JPanel {
+
+	private static final Logger log = LogManager.getLogger( SavedGameSectorMapPanel.class );
+
 	// Dimensions for placing beacons' background sprite images.
 	private static final int SCREEN_WIDTH = 1280;
 	private static final int SCREEN_HEIGHT = 720;
@@ -104,7 +119,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 	//private static final Integer MISC_BOX_LAYER = new Integer(15);
 	//private static final Integer SHIP_LAYER = new Integer(30);
 	//private static final Integer CTRL_LAYER = new Integer(50);
-	private static final Logger log = LogManager.getLogger(SavedGameSectorMapPanel.class);
 
 	private FTLFrame frame;
 
@@ -117,7 +131,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
 
+	private Random javaRandom = new Random();
+	private int fileFormat = 2;
+	private FTLConstants ftlConstants = new AdvancedFTLConstants();
+	private int sectorLayoutSeed = 1;
+
 	private SectorMapLayout mapLayout = null;
+
 	private JPanel mapPanel = null;
 	private JLayeredPane mapHolderPanel = null;
 	private StatusViewport mapViewport = null;
@@ -127,8 +147,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 	private SpriteSelector miscSelector = null;
 	private ActionListener columnCtrlListener = null;
 
-	private FTLConstants ftlConstants = new AdvancedFTLConstants();
-
 
 	public SavedGameSectorMapPanel( FTLFrame frame ) {
 		super( new BorderLayout() );
@@ -137,6 +155,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		mapHolderPanel = new JLayeredPane();
 
 		mapLayout = new SectorMapLayout();
+
 		mapPanel = new JPanel( mapLayout );
 		mapPanel.setBackground( Color.BLACK );
 		mapPanel.setOpaque( true );
@@ -189,6 +208,20 @@ public class SavedGameSectorMapPanel extends JPanel {
 		miscSelector.addMouseListener( miscListener );
 		miscSelector.addMouseMotionListener( miscListener );
 
+		// Clear the status string when the selector is reset (hidden).
+		// Had there been another delector underneath, this wouldn't be
+		// necessary. Without this, the viewport isn't affected immediately by
+		// a right click. The mouse has to move first to trigger an exit.
+		//
+		// TODO: If another selector is ever added, remove this code.
+		miscSelector.addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentHidden( ComponentEvent e ) {
+				mapViewport.setStatusString( null );
+				miscSelector.setMousePoint( -1, -1 );
+			}
+		});
+
 		Insets ctrlInsets = new Insets( 3, 4, 3, 4 );
 
 		JPanel selectPanel = new JPanel();
@@ -221,16 +254,28 @@ public class SavedGameSectorMapPanel extends JPanel {
 		addQuestBtn.setMargin( ctrlInsets );
 		addPanel.add( addQuestBtn );
 
+		JPanel otherPanel = new JPanel();
+		otherPanel.setLayout( new BoxLayout( otherPanel, BoxLayout.X_AXIS ) );
+		otherPanel.setBorder( BorderFactory.createTitledBorder( "Other" ) );
+		final JButton otherLayoutBtn = new JButton( "Layout" );
+		otherLayoutBtn.setMargin( ctrlInsets );
+		otherPanel.add( otherLayoutBtn );
+
 		JPanel ctrlRowOnePanel = new JPanel();
 		ctrlRowOnePanel.setLayout( new BoxLayout( ctrlRowOnePanel, BoxLayout.X_AXIS ) );
 		ctrlRowOnePanel.add( selectPanel );
 		ctrlRowOnePanel.add( Box.createHorizontalStrut( 15 ) );
 		ctrlRowOnePanel.add( addPanel );
 
+		JPanel ctrlRowTwoPanel = new JPanel();
+		ctrlRowTwoPanel.setLayout( new BoxLayout( ctrlRowTwoPanel, BoxLayout.X_AXIS ) );
+		ctrlRowTwoPanel.add( otherPanel );
+
 		JPanel ctrlPanel = new JPanel();
 		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS) );
 		ctrlPanel.add( ctrlRowOnePanel );
-		//ctrlPanel.add( Box.createVerticalStrut( 8 ) );
+		ctrlPanel.add( Box.createVerticalStrut( 8 ) );
+		ctrlPanel.add( ctrlRowTwoPanel );
 
 		ActionListener ctrlListener = new ActionListener() {
 			@Override
@@ -256,6 +301,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 				else if ( source == addQuestBtn ) {
 					addQuest();
 				}
+				else if ( source == otherLayoutBtn ) {
+					showLayoutEditor();
+				}
 			}
 		};
 
@@ -266,6 +314,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		addStoreBtn.addActionListener( ctrlListener );
 		addQuestBtn.addActionListener( ctrlListener );
+
+		otherLayoutBtn.addActionListener( ctrlListener );
 
 		JPanel centerPanel = new JPanel( new GridBagLayout() );
 
@@ -305,79 +355,66 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sideScroll.setVisible( false );
 		this.add( sideScroll, BorderLayout.EAST );
 
-		JPanel borderPanel = new JPanel( new BorderLayout() );
-		borderPanel.setBorder( BorderFactory.createTitledBorder( "Sector Map" ) );
-
-
-		//JLabel noticeLbl = new JLabel( "The number of beacons in each column can't be determined automatically." );
-		//noticeLbl.setHorizontalAlignment( SwingConstants.CENTER );
-		//borderPanel.add( noticeLbl, BorderLayout.NORTH );
-
-		columnCtrlListener = new ActionListener() {
+		// As scrollpane resizes, adjust the view's size to fill the viewport.
+		// No need for AncestorListener to track tab switching. Event fires even if hidden.
+		mapScroll.addComponentListener(new ComponentAdapter() {
 			@Override
-			public void actionPerformed( ActionEvent e ) {
-				Object source = e.getSource();
-
-				BasicArrowButton srcBtn = (BasicArrowButton)source;
-				IncrementBox iBox = (IncrementBox)srcBtn.getParent();
-				int column = mapLayout.getCtrlColumn( iBox );
-				if ( column != -1 ) {
-					int colSize = mapLayout.getColumnSize( column );
-					if ( srcBtn == iBox.decBtn ) {
-						mapLayout.setColumnSize( column, colSize-1 );
-					} else if ( srcBtn == iBox.incBtn ) {
-						mapLayout.setColumnSize( column, colSize+1 );
-					}
-
-					mapPanel.revalidate();
-					mapViewport.repaint();
-				}
+			public void componentResized( ComponentEvent e ) {
+				fitViewToViewport();
 			}
-		};
+		});
+
+		fitViewToViewport();
 	}
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
 		mapPanel.removeAll();
+		mapLayout.setBeaconLocations( null );
+		mapLayout.setBeaconRegionSize( null );
 		miscSelector.setVisible( false );
 		miscSelector.setMousePoint( -1, -1 );
 		mapViewport.setStatusString( null );
 		clearSidePanel();
 
-		for ( BeaconSprite beaconSprite : beaconSprites )
-			mapPanel.remove( beaconSprite );
+		// These were already removed from mapPanel.
 		beaconSprites.clear();
-
-		for ( StoreSprite storeSprite : storeSprites )
-			mapPanel.remove( storeSprite );
 		storeSprites.clear();
-
-		for ( QuestSprite questSprite : questSprites )
-			mapPanel.remove( questSprite );
 		questSprites.clear();
-
-		for ( PlayerShipSprite playerShipSprite : playerShipSprites )
-			mapPanel.remove( playerShipSprite );
 		playerShipSprites.clear();
 
 		beaconRefs.clear();
 
 		if ( gameState == null ) {
 			mapPanel.revalidate();
+			fitViewToViewport();
 			mapViewport.repaint();
 			return;
 		}
 
-		if ( gameState.getFileFormat() == 2 ) {
+		fileFormat = gameState.getFileFormat();
+
+		if ( fileFormat == 2 ) {
 			ftlConstants = new OriginalFTLConstants();
 		} else {
 			ftlConstants = new AdvancedFTLConstants();
 		}
 
-		int beaconId;
-		List<BeaconState> beaconStateList = gameState.getBeaconList();
+		sectorLayoutSeed = gameState.getSectorLayoutSeed();
+
+		GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
+		GeneratedSectorMap newGenMap = gridMapGen.generateSectorMap( 6, 4, 116, 122 );
+
+		List<GeneratedBeacon> genBeacons = newGenMap.getGeneratedBeaconList();
+		List<Point> newLocations = new ArrayList<Point>( genBeacons.size() );
+
+		for ( int i=0; i < genBeacons.size(); i++ ) {
+			newLocations.add( genBeacons.get( i ).getLocation() );
+		}
+		mapLayout.setBeaconLocations( newLocations );
+		mapLayout.setBeaconRegionSize( newGenMap.getPreferredSize() );
 
 		// Beacons.
-		for ( BeaconState beaconState : beaconStateList ) {
+		for ( BeaconState beaconState : gameState.getBeaconList() ) {
 			SpriteReference<BeaconState> beaconRef = new SpriteReference<BeaconState>( new BeaconState( beaconState ) );
 			beaconRefs.add( beaconRef );
 
@@ -388,16 +425,16 @@ public class SavedGameSectorMapPanel extends JPanel {
 		}
 
 		// Stores.
-		beaconId = 0;
-		for ( SpriteReference<BeaconState> beaconRef : beaconRefs ) {
+		for ( int i=0; i < beaconRefs.size(); i++ ) {
+			SpriteReference<BeaconState> beaconRef = beaconRefs.get( i );
+
 			if ( beaconRef.get().getStore() != null ) {
 				StoreSprite storeSprite = new StoreSprite( beaconRef );
 				SectorMapConstraints storeC = new SectorMapConstraints( SectorMapConstraints.MISC_BOX );
-				storeC.setBeaconId( beaconId );
+				storeC.setBeaconId( i );
 				storeSprites.add( storeSprite );
 				mapPanel.add( storeSprite, storeC );
 			}
-			beaconId++;
 		}
 
 		// Quests.
@@ -419,20 +456,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		playerShipSprites.add( playerShipSprite );
 		mapPanel.add( playerShipSprite, playerShipC );
 
-		// Add column controls.
-		for ( int i=0; i < 6; i++ ) {
-			IncrementBox iBox = new IncrementBox();
-			iBox.decBtn.addActionListener( columnCtrlListener );
-			iBox.incBtn.addActionListener( columnCtrlListener );
-			mapPanel.add( iBox, new SectorMapConstraints( SectorMapConstraints.COLUMN_CTRL ) );
-
-			String message = "Adjust the number of beacons in this column.";
-			iBox.addMouseListener( new StatusbarMouseListener( frame, message ) );
-			iBox.decBtn.addMouseListener( new StatusbarMouseListener( frame, message ) );
-			iBox.incBtn.addMouseListener( new StatusbarMouseListener( frame, message ) );
-		}
-
 		mapPanel.revalidate();
+		fitViewToViewport();
 		mapViewport.repaint();
 	}
 
@@ -441,6 +466,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		List<BeaconState> beaconStateList = gameState.getBeaconList();
 		beaconStateList.clear();
+
+		gameState.setSectorLayoutSeed( sectorLayoutSeed );
 
 		// Player ship.
 		for ( PlayerShipSprite playerShipSprite : playerShipSprites ) {
@@ -466,6 +493,97 @@ public class SavedGameSectorMapPanel extends JPanel {
 				gameState.getQuestEventMap().put( questSprite.getQuestId(), new Integer( beaconId ) );
 			}
 		}
+	}
+
+	/**
+	 * Clears the map, creates new BeaconStates, and moves the player ship to
+	 * beacon 0.
+	 */
+	public void replaceMap( GeneratedSectorMap newGenMap, boolean clearSidePanel ) {
+		mapPanel.removeAll();
+		mapLayout.setBeaconLocations( null );
+		mapLayout.setBeaconRegionSize( null );
+		miscSelector.setVisible( false );
+		miscSelector.setMousePoint( -1, -1 );
+		mapViewport.setStatusString( null );
+		if ( clearSidePanel ) clearSidePanel();
+
+		beaconSprites.clear();
+		storeSprites.clear();
+		questSprites.clear();
+		playerShipSprites.clear();
+
+		beaconRefs.clear();
+
+		// Beacons.
+		List<GeneratedBeacon> genBeacons = newGenMap.getGeneratedBeaconList();
+		List<Point> newLocations = new ArrayList<Point>( genBeacons.size() );
+
+		for ( int i=0; i < genBeacons.size(); i++ ) {
+			newLocations.add( genBeacons.get( i ).getLocation() );
+		}
+		mapLayout.setBeaconLocations( newLocations );
+		mapLayout.setBeaconRegionSize( newGenMap.getPreferredSize() );
+
+		for ( GeneratedBeacon genBeacon : genBeacons ) {
+			BeaconState beaconState = new BeaconState();
+
+			SpriteReference<BeaconState> beaconRef = new SpriteReference<BeaconState>( beaconState );
+			beaconRefs.add( beaconRef );
+
+			BeaconSprite beaconSprite = new BeaconSprite( beaconRef );
+			SectorMapConstraints beaconC = new SectorMapConstraints( SectorMapConstraints.BEACON );
+			beaconSprites.add( beaconSprite );
+			mapPanel.add( beaconSprite, beaconC );
+		}
+
+		// Player ship.
+		PlayerShipSprite playerShipSprite = new PlayerShipSprite();
+		SectorMapConstraints playerShipC = new SectorMapConstraints( SectorMapConstraints.PLAYER_SHIP );
+		playerShipC.setBeaconId( 0 );  // TODO: Magic number.
+		playerShipSprites.add( playerShipSprite );
+		mapPanel.add( playerShipSprite, playerShipC );
+
+		mapPanel.revalidate();
+		fitViewToViewport();
+		mapViewport.repaint();
+	}
+
+	/**
+	 * Ensures the view (and selectors) are at least as large as the viewport.
+	 *
+	 * Without this method, the view may be undersized for the viewport,
+	 * leaving dead space to the right and below the view.
+	 *
+	 * The view will be made large enough to enclose all non-selector child
+	 * components' bounds. Selectors will be given the same size.
+	 *
+	 * Note: Layout components, stretch the holder panel to fit, and paint:
+	 *   mapPanel.revalidate();
+	 *   fitViewToViewport();
+	 *   Viewport.repaint();
+	 */
+	private void fitViewToViewport() {
+		// Calculate needed dimensions for all non-selector components.
+
+		mapPanel.setSize( mapPanel.getPreferredSize() );
+
+		int neededWidth = 0, neededHaight = 0;
+		for ( Component c : mapHolderPanel.getComponents() ) {
+			if ( c == miscSelector ) continue;
+
+			neededWidth = Math.max( c.getX()+c.getWidth(), neededWidth );
+			neededHaight = Math.max( c.getY()+c.getHeight(), neededHaight );
+		}
+
+		Dimension viewExtents = mapViewport.getExtentSize();
+		// Possibly account for scrollbar thickness?
+
+		int desiredWidth = Math.max( viewExtents.width, neededWidth );
+		int desiredHeight = Math.max( viewExtents.height, neededHaight );
+		mapHolderPanel.setPreferredSize( new Dimension( desiredWidth, desiredHeight ) );
+
+		miscSelector.setSize( desiredWidth, desiredHeight );
 	}
 
 	public void selectBeacon() {
@@ -805,7 +923,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		JPanel applyPanel = new JPanel();
 		applyPanel.setLayout( new BoxLayout( applyPanel, BoxLayout.X_AXIS ) );
-		JButton cancelBtn = new JButton( "Cancel" );
+		JButton cancelBtn = new JButton( "Close" );
 		applyPanel.add( cancelBtn );
 		applyPanel.add( Box.createRigidArea( new Dimension( 15, 1 ) ) );
 		JButton applyBtn = new JButton( "Apply" );
@@ -850,6 +968,168 @@ public class SavedGameSectorMapPanel extends JPanel {
 		labelArea.setWrapStyleWord( true );
 		labelArea.setFocusable( false );
 		sidePanel.add( labelArea );
+	}
+
+	private void showLayoutEditor() {
+		final String ALGORITHM = "RNG";
+		final String LAYOUT = "Preview";
+		final String LAYOUT_SEED = "Seed";
+
+		final String LAYOUT_GRID = "Grid";
+		final String LAYOUT_SEEDED = "Seeded";
+
+		String title = String.format( "Sector Layout" );
+
+		final FieldEditorPanel editorPanel = new FieldEditorPanel( true );
+		editorPanel.addRow( ALGORITHM, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( LAYOUT, FieldEditorPanel.ContentType.COMBO );
+		editorPanel.addBlankRow();
+		editorPanel.addRow( LAYOUT_SEED, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.getInt( LAYOUT_SEED ).setDocument( new RegexDocument( "-?[0-9]*" ) );
+
+		editorPanel.getCombo( ALGORITHM ).addMouseListener( new StatusbarMouseListener( frame, "Algorithm of the OS the saved game was created under, or native for the current OS." ) );
+		editorPanel.getCombo( LAYOUT ).addMouseListener( new StatusbarMouseListener( frame, "The type of map to generate." ) );
+		editorPanel.getInt( LAYOUT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A per-sector constant that seeds random generation of the map, events, etc. (potentially dangerous)." ) );
+
+		editorPanel.getCombo( ALGORITHM ).addItem( new NativeRandom( "Native" ) );
+		editorPanel.getCombo( ALGORITHM ).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
+		editorPanel.getCombo( ALGORITHM ).addItem( new MsRandom( "Microsoft" ) );
+
+		editorPanel.getCombo( LAYOUT ).addItem( LAYOUT_GRID );
+		editorPanel.getCombo( LAYOUT ).addItem( LAYOUT_SEEDED );
+		editorPanel.getCombo( LAYOUT ).setSelectedItem( LAYOUT_SEEDED );
+
+		editorPanel.setIntAndReminder( LAYOUT_SEED, sectorLayoutSeed );
+
+		final Runnable applyCallback = new Runnable() {
+			@Override
+			public void run() {
+				int newSeed = editorPanel.parseInt( LAYOUT_SEED );
+
+				GeneratedSectorMap newGenMap = null;
+
+				if ( LAYOUT_GRID.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+					GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
+					newGenMap = gridMapGen.generateSectorMap( 6, 4, 116, 122 );
+				}
+				else if ( LAYOUT_SEEDED.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+					Object selectedRNGObj = editorPanel.getCombo( ALGORITHM ).getSelectedItem();
+					if ( selectedRNGObj == null ) {
+						log.warn( "No RNG selected to generate a sector map!?" );
+						return;
+					}
+
+					@SuppressWarnings("unchecked")
+					RandRNG selectedRNG = (RandRNG)selectedRNGObj;
+					selectedRNG.srand( newSeed );
+
+					RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
+					newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
+				}
+
+				if ( newGenMap != null ) {
+					sectorLayoutSeed = newSeed;
+
+					List<GeneratedBeacon> genBeacons = newGenMap.getGeneratedBeaconList();
+					List<Point> newLocations = new ArrayList<Point>( genBeacons.size() );
+
+					for ( int i=0; i < genBeacons.size(); i++ ) {
+						newLocations.add( genBeacons.get( i ).getLocation() );
+					}
+					mapLayout.setBeaconLocations( newLocations );
+					mapLayout.setBeaconRegionSize( newGenMap.getPreferredSize() );
+
+					mapPanel.revalidate();
+					fitViewToViewport();
+					mapViewport.repaint();
+				}
+
+				editorPanel.getInt( LAYOUT_SEED ).setText( ""+ sectorLayoutSeed );
+			}
+		};
+		createSidePanel( title, editorPanel, null, applyCallback );
+
+		addSidePanelSeparator( 6 );
+
+		JButton randomSeedBtn = new JButton( "Random Seed" );
+		randomSeedBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
+		randomSeedBtn.addMouseListener( new StatusbarMouseListener( frame, "Generate an entirely new sector map." ) );
+		sidePanel.add( randomSeedBtn );
+
+		randomSeedBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed( ActionEvent e ) {
+				int newSeed = javaRandom.nextInt( Integer.MAX_VALUE );
+
+				editorPanel.getInt( LAYOUT_SEED ).setText( ""+ newSeed );
+
+				GeneratedSectorMap newGenMap = null;
+
+				if ( LAYOUT_GRID.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+					GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
+					newGenMap = gridMapGen.generateSectorMap( 6, 4, 116, 122 );
+				}
+				else if ( LAYOUT_SEEDED.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+					Object selectedRNGObj = editorPanel.getCombo( ALGORITHM ).getSelectedItem();
+					if ( selectedRNGObj == null ) {
+						log.warn( "No RNG selected to generate a sector map!?" );
+						return;
+					}
+
+					@SuppressWarnings("unchecked")
+					RandRNG selectedRNG = (RandRNG)selectedRNGObj;
+					selectedRNG.srand( newSeed );
+
+					RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
+					newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
+
+					if ( sectorLayoutSeed == newSeed && newGenMap.getGeneratedBeaconList().size() != beaconRefs.size() ) {
+						// This never seems to trigger even for bad RNGs!?
+
+						StringBuilder badCountBuf = new StringBuilder();
+						badCountBuf.append( "The RNG-informed map has a beacon count that doesn't match the fixed beacon " );
+						badCountBuf.append( "list. FTL must have used a different RNG." );
+
+						JOptionPane.showMessageDialog( frame, badCountBuf.toString(), "Bad RNG", JOptionPane.WARNING_MESSAGE );
+						newGenMap = null;
+					}
+				}
+
+				if ( newGenMap != null ) {
+					sectorLayoutSeed = newSeed;
+
+					replaceMap( newGenMap, false );
+				}
+
+				editorPanel.getInt( LAYOUT_SEED ).setText( ""+ sectorLayoutSeed );
+			}
+		});
+
+		addSidePanelSeparator( 8 );
+		StringBuilder noticeBuf = new StringBuilder();
+		noticeBuf.append( "A sector map is part random, part fixed & editable.\n" );
+		noticeBuf.append( "\n" );
+		noticeBuf.append( "FTL first builds a map with random layout and events. " );
+		noticeBuf.append( "Then FTL overlays it with a flat list of saved beacon " );
+		noticeBuf.append( "details, each overriding the nth random beacon.\n" );
+		noticeBuf.append( "\n" );
+		noticeBuf.append( "FTL sends the sector seed to the OS's random number generator. " );
+		noticeBuf.append( "As such, the map is fragile: platform-dependent.\n" );
+		noticeBuf.append( "\n" );
+		noticeBuf.append( "This editor can reconstruct an RNG-informed preview using " );
+		noticeBuf.append( "various algorithms, or passively display the fixed beacon list " );
+		noticeBuf.append( "wrapped vertically in a grid.\n" );
+		noticeBuf.append( "\n" );
+		noticeBuf.append( "If FTL interprets the seed differently in-game, the beacon count " );
+		noticeBuf.append( "will vary, along with all other random elements.\n" );
+		noticeBuf.append( "\n" );
+		noticeBuf.append( "A grid layout with the original seed should always be safe." );
+
+		noticeBuf.append( "" );
+		addSidePanelNote( noticeBuf.toString() );
+
+		showSidePanel();
 	}
 
 	private void showBeaconEditor( final SpriteReference<BeaconState> beaconRef ) {
@@ -1198,12 +1478,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 		};
 		editorPanel.getSpinner(VISIT_COUNT).addChangeListener( visitListener );
 
-		addSidePanelSeparator(6);
+		addSidePanelSeparator( 6 );
 
 		JButton visitBtn = new JButton( "Visit" );
 		visitBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
 		visitBtn.addMouseListener( new StatusbarMouseListener( frame, "Mark this beacon as visited, using random images." ) );
-		sidePanel.add(visitBtn);
+		sidePanel.add( visitBtn );
 
 		visitBtn.addActionListener(new ActionListener() {
 			@Override

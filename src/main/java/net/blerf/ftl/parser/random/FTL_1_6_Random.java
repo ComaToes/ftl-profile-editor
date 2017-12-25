@@ -28,10 +28,16 @@ public class FTL_1_6_Random implements RandRNG {
 	// Math is gonna reach 64bit unsigned long territory.
 	protected BigInteger seed = new BigInteger( "1" );
 
+	protected String name = null;
+
 
 	public FTL_1_6_Random() {
+		this( null );
 	}
 
+	public FTL_1_6_Random( String name ) {
+		this.name = name;
+	}
 
 	@Override
 	public void srand( int newSeed ) {
@@ -57,5 +63,16 @@ public class FTL_1_6_Random implements RandRNG {
 
 		// After masking 64 bits, shifting 32, and shifting 1 bit more,
 		// return value should be 31 bits, safe to hold in a 32bit signed int.
+	}
+
+
+	@Override
+	public void setName( String newName ) {
+		name = newName;
+	}
+
+	@Override
+	public String toString() {
+		return (name != null ? name : super.toString());
 	}
 }

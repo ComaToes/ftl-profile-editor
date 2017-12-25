@@ -11,6 +11,8 @@ import net.blerf.ftl.model.sectortree.SectorDot;
  *
  * This class simply creates a list of one-dot columns.
  * Each dot has null type, null id, and "Unknown" title.
+ *
+ * @see net.blerf.ftl.model.sectortree.SectorTree
  */
 public class LinearSectorTreeGenerator {
 

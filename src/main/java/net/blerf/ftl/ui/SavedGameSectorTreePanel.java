@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -31,6 +30,9 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import net.blerf.ftl.model.sectortree.SectorDot;
 import net.blerf.ftl.model.sectortree.SectorTree;
@@ -49,9 +51,6 @@ import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.ui.sectortree.SectorTreePreviewPanel;
 import net.blerf.ftl.ui.sectortree.SectorTreeEditPanel;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
@@ -112,7 +111,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		treeEditHolderPanel.setBorder( BorderFactory.createEtchedBorder() );
 		treeEditHolderPanel.add( treeEditPanel, BorderLayout.CENTER );
 
-		genPanel =  new FieldEditorPanel( true );
+		genPanel = new FieldEditorPanel( true );
 		genPanel.setBorder( BorderFactory.createTitledBorder( "" ) );
 		genPanel.addRow( ALGORITHM, FieldEditorPanel.ContentType.COMBO );
 		genPanel.addBlankRow();
@@ -126,7 +125,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		genPanel.addBlankRow();
 		genPanel.addFillRow();
 
-		genPanel.getCombo(ALGORITHM).addMouseListener( new StatusbarMouseListener( frame, "An algorithm of the OS the saved game was created under, or native for the current OS." ) );
+		genPanel.getCombo(ALGORITHM).addMouseListener( new StatusbarMouseListener( frame, "Algorithm of the OS the saved game was created under, or native for the current OS." ) );
 		genPanel.getCombo(TREE_TYPE).addMouseListener( new StatusbarMouseListener( frame, "The type of tree to generate." ) );
 		genPanel.getInt(SECTOR_TREE_SEED).addMouseListener( new StatusbarMouseListener( frame, "A per-game constant that seeds the random generation of the sector tree." ) );
 		genApplyBtn.addMouseListener( new StatusbarMouseListener( frame, "Generate a sector tree with the given algorithm, type, and seed." ) );
@@ -258,22 +257,21 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 
 	private void setSeed( int newSeed ) {
-		Object selectedNamedRNGObj = genPanel.getCombo(ALGORITHM).getSelectedItem();
-		if ( selectedNamedRNGObj == null ) {
+		Object selectedRNGObj = genPanel.getCombo(ALGORITHM).getSelectedItem();
+		if ( selectedRNGObj == null ) {
 			log.warn( "No RNG selected to generate a sector tree!?" );
 			return;
 		}
 
 		@SuppressWarnings("unchecked")
-		NamedRNG selectedNamedRNG = (NamedRNG)selectedNamedRNGObj;
-		RandRNG selectedRNG = selectedNamedRNG.getRNG();
+		RandRNG selectedRNG = (RandRNG)selectedRNGObj;
 
 		if ( selectedRNG != expandedTreeGen.getRNG() ) {
 			expandedTreeGen.setRNG( selectedRNG );
 		}
 
 
-		if ( TREE_TYPE_LINEAR.equals(genPanel.getCombo(TREE_TYPE).getSelectedItem()) ) {
+		if ( TREE_TYPE_LINEAR.equals( genPanel.getCombo(TREE_TYPE).getSelectedItem() ) ) {
 			treePreviewPanel.setTreeExpanded( false );
 			treeEditPanel.setPeekEnabled( false );
 
@@ -344,9 +342,9 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		tree.fireColumnsChanged();
 
 		if ( gameState != null ) {
-			genPanel.getCombo(ALGORITHM).addItem( new NamedRNG( new NativeRandom(), "Native" ) );
-			genPanel.getCombo(ALGORITHM).addItem( new NamedRNG( new GNULibCRandom(), "GLibC (Linux/OSX)" ) );
-			genPanel.getCombo(ALGORITHM).addItem( new NamedRNG( new MsRandom(), "Microsoft" ) );
+			genPanel.getCombo(ALGORITHM).addItem( new NativeRandom( "Native" ) );
+			genPanel.getCombo(ALGORITHM).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
+			genPanel.getCombo(ALGORITHM).addItem( new MsRandom( "Microsoft" ) );
 
 			genPanel.getCombo(TREE_TYPE).addItem( TREE_TYPE_LINEAR );
 			genPanel.getCombo(TREE_TYPE).addItem( TREE_TYPE_EXPANDED );
@@ -384,20 +382,5 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 			gameState.setSectorNumber( sectorNum );
 			gameState.setSectorVisitation( tree.getSectorVisitation() );
 		}
-	}
-
-
-
-	private static class NamedRNG {
-		protected final RandRNG rng;
-		protected final String name;
-
-		public NamedRNG( RandRNG rng, String name ) {
-			this.rng = rng;
-			this.name = name;
-		}
-
-		public RandRNG getRNG() { return rng; }
-		public String toString() { return name; }
 	}
 }

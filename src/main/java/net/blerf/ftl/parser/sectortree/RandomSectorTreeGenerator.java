@@ -24,6 +24,7 @@ import net.blerf.ftl.xml.SectorType;
  * Matthew: "Looks pretty accurate to me. I double checked your
  * probabilities and it all looks to match my code :) Well done!"
  *
+ * @see net.blerf.ftl.model.sectortree.SectorTree
  * @see net.blerf.ftl.parser.random.NativeRandom
  */
 public class RandomSectorTreeGenerator {
