@@ -116,7 +116,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	// mapHolderPanel Layers
 	private static final Integer MAP_LAYER = new Integer(10);
-	private static final Integer MISC_SELECTION_LAYER = new Integer(50);
+	private static final Integer MISC_SELECTION_LAYER = new Integer( 50 );
 	// mapPanel Layers
 	//private static final Integer BEACON_LAYER = new Integer(10);
 	//private static final Integer MISC_BOX_LAYER = new Integer(15);
@@ -298,7 +298,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		ctrlRowTwoPanel.add( otherPanel );
 
 		JPanel ctrlPanel = new JPanel();
-		ctrlPanel.setLayout( new BoxLayout(ctrlPanel, BoxLayout.Y_AXIS) );
+		ctrlPanel.setLayout( new BoxLayout( ctrlPanel, BoxLayout.Y_AXIS ) );
 		ctrlPanel.add( ctrlRowOnePanel );
 		ctrlPanel.add( Box.createVerticalStrut( 8 ) );
 		ctrlPanel.add( ctrlRowTwoPanel );
@@ -306,7 +306,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		ActionListener ctrlListener = new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				//if ( shipBlueprint == null ) return;  // No map to edit!
+				//TODO: When there's a central object to edit, test for null here and return.
 
 				Object source = e.getSource();
 				if ( source == selectBeaconBtn ) {
@@ -793,7 +793,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
 
-					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId(beaconId) == null ) {
+					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId( beaconId ) == null ) {
 						return true;
 					}
 				}
@@ -845,7 +845,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				if ( sprite instanceof BeaconSprite ) {
 					int beaconId = mapLayout.getBeaconId( sprite );
 
-					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId(beaconId) == null ) {
+					if ( beaconId != -1 && mapLayout.getMiscBoxAtBeaconId( beaconId ) == null ) {
 						return true;
 					}
 				}
@@ -1228,11 +1228,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( true );
 		editorPanel.addRow( REBEL_FLEET_OFFSET, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( REBEL_FLEET_OFFSET ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( REBEL_FLEET_OFFSET ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( REBEL_FLEET_FUDGE, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( REBEL_FLEET_FUDGE ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( REBEL_FLEET_FUDGE ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( REBEL_PURSUIT_MOD, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( REBEL_PURSUIT_MOD ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( REBEL_PURSUIT_MOD ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( HIDDEN_SECTOR, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( HAZARDS_VISIBLE, FieldEditorPanel.ContentType.BOOLEAN );
 
@@ -1292,21 +1292,21 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getSlider( FLAGSHIP_HOP ).setMaximum( 10 );
 		editorPanel.addRow( FLAGSHIP_MOVING, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( TOP_KAPPA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( TOP_KAPPA ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( TOP_KAPPA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( FLAGSHIP_BASE_TURNS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( FLAGSHIP_NEARBY, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( FLAGSHIP_ALPHA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( FLAGSHIP_ALPHA ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( FLAGSHIP_ALPHA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( FLAGSHIP_GAMMA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( FLAGSHIP_GAMMA ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( FLAGSHIP_GAMMA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( FLAGSHIP_DELTA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( FLAGSHIP_DELTA ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( FLAGSHIP_DELTA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 
 		editorPanel.getBoolean( FLAGSHIP_VISIBLE ).addMouseListener( new StatusbarMouseListener( frame, "Toggle the rebel flagship on the map. (FTL 1.01-1.03.3: Instant loss if not in sector 8)" ) );
 		editorPanel.getSlider( FLAGSHIP_HOP ).addMouseListener( new StatusbarMouseListener( frame, "The flagship is at it's Nth random beacon. (0-based) Sector layout seed affects where that will be. (FTL 1.01-1.03.3: Instant loss may occur beyond 4)" ) );
 		editorPanel.getBoolean( FLAGSHIP_MOVING ).addMouseListener( new StatusbarMouseListener( frame, "The flagship is moving from its current beacon toward the next." ) );
-		editorPanel.getInt( TOP_KAPPA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Maybe flagship-related?" ) );
+		editorPanel.getInt( TOP_KAPPA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Increments after defeating the flagship. Decrements on re-saving. It glitches the hop index!?" ) );
 		editorPanel.getInt( FLAGSHIP_BASE_TURNS ).addMouseListener( new StatusbarMouseListener( frame, "Number of turns the flagship has started at the fed base. Instant loss will occur beyond 3." ) );
 		editorPanel.getBoolean( FLAGSHIP_NEARBY ).addMouseListener( new StatusbarMouseListener( frame, "True if nearby ship is the flagship. Only set when a nearby ship is present." ) );
 		editorPanel.getInt( FLAGSHIP_ALPHA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Last seen rebel flagship stage, or 0. Redundant?" ) );
@@ -1340,18 +1340,19 @@ public class SavedGameSectorMapPanel extends JPanel {
 					flagshipHop = editorPanel.getSlider( FLAGSHIP_HOP ).getValue();
 					flagshipMoving = editorPanel.getBoolean( FLAGSHIP_MOVING ).isSelected();
 
+					try { topUnknownKappa = editorPanel.parseInt( TOP_KAPPA ); }
+					catch ( NumberFormatException e ) {}
+
 					try { flagshipBaseTurns = editorPanel.parseInt( FLAGSHIP_BASE_TURNS ); }
 					catch ( NumberFormatException e ) {}
 				}
 				else {
 					flagshipHop = 0;
 					flagshipMoving = false;
+					topUnknownKappa = 0;
 					flagshipBaseTurns = 0;
 				}
 				flagshipNearby = editorPanel.getBoolean( FLAGSHIP_NEARBY ).isSelected();
-
-				try { topUnknownKappa = editorPanel.parseInt( TOP_KAPPA ); }
-				catch ( NumberFormatException e ) {}
 
 				if ( flagship != null ) {
 					try { flagship.setUnknownAlpha( editorPanel.parseInt( FLAGSHIP_ALPHA ) ); }
@@ -1377,10 +1378,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 				if ( !flagshipVisible ) {
 					editorPanel.getSlider( FLAGSHIP_HOP ).setValue( 0 );
 					editorPanel.getBoolean( FLAGSHIP_MOVING ).setSelected( false );
+					editorPanel.getInt( TOP_KAPPA ).setText( "0" );
 					editorPanel.getInt( FLAGSHIP_BASE_TURNS ).setText( "0" );
 				}
 				editorPanel.getSlider( FLAGSHIP_HOP ).setEnabled( flagshipVisible );
 				editorPanel.getBoolean( FLAGSHIP_MOVING ).setEnabled( flagshipVisible );
+				editorPanel.getInt( TOP_KAPPA ).setEnabled( flagshipVisible );
 				editorPanel.getInt( FLAGSHIP_BASE_TURNS ).setEnabled( flagshipVisible );
 			}
 		};
@@ -1417,114 +1420,114 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( VISIT_COUNT, FieldEditorPanel.ContentType.SPINNER );
-		editorPanel.getSpinnerField(VISIT_COUNT).addMouseListener( new StatusbarMouseListener( frame, "Number of times the player has been here. If visited, random events won't occur. (All nearby fields need values) Hit enter after typing." ) );
+		editorPanel.getSpinnerField( VISIT_COUNT ).addMouseListener( new StatusbarMouseListener( frame, "Number of times the player has been here. If visited, random events won't occur. (All nearby fields need values) Hit enter after typing." ) );
 		editorPanel.addRow( STARS_LIST, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(STARS_LIST).setEnabled( false );
-		editorPanel.getCombo(STARS_LIST).addMouseListener( new StatusbarMouseListener( frame, "An image list from which to choose a background starscape. (BG_*)" ) );
+		editorPanel.getCombo( STARS_LIST ).setEnabled( false );
+		editorPanel.getCombo( STARS_LIST ).addMouseListener( new StatusbarMouseListener( frame, "An image list from which to choose a background starscape. (BG_*)" ) );
 		editorPanel.addRow( STARS_IMAGE, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(STARS_IMAGE).setEnabled( false );
-		editorPanel.getCombo(STARS_IMAGE).addMouseListener( new StatusbarMouseListener( frame, "Background starscape, a fullscreen image." ) );
+		editorPanel.getCombo( STARS_IMAGE ).setEnabled( false );
+		editorPanel.getCombo( STARS_IMAGE ).addMouseListener( new StatusbarMouseListener( frame, "Background starscape, a fullscreen image." ) );
 		editorPanel.addRow( SPRITE_LIST, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(SPRITE_LIST).setEnabled( false );
-		editorPanel.getCombo(SPRITE_LIST).addMouseListener( new StatusbarMouseListener( frame, "An image list from which to choose a background sprite. (PLANET_*)" ) );
+		editorPanel.getCombo( SPRITE_LIST ).setEnabled( false );
+		editorPanel.getCombo( SPRITE_LIST ).addMouseListener( new StatusbarMouseListener( frame, "An image list from which to choose a background sprite. (PLANET_*)" ) );
 		editorPanel.addRow( SPRITE_IMAGE, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(SPRITE_IMAGE).setEnabled( false );
-		editorPanel.getCombo(SPRITE_IMAGE).addMouseListener( new StatusbarMouseListener( frame, "Background sprite, which appears in front of the starscape." ) );
+		editorPanel.getCombo( SPRITE_IMAGE ).setEnabled( false );
+		editorPanel.getCombo( SPRITE_IMAGE ).addMouseListener( new StatusbarMouseListener( frame, "Background sprite, which appears in front of the starscape." ) );
 		editorPanel.addRow( SPRITE_X, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SPRITE_X).setEnabled( false );
-		editorPanel.getInt(SPRITE_X).addMouseListener( new StatusbarMouseListener( frame, "Background sprite X position." ) );
+		editorPanel.getInt( SPRITE_X ).setEnabled( false );
+		editorPanel.getInt( SPRITE_X ).addMouseListener( new StatusbarMouseListener( frame, "Background sprite X position." ) );
 		editorPanel.addRow( SPRITE_Y, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SPRITE_Y).setEnabled( false );
-		editorPanel.getInt(SPRITE_Y).addMouseListener( new StatusbarMouseListener( frame, "Background sprite Y position." ) );
+		editorPanel.getInt( SPRITE_Y ).setEnabled( false );
+		editorPanel.getInt( SPRITE_Y ).addMouseListener( new StatusbarMouseListener( frame, "Background sprite Y position." ) );
 		editorPanel.addRow( SPRITE_ROT, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SPRITE_ROT).setDocument( new RegexDocument( "-?[0-9]*" ) );
-		editorPanel.getInt(SPRITE_ROT).setText( "0" );
-		editorPanel.getInt(SPRITE_ROT).setEnabled( false );
-		editorPanel.getInt(SPRITE_ROT).addMouseListener( new StatusbarMouseListener( frame, "Background sprite rotation. (degrees, positive = clockwise)" ) );
+		editorPanel.getInt( SPRITE_ROT ).setDocument( new RegexDocument( "-?[0-9]*" ) );
+		editorPanel.getInt( SPRITE_ROT ).setText( "0" );
+		editorPanel.getInt( SPRITE_ROT ).setEnabled( false );
+		editorPanel.getInt( SPRITE_ROT ).addMouseListener( new StatusbarMouseListener( frame, "Background sprite rotation. (degrees, positive = clockwise)" ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( SEEN, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(SEEN).addMouseListener( new StatusbarMouseListener( frame, "The player has been within one hop of this beacon." ) );
+		editorPanel.getBoolean( SEEN ).addMouseListener( new StatusbarMouseListener( frame, "The player has been within one hop of this beacon." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( ENEMY_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(ENEMY_PRESENT).addMouseListener( new StatusbarMouseListener( frame, "A ship is waiting at this beacon. (All nearby fields need values)" ) );
+		editorPanel.getBoolean( ENEMY_PRESENT ).addMouseListener( new StatusbarMouseListener( frame, "A ship is waiting at this beacon. (All nearby fields need values)" ) );
 		editorPanel.addRow( SHIP_EVENT, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(SHIP_EVENT).setEnabled( false );
-		editorPanel.getCombo(SHIP_EVENT).addMouseListener( new StatusbarMouseListener( frame, "A ship event to trigger and forget upon arrival (spawning a new nearby ship)." ) );
+		editorPanel.getCombo( SHIP_EVENT ).setEnabled( false );
+		editorPanel.getCombo( SHIP_EVENT ).addMouseListener( new StatusbarMouseListener( frame, "A ship event to trigger and forget upon arrival (spawning a new nearby ship)." ) );
 		editorPanel.addRow( AUTO_SHIP, FieldEditorPanel.ContentType.STRING );
-		editorPanel.getString(AUTO_SHIP).setEditable( false );
-		editorPanel.getString(AUTO_SHIP).setEnabled( false );
-		editorPanel.getString(AUTO_SHIP).addMouseListener( new StatusbarMouseListener( frame, "The blueprint (or blueprintList) of an auto ship to appear." ) );
+		editorPanel.getString( AUTO_SHIP ).setEditable( false );
+		editorPanel.getString( AUTO_SHIP ).setEnabled( false );
+		editorPanel.getString( AUTO_SHIP ).addMouseListener( new StatusbarMouseListener( frame, "The blueprint (or blueprintList) of an auto ship to appear." ) );
 		editorPanel.addRow( SHIP_EVENT_SEED, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(SHIP_EVENT_SEED).setDocument( new RegexDocument( "-?[0-9]*" ) );
-		editorPanel.getInt(SHIP_EVENT_SEED).setText( "0" );
-		editorPanel.getInt(SHIP_EVENT_SEED).setEnabled( false );
-		editorPanel.getInt(SHIP_EVENT_SEED).addMouseListener( new StatusbarMouseListener( frame, "A constant that seeds the random generation of the enemy ship." ) );
+		editorPanel.getInt( SHIP_EVENT_SEED ).setDocument( new RegexDocument( "-?[0-9]*" ) );
+		editorPanel.getInt( SHIP_EVENT_SEED ).setText( "0" );
+		editorPanel.getInt( SHIP_EVENT_SEED ).setEnabled( false );
+		editorPanel.getInt( SHIP_EVENT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A constant that seeds the random generation of the enemy ship." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( FLEET, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(FLEET).addMouseListener( new StatusbarMouseListener( frame, "Fleet background sprites." ) );
+		editorPanel.getCombo( FLEET ).addMouseListener( new StatusbarMouseListener( frame, "Fleet background sprites." ) );
 		editorPanel.addRow( UNDER_ATTACK, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(UNDER_ATTACK).addMouseListener( new StatusbarMouseListener( frame, "The beacon is under attack by rebels (flashing red)." ) );
+		editorPanel.getBoolean( UNDER_ATTACK ).addMouseListener( new StatusbarMouseListener( frame, "The beacon is under attack by rebels (flashing red)." ) );
 
-		editorPanel.getCombo(STARS_LIST).addItem( "" );
-		editorPanel.getCombo(SPRITE_LIST).addItem( "" );
-		editorPanel.getCombo(STARS_IMAGE).addItem( "" );
-		editorPanel.getCombo(SPRITE_IMAGE).addItem( "" );
+		editorPanel.getCombo( STARS_LIST ).addItem( "" );
+		editorPanel.getCombo( SPRITE_LIST ).addItem( "" );
+		editorPanel.getCombo( STARS_IMAGE ).addItem( "" );
+		editorPanel.getCombo( SPRITE_IMAGE ).addItem( "" );
 		for ( BackgroundImageList imageList : allImageListsMap.values() ) {
-			editorPanel.getCombo(STARS_LIST).addItem( imageList );
-			editorPanel.getCombo(SPRITE_LIST).addItem( imageList );
+			editorPanel.getCombo( STARS_LIST ).addItem( imageList );
+			editorPanel.getCombo( SPRITE_LIST ).addItem( imageList );
 		}
 
-		editorPanel.getCombo(SHIP_EVENT).addItem( "" );
+		editorPanel.getCombo( SHIP_EVENT ).addItem( "" );
 		for ( ShipEvent shipEvent : allShipEventsMap.values() ) {
-			editorPanel.getCombo(SHIP_EVENT).addItem( shipEvent );
+			editorPanel.getCombo( SHIP_EVENT ).addItem( shipEvent );
 		}
 
 		if ( beaconRef.get().getVisitCount() > 0 ) {
-			editorPanel.getCombo(STARS_LIST).setEnabled( true );
-			editorPanel.getCombo(STARS_IMAGE).setEnabled( true );
-			editorPanel.getCombo(SPRITE_LIST).setEnabled( true );
-			editorPanel.getCombo(SPRITE_IMAGE).setEnabled( true );
-			editorPanel.getInt(SPRITE_X).setEnabled( true );
-			editorPanel.getInt(SPRITE_Y).setEnabled( true );
-			editorPanel.getInt(SPRITE_ROT).setEnabled( true );
+			editorPanel.getCombo( STARS_LIST ).setEnabled( true );
+			editorPanel.getCombo( STARS_IMAGE ).setEnabled( true );
+			editorPanel.getCombo( SPRITE_LIST ).setEnabled( true );
+			editorPanel.getCombo( SPRITE_IMAGE ).setEnabled( true );
+			editorPanel.getInt( SPRITE_X ).setEnabled( true );
+			editorPanel.getInt( SPRITE_Y ).setEnabled( true );
+			editorPanel.getInt( SPRITE_ROT ).setEnabled( true );
 
-			editorPanel.getSpinner(VISIT_COUNT).setValue( new Integer( beaconRef.get().getVisitCount() ) );
+			editorPanel.getSpinner( VISIT_COUNT ).setValue( new Integer( beaconRef.get().getVisitCount() ) );
 
-			editorPanel.getCombo(STARS_IMAGE).addItem( beaconRef.get().getBgStarscapeImageInnerPath() );
-			editorPanel.getCombo(STARS_IMAGE).setSelectedItem( beaconRef.get().getBgStarscapeImageInnerPath() );
+			editorPanel.getCombo( STARS_IMAGE ).addItem( beaconRef.get().getBgStarscapeImageInnerPath() );
+			editorPanel.getCombo( STARS_IMAGE ).setSelectedItem( beaconRef.get().getBgStarscapeImageInnerPath() );
 
-			editorPanel.getCombo(SPRITE_IMAGE).addItem( beaconRef.get().getBgSpriteImageInnerPath() );
-			editorPanel.getCombo(SPRITE_IMAGE).setSelectedItem( beaconRef.get().getBgSpriteImageInnerPath() );
+			editorPanel.getCombo( SPRITE_IMAGE ).addItem( beaconRef.get().getBgSpriteImageInnerPath() );
+			editorPanel.getCombo( SPRITE_IMAGE ).setSelectedItem( beaconRef.get().getBgSpriteImageInnerPath() );
 
-			editorPanel.getInt(SPRITE_X).setText( ""+ beaconRef.get().getBgSpritePosX() );
-			editorPanel.getInt(SPRITE_Y).setText( ""+ beaconRef.get().getBgSpritePosY() );
-			editorPanel.getInt(SPRITE_ROT).setText( ""+ beaconRef.get().getBgSpriteRotation() );
+			editorPanel.getInt( SPRITE_X ).setText( ""+ beaconRef.get().getBgSpritePosX() );
+			editorPanel.getInt( SPRITE_Y ).setText( ""+ beaconRef.get().getBgSpritePosY() );
+			editorPanel.getInt( SPRITE_ROT ).setText( ""+ beaconRef.get().getBgSpriteRotation() );
 		}
 
-		editorPanel.getBoolean(SEEN).setSelected( beaconRef.get().isSeen() );
+		editorPanel.getBoolean( SEEN ).setSelected( beaconRef.get().isSeen() );
 
 		if ( beaconRef.get().isEnemyPresent() ) {
-			editorPanel.getCombo(SHIP_EVENT).setEnabled( true );
-			editorPanel.getString(AUTO_SHIP).setEnabled( true );
-			editorPanel.getInt(SHIP_EVENT_SEED).setEnabled( true );
+			editorPanel.getCombo( SHIP_EVENT ).setEnabled( true );
+			editorPanel.getString( AUTO_SHIP ).setEnabled( true );
+			editorPanel.getInt( SHIP_EVENT_SEED ).setEnabled( true );
 
-			editorPanel.getBoolean(ENEMY_PRESENT).setSelected( true );
+			editorPanel.getBoolean( ENEMY_PRESENT ).setSelected( true );
 
 			ShipEvent currentShipEvent = allShipEventsMap.get( beaconRef.get().getShipEventId() );
 			if ( currentShipEvent != null )
-				editorPanel.getCombo(SHIP_EVENT).setSelectedItem( currentShipEvent );
+				editorPanel.getCombo( SHIP_EVENT ).setSelectedItem( currentShipEvent );
 
-			editorPanel.getString(AUTO_SHIP).setText( beaconRef.get().getAutoBlueprintId() );
+			editorPanel.getString( AUTO_SHIP ).setText( beaconRef.get().getAutoBlueprintId() );
 
-			editorPanel.getInt(SHIP_EVENT_SEED).setText( ""+ beaconRef.get().getShipEventSeed() );
+			editorPanel.getInt( SHIP_EVENT_SEED ).setText( ""+ beaconRef.get().getShipEventSeed() );
 		}
 
 		for ( FleetPresence fleetPresence : FleetPresence.values() ) {
-			editorPanel.getCombo(FLEET).addItem( fleetPresence );
+			editorPanel.getCombo( FLEET ).addItem( fleetPresence );
 		}
-		editorPanel.getCombo(FLEET).setSelectedItem( beaconRef.get().getFleetPresence() );
+		editorPanel.getCombo( FLEET ).setSelectedItem( beaconRef.get().getFleetPresence() );
 
-		editorPanel.getBoolean(UNDER_ATTACK).setSelected( beaconRef.get().isUnderAttack() );
+		editorPanel.getBoolean( UNDER_ATTACK ).setSelected( beaconRef.get().isUnderAttack() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
@@ -1538,16 +1541,16 @@ public class SavedGameSectorMapPanel extends JPanel {
 				int bgSpritePosY = 0;
 				int bgSpriteRotation = 0;
 
-				Object bgStarscapeImageInnerPathObj = editorPanel.getCombo(STARS_IMAGE).getSelectedItem();
+				Object bgStarscapeImageInnerPathObj = editorPanel.getCombo( STARS_IMAGE ).getSelectedItem();
 				if ( bgStarscapeImageInnerPathObj instanceof BackgroundImage ) {
 					bgStarscapeImageInnerPath = ((BackgroundImage)bgStarscapeImageInnerPathObj).getInnerPath();
 				}
 				else if ( bgStarscapeImageInnerPathObj instanceof String ) {
-					if ( !"".equals(bgStarscapeImageInnerPath) && !"null".equals(bgStarscapeImageInnerPath) )
+					if ( !"".equals( bgStarscapeImageInnerPath ) && !"null".equals( bgStarscapeImageInnerPath ) )
 						bgStarscapeImageInnerPath = (String)bgStarscapeImageInnerPathObj;
 				}
 
-				Object bgSpriteImageInnerPathObj = editorPanel.getCombo(SPRITE_IMAGE).getSelectedItem();
+				Object bgSpriteImageInnerPathObj = editorPanel.getCombo( SPRITE_IMAGE ).getSelectedItem();
 				if ( bgSpriteImageInnerPathObj instanceof BackgroundImage ) {
 					bgSpriteImageInnerPath = ((BackgroundImage)bgSpriteImageInnerPathObj).getInnerPath();
 				}
@@ -1589,20 +1592,20 @@ public class SavedGameSectorMapPanel extends JPanel {
 					beaconRef.get().setBgSpriteRotation( 0 );
 				}
 
-				beaconRef.get().setSeen( editorPanel.getBoolean(SEEN).isSelected() );
+				beaconRef.get().setSeen( editorPanel.getBoolean( SEEN ).isSelected() );
 
 				String shipEventId = null;
 				String autoBlueprintId = null;
 				int shipEventSeed = 0;
-				boolean enemyPresent = editorPanel.getBoolean(ENEMY_PRESENT).isSelected();
+				boolean enemyPresent = editorPanel.getBoolean( ENEMY_PRESENT ).isSelected();
 
-				Object shipEventObj = editorPanel.getCombo(SHIP_EVENT).getSelectedItem();
+				Object shipEventObj = editorPanel.getCombo( SHIP_EVENT ).getSelectedItem();
 				if ( shipEventObj instanceof ShipEvent )
 					shipEventId = ((ShipEvent)shipEventObj).getId();
 
 				autoBlueprintId = editorPanel.getString(AUTO_SHIP).getText();
 
-				newString = editorPanel.getInt(SHIP_EVENT_SEED).getText();
+				newString = editorPanel.getInt( SHIP_EVENT_SEED ).getText();
 				try { shipEventSeed = Integer.parseInt( newString ); }
 				catch ( NumberFormatException e ) {}
 
@@ -1618,8 +1621,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 					beaconRef.get().setShipEventSeed( 0 );
 				}
 
-				beaconRef.get().setFleetPresence( (FleetPresence)editorPanel.getCombo(FLEET).getSelectedItem() );
-				beaconRef.get().setUnderAttack( editorPanel.getBoolean(UNDER_ATTACK).isSelected() );
+				beaconRef.get().setFleetPresence( (FleetPresence)editorPanel.getCombo( FLEET ).getSelectedItem() );
+				beaconRef.get().setUnderAttack( editorPanel.getBoolean( UNDER_ATTACK ).isSelected() );
 
 				beaconRef.fireReferenceChange();
 
@@ -1629,18 +1632,18 @@ public class SavedGameSectorMapPanel extends JPanel {
 		createSidePanel( title, editorPanel, null, applyCallback );
 
 		ActionListener beaconListener = new ActionListener() {
-			private JComboBox starsListCombo = editorPanel.getCombo(STARS_LIST);
-			private JComboBox starsImageCombo = editorPanel.getCombo(STARS_IMAGE);
-			private JComboBox spriteListCombo = editorPanel.getCombo(SPRITE_LIST);
-			private JComboBox spriteImageCombo = editorPanel.getCombo(SPRITE_IMAGE);
-			private JTextField spriteXField = editorPanel.getInt(SPRITE_X);
-			private JTextField spriteYField = editorPanel.getInt(SPRITE_Y);
-			private JTextField spriteRotField = editorPanel.getInt(SPRITE_ROT);
+			private JComboBox starsListCombo = editorPanel.getCombo( STARS_LIST );
+			private JComboBox starsImageCombo = editorPanel.getCombo( STARS_IMAGE );
+			private JComboBox spriteListCombo = editorPanel.getCombo( SPRITE_LIST );
+			private JComboBox spriteImageCombo = editorPanel.getCombo( SPRITE_IMAGE );
+			private JTextField spriteXField = editorPanel.getInt( SPRITE_X );
+			private JTextField spriteYField = editorPanel.getInt( SPRITE_Y );
+			private JTextField spriteRotField = editorPanel.getInt( SPRITE_ROT );
 
-			private JCheckBox enemyPresentCheck = editorPanel.getBoolean(ENEMY_PRESENT);
-			private JComboBox shipEventCombo = editorPanel.getCombo(SHIP_EVENT);
-			private JTextField autoShipField = editorPanel.getString(AUTO_SHIP);
-			private JTextField shipEventSeedField = editorPanel.getInt(SHIP_EVENT_SEED);
+			private JCheckBox enemyPresentCheck = editorPanel.getBoolean( ENEMY_PRESENT );
+			private JComboBox shipEventCombo = editorPanel.getCombo( SHIP_EVENT );
+			private JTextField autoShipField = editorPanel.getString( AUTO_SHIP );
+			private JTextField shipEventSeedField = editorPanel.getInt( SHIP_EVENT_SEED );
 
 			@Override
 			public void actionPerformed( ActionEvent e ) {
@@ -1684,9 +1687,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 					Object shipEventObj = shipEventCombo.getSelectedItem();
 					if ( shipEventObj instanceof ShipEvent ) {
 						String autoBlueprintId = ((ShipEvent)shipEventObj).getAutoBlueprintId();
-						editorPanel.getString(AUTO_SHIP).setText( autoBlueprintId );
+						editorPanel.getString( AUTO_SHIP ).setText( autoBlueprintId );
 					} else {
-						editorPanel.getString(AUTO_SHIP).setText( "" );
+						editorPanel.getString( AUTO_SHIP ).setText( "" );
 					}
 				}
 				if ( resize ) {
@@ -1695,20 +1698,20 @@ public class SavedGameSectorMapPanel extends JPanel {
 				}
 			}
 		};
-		editorPanel.getCombo(STARS_LIST).addActionListener( beaconListener );
-		editorPanel.getCombo(SPRITE_LIST).addActionListener( beaconListener );
-		editorPanel.getBoolean(ENEMY_PRESENT).addActionListener( beaconListener );
-		editorPanel.getCombo(SHIP_EVENT).addActionListener( beaconListener );
+		editorPanel.getCombo( STARS_LIST ).addActionListener( beaconListener );
+		editorPanel.getCombo( SPRITE_LIST ).addActionListener( beaconListener );
+		editorPanel.getBoolean( ENEMY_PRESENT ).addActionListener( beaconListener );
+		editorPanel.getCombo( SHIP_EVENT ).addActionListener( beaconListener );
 
 		ChangeListener visitListener = new ChangeListener() {
-			private JSpinner visitCountSpinner = editorPanel.getSpinner(VISIT_COUNT);
-			private JComboBox starsListCombo = editorPanel.getCombo(STARS_LIST);
-			private JComboBox starsImageCombo = editorPanel.getCombo(STARS_IMAGE);
-			private JComboBox spriteListCombo = editorPanel.getCombo(SPRITE_LIST);
-			private JComboBox spriteImageCombo = editorPanel.getCombo(SPRITE_IMAGE);
-			private JTextField spriteXField = editorPanel.getInt(SPRITE_X);
-			private JTextField spriteYField = editorPanel.getInt(SPRITE_Y);
-			private JTextField spriteRotField = editorPanel.getInt(SPRITE_ROT);
+			private JSpinner visitCountSpinner = editorPanel.getSpinner( VISIT_COUNT );
+			private JComboBox starsListCombo = editorPanel.getCombo( STARS_LIST );
+			private JComboBox starsImageCombo = editorPanel.getCombo( STARS_IMAGE );
+			private JComboBox spriteListCombo = editorPanel.getCombo( SPRITE_LIST );
+			private JComboBox spriteImageCombo = editorPanel.getCombo( SPRITE_IMAGE );
+			private JTextField spriteXField = editorPanel.getInt( SPRITE_X );
+			private JTextField spriteYField = editorPanel.getInt( SPRITE_Y );
+			private JTextField spriteRotField = editorPanel.getInt( SPRITE_ROT );
 
 			@Override
 			public void stateChanged( ChangeEvent e ) {
@@ -1736,7 +1739,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				}
 			}
 		};
-		editorPanel.getSpinner(VISIT_COUNT).addChangeListener( visitListener );
+		editorPanel.getSpinner( VISIT_COUNT ).addChangeListener( visitListener );
 
 		addSidePanelSeparator( 6 );
 
@@ -1757,14 +1760,14 @@ public class SavedGameSectorMapPanel extends JPanel {
 				for ( int i=0; i < listCombos.length; i++ ) {
 					defaultLists[i] = allImageListsMap.get( listNames[i] );
 					if ( defaultLists[i] == null || defaultLists[i].getImages().size() == 0 ) {
-						frame.setStatusText( "Random visit failed. The default \""+ listNames[i] +"\" image list was missing or empty." );
+						frame.setStatusText( String.format( "Random visit failed. The default \"%s\" image list was missing or empty.", listNames[i] ) );
 						return;
 					}
 					randomImages[i] = defaultLists[i].getImages().get( (int)(Math.random()*defaultLists[i].getImages().size()) );
 				}
 
 				if ( editorPanel.parseSpinnerInt( VISIT_COUNT ) == 0 ) {
-					editorPanel.getSpinner(VISIT_COUNT).setValue( new Integer( 1 ) );
+					editorPanel.getSpinner( VISIT_COUNT ).setValue( new Integer( 1 ) );
 				}
 
 				for ( int i=0; i < listCombos.length; i++ ) {
@@ -1780,9 +1783,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 								int bgSpritePosX = (int)(Math.random() * (SCREEN_WIDTH - randomImages[i].getWidth()));
 								int bgSpritePosY = (int)(Math.random() * (SCREEN_HEIGHT - randomImages[i].getHeight()));
 								int bgSpriteRotation = (Math.random() >= 0.5 ? 0 : 180);
-								editorPanel.getInt(SPRITE_X).setText( ""+ bgSpritePosX );
-								editorPanel.getInt(SPRITE_Y).setText( ""+ bgSpritePosY );
-								editorPanel.getInt(SPRITE_ROT).setText( ""+ bgSpriteRotation );
+								editorPanel.getInt( SPRITE_X ).setText( ""+ bgSpritePosX );
+								editorPanel.getInt( SPRITE_Y ).setText( ""+ bgSpritePosY );
+								editorPanel.getInt( SPRITE_ROT ).setText( ""+ bgSpriteRotation );
 							}
 						}
 					}
@@ -1796,7 +1799,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 	private void showPlayerShipEditor( final PlayerShipSprite playerShipSprite ) {
 
-		String title = String.format("Player Ship (Beacon %02d)", mapLayout.getBeaconId( playerShipSprite ) );
+		String title = String.format( "Player Ship (Beacon %02d)", mapLayout.getBeaconId( playerShipSprite ) );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 
@@ -1837,9 +1840,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
 
-		editorPanel.getInt(FUEL).setText( ""+ beaconRef.get().getStore().getFuel() );
-		editorPanel.getInt(MISSILES).setText( ""+ beaconRef.get().getStore().getMissiles() );
-		editorPanel.getInt(DRONE_PARTS).setText( ""+ beaconRef.get().getStore().getDroneParts() );
+		editorPanel.getInt( FUEL ).setText( ""+ beaconRef.get().getStore().getFuel() );
+		editorPanel.getInt( MISSILES ).setText( ""+ beaconRef.get().getStore().getMissiles() );
+		editorPanel.getInt( DRONE_PARTS ).setText( ""+ beaconRef.get().getStore().getDroneParts() );
 
 		final JTabbedPane shelfTabsPane = new JTabbedPane();
 		shelfTabsPane.setTabLayoutPolicy( JTabbedPane.SCROLL_TAB_LAYOUT );
@@ -1961,41 +1964,41 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.addRow( ENCOUNTERS_FILE, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.addRow( EVENT, FieldEditorPanel.ContentType.COMBO );
 
-		editorPanel.getCombo(ENCOUNTERS_FILE).addItem( "" );
+		editorPanel.getCombo( ENCOUNTERS_FILE ).addItem( "" );
 		for ( String fileName : allEncountersMap.keySet() ) {
-			editorPanel.getCombo(ENCOUNTERS_FILE).addItem( fileName );
+			editorPanel.getCombo( ENCOUNTERS_FILE ).addItem( fileName );
 		}
 
 		// Preselect the file of the current event.
-		editorPanel.getCombo(EVENT).addItem( "" );
+		editorPanel.getCombo( EVENT ).addItem( "" );
 		for ( Map.Entry<String,Encounters> entry : allEncountersMap.entrySet() ) {
 			FTLEvent currentEvent = entry.getValue().getEventById( questSprite.getQuestId() );
 			FTLEventList currentEventList = entry.getValue().getEventListById( questSprite.getQuestId() );
 			if ( currentEvent != null || currentEventList != null ) {
-				editorPanel.getCombo(ENCOUNTERS_FILE).setSelectedItem( entry.getKey() );
+				editorPanel.getCombo( ENCOUNTERS_FILE ).setSelectedItem( entry.getKey() );
 
 				for ( FTLEvent tmpEvent : entry.getValue().getEvents() ) {
 					if ( tmpEvent.getId() != null )
-						editorPanel.getCombo(EVENT).addItem( tmpEvent );
+						editorPanel.getCombo( EVENT ).addItem( tmpEvent );
 				}
-				editorPanel.getCombo(EVENT).addItem( "- = Lists = -" );
+				editorPanel.getCombo( EVENT ).addItem( "- = Lists = -" );
 				for ( FTLEventList tmpEventList : entry.getValue().getEventLists() ) {
 					if ( tmpEventList.getId() != null )
-						editorPanel.getCombo(EVENT).addItem( tmpEventList );
+						editorPanel.getCombo( EVENT ).addItem( tmpEventList );
 				}
 				if ( currentEvent != null ) {
-					editorPanel.getCombo(EVENT).setSelectedItem( currentEvent );
+					editorPanel.getCombo( EVENT ).setSelectedItem( currentEvent );
 				} else if ( currentEventList != null ) {
-					editorPanel.getCombo(EVENT).setSelectedItem( currentEventList );
+					editorPanel.getCombo( EVENT ).setSelectedItem( currentEventList );
 				} else {
-					editorPanel.getCombo(EVENT).setSelectedItem( "" );
+					editorPanel.getCombo( EVENT ).setSelectedItem( "" );
 				}
 				break;
 			}
 		}
 		// If no file contains the current event, complain.
-		if ( "".equals( editorPanel.getCombo(ENCOUNTERS_FILE).getSelectedItem() ) ) {
-			String message = "The current event/eventlist id is unrecognized: "+ questSprite.getQuestId() +".";
+		if ( "".equals( editorPanel.getCombo( ENCOUNTERS_FILE ).getSelectedItem() ) ) {
+			String message = String.format( "The current event/eventlist id is unrecognized: %s", questSprite.getQuestId() );
 			log.error( message );
 			frame.setStatusText( message );
 		}
@@ -2003,12 +2006,14 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				Object evtObj = editorPanel.getCombo(EVENT).getSelectedItem();
+				Object evtObj = editorPanel.getCombo( EVENT ).getSelectedItem();
 				if ( evtObj instanceof FTLEvent ) {
 					questSprite.setQuestId( ((FTLEvent)evtObj).getId() );
-				} else if ( evtObj instanceof FTLEventList ) {
+				}
+				else if ( evtObj instanceof FTLEventList ) {
 					questSprite.setQuestId( ((FTLEventList)evtObj).getId() );
-				} else {
+				}
+				else {
 					frame.setStatusText( "No event/eventlist id has been selected." );
 					return;
 				}
@@ -2018,8 +2023,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 		createSidePanel( title, editorPanel, null, applyCallback );
 
 		ActionListener questListener = new ActionListener() {
-			private JComboBox fileCombo = editorPanel.getCombo(ENCOUNTERS_FILE);
-			private JComboBox eventCombo = editorPanel.getCombo(EVENT);
+			private JComboBox fileCombo = editorPanel.getCombo( ENCOUNTERS_FILE );
+			private JComboBox eventCombo = editorPanel.getCombo( EVENT );
 
 			@Override
 			public void actionPerformed( ActionEvent e ) {
@@ -2028,7 +2033,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 					eventCombo.removeAllItems();
 					Object selectedFile = fileCombo.getSelectedItem();
 
-					editorPanel.getCombo(EVENT).addItem( "" );
+					editorPanel.getCombo( EVENT ).addItem( "" );
 					if ( "".equals( selectedFile ) == false ) {
 						Encounters tmpEncounters = allEncountersMap.get( selectedFile );
 						if ( tmpEncounters != null ) {
@@ -2048,7 +2053,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				}
 			}
 		};
-		editorPanel.getCombo(ENCOUNTERS_FILE).addActionListener( questListener );
+		editorPanel.getCombo( ENCOUNTERS_FILE ).addActionListener( questListener );
 
 		addSidePanelSeparator( 6 );
 
