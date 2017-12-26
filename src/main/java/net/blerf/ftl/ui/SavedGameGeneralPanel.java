@@ -140,7 +140,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		cargoPanel = new FieldEditorPanel( false );
 		cargoPanel.setBorder( BorderFactory.createTitledBorder( "Cargo" ) );
 
-		for (int i=0; i < cargoSlots.length; i++) {
+		for ( int i=0; i < cargoSlots.length; i++ ) {
 			cargoPanel.addRow( cargoSlots[i], FieldEditorPanel.ContentType.COMBO );
 		}
 		cargoPanel.addBlankRow();
@@ -346,18 +346,18 @@ public class SavedGameGeneralPanel extends JPanel {
 			sessionPanel.setComboAndReminder( DIFFICULTY, gameState.getDifficulty() );
 			sessionPanel.setIntAndReminder( TOP_BETA, gameState.getUnknownBeta() );
 
-			for (int i=0; i < cargoSlots.length; i++) {
-				cargoPanel.getCombo(cargoSlots[i]).addItem( "" );
-				cargoPanel.getCombo(cargoSlots[i]).addItem( "Weapons" );
-				cargoPanel.getCombo(cargoSlots[i]).addItem( "-------" );
+			for ( int i=0; i < cargoSlots.length; i++ ) {
+				cargoPanel.getCombo( cargoSlots[i] ).addItem( "" );
+				cargoPanel.getCombo( cargoSlots[i] ).addItem( "Weapons" );
+				cargoPanel.getCombo( cargoSlots[i] ).addItem( "-------" );
 				for ( WeaponBlueprint weaponBlueprint : DataManager.get().getWeapons().values() ) {
-					cargoPanel.getCombo(cargoSlots[i]).addItem( weaponBlueprint );
+					cargoPanel.getCombo( cargoSlots[i] ).addItem( weaponBlueprint );
 				}
-				cargoPanel.getCombo(cargoSlots[i]).addItem( "" );
-				cargoPanel.getCombo(cargoSlots[i]).addItem( "Drones" );
-				cargoPanel.getCombo(cargoSlots[i]).addItem( "------" );
+				cargoPanel.getCombo( cargoSlots[i] ).addItem( "" );
+				cargoPanel.getCombo( cargoSlots[i] ).addItem( "Drones" );
+				cargoPanel.getCombo( cargoSlots[i] ).addItem( "------" );
 				for ( DroneBlueprint droneBlueprint : DataManager.get().getDrones().values() ) {
-					cargoPanel.getCombo(cargoSlots[i]).addItem( droneBlueprint );
+					cargoPanel.getCombo( cargoSlots[i] ).addItem( droneBlueprint );
 				}
 
 				if ( gameState.getCargoIdList().size() > i ) {
@@ -514,8 +514,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		catch ( NumberFormatException e ) {}
 
 		gameState.getCargoIdList().clear();
-		for (int i=0; i < cargoSlots.length; i++) {
-			Object cargoObj = cargoPanel.getCombo(cargoSlots[i]).getSelectedItem();
+		for ( int i=0; i < cargoSlots.length; i++ ) {
+			Object cargoObj = cargoPanel.getCombo( cargoSlots[i] ).getSelectedItem();
 			if ( cargoObj instanceof WeaponBlueprint ) {
 				gameState.addCargoItemId( ((WeaponBlueprint)cargoObj).getId() );
 			}
