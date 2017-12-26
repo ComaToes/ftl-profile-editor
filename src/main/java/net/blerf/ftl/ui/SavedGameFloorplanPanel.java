@@ -2207,14 +2207,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		JPanel applyPanel = new JPanel();
 		applyPanel.setLayout( new BoxLayout( applyPanel, BoxLayout.X_AXIS ) );
-		JButton cancelBtn = new JButton("Cancel");
-		applyPanel.add( cancelBtn );
+		JButton closeBtn = new JButton( "Close" );
+		applyPanel.add( closeBtn );
 		applyPanel.add( Box.createRigidArea( new Dimension( 15, 1 ) ) );
-		JButton applyBtn = new JButton("Apply");
+		JButton applyBtn = new JButton( "Apply" );
 		applyPanel.add( applyBtn );
 		sidePanel.add( applyPanel );
 
-		cancelBtn.addActionListener(new ActionListener() {
+		closeBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
