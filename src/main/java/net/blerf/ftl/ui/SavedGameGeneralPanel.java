@@ -119,7 +119,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		this.frame = frame;
 
 		sessionPanel = new FieldEditorPanel( true );
-		sessionPanel.setBorder( BorderFactory.createTitledBorder("Session") );
+		sessionPanel.setBorder( BorderFactory.createTitledBorder( "Session" ) );
 		sessionPanel.addRow( TOTAL_SHIPS_DEFEATED, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( TOTAL_BEACONS, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( TOTAL_SCRAP, FieldEditorPanel.ContentType.INTEGER );
@@ -127,18 +127,18 @@ public class SavedGameGeneralPanel extends JPanel {
 		sessionPanel.addRow( DLC, FieldEditorPanel.ContentType.BOOLEAN );
 		sessionPanel.addRow( DIFFICULTY, FieldEditorPanel.ContentType.COMBO );
 		sessionPanel.addRow( TOP_BETA, FieldEditorPanel.ContentType.INTEGER );
-		sessionPanel.getInt(TOP_BETA).setDocument( new RegexDocument("-?[0-9]*") );
+		sessionPanel.getInt( TOP_BETA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		sessionPanel.addBlankRow();
 		sessionPanel.addFillRow();
 
-		sessionPanel.getBoolean(DLC).setEnabled( false );
+		sessionPanel.getBoolean( DLC ).setEnabled( false );
 
-		sessionPanel.getBoolean(DLC).addMouseListener( new StatusbarMouseListener(frame, "Toggle FTL:AE content (changing to false may be dangerous).") );
-		sessionPanel.getCombo(DIFFICULTY).addMouseListener( new StatusbarMouseListener(frame, "Difficulty (FTL 1.01-1.03.3 did not have HARD).") );
-		sessionPanel.getInt(TOP_BETA).addMouseListener( new StatusbarMouseListener(frame, "Unknown session field. Always 0?") );
+		sessionPanel.getBoolean( DLC ).addMouseListener( new StatusbarMouseListener( frame, "Toggle FTL:AE content (changing to false may be dangerous)." ) );
+		sessionPanel.getCombo( DIFFICULTY ).addMouseListener( new StatusbarMouseListener( frame, "Difficulty (FTL 1.01-1.03.3 did not have HARD)." ) );
+		sessionPanel.getInt( TOP_BETA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown session field. Always 0?" ) );
 
 		cargoPanel = new FieldEditorPanel( false );
-		cargoPanel.setBorder( BorderFactory.createTitledBorder("Cargo") );
+		cargoPanel.setBorder( BorderFactory.createTitledBorder( "Cargo" ) );
 
 		for (int i=0; i < cargoSlots.length; i++) {
 			cargoPanel.addRow( cargoSlots[i], FieldEditorPanel.ContentType.COMBO );
@@ -147,7 +147,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		cargoPanel.addFillRow();
 
 		envPanel = new FieldEditorPanel( true );
-		envPanel.setBorder( BorderFactory.createTitledBorder("Environment") );
+		envPanel.setBorder( BorderFactory.createTitledBorder( "Environment" ) );
 		envPanel.addRow( ENV_RED_GIANT_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
 		envPanel.addRow( ENV_PULSAR_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
 		envPanel.addRow( ENV_PDS_PRESENT, FieldEditorPanel.ContentType.BOOLEAN );
@@ -155,68 +155,68 @@ public class SavedGameGeneralPanel extends JPanel {
 		envPanel.addBlankRow();
 		envPanel.addRow( ENV_ASTEROID_FIELD, FieldEditorPanel.ContentType.BOOLEAN );
 		envPanel.addRow( ENV_ASTEROID_ALPHA, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_ASTEROID_ALPHA).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_ASTEROID_ALPHA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addRow( ENV_ASTEROID_STRAY_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_ASTEROID_STRAY_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_ASTEROID_STRAY_TICKS ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addRow( ENV_ASTEROID_GAMMA, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_ASTEROID_GAMMA).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_ASTEROID_GAMMA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addRow( ENV_ASTEROID_BKG_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_ASTEROID_BKG_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_ASTEROID_BKG_TICKS ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addRow( ENV_ASTEROID_TARGET, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_ASTEROID_TARGET).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_ASTEROID_TARGET ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addBlankRow();
 		envPanel.addRow( ENV_FLARE_FADE_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_FLARE_FADE_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_FLARE_FADE_TICKS ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addRow( ENV_HAVOC_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_HAVOC_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_HAVOC_TICKS ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addRow( ENV_PDS_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		envPanel.getInt(ENV_PDS_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
+		envPanel.getInt( ENV_PDS_TICKS ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		envPanel.addBlankRow();
 		envPanel.addFillRow();
 
-		envPanel.getBoolean(ENV_RED_GIANT_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of a red giant hazard.") );
-		envPanel.getBoolean(ENV_PULSAR_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of a pulsar hazard.") );
-		envPanel.getBoolean(ENV_PDS_PRESENT).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of a PDS hazard.") );
-		envPanel.getCombo(ENV_VULN).addMouseListener( new StatusbarMouseListener(frame, "Which ship the environment will affect (PDS only).") );
-		envPanel.getBoolean(ENV_ASTEROID_FIELD).addMouseListener( new StatusbarMouseListener(frame, "Toggle the presence of asteroids.") );
-		envPanel.getInt(ENV_ASTEROID_ALPHA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_ASTEROID_STRAY_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_ASTEROID_GAMMA).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_ASTEROID_BKG_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_ASTEROID_TARGET).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		envPanel.getInt(ENV_FLARE_FADE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Active during red giant/pulsar flares, when the entire screen fades.") );
-		envPanel.getInt(ENV_HAVOC_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Red giant/pulsar/PDS only. Goal varies.") );
-		envPanel.getInt(ENV_PDS_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		envPanel.getBoolean( ENV_RED_GIANT_PRESENT ).addMouseListener( new StatusbarMouseListener( frame, "Toggle the presence of a red giant hazard." ) );
+		envPanel.getBoolean( ENV_PULSAR_PRESENT ).addMouseListener( new StatusbarMouseListener( frame, "Toggle the presence of a pulsar hazard." ) );
+		envPanel.getBoolean( ENV_PDS_PRESENT ).addMouseListener( new StatusbarMouseListener( frame, "Toggle the presence of a PDS hazard." ) );
+		envPanel.getCombo( ENV_VULN ).addMouseListener( new StatusbarMouseListener( frame, "Which ship the environment will affect (PDS only)." ) );
+		envPanel.getBoolean( ENV_ASTEROID_FIELD ).addMouseListener( new StatusbarMouseListener( frame, "Toggle the presence of asteroids." ) );
+		envPanel.getInt( ENV_ASTEROID_ALPHA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		envPanel.getInt( ENV_ASTEROID_STRAY_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		envPanel.getInt( ENV_ASTEROID_GAMMA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		envPanel.getInt( ENV_ASTEROID_BKG_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		envPanel.getInt( ENV_ASTEROID_TARGET ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		envPanel.getInt( ENV_FLARE_FADE_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Active during red giant/pulsar flares, when the entire screen fades." ) );
+		envPanel.getInt( ENV_HAVOC_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Red giant/pulsar/PDS only. Goal varies." ) );
+		envPanel.getInt( ENV_PDS_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
 
-		envPanel.getBoolean(ENV_ASTEROID_FIELD).addItemListener(new ItemListener() {
+		envPanel.getBoolean( ENV_ASTEROID_FIELD ).addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged( ItemEvent e ) {
 				boolean asteroidsPresent = ( e.getStateChange() == ItemEvent.SELECTED );
 				if ( !asteroidsPresent ) {
-					envPanel.getInt(ENV_ASTEROID_ALPHA).setText( "0" );
-					envPanel.getInt(ENV_ASTEROID_STRAY_TICKS).setText( "0" );
-					envPanel.getInt(ENV_ASTEROID_GAMMA).setText( "0" );
-					envPanel.getInt(ENV_ASTEROID_BKG_TICKS).setText( "0" );
-					envPanel.getInt(ENV_ASTEROID_TARGET).setText( "0" );
+					envPanel.getInt( ENV_ASTEROID_ALPHA ).setText( "0" );
+					envPanel.getInt( ENV_ASTEROID_STRAY_TICKS ).setText( "0" );
+					envPanel.getInt( ENV_ASTEROID_GAMMA ).setText( "0" );
+					envPanel.getInt( ENV_ASTEROID_BKG_TICKS ).setText( "0" );
+					envPanel.getInt( ENV_ASTEROID_TARGET ).setText( "0" );
 				}
-				envPanel.getInt(ENV_ASTEROID_ALPHA).setEnabled( asteroidsPresent );
-				envPanel.getInt(ENV_ASTEROID_STRAY_TICKS).setEnabled( asteroidsPresent );
-				envPanel.getInt(ENV_ASTEROID_GAMMA).setEnabled( asteroidsPresent );
-				envPanel.getInt(ENV_ASTEROID_BKG_TICKS).setEnabled( asteroidsPresent );
-				envPanel.getInt(ENV_ASTEROID_TARGET).setEnabled( asteroidsPresent );
+				envPanel.getInt( ENV_ASTEROID_ALPHA ).setEnabled( asteroidsPresent );
+				envPanel.getInt( ENV_ASTEROID_STRAY_TICKS ).setEnabled( asteroidsPresent );
+				envPanel.getInt( ENV_ASTEROID_GAMMA ).setEnabled( asteroidsPresent );
+				envPanel.getInt( ENV_ASTEROID_BKG_TICKS ).setEnabled( asteroidsPresent );
+				envPanel.getInt( ENV_ASTEROID_TARGET ).setEnabled( asteroidsPresent );
 			}
 		});
-		forceCheckBox( envPanel.getBoolean(ENV_ASTEROID_FIELD), false );
+		forceCheckBox( envPanel.getBoolean( ENV_ASTEROID_FIELD ), false );
 
 		aiPanel = new FieldEditorPanel( true );
-		aiPanel.setBorder( BorderFactory.createTitledBorder("Nearby Ship AI") );
+		aiPanel.setBorder( BorderFactory.createTitledBorder( "Nearby Ship AI" ) );
 		aiPanel.addRow( AI_SURRENDERED, FieldEditorPanel.ContentType.BOOLEAN );
 		aiPanel.addRow( AI_ESCAPING, FieldEditorPanel.ContentType.BOOLEAN );
 		aiPanel.addRow( AI_DESTROYED, FieldEditorPanel.ContentType.BOOLEAN );
 		aiPanel.addRow( AI_SURRENDER_THRESHOLD, FieldEditorPanel.ContentType.INTEGER );
-		aiPanel.getInt(AI_SURRENDER_THRESHOLD).setDocument( new RegexDocument("-?[0-9]*") );
+		aiPanel.getInt( AI_SURRENDER_THRESHOLD ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		aiPanel.addRow( AI_ESCAPE_THRESHOLD, FieldEditorPanel.ContentType.INTEGER );
-		aiPanel.getInt(AI_ESCAPE_THRESHOLD).setDocument( new RegexDocument("-?[0-9]*") );
+		aiPanel.getInt( AI_ESCAPE_THRESHOLD ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		aiPanel.addRow( AI_ESCAPE_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		aiPanel.addRow( AI_STALEMATE, FieldEditorPanel.ContentType.BOOLEAN );
 		aiPanel.addRow( AI_STALEMATE_TICKS, FieldEditorPanel.ContentType.INTEGER );
@@ -225,44 +225,44 @@ public class SavedGameGeneralPanel extends JPanel {
 		aiPanel.addBlankRow();
 		aiPanel.addFillRow();
 
-		aiPanel.getBoolean(AI_SURRENDERED).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether surrender was offered.") );
-		aiPanel.getBoolean(AI_ESCAPING).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether the nearby ship's FTL is charging to escape.") );
-		aiPanel.getBoolean(AI_DESTROYED).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether the nearby ship was destroyed.") );
-		aiPanel.getInt(AI_SURRENDER_THRESHOLD).addMouseListener( new StatusbarMouseListener(frame, "Hull amount that will cause the ship to surrender (may be negative).") );
-		aiPanel.getInt(AI_ESCAPE_THRESHOLD).addMouseListener( new StatusbarMouseListener(frame, "Hull amount that will cause the ship to flee (may be negative).") );
-		aiPanel.getInt(AI_ESCAPE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while waiting for the nearby ship's FTL to charge (Decrements to 0).") );
-		aiPanel.getBoolean(AI_STALEMATE).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		aiPanel.getInt(AI_STALEMATE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		aiPanel.getInt(AI_BOARDING_ATTEMPTS).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
-		aiPanel.getInt(AI_BOARDERS_NEEDED).addMouseListener( new StatusbarMouseListener(frame, "Unknown.") );
+		aiPanel.getBoolean( AI_SURRENDERED ).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether surrender was offered." ) );
+		aiPanel.getBoolean( AI_ESCAPING ).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether the nearby ship's FTL is charging to escape." ) );
+		aiPanel.getBoolean( AI_DESTROYED ).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether the nearby ship was destroyed." ) );
+		aiPanel.getInt( AI_SURRENDER_THRESHOLD ).addMouseListener( new StatusbarMouseListener( frame, "Hull amount that will cause the ship to surrender (may be negative)." ) );
+		aiPanel.getInt( AI_ESCAPE_THRESHOLD ).addMouseListener( new StatusbarMouseListener( frame, "Hull amount that will cause the ship to flee (may be negative)." ) );
+		aiPanel.getInt( AI_ESCAPE_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Time elapsed while waiting for the nearby ship's FTL to charge (Decrements to 0)." ) );
+		aiPanel.getBoolean( AI_STALEMATE ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		aiPanel.getInt( AI_STALEMATE_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		aiPanel.getInt( AI_BOARDING_ATTEMPTS ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		aiPanel.getInt( AI_BOARDERS_NEEDED ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
 
 		unknownsPanel = new FieldEditorPanel( true );
-		unknownsPanel.setBorder( BorderFactory.createTitledBorder("Top-Level Unknowns") );
+		unknownsPanel.setBorder( BorderFactory.createTitledBorder( "Top-Level Unknowns" ) );
 		unknownsPanel.addRow( TOP_WAITING, FieldEditorPanel.ContentType.BOOLEAN );
 		unknownsPanel.addRow( TOP_WAIT_EVENT_SEED, FieldEditorPanel.ContentType.INTEGER );
-		unknownsPanel.getInt(TOP_WAIT_EVENT_SEED).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.getInt( TOP_WAIT_EVENT_SEED ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		unknownsPanel.addRow( TOP_EPSILON, FieldEditorPanel.ContentType.STRING );
 		unknownsPanel.addRow( TOP_MU, FieldEditorPanel.ContentType.INTEGER );
-		unknownsPanel.getInt(TOP_MU).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.getInt( TOP_MU ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		unknownsPanel.addBlankRow();
 		unknownsPanel.addRow( TOP_NU, FieldEditorPanel.ContentType.INTEGER );
-		unknownsPanel.getInt(TOP_NU).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.getInt( TOP_NU ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		unknownsPanel.addRow( TOP_XI, FieldEditorPanel.ContentType.INTEGER );
-		unknownsPanel.getInt(TOP_XI).setDocument( new RegexDocument("-?[0-9]*") );
+		unknownsPanel.getInt( TOP_XI ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		unknownsPanel.addRow( TOP_AUTOFIRE, FieldEditorPanel.ContentType.BOOLEAN );
 		unknownsPanel.addBlankRow();
 		unknownsPanel.addFillRow();
 
-		unknownsPanel.getBoolean(TOP_WAITING).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether any current random event is a wait event. (Set a wait seed!)") );
-		unknownsPanel.getInt(TOP_WAIT_EVENT_SEED).addMouseListener( new StatusbarMouseListener(frame, "Seed for random wait events. (-1 when not set. Waiting without a seed crashes FTL.)") );
-		unknownsPanel.getString(TOP_EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Rare eventId. Related to waiting?") );
-		unknownsPanel.getInt(TOP_MU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Maybe event-related?") );
-		unknownsPanel.getInt(TOP_NU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the player ship.") );
-		unknownsPanel.getInt(TOP_XI).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Probably a seed related to the nearby ship, when one is present.") );
-		unknownsPanel.getBoolean(TOP_AUTOFIRE).addMouseListener( new StatusbarMouseListener(frame, "Toggle autofire.") );
+		unknownsPanel.getBoolean( TOP_WAITING ).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether any current random event is a wait event. (Set a wait seed!)" ) );
+		unknownsPanel.getInt( TOP_WAIT_EVENT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "Seed for random wait events. (-1 when not set. Waiting without a seed crashes FTL.)" ) );
+		unknownsPanel.getString( TOP_EPSILON ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Rare eventId. Related to waiting?" ) );
+		unknownsPanel.getInt( TOP_MU ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Maybe event-related?" ) );
+		unknownsPanel.getInt( TOP_NU ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Probably a seed related to the player ship." ) );
+		unknownsPanel.getInt( TOP_XI ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Probably a seed related to the nearby ship, when one is present." ) );
+		unknownsPanel.getBoolean( TOP_AUTOFIRE ).addMouseListener( new StatusbarMouseListener( frame, "Toggle autofire." ) );
 
 		encPanel = new FieldEditorPanel( true );
-		encPanel.setBorder( BorderFactory.createTitledBorder("Encounter") );
+		encPanel.setBorder( BorderFactory.createTitledBorder( "Encounter" ) );
 		encPanel.addRow( ENC_SHIP_EVENT_SEED, FieldEditorPanel.ContentType.INTEGER );
 		encPanel.addRow( ENC_SURRENDER_EVENT, FieldEditorPanel.ContentType.STRING );
 		encPanel.addRow( ENC_ESCAPE_EVENT, FieldEditorPanel.ContentType.STRING );
@@ -271,19 +271,19 @@ public class SavedGameGeneralPanel extends JPanel {
 		encPanel.addRow( ENC_GOT_AWAY_EVENT, FieldEditorPanel.ContentType.STRING );
 		encPanel.addRow( ENC_LAST_EVENT, FieldEditorPanel.ContentType.STRING );
 		encPanel.addRow( ENC_TEXT, FieldEditorPanel.ContentType.STRING );
-		encPanel.getString(ENC_TEXT).setColumns( 10 );
+		encPanel.getString( ENC_TEXT ).setColumns( 10 );
 		encPanel.addRow( ENC_CREW_SEED, FieldEditorPanel.ContentType.INTEGER );
-		encPanel.getInt(ENC_CREW_SEED).setDocument( new RegexDocument("-?[0-9]*") );
+		encPanel.getInt( ENC_CREW_SEED ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		encPanel.addRow( ENC_CHOICES, FieldEditorPanel.ContentType.STRING );
-		encPanel.getString(ENC_CHOICES).setDocument( new RegexDocument("(?:-?[0-9]*)(?:,-?[0-9]*)*") );
+		encPanel.getString( ENC_CHOICES ).setDocument( new RegexDocument( "(?:-?[0-9]*)(?:,-?[0-9]*)*" ) );
 		encPanel.addBlankRow();
 		encPanel.addFillRow();
 
-		encPanel.getInt(ENC_SHIP_EVENT_SEED).addMouseListener( new StatusbarMouseListener(frame, "A seed for randomly generating a nearby ship. Copied from beacons on arrival.") );
-		encPanel.getString(ENC_LAST_EVENT).addMouseListener( new StatusbarMouseListener(frame, "The last dynamically triggered event. (Sector's beacon events are initially static.)") );
-		encPanel.getString(ENC_TEXT).addMouseListener( new StatusbarMouseListener(frame, "Last situation-describing text shown in an event window. (From any event.)") );
-		encPanel.getInt(ENC_CREW_SEED).addMouseListener( new StatusbarMouseListener(frame, "A seed for randomly selecting crew. (-1 when not set.)") );
-		encPanel.getString(ENC_CHOICES).addMouseListener( new StatusbarMouseListener(frame, "Breadcrumbs tracking already-selected choices at each prompt. (0-based) Blank for fresh events.") );
+		encPanel.getInt( ENC_SHIP_EVENT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A seed for randomly generating a nearby ship. Copied from beacons on arrival." ) );
+		encPanel.getString( ENC_LAST_EVENT ).addMouseListener( new StatusbarMouseListener( frame, "The last dynamically triggered event. (Sector's beacon events are initially static.)" ) );
+		encPanel.getString( ENC_TEXT ).addMouseListener( new StatusbarMouseListener( frame, "Last situation-describing text shown in an event window. (From any event.)" ) );
+		encPanel.getInt( ENC_CREW_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A seed for randomly selecting crew. (-1 when not set.)" ) );
+		encPanel.getString( ENC_CHOICES ).addMouseListener( new StatusbarMouseListener( frame, "Breadcrumbs tracking already-selected choices at each prompt. (0-based) Blank for fresh events." ) );
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.anchor = GridBagConstraints.NORTH;
@@ -335,7 +335,7 @@ public class SavedGameGeneralPanel extends JPanel {
 				throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
 
 			for ( Difficulty d : Difficulty.values() ) {
-				sessionPanel.getCombo(DIFFICULTY).addItem( d );
+				sessionPanel.getCombo( DIFFICULTY ).addItem( d );
 			}
 
 			sessionPanel.setIntAndReminder( TOTAL_SHIPS_DEFEATED, gameState.getTotalShipsDefeated() );
@@ -361,7 +361,7 @@ public class SavedGameGeneralPanel extends JPanel {
 				}
 
 				if ( gameState.getCargoIdList().size() > i ) {
-					String cargoId = gameState.getCargoIdList().get(i);
+					String cargoId = gameState.getCargoIdList().get( i );
 
 					if ( DataManager.get().getWeapons().containsKey( cargoId ) ) {
 						WeaponBlueprint weaponBlueprint = DataManager.get().getWeapon( cargoId );
@@ -375,26 +375,26 @@ public class SavedGameGeneralPanel extends JPanel {
 			}
 
 			for ( SavedGameParser.HazardVulnerability h : SavedGameParser.HazardVulnerability.values() ) {
-				envPanel.getCombo(ENV_VULN).addItem( h );
+				envPanel.getCombo( ENV_VULN ).addItem( h );
 			}
 
 			SavedGameParser.EnvironmentState env = gameState.getEnvironment();
 			envEnabled = ( env != null );
-			envPanel.getBoolean(ENV_RED_GIANT_PRESENT).setEnabled( envEnabled );
-			envPanel.getBoolean(ENV_PULSAR_PRESENT).setEnabled( envEnabled );
-			envPanel.getBoolean(ENV_PDS_PRESENT).setEnabled( envEnabled );
-			envPanel.getCombo(ENV_VULN).setEnabled( envEnabled );
-			envPanel.getBoolean(ENV_ASTEROID_FIELD).setEnabled( envEnabled );
-			envPanel.getInt(ENV_ASTEROID_ALPHA).setEnabled( envEnabled );
-			envPanel.getInt(ENV_ASTEROID_STRAY_TICKS).setEnabled( envEnabled );
-			envPanel.getInt(ENV_ASTEROID_GAMMA).setEnabled( envEnabled );
-			envPanel.getInt(ENV_ASTEROID_BKG_TICKS).setEnabled( envEnabled );
-			envPanel.getInt(ENV_ASTEROID_TARGET).setEnabled( envEnabled );
-			envPanel.getInt(ENV_FLARE_FADE_TICKS).setEnabled( envEnabled );
-			envPanel.getInt(ENV_HAVOC_TICKS).setEnabled( envEnabled );
-			envPanel.getInt(ENV_PDS_TICKS).setEnabled( envEnabled );
+			envPanel.getBoolean( ENV_RED_GIANT_PRESENT ).setEnabled( envEnabled );
+			envPanel.getBoolean( ENV_PULSAR_PRESENT ).setEnabled( envEnabled );
+			envPanel.getBoolean( ENV_PDS_PRESENT ).setEnabled( envEnabled );
+			envPanel.getCombo( ENV_VULN ).setEnabled( envEnabled );
+			envPanel.getBoolean( ENV_ASTEROID_FIELD ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_ASTEROID_ALPHA ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_ASTEROID_STRAY_TICKS ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_ASTEROID_GAMMA ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_ASTEROID_BKG_TICKS ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_ASTEROID_TARGET ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_FLARE_FADE_TICKS ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_HAVOC_TICKS ).setEnabled( envEnabled );
+			envPanel.getInt( ENV_PDS_TICKS ).setEnabled( envEnabled );
 
-			forceCheckBox( envPanel.getBoolean(ENV_ASTEROID_FIELD), false );
+			forceCheckBox( envPanel.getBoolean( ENV_ASTEROID_FIELD ), false );
 
 			if ( envEnabled ) {
 				envPanel.setBoolAndReminder( ENV_RED_GIANT_PRESENT, env.isRedGiantPresent() );
@@ -404,7 +404,7 @@ public class SavedGameGeneralPanel extends JPanel {
 
 				SavedGameParser.AsteroidFieldState asteroidField = env.getAsteroidField();
 				boolean asteroidsPresent = ( asteroidField != null );
-				envPanel.getBoolean(ENV_ASTEROID_FIELD).setSelected( asteroidsPresent );
+				envPanel.getBoolean( ENV_ASTEROID_FIELD ).setSelected( asteroidsPresent );
 
 				if ( asteroidsPresent ) {
 					envPanel.setIntAndReminder( ENV_ASTEROID_ALPHA, asteroidField.getUnknownAlpha() );
@@ -421,16 +421,16 @@ public class SavedGameGeneralPanel extends JPanel {
 
 			SavedGameParser.NearbyShipAIState ai = gameState.getNearbyShipAI();
 			aiEnabled = ( ai != null );
-			aiPanel.getBoolean(AI_SURRENDERED).setEnabled( aiEnabled );
-			aiPanel.getBoolean(AI_ESCAPING).setEnabled( aiEnabled );
-			aiPanel.getBoolean(AI_DESTROYED).setEnabled( aiEnabled );
-			aiPanel.getInt(AI_SURRENDER_THRESHOLD).setEnabled( aiEnabled );
-			aiPanel.getInt(AI_ESCAPE_THRESHOLD).setEnabled( aiEnabled );
-			aiPanel.getInt(AI_ESCAPE_TICKS).setEnabled( aiEnabled );
-			aiPanel.getBoolean(AI_STALEMATE).setEnabled( aiEnabled );
-			aiPanel.getInt(AI_STALEMATE_TICKS).setEnabled( aiEnabled );
-			aiPanel.getInt(AI_BOARDING_ATTEMPTS).setEnabled( aiEnabled );
-			aiPanel.getInt(AI_BOARDERS_NEEDED).setEnabled( aiEnabled );
+			aiPanel.getBoolean( AI_SURRENDERED ).setEnabled( aiEnabled );
+			aiPanel.getBoolean( AI_ESCAPING ).setEnabled( aiEnabled );
+			aiPanel.getBoolean( AI_DESTROYED ).setEnabled( aiEnabled );
+			aiPanel.getInt( AI_SURRENDER_THRESHOLD ).setEnabled( aiEnabled );
+			aiPanel.getInt( AI_ESCAPE_THRESHOLD ).setEnabled( aiEnabled );
+			aiPanel.getInt( AI_ESCAPE_TICKS ).setEnabled( aiEnabled );
+			aiPanel.getBoolean( AI_STALEMATE ).setEnabled( aiEnabled );
+			aiPanel.getInt( AI_STALEMATE_TICKS ).setEnabled( aiEnabled );
+			aiPanel.getInt( AI_BOARDING_ATTEMPTS ).setEnabled( aiEnabled );
+			aiPanel.getInt( AI_BOARDERS_NEEDED ).setEnabled( aiEnabled );
 
 			if ( aiEnabled ) {
 				aiPanel.setBoolAndReminder( AI_SURRENDERED, ai.hasSurrendered() );
@@ -493,24 +493,24 @@ public class SavedGameGeneralPanel extends JPanel {
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
 		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 
-		try { gameState.setTotalShipsDefeated( sessionPanel.parseInt(TOTAL_SHIPS_DEFEATED) ); }
+		try { gameState.setTotalShipsDefeated( sessionPanel.parseInt( TOTAL_SHIPS_DEFEATED ) ); }
 		catch ( NumberFormatException e ) {}
 
-		try { gameState.setTotalBeaconsExplored( sessionPanel.parseInt(TOTAL_BEACONS) ); }
+		try { gameState.setTotalBeaconsExplored( sessionPanel.parseInt( TOTAL_BEACONS ) ); }
 		catch ( NumberFormatException e ) {}
 
-		try { gameState.setTotalScrapCollected( sessionPanel.parseInt(TOTAL_SCRAP) ); }
+		try { gameState.setTotalScrapCollected( sessionPanel.parseInt( TOTAL_SCRAP ) ); }
 		catch ( NumberFormatException e ) {}
 
-		try { gameState.setTotalCrewHired( sessionPanel.parseInt(TOTAL_CREW_HIRED) ); }
+		try { gameState.setTotalCrewHired( sessionPanel.parseInt( TOTAL_CREW_HIRED ) ); }
 		catch ( NumberFormatException e ) {}
 
-		gameState.setDLCEnabled( sessionPanel.getBoolean(DLC).isSelected() );
+		gameState.setDLCEnabled( sessionPanel.getBoolean( DLC ).isSelected() );
 
-		Object diffObj = sessionPanel.getCombo(DIFFICULTY).getSelectedItem();
+		Object diffObj = sessionPanel.getCombo( DIFFICULTY ).getSelectedItem();
 		gameState.setDifficulty( (Difficulty)diffObj );
 
-		try { gameState.setUnknownBeta( sessionPanel.parseInt(TOP_BETA) ); }
+		try { gameState.setUnknownBeta( sessionPanel.parseInt( TOP_BETA ) ); }
 		catch ( NumberFormatException e ) {}
 
 		gameState.getCargoIdList().clear();
@@ -526,107 +526,107 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		SavedGameParser.EnvironmentState env = gameState.getEnvironment();
 		if ( env != null && envEnabled ) {
-			env.setRedGiantPresent( envPanel.getBoolean(ENV_RED_GIANT_PRESENT).isSelected() );
-			env.setPulsarPresent( envPanel.getBoolean(ENV_PULSAR_PRESENT).isSelected() );
-			env.setPDSPresent( envPanel.getBoolean(ENV_PDS_PRESENT).isSelected() );
+			env.setRedGiantPresent( envPanel.getBoolean( ENV_RED_GIANT_PRESENT ).isSelected() );
+			env.setPulsarPresent( envPanel.getBoolean( ENV_PULSAR_PRESENT ).isSelected() );
+			env.setPDSPresent( envPanel.getBoolean( ENV_PDS_PRESENT ).isSelected() );
 
-			Object vulnObj = envPanel.getCombo(ENV_VULN).getSelectedItem();
+			Object vulnObj = envPanel.getCombo( ENV_VULN ).getSelectedItem();
 			env.setVulnerableShips( (SavedGameParser.HazardVulnerability)vulnObj );
 
 			SavedGameParser.AsteroidFieldState asteroidField = null;
-			if ( envPanel.getBoolean(ENV_ASTEROID_FIELD).isSelected() ) {
+			if ( envPanel.getBoolean( ENV_ASTEROID_FIELD ).isSelected() ) {
 				asteroidField = new SavedGameParser.AsteroidFieldState();
 
-				try { asteroidField.setUnknownAlpha( envPanel.parseInt(ENV_ASTEROID_ALPHA) ); }
+				try { asteroidField.setUnknownAlpha( envPanel.parseInt( ENV_ASTEROID_ALPHA ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { asteroidField.setStrayRockTicks( envPanel.parseInt(ENV_ASTEROID_STRAY_TICKS) ); }
+				try { asteroidField.setStrayRockTicks( envPanel.parseInt( ENV_ASTEROID_STRAY_TICKS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { asteroidField.setUnknownGamma( envPanel.parseInt(ENV_ASTEROID_GAMMA) ); }
+				try { asteroidField.setUnknownGamma( envPanel.parseInt( ENV_ASTEROID_GAMMA ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { asteroidField.setBgDriftTicks( envPanel.parseInt(ENV_ASTEROID_BKG_TICKS) ); }
+				try { asteroidField.setBgDriftTicks( envPanel.parseInt( ENV_ASTEROID_BKG_TICKS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { asteroidField.setCurrentTarget( envPanel.parseInt(ENV_ASTEROID_TARGET) ); }
+				try { asteroidField.setCurrentTarget( envPanel.parseInt( ENV_ASTEROID_TARGET ) ); }
 				catch ( NumberFormatException e ) {}
 			}
 			env.setAsteroidField( asteroidField );
 
-			try { env.setSolarFlareFadeTicks( envPanel.parseInt(ENV_FLARE_FADE_TICKS) ); }
+			try { env.setSolarFlareFadeTicks( envPanel.parseInt( ENV_FLARE_FADE_TICKS ) ); }
 			catch ( NumberFormatException e ) {}
 
-			try { env.setHavocTicks( envPanel.parseInt(ENV_HAVOC_TICKS) ); }
+			try { env.setHavocTicks( envPanel.parseInt( ENV_HAVOC_TICKS ) ); }
 			catch ( NumberFormatException e ) {}
 
-			try { env.setPDSTicks( envPanel.parseInt(ENV_PDS_TICKS) ); }
+			try { env.setPDSTicks( envPanel.parseInt( ENV_PDS_TICKS ) ); }
 			catch ( NumberFormatException e ) {}
 		}
 
 		SavedGameParser.NearbyShipAIState ai = gameState.getNearbyShipAI();
 		if ( ai != null && aiEnabled ) {
-			ai.setSurrendered( aiPanel.getBoolean(AI_SURRENDERED).isSelected() );
-			ai.setEscaping( aiPanel.getBoolean(AI_ESCAPING).isSelected() );
-			ai.setDestroyed( aiPanel.getBoolean(AI_DESTROYED).isSelected() );
+			ai.setSurrendered( aiPanel.getBoolean( AI_SURRENDERED ).isSelected() );
+			ai.setEscaping( aiPanel.getBoolean( AI_ESCAPING ).isSelected() );
+			ai.setDestroyed( aiPanel.getBoolean( AI_DESTROYED ).isSelected() );
 
-			try { ai.setSurrenderThreshold( aiPanel.parseInt(AI_SURRENDER_THRESHOLD) ); }
+			try { ai.setSurrenderThreshold( aiPanel.parseInt( AI_SURRENDER_THRESHOLD ) ); }
 			catch ( NumberFormatException e ) {}
 
-			try { ai.setEscapeThreshold( aiPanel.parseInt(AI_ESCAPE_THRESHOLD) ); }
+			try { ai.setEscapeThreshold( aiPanel.parseInt( AI_ESCAPE_THRESHOLD ) ); }
 			catch ( NumberFormatException e ) {}
 
-			try { ai.setEscapeTicks( aiPanel.parseInt(AI_ESCAPE_TICKS) ); }
+			try { ai.setEscapeTicks( aiPanel.parseInt( AI_ESCAPE_TICKS ) ); }
 			catch ( NumberFormatException e ) {}
 
-			ai.setStalemateTriggered( aiPanel.getBoolean(AI_STALEMATE).isSelected() );
+			ai.setStalemateTriggered( aiPanel.getBoolean( AI_STALEMATE ).isSelected() );
 
-			try { ai.setStalemateTicks( aiPanel.parseInt(AI_STALEMATE_TICKS) ); }
+			try { ai.setStalemateTicks( aiPanel.parseInt( AI_STALEMATE_TICKS ) ); }
 			catch ( NumberFormatException e ) {}
 
-			try { ai.setBoardingAttempts( aiPanel.parseInt(AI_BOARDING_ATTEMPTS) ); }
+			try { ai.setBoardingAttempts( aiPanel.parseInt( AI_BOARDING_ATTEMPTS ) ); }
 			catch ( NumberFormatException e ) {}
 
-			try { ai.setBoardersNeeded( aiPanel.parseInt(AI_BOARDERS_NEEDED) ); }
+			try { ai.setBoardersNeeded( aiPanel.parseInt( AI_BOARDERS_NEEDED ) ); }
 			catch ( NumberFormatException e ) {}
 		}
 
-		gameState.setWaiting( unknownsPanel.getBoolean(TOP_WAITING).isSelected() );
+		gameState.setWaiting( unknownsPanel.getBoolean( TOP_WAITING ).isSelected() );
 
-		try { gameState.setWaitEventSeed( unknownsPanel.parseInt(TOP_WAIT_EVENT_SEED) ); }
+		try { gameState.setWaitEventSeed( unknownsPanel.parseInt( TOP_WAIT_EVENT_SEED ) ); }
 		catch ( NumberFormatException e ) {}
 
-		gameState.setUnknownEpsilon( unknownsPanel.getString(TOP_EPSILON).getText() );
+		gameState.setUnknownEpsilon( unknownsPanel.getString( TOP_EPSILON ).getText() );
 
-		try { gameState.setUnknownMu( unknownsPanel.parseInt(TOP_MU) ); }
+		try { gameState.setUnknownMu( unknownsPanel.parseInt( TOP_MU ) ); }
 		catch ( NumberFormatException e ) {}
 
-		try { gameState.setUnknownNu( unknownsPanel.parseInt(TOP_NU) ); }
+		try { gameState.setUnknownNu( unknownsPanel.parseInt( TOP_NU ) ); }
 		catch ( NumberFormatException e ) {}
 
-		try { gameState.setUnknownXi( new Integer( unknownsPanel.parseInt(TOP_XI) ) ); }
+		try { gameState.setUnknownXi( new Integer( unknownsPanel.parseInt( TOP_XI ) ) ); }
 		catch ( NumberFormatException e ) {}
 
-		gameState.setAutofire( unknownsPanel.getBoolean(TOP_AUTOFIRE).isSelected() );
+		gameState.setAutofire( unknownsPanel.getBoolean( TOP_AUTOFIRE ).isSelected() );
 
 		SavedGameParser.EncounterState enc = gameState.getEncounter();
 		if ( enc != null && encEnabled ) {
-			try { enc.setShipEventSeed( encPanel.parseInt(ENC_SHIP_EVENT_SEED) ); }
+			try { enc.setShipEventSeed( encPanel.parseInt( ENC_SHIP_EVENT_SEED ) ); }
 			catch ( NumberFormatException e ) {}
 
-			enc.setEscapeEventId( encPanel.getString(ENC_ESCAPE_EVENT).getText() );
-			enc.setDestroyedEventId( encPanel.getString(ENC_DESTROYED_EVENT).getText() );
-			enc.setDeadCrewEventId( encPanel.getString(ENC_DEAD_CREW_EVENT).getText() );
-			enc.setGotAwayEventId( encPanel.getString(ENC_GOT_AWAY_EVENT).getText() );
-			enc.setLastEventId( encPanel.getString(ENC_LAST_EVENT).getText() );
-			enc.setText( encPanel.getString(ENC_TEXT).getText() );
+			enc.setEscapeEventId( encPanel.getString( ENC_ESCAPE_EVENT ).getText() );
+			enc.setDestroyedEventId( encPanel.getString( ENC_DESTROYED_EVENT ).getText() );
+			enc.setDeadCrewEventId( encPanel.getString( ENC_DEAD_CREW_EVENT ).getText() );
+			enc.setGotAwayEventId( encPanel.getString( ENC_GOT_AWAY_EVENT ).getText() );
+			enc.setLastEventId( encPanel.getString( ENC_LAST_EVENT ).getText() );
+			enc.setText( encPanel.getString( ENC_TEXT ).getText() );
 
-			try { enc.setAffectedCrewSeed( encPanel.parseInt(ENC_CREW_SEED) ); }
+			try { enc.setAffectedCrewSeed( encPanel.parseInt( ENC_CREW_SEED ) ); }
 			catch ( NumberFormatException e ) {}
 
 			try {
 				List<Integer> newChoices = new ArrayList<Integer>();
-				String choicesString = encPanel.getString(ENC_CHOICES).getText();
+				String choicesString = encPanel.getString( ENC_CHOICES ).getText();
 				choicesString = choicesString.replaceAll( ",,+", "," );
 				choicesString = choicesString.replaceAll( "^,|,$", "" );
 				for ( String chunk : choicesString.split( "," ) ) {
