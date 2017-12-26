@@ -455,7 +455,16 @@ public class SavedGameGeneralPanel extends JPanel {
 
 			SavedGameParser.EncounterState enc = gameState.getEncounter();
 			encEnabled = ( enc != null );
-			encPanel.getInt(ENC_SHIP_EVENT_SEED).setEnabled( encEnabled );
+			encPanel.getInt( ENC_SHIP_EVENT_SEED ).setEnabled( encEnabled );
+			encPanel.getString( ENC_SURRENDER_EVENT ).setEnabled( encEnabled );
+			encPanel.getString( ENC_ESCAPE_EVENT ).setEnabled( encEnabled );
+			encPanel.getString( ENC_DESTROYED_EVENT ).setEnabled( encEnabled );
+			encPanel.getString( ENC_DEAD_CREW_EVENT ).setEnabled( encEnabled );
+			encPanel.getString( ENC_GOT_AWAY_EVENT ).setEnabled( encEnabled );
+			encPanel.getString( ENC_LAST_EVENT ).setEnabled( encEnabled );
+			encPanel.getString( ENC_TEXT ).setEnabled( encEnabled );
+			encPanel.getInt( ENC_CREW_SEED ).setEnabled( encEnabled );
+			encPanel.getString( ENC_CHOICES ).setEnabled( encEnabled );
 
 			if ( encEnabled ) {
 				encPanel.setIntAndReminder( ENC_SHIP_EVENT_SEED, enc.getShipEventSeed() );
@@ -465,7 +474,7 @@ public class SavedGameGeneralPanel extends JPanel {
 				encPanel.setStringAndReminder( ENC_DEAD_CREW_EVENT, enc.getDeadCrewEventId() );
 				encPanel.setStringAndReminder( ENC_GOT_AWAY_EVENT, enc.getGotAwayEventId() );
 				encPanel.setStringAndReminder( ENC_LAST_EVENT, enc.getLastEventId() );
-				encPanel.getString(ENC_TEXT).setText( enc.getText() );
+				encPanel.getString( ENC_TEXT ).setText( enc.getText() );
 				encPanel.setIntAndReminder( ENC_CREW_SEED, enc.getAffectedCrewSeed() );
 
 				StringBuilder choiceBuf = new StringBuilder();
