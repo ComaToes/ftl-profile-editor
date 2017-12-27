@@ -25,8 +25,8 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.parser.DataManager;
@@ -35,7 +35,7 @@ import net.blerf.ftl.ui.IconCycleButton;
 
 public class ImageUtilities {
 
-	private static final Logger log = LogManager.getLogger( ImageUtilities.class );
+	private static final Logger log = LoggerFactory.getLogger( ImageUtilities.class );
 
 	private static final int maxIconWidth = 64;
 	private static final int maxIconHeight = 64;

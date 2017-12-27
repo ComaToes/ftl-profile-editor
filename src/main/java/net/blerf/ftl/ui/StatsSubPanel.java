@@ -25,8 +25,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
@@ -36,7 +36,7 @@ import net.blerf.ftl.parser.SavedGameParser.CrewType;
 
 public class StatsSubPanel extends JPanel implements ActionListener {
 
-	private static final Logger log = LogManager.getLogger( StatsSubPanel.class );
+	private static final Logger log = LoggerFactory.getLogger( StatsSubPanel.class );
 
 	private int COLUMN_COUNT = 0;
 	private final int DESC_COL = COLUMN_COUNT++;

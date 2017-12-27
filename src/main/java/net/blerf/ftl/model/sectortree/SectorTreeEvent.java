@@ -8,7 +8,7 @@ public class SectorTreeEvent extends EventObject {
 	public static final int COLUMNS_CHANGED = 0;
 	public static final int VISITATION_CHANGED = 1;
 
-	private final int type;
+	protected final int type;
 
 
 	public SectorTreeEvent( Object source, int type ) {

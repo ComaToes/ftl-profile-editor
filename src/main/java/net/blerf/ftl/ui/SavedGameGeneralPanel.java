@@ -11,7 +11,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -23,6 +22,9 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
@@ -33,13 +35,10 @@ import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class SavedGameGeneralPanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger(SavedGameGeneralPanel.class);
+	private static final Logger log = LoggerFactory.getLogger( SavedGameGeneralPanel.class );
 
 	private static final String TOTAL_SHIPS_DEFEATED = "Total Ships Defeated";
 	private static final String TOTAL_BEACONS = "Total Beacons";

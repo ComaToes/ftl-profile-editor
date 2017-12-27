@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -71,6 +70,9 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
@@ -116,11 +118,10 @@ import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class SavedGameFloorplanPanel extends JPanel {
+
+	private static final Logger log = LoggerFactory.getLogger( SavedGameFloorplanPanel.class );
 
 	private static final Integer WEAPON_LAYER = new Integer(5);
 	private static final Integer BASE_LAYER = new Integer(10);
@@ -140,7 +141,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final int squareSize = 35;
 	private static final int tileEdge = 1;
 	private static final int jambLength = 5;
-	private static final Logger log = LogManager.getLogger( SavedGameFloorplanPanel.class );
 
 	private GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 	private GraphicsDevice gs = ge.getDefaultScreenDevice();

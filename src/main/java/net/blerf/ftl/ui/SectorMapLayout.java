@@ -11,8 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class SectorMapLayout implements LayoutManager2 {
 
-	private static final Logger log = LogManager.getLogger( SectorMapLayout.class );
+	private static final Logger log = LoggerFactory.getLogger( SectorMapLayout.class );
 
 	// These numbers were copied from RandomSectorMapGenerator's size for FTL 1.5.4.
 	private static final int DEFAULT_BEACON_ZONE_W = 700;

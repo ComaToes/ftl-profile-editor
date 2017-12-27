@@ -9,6 +9,8 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.Properties;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -17,12 +19,16 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.core.FileAppender;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import net.vhati.modmanager.core.FTLUtilities;
 
-import net.blerf.ftl.cli.FTLProfileEditorCLI;
 import net.blerf.ftl.core.EditorConfig;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.DefaultDataManager;
@@ -31,15 +37,44 @@ import net.blerf.ftl.ui.FTLFrame;
 
 public class FTLProfileEditor {
 
-	private static final Logger log = LogManager.getLogger( FTLProfileEditor.class );
+	private static final Logger log = LoggerFactory.getLogger( FTLProfileEditor.class );
 
 	public static final String APP_NAME = "FTL Profile Editor";
 	public static final int APP_VERSION = 26;
 
 
 	public static void main( String[] args ) {
-		if ( args.length > 0 ) FTLProfileEditorCLI.main( args );
+		// Redirect any libraries' java.util.Logging messages.
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
 
+		// Doing this here instead of in "logback.xml", allows for conditional log files.
+		// For example, the app could decide not to or in a different place.
+
+		// Fork log into a file.
+		LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
+
+		PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+		encoder.setContext( lc );
+		encoder.setCharset( Charset.forName( "UTF-8" ) );
+		encoder.setPattern( "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" );
+		encoder.start();
+
+		FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
+		fileAppender.setContext( lc );
+		fileAppender.setName( "LogFile" );
+		fileAppender.setFile( new File( "./profile-editor-log.txt" ).getAbsolutePath() );
+		fileAppender.setAppend( false );
+		fileAppender.setEncoder( encoder );
+		fileAppender.start();
+
+		lc.getLogger( Logger.ROOT_LOGGER_NAME ).addAppender( fileAppender );
+
+		// Log a welcome message.
+		log.debug( "Started: {}", new Date() );
+		log.debug( "{} v{}", APP_NAME, APP_VERSION );
+		log.debug( "OS: {} {}", System.getProperty( "os.name" ), System.getProperty( "os.version" ) );
+		log.debug( "VM: {}, {}, {}", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) );
 
 		// Ensure all popups are triggered from the event dispatch thread.
 
@@ -55,10 +90,6 @@ public class FTLProfileEditor {
 		try {
 			// Don't use the hard drive to buffer streams during ImageIO.read().
 			ImageIO.setUseCache( false );  // Small images don't need extra buffering.
-
-			log.debug( String.format( "%s v%s", APP_NAME, APP_VERSION ) );
-			log.debug( String.format( "%s %s", System.getProperty( "os.name" ), System.getProperty( "os.version" ) ) );
-			log.debug( String.format( "%s, %s, %s", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) ) );
 
 			File configFile = new File( "ftl-editor.cfg" );
 

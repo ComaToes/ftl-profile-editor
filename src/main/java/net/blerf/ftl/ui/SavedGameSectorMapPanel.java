@@ -29,7 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -57,8 +56,8 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.plaf.basic.BasicArrowButton;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
@@ -108,7 +107,7 @@ import net.blerf.ftl.xml.WeaponBlueprint;
 
 public class SavedGameSectorMapPanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger( SavedGameSectorMapPanel.class );
+	private static final Logger log = LoggerFactory.getLogger( SavedGameSectorMapPanel.class );
 
 	// Dimensions for placing beacons' background sprite images.
 	private static final int SCREEN_WIDTH = 1280;
@@ -1110,7 +1109,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 					selectedRNG.srand( newSeed );
 
 					RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
-					newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
+					try {
+						newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
+					}
+					catch ( IllegalStateException e ) {
+						log.error( "Map generation failed", e );
+						JOptionPane.showMessageDialog( frame, "Map generation failed:\n"+ e.toString(), "Map generation failed", JOptionPane.ERROR_MESSAGE );
+					}
 				}
 
 				if ( newGenMap != null ) {

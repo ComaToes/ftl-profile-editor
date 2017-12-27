@@ -61,8 +61,8 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.vhati.ftldat.PackUtilities;
 import net.vhati.modmanager.core.FTLUtilities;
@@ -91,7 +91,7 @@ import net.blerf.ftl.ui.StatusbarMouseListener;
 
 public class FTLFrame extends JFrame implements Statusbar {
 
-	private static final Logger log = LogManager.getLogger( FTLFrame.class );
+	private static final Logger log = LoggerFactory.getLogger( FTLFrame.class );
 
 	private static final String PROFILE_SHIP_UNLOCK = "Ship Unlocks & Achievements";
 	private static final String PROFILE_GENERAL_ACH = "General Achievements";
@@ -141,6 +141,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private DumpPanel profileDumpPanel;
 
 	private JButton gameStateSaveBtn;
+	private JButton gameStateDumpBtn;
 	private JTabbedPane savedGameTabsPane;
 	private DumpPanel savedGameDumpPanel;
 	private SavedGameGeneralPanel savedGameGeneralPanel;
@@ -585,6 +586,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 				}
 
 				JFileChooser dumpChooser = new JFileChooser();
+				dumpChooser.setDialogTitle( "Dump Profile" );
 				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
 				dumpChooser.setFileHidingEnabled( false );
 
@@ -915,7 +917,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 		gameStateSaveBtn.addMouseListener( new StatusbarMouseListener( this, "Save the current game state." ) );
 		toolbar.add( gameStateSaveBtn );
 
-		JButton gameStateDumpBtn = new JButton( "Dump", saveIcon );
+		gameStateDumpBtn = new JButton( "Dump", saveIcon );
 		gameStateDumpBtn.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
@@ -923,6 +925,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 				if ( gameState == null ) return;
 
 				JFileChooser dumpChooser = new JFileChooser();
+				dumpChooser.setDialogTitle( "Dump Game State" );
 				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
 				dumpChooser.setFileHidingEnabled( false );
 
@@ -1372,6 +1375,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_STATE_VARS ), false );
 			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( SAVE_DUMP ) );
 			gameStateSaveBtn.setEnabled( false );
+			gameStateDumpBtn.setEnabled( false );
 
 			gameState = null;
 		}
@@ -1394,6 +1398,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_STATE_VARS ), true );
 			savedGameTabsPane.setSelectedIndex( savedGameTabsPane.indexOfTab( SAVE_DUMP ) );
 			gameStateSaveBtn.setEnabled( true );
+			gameStateDumpBtn.setEnabled( true );
 
 			gameState = gs;
 		}

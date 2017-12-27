@@ -31,8 +31,8 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.model.sectortree.SectorDot;
 import net.blerf.ftl.model.sectortree.SectorTree;
@@ -55,7 +55,7 @@ import net.blerf.ftl.ui.sectortree.SectorTreeEditPanel;
 
 public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
-	private static final Logger log = LogManager.getLogger( SavedGameSectorTreePanel.class );
+	private static final Logger log = LoggerFactory.getLogger( SavedGameSectorTreePanel.class );
 
 	private static final String ALGORITHM = "RNG Algorithm";
 	private static final String TREE_TYPE = "Preview";
@@ -308,7 +308,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 					SectorTree.validate( dotColumns );
 				}
 				catch ( Exception e ) {
-					log.error( e );
+					log.error( "Sector tree generation failed", e );
 					JOptionPane.showMessageDialog( this, "An error occurred while attempting to reconstruct the sector tree with existing visitation breadcrumbs.\n\nThis saved game probably used a different algorithm. See log for details.", "Sector Tree", JOptionPane.ERROR_MESSAGE );
 					return;
 				}

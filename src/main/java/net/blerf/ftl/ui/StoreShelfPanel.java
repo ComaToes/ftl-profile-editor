@@ -25,8 +25,8 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
@@ -43,7 +43,7 @@ import net.blerf.ftl.ui.StatusbarMouseListener;
 
 public class StoreShelfPanel extends JPanel implements ActionListener {
 
-	private static final Logger log = LogManager.getLogger( StoreShelfPanel.class );
+	private static final Logger log = LoggerFactory.getLogger( StoreShelfPanel.class );
 
 	private static final String SHELF_TYPE = "Type";
 	private static final String ITEM_ZERO = "#0 Item";

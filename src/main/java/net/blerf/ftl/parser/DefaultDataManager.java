@@ -16,6 +16,9 @@ import javax.xml.bind.JAXBException;
 
 import org.jdom2.JDOMException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.vhati.ftldat.AbstractPack;
 import net.vhati.ftldat.FolderPack;
 import net.vhati.ftldat.FTLPack;
@@ -43,13 +46,10 @@ import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 
 public class DefaultDataManager extends DataManager {
 	
-	private static final Logger log = LogManager.getLogger( DefaultDataManager.class );
+	private static final Logger log = LoggerFactory.getLogger( DefaultDataManager.class );
 
 	private List<String> stdBlueprintsFileNames;
 	private List<String> dlcBlueprintsFileNames;

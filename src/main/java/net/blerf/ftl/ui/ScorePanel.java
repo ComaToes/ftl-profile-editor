@@ -24,8 +24,8 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.Score;
@@ -36,7 +36,7 @@ import net.blerf.ftl.xml.ShipBlueprint;
 
 public class ScorePanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger( ScorePanel.class );
+	private static final Logger log = LoggerFactory.getLogger( ScorePanel.class );
 
 	private static final String SHIP_NAME = "Ship Name";
 	private static final String SHIP_ID = "Ship Id";

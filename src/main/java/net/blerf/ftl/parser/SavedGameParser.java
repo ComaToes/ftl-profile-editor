@@ -26,8 +26,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.Difficulty;
@@ -45,7 +45,7 @@ import net.blerf.ftl.xml.WeaponBlueprint;
 
 public class SavedGameParser extends Parser {
 
-	private static final Logger log = LogManager.getLogger( SavedGameParser.class );
+	private static final Logger log = LoggerFactory.getLogger( SavedGameParser.class );
 
 
 	public SavedGameParser() {
@@ -2501,9 +2501,18 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 		/**
 		 * Unknown.
 		 *
-		 * Observed values 0 (Always!?).
+		 * If edited to 2, bouncing to the main menu for re-saving causes this
+		 * to decrement toward 0. It glitches the hop index, sometimes
+		 * resetting it to 0 or seemingly causing the flagship to backtrack?
+		 *
+		 * Even when FTL increments this, re-saving messes with the hops.
+		 *
+		 * Observed values: 0 (Almost always!?), 1 (Immediately after defeating
+		 * the flagship, but reverts if loaded and saved again!?).
 		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setRebelFlagshipHop(int)
 		 */
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
 		public int getUnknownKappa() { return unknownKappa; }

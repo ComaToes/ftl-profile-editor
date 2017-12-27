@@ -5,8 +5,8 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.parser.sectormap.GeneratedBeacon;
 import net.blerf.ftl.parser.sectormap.GeneratedSectorMap;
@@ -35,7 +35,7 @@ import net.blerf.ftl.parser.random.RandRNG;
  */
 public class RandomSectorMapGenerator {
 
-	private static final Logger log = LogManager.getLogger( RandomSectorMapGenerator.class );
+	private static final Logger log = LoggerFactory.getLogger( RandomSectorMapGenerator.class );
 
 	/**
 	 * The threshold for re-rolling a map with disconnected beacons.
@@ -53,6 +53,7 @@ public class RandomSectorMapGenerator {
 	 * Note: The RNG needs to be seeded immediately before calling this method.
 	 *
 	 * @see net.blerf.ftl.parser.SavedGameParser.SavedGameState#getFileFormat()
+	 * @throws IllegalStateException if a valid map isn't generated after 50 attempts
 	 */
 	public GeneratedSectorMap generateSectorMap( RandRNG rng, int fileFormat ) {
 
@@ -129,11 +130,7 @@ public class RandomSectorMapGenerator {
 			n = rng.rand();
 			genMap.setRebelFleetFudge( new Integer( n % 250 + 50 ) );
 
-			while ( true ) {
-				if ( generations >= 50 ) {
-					throw new IllegalStateException( String.format( "Sector map generation failed %d times!?", generations ) );
-				}
-
+			while ( generations < 50 ) {
 				List<GeneratedBeacon> genBeaconList = new ArrayList<GeneratedBeacon>();
 				int skipInclusiveCount = 0;
 				int z = 0;
@@ -178,10 +175,15 @@ public class RandomSectorMapGenerator {
 				double isolation = calculateIsolation( genMap );
 				if ( isolation > ISOLATION_THRESHOLD ) {
 					log.info( String.format( "Re-rolling sector map because attempt #%d has isolated beacons (threshold dist %5.2f): %5.2f", generations, ISOLATION_THRESHOLD, isolation ) );
+					genMap.setGeneratedBeaconList( null );
 				}
 				else {
 					break;  // Success!
 				}
+			}
+
+			if ( genMap.getGeneratedBeaconList() == null ) {
+				throw new IllegalStateException( String.format( "No valid map was produced after %d attempts!?", generations ) );
 			}
 
 			return genMap;

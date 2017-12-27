@@ -11,8 +11,8 @@ import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.constants.NewbieTipLevel;
@@ -29,7 +29,7 @@ import net.blerf.ftl.xml.Achievement;
 
 public class ProfileGeneralAchievementsPanel extends JPanel {
 
-	private static final Logger log = LogManager.getLogger( ProfileGeneralAchievementsPanel.class );
+	private static final Logger log = LoggerFactory.getLogger( ProfileGeneralAchievementsPanel.class );
 
 	private static final int ICON_LOCKED = 0;
 	private static final int ICON_EASY = 1;
