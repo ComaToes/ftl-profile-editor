@@ -890,7 +890,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 			catch ( FileNotFoundException e ) {
-				log.warn( "No ship floor image for ("+ shipGfxBaseName +")" );
+				log.debug( "No ship floor image for ("+ shipGfxBaseName +")" );
 			}
 			catch ( IOException e ) {
 				log.error( "Failed to load ship floor image ("+ shipGfxBaseName +")", e );
