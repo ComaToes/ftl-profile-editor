@@ -805,23 +805,23 @@ public class SavedGameFloorplanPanel extends JPanel {
 					int squareX = roomX + tileEdge + (s%squaresH)*squareSize;
 					int squareY = roomY + tileEdge + (s/squaresH)*squareSize;
 					Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
-					squareRegionRoomIdMap.put( squareRect, new Integer(i) );
-					squareRegionSquareIdMap.put( squareRect, new Integer(s) );
+					squareRegionRoomIdMap.put( squareRect, new Integer( i ) );
+					squareRegionSquareIdMap.put( squareRect, new Integer( s ) );
 				}
 			}
-			// Find squares that don't allow crew in them (medbay's slot).
+			// Find squares that don't allow crew in them (medbay's slot, same as clonebay).
 			blockedRegions.clear();
 			ShipBlueprint.SystemList.SystemRoom medicalSystem = blueprintSystems.getMedicalRoom();
 			if ( medicalSystem != null ) {
 				ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
 				int badRoomId = medicalSystem.getRoomId();
-				int badSquareId = 1;       // TODO: Magic number (when omitted, slot is #1).
+				int badSquareId = ftlConstants.getDefaultSystemRoomSlotSquare( SystemType.MEDBAY );
 				if ( medicalSlot != null ) {
 					badSquareId = medicalSlot.getNumber();
 				}
 
 				if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
-					log.trace(String.format( "Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId ) );
+					log.trace( String.format( "Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId ) );
 
 					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( badRoomId );
 					int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();

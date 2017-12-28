@@ -3,6 +3,8 @@ package net.blerf.ftl.constants;
 import java.util.List;
 
 import net.blerf.ftl.parser.SavedGameParser.CrewType;
+import net.blerf.ftl.parser.SavedGameParser.StationDirection;
+import net.blerf.ftl.parser.SavedGameParser.SystemType;
 
 
 public interface FTLConstants {
@@ -34,4 +36,13 @@ public interface FTLConstants {
 	public int getMasteryIntervalWeapon( String race );
 	public int getMasteryIntervalRepair( String race );
 	public int getMasteryIntervalCombat( String race );
+
+
+	// System-related constants.
+
+	public List<SystemType> getSystemTypes();
+
+	public int getDefaultSystemRoomSlotSquare( SystemType systemType );
+
+	public StationDirection getDefaultSystemRoomSlotDirection( SystemType systemType );
 }
