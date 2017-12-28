@@ -1550,7 +1550,6 @@ public class SavedGameParser extends Parser {
 	}
 
 	private NearbyShipAIState readNearbyShipAI( FileInputStream in ) throws IOException {
-System.err.println(String.format("Ship AI: @%d", in.getChannel().position()));
 		NearbyShipAIState ai = new NearbyShipAIState();
 
 		ai.setSurrendered( readBool(in) );
@@ -1581,7 +1580,6 @@ System.err.println(String.format("Ship AI: @%d", in.getChannel().position()));
 	}
 
 	private EnvironmentState readEnvironment( FileInputStream in ) throws IOException {
-System.err.println(String.format("Environment: @%d", in.getChannel().position()));
 		EnvironmentState env = new EnvironmentState();
 
 		env.setRedGiantPresent( readBool(in) );
@@ -1705,7 +1703,8 @@ System.err.println(String.format("Environment: @%d", in.getChannel().position())
 	}
 
 	private ProjectileState readProjectile( FileInputStream in ) throws IOException {
-System.err.println(String.format("Projectile: @%d", in.getChannel().position()));
+		//log.debug( String.format( "Projectile: @%d", in.getChannel().position() ) );
+
 		ProjectileState projectile = new ProjectileState();
 
 		int projectileTypeFlag = readInt(in);
@@ -9757,8 +9756,6 @@ System.err.println(String.format("Projectile: @%d", in.getChannel().position()))
 	 * This method does not involve a dedicated class.
 	 */
 	private void readExtendedShipInfo( FileInputStream in, ShipState shipState, int fileFormat ) throws IOException {
-System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().position()));
-
 		// There is no explicit list count for drones.
 		for ( DroneState drone : shipState.getDroneList() ) {
 			ExtendedDroneInfo droneInfo = new ExtendedDroneInfo();
@@ -9942,7 +9939,8 @@ System.err.println(String.format("Extended Ship Info: @%d", in.getChannel().posi
 
 	private DronePodState readDronePod( FileInputStream in, DroneType droneType ) throws IOException {
 		if ( droneType == null ) throw new IllegalArgumentException( "DroneType cannot be null." );
-System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
+
+		//log.debug( String.format( "Drone Pod: @%d", in.getChannel().position() ) );
 
 		DronePodState dronePod = new DronePodState();
 		dronePod.setDroneType( droneType );
@@ -10127,7 +10125,6 @@ System.err.println(String.format("Drone Pod: @%d", in.getChannel().position()));
 	}
 
 	private WeaponModuleState readWeaponModule( FileInputStream in, int fileFormat ) throws IOException {
-System.err.println(String.format("Weapon Module: @%d", in.getChannel().position()));
 		WeaponModuleState weaponMod = new WeaponModuleState();
 
 		weaponMod.setCooldownTicks( readInt(in) );
