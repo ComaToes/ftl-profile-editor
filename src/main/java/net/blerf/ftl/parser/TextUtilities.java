@@ -1,5 +1,6 @@
-// Copied from Slipstream Mod Manager 1.4.
-// (Excerpts from ModUtilities)
+// Copied from a snapshot of Slipstream Mod Manager after 1.9.
+// Excerpts from ModUtilities.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/80c151aef8300b1ad043ccf41aa2d3473d77d109/src/main/java/net/vhati/modmanager/core/ModUtilities.java
 
 package net.blerf.ftl.parser;
 
@@ -43,7 +44,7 @@ public class TextUtilities {
 		byte[] buf = new byte[4096];
 		int len;
 		ByteArrayOutputStream tmpData = new ByteArrayOutputStream();
-		while ( (len = is.read(buf)) >= 0 ) {
+		while ( (len = is.read( buf )) >= 0 ) {
 			tmpData.write( buf, 0, len );
 		}
 		byte[] allBytes = tmpData.toByteArray();
@@ -72,6 +73,7 @@ public class TextUtilities {
 			CharsetDecoder decoder = Charset.forName( encoding ).newDecoder();
 			ByteBuffer byteBuffer = ByteBuffer.wrap( allBytes, bom.length, allBytes.length-bom.length );
 			result = decoder.decode( byteBuffer ).toString();
+			allBytes = null;    // GC hint.
 		}
 		else {
 			ByteBuffer byteBuffer = ByteBuffer.wrap( allBytes );
@@ -98,6 +100,7 @@ public class TextUtilities {
 				}
 				throw new IOException( msg );
 			}
+			allBytes = null;    // GC hint.
 		}
 
 		// Determine the original line endings.

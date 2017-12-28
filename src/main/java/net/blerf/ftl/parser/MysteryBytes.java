@@ -29,11 +29,13 @@ public class MysteryBytes {
 		int numRead = 0;
 		int unOffset = 0;
 		byte[] unBytes = new byte[length];
-		while (unOffset < unBytes.length && (numRead = in.read(unBytes, unOffset, unBytes.length)) >= 0)
+		while ( unOffset < unBytes.length && (numRead = in.read(unBytes, unOffset, unBytes.length)) >= 0 ) {
 			unOffset += numRead;
+		}
 
-		if ( in instanceof FileInputStream )
+		if ( in instanceof FileInputStream ) {
 			this.offset = ((FileInputStream)in).getChannel().position()-unBytes.length;
+		}
 		this.bytes = unBytes;
 	}
 
@@ -42,31 +44,33 @@ public class MysteryBytes {
 		StringBuilder ascii = new StringBuilder();
 
 		if (offset >= 0)
-			result.append(String.format("Location: %d-%d\n", offset, offset+bytes.length));
+			result.append( String.format( "Location: %d-%d\n", offset, offset+bytes.length ) );
 		else
-			result.append(String.format("Length: %d\n", bytes.length));
+			result.append( String.format( "Length: %d\n", bytes.length ) );
 
-		for (int i=0; i < bytes.length; i++) {
+		for ( int i=0; i < bytes.length; i++ ) {
 			result.append( (char)(HEX_CHARS[( bytes[i] & 0x00F0 ) >> 4]) );
 			result.append( (char)(HEX_CHARS[( bytes[i] & 0x000F )]) );
 
 			char charValue = (char)bytes[i];
-			if (charValue >= 32 && charValue < 127)
+			if (charValue >= 32 && charValue < 127) {
 				ascii.append( charValue );
-			else
+			} else {
 				ascii.append( "." );
+			}
 
 			if ( i < bytes.length-1 ) {
 				if ( i % 16 == 15 ) {
-					result.append("   ").append(ascii);
-					result.append("\n");
-					ascii.setLength(0);
-				} else if (i % 2 == 1) {
-					result.append(" ");
+					result.append( "   " ).append( ascii );
+					result.append( "\n" );
+					ascii.setLength( 0 );
+				}
+				else if ( i % 2 == 1 ) {
+					result.append( " " );
 				}
 			}
 		}
-		result.append("\n");
+		result.append( "\n" );
 		return result.toString();
 	}
 }

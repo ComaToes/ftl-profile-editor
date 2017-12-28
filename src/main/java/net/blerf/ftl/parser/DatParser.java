@@ -74,22 +74,22 @@ public class DatParser {
 		StringBuilder sb = new StringBuilder( streamText );
 		String ptn; Pattern p; Matcher m;
 
-		if ( "blueprints.xml".equals(fileName) ) {
+		if ( "blueprints.xml".equals( fileName ) ) {
 			// blueprints.xml: LONG_ELITE_MED shipBlueprint (FTL 1.03.1)
 			// blueprints.xml: LONG_ELITE_HARD shipBlueprint (FTL 1.03.1)
 			streamText = streamText.replaceAll( " img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"" );
 		}
 
-		if ( "blueprints.xml".equals(fileName) ) {
+		if ( "blueprints.xml".equals( fileName ) ) {
 			// blueprints.xml: SYSTEM_CASING augBlueprint (FTL 1.02.6)
 			ptn = "";
 			ptn += "\\s*<title>Reinforced System Casing</title>"; // Extra title.
 			ptn += "(\\s*<title>Titanium System Casing</title>)";
 
 			p = Pattern.compile(ptn);
-			m = p.matcher(sb);
+			m = p.matcher( sb );
 			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group(1) );
+				sb.replace( m.start(), m.end(), m.group( 1 ) );
 				m.reset();
 			}
 		}
@@ -162,7 +162,7 @@ public class DatParser {
 	public ShipChassis readChassis( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
 		streamText = "<shipChassis>"+ streamText +"</shipChassis>";
 		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
@@ -177,8 +177,8 @@ public class DatParser {
 	public List<CrewNameList> readCrewNames( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
-		streamText = "<nameLists>"+ streamText  +"</nameLists>";
+		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
+		streamText = "<nameLists>"+ streamText +"</nameLists>";
 		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
@@ -193,7 +193,7 @@ public class DatParser {
 	public SectorData readSectorData( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
+		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
 		streamText = "<sectorData>"+ streamText +"</sectorData>";
 		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
@@ -209,8 +209,8 @@ public class DatParser {
 	public Encounters readEvents( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
-		streamText = "<events>"+ streamText  +"</events>";
+		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
+		streamText = "<events>"+ streamText +"</events>";
 		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
@@ -225,8 +225,8 @@ public class DatParser {
 	public List<ShipEvent> readShipEvents( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
-		streamText = "<shipEvents>"+ streamText  +"</shipEvents>";
+		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
+		streamText = "<shipEvents>"+ streamText +"</shipEvents>";
 		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
@@ -241,8 +241,8 @@ public class DatParser {
 	public List<BackgroundImageList> readImageLists( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
-		streamText = "<imageLists>"+ streamText  +"</imageLists>";
+		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
+		streamText = "<imageLists>"+ streamText +"</imageLists>";
 		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
@@ -257,8 +257,8 @@ public class DatParser {
 	public Animations readAnimations( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher(streamText).replaceFirst( "" );
-		streamText = "<animations>"+ streamText  +"</animations>";
+		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
+		streamText = "<animations>"+ streamText +"</animations>";
 		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 

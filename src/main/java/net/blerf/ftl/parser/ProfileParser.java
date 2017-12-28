@@ -39,7 +39,7 @@ public class ProfileParser extends Parser {
 		FileInputStream in = null;
 		try {
 			in = new FileInputStream( savFile );
-			p = readProfile(in);
+			p = readProfile( in );
 		}
 		finally {
 			try {if ( in != null ) in.close();}
@@ -52,7 +52,7 @@ public class ProfileParser extends Parser {
 	public Profile readProfile( InputStream in ) throws IOException {
 		Profile p = new Profile();
 
-		int fileFormat = readInt(in);
+		int fileFormat = readInt( in );
 		if ( fileFormat == 4 ) {
 			// FTL 1.03.3 and earlier.
 			p.setFileFormat( fileFormat );
@@ -61,7 +61,7 @@ public class ProfileParser extends Parser {
 			// FTL 1.5.4+.
 			p.setFileFormat( fileFormat );
 
-			int newbieFlag = readInt(in);
+			int newbieFlag = readInt( in );
 			if ( newbieFlag == 0 ) {
 				p.setNewbieTipLevel( NewbieTipLevel.SHIPS_UNLOCKED );
 			}
@@ -72,7 +72,7 @@ public class ProfileParser extends Parser {
 				p.setNewbieTipLevel( NewbieTipLevel.VETERAN );
 			}
 			else {
-				throw new IOException( String.format("Unsupported newbie tip level flag: %d", newbieFlag) );
+				throw new IOException( String.format( "Unsupported newbie tip level flag: %d", newbieFlag ) );
 			}
 		}
 		else {
@@ -103,8 +103,7 @@ public class ProfileParser extends Parser {
 				newbieFlag = 2;
 			}
 			else {
-				//throw new IOException( String.format("Unsupported newbie tip level: %s", p.getNewbieTipLevel().toString()) );
-				log.warn( String.format("Substituting VETERAN for unsupported newbie tip level: %s", p.getNewbieTipLevel().toString()) );
+				log.warn( String.format( "Substituting VETERAN for unsupported newbie tip level: %s", p.getNewbieTipLevel().toString() ) );
 				newbieFlag = 0;
 			}
 
@@ -119,14 +118,14 @@ public class ProfileParser extends Parser {
 	}
 
 	private List<AchievementRecord> readAchievements( InputStream in, int fileFormat ) throws IOException {
-		int achievementCount = readInt(in);
+		int achievementCount = readInt( in );
 
 		List<AchievementRecord> achievements = new ArrayList<AchievementRecord>( achievementCount );
 
 		for ( int i=0; i < achievementCount; i++ ) {
-			String achId = readString(in);
+			String achId = readString( in );
 
-			int diffFlag = readInt(in);
+			int diffFlag = readInt( in );
 			Difficulty diff;
 			if ( diffFlag == 0 ) {
 				diff = Difficulty.EASY;
@@ -138,7 +137,7 @@ public class ProfileParser extends Parser {
 				diff = Difficulty.HARD;
 			}
 			else {
-				throw new IOException( String.format("Unsupported difficulty flag for achievement %d (\"%s\"): %d", i, achId, diffFlag) );
+				throw new IOException( String.format( "Unsupported difficulty flag for achievement %d (\"%s\"): %d", i, achId, diffFlag ) );
 			}
 
 			Achievement ach = DataManager.get().getAchievement( achId );
@@ -160,7 +159,7 @@ public class ProfileParser extends Parser {
 
 					for ( int j=0; j < variantDiffs.length; j++ ) {
 						Difficulty variantDiff = null;
-						int variantDiffFlag = readInt(in);
+						int variantDiffFlag = readInt( in );
 
 						if ( variantDiffFlag == -1 ) {
 							variantDiff = null;
@@ -175,7 +174,7 @@ public class ProfileParser extends Parser {
 							variantDiff = Difficulty.HARD;
 						}
 						else {
-							throw new IOException( String.format("Unsupported per-layout difficulty flag for achievement %d (\"%s\"): %d", i, achId, variantDiffFlag) );
+							throw new IOException( String.format( "Unsupported per-layout difficulty flag for achievement %d (\"%s\"): %d", i, achId, variantDiffFlag ) );
 						}
 						variantDiffs[j] = variantDiff;
 					}
@@ -246,8 +245,7 @@ public class ProfileParser extends Parser {
 				diffFlag = 2;
 			}
 			else {
-				//throw new IOException( String.format("Unsupported difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), rec.getDifficulty().toString()) );
-				log.warn( String.format("Substituting EASY for unsupported difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), rec.getDifficulty().toString()) );
+				log.warn( String.format( "Substituting EASY for unsupported difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), rec.getDifficulty().toString() ) );
 				diffFlag = 0;
 			}
 			writeInt( out, diffFlag );
@@ -276,8 +274,7 @@ public class ProfileParser extends Parser {
 							variantDiffFlag = 2;
 						}
 						else {
-							//throw new IOException( String.format("Unsupported per-layout difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), variantDiff.toString()) );
-							log.warn( String.format("Substituting EASY for unsupported per-layout difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), variantDiff.toString()) );
+							log.warn( String.format( "Substituting EASY for unsupported per-layout difficulty for achievement (\"%s\"): %s", rec.getAchievementId(), variantDiff.toString() ) );
 							variantDiffFlag = 0;
 						}
 						writeInt( out, variantDiffFlag );
@@ -314,10 +311,10 @@ public class ProfileParser extends Parser {
 
 		for ( String shipId : unlockableShipIds ) {
 			ShipAvailability shipAvail = new ShipAvailability( shipId );
-			shipAvail.setUnlockedA( readBool(in) );
+			shipAvail.setUnlockedA( readBool( in ) );
 
 			if ( fileFormat == 9 ) {
-				shipAvail.setUnlockedC( readBool(in) );
+				shipAvail.setUnlockedC( readBool( in ) );
 			}
 
 			shipUnlockMap.put( shipId, shipAvail );
@@ -375,22 +372,22 @@ public class ProfileParser extends Parser {
 		stats.setShipBest( readScoreList( in, fileFormat ) );
 
 		// Stats
-		stats.setIntRecord( StatType.MOST_SHIPS_DEFEATED, readInt(in) );
-		stats.setIntRecord( StatType.TOTAL_SHIPS_DEFEATED, readInt(in) );
-		stats.setIntRecord( StatType.MOST_BEACONS_EXPLORED, readInt(in) );
-		stats.setIntRecord( StatType.TOTAL_BEACONS_EXPLORED, readInt(in) );
-		stats.setIntRecord( StatType.MOST_SCRAP_COLLECTED, readInt(in) );
-		stats.setIntRecord( StatType.TOTAL_SCRAP_COLLECTED, readInt(in) );
-		stats.setIntRecord( StatType.MOST_CREW_HIRED, readInt(in) );
-		stats.setIntRecord( StatType.TOTAL_CREW_HIRED, readInt(in) );
-		stats.setIntRecord( StatType.TOTAL_GAMES_PLAYED, readInt(in) );
-		stats.setIntRecord( StatType.TOTAL_VICTORIES, readInt(in) );
+		stats.setIntRecord( StatType.MOST_SHIPS_DEFEATED, readInt( in ) );
+		stats.setIntRecord( StatType.TOTAL_SHIPS_DEFEATED, readInt( in ) );
+		stats.setIntRecord( StatType.MOST_BEACONS_EXPLORED, readInt( in ) );
+		stats.setIntRecord( StatType.TOTAL_BEACONS_EXPLORED, readInt( in ) );
+		stats.setIntRecord( StatType.MOST_SCRAP_COLLECTED, readInt( in ) );
+		stats.setIntRecord( StatType.TOTAL_SCRAP_COLLECTED, readInt( in ) );
+		stats.setIntRecord( StatType.MOST_CREW_HIRED, readInt( in ) );
+		stats.setIntRecord( StatType.TOTAL_CREW_HIRED, readInt( in ) );
+		stats.setIntRecord( StatType.TOTAL_GAMES_PLAYED, readInt( in ) );
+		stats.setIntRecord( StatType.TOTAL_VICTORIES, readInt( in ) );
 
-		stats.setCrewRecord( StatType.MOST_REPAIRS, readCrewRecord(in) );
-		stats.setCrewRecord( StatType.MOST_COMBAT_KILLS, readCrewRecord(in) );
-		stats.setCrewRecord( StatType.MOST_PILOTED_EVASIONS, readCrewRecord(in) );
-		stats.setCrewRecord( StatType.MOST_JUMPS_SURVIVED, readCrewRecord(in) );
-		stats.setCrewRecord( StatType.MOST_SKILL_MASTERIES, readCrewRecord(in) );
+		stats.setCrewRecord( StatType.MOST_REPAIRS, readCrewRecord( in ) );
+		stats.setCrewRecord( StatType.MOST_COMBAT_KILLS, readCrewRecord( in ) );
+		stats.setCrewRecord( StatType.MOST_PILOTED_EVASIONS, readCrewRecord( in ) );
+		stats.setCrewRecord( StatType.MOST_JUMPS_SURVIVED, readCrewRecord( in ) );
+		stats.setCrewRecord( StatType.MOST_SKILL_MASTERIES, readCrewRecord( in ) );
 
 		return stats;
 	}
@@ -418,10 +415,10 @@ public class ProfileParser extends Parser {
 	}
 
 	private CrewRecord readCrewRecord( InputStream in ) throws IOException {
-		int value = readInt(in);
-		String name = readString(in);
-		String race = readString(in);
-		boolean male = readBool(in);
+		int value = readInt( in );
+		String name = readString( in );
+		String race = readString( in );
+		boolean male = readBool( in );
 
 		return new CrewRecord(name, race, male, value);
 	}
@@ -434,21 +431,21 @@ public class ProfileParser extends Parser {
 	}
 
 	private List<Score> readScoreList( InputStream in, int fileFormat ) throws IOException {
-		int scoreCount = readInt(in);
+		int scoreCount = readInt( in );
 
 		List<Score> scores = new ArrayList<Score>( scoreCount );
 
 		for ( int i=0; i < scoreCount; i++ ) {
-			String shipName = readString(in);
+			String shipName = readString( in );
 
-			String shipId = readString(in);
-			int value = readInt(in);
-			int sector = readInt(in);
-			boolean victory = readInt(in) == 1;
+			String shipId = readString( in );
+			int value = readInt( in );
+			int sector = readInt( in );
+			boolean victory = readInt( in ) == 1;
 
 			// In "profile.sav", scores' difficulty had the meanings of 0 and 1 backward.
 
-			int diffFlag = readInt(in);
+			int diffFlag = readInt( in );
 			Difficulty diff;
 			if ( diffFlag == 0 && fileFormat == 4 ) {
 				diff = Difficulty.NORMAL;
@@ -466,13 +463,13 @@ public class ProfileParser extends Parser {
 				diff = Difficulty.HARD;
 			}
 			else {
-				throw new IOException( String.format("Unsupported difficulty flag for score %d (\"%s\"): %d", i, shipName, diffFlag) );
+				throw new IOException( String.format( "Unsupported difficulty flag for score %d (\"%s\"): %d", i, shipName, diffFlag ) );
 			}
 
 			Score score = new Score( shipName, shipId, value, sector, diff, victory );
 
 			if ( fileFormat == 9 ) {
-				score.setDLCEnabled( readBool(in) );
+				score.setDLCEnabled( readBool( in ) );
 			}
 
 			scores.add( score );
@@ -508,8 +505,7 @@ public class ProfileParser extends Parser {
 				diffFlag = 2;
 			}
 			else {
-				//throw new IOException( String.format("Unsupported difficulty for score (\"%s\"): %s", score.getShipName(), score.getDifficulty().toString()) );
-				log.warn( String.format("Substituting EASY for unsupported difficulty for score (\"%s\"): %s", score.getShipName(), score.getDifficulty().toString()) );
+				log.warn( String.format( "Substituting EASY for unsupported difficulty for score (\"%s\"): %s", score.getShipName(), score.getDifficulty().toString() ) );
 				diffFlag = 0;
 			}
 			writeInt( out, diffFlag );
