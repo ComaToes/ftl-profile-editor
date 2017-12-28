@@ -10,14 +10,14 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlValue;
 
 
-@XmlRootElement(name="img")
+@XmlRootElement(name = "img")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class BackgroundImage {
 
-	@XmlAttribute(name="w")
+	@XmlAttribute(name = "w")
 	private int width;
 
-	@XmlAttribute(name="h")
+	@XmlAttribute(name = "h")
 	private int height;
 
 	@XmlValue
@@ -49,6 +49,6 @@ public class BackgroundImage {
 
 	@Override
 	public String toString() {
-		return String.format("%s (%dx%d)", innerPath, width, height);
+		return String.format( "%s (%dx%d)", innerPath, width, height );
 	}
 }

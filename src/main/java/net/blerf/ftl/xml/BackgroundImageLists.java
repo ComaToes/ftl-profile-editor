@@ -12,10 +12,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 import net.blerf.ftl.xml.BackgroundImageList;
 
 
-@XmlRootElement(name="imageLists")
+@XmlRootElement(name = "imageLists")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class BackgroundImageLists {
-	@XmlElement(name="imageList")
+	@XmlElement(name = "imageList")
 	private List<BackgroundImageList> imageLists;
 
 	public List<BackgroundImageList> getImageLists() {

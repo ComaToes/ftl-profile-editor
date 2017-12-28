@@ -12,10 +12,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 import net.blerf.ftl.xml.FTLEvent;
 
 
-@XmlRootElement(name="eventList")
+@XmlRootElement(name = "eventList")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class FTLEventList {
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
 	//@XmlElement(name="event",required=false)

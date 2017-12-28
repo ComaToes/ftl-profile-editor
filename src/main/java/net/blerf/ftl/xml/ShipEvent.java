@@ -9,14 +9,14 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="ship")
+@XmlRootElement(name = "ship")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class ShipEvent {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
-	@XmlAttribute(name="auto_blueprint")
+	@XmlAttribute(name = "auto_blueprint")
 	private String autoBlueprintId;
 
 	// The rest is uninteresting. ;)

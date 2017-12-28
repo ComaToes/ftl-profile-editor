@@ -8,11 +8,11 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="achievements")
+@XmlRootElement(name = "achievements")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Achievements {
 
-	@XmlElement(name="achievement")
+	@XmlElement(name = "achievement")
 	private List<Achievement> achievements;
 
 	public List<Achievement> getAchievements() {

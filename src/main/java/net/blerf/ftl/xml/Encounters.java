@@ -11,16 +11,16 @@ import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
 
 
-@XmlRootElement(name="events")
+@XmlRootElement(name = "events")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Encounters {
-	@XmlElement(name="event",required=false)
+	@XmlElement(name = "event",required=false)
 	private List<FTLEvent> events;
 
-	@XmlElement(name="eventList",required=false)
+	@XmlElement(name = "eventList",required=false)
 	private List<FTLEventList> eventLists;
 
-	@XmlElement(name="ship")
+	@XmlElement(name = "ship")
 	private List<ShipEvent> shipEvents;
 
 	public void setEvents( List<FTLEvent> events ) {

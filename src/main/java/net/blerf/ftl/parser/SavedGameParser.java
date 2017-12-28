@@ -4286,7 +4286,7 @@ public class SavedGameParser extends Parser {
 
 			result.append( "\nSprite Tints...\n" );
 			for ( int i=0; i < spriteTintIndeces.size(); i++ ) {
-				Integer colorIndex = spriteTintIndeces.get(i);
+				Integer colorIndex = spriteTintIndeces.get( i );
 
 				String colorHint = null;
 				if ( tintLayerList != null && i < tintLayerList.size() ) {
@@ -4351,26 +4351,30 @@ public class SavedGameParser extends Parser {
 	}
 
 
-
+	/**
+	 * Types of systems.
+	 *
+	 * FTL 1.5.4 introduced BATTERY, CLONEBAY, MIND, and HACKING.
+	 */
 	public static enum SystemType {
 		// SystemType ids are tied to "img/icons/s_*_overlay.png" and store item ids.
 		// TODO: Magic booleans.
-		PILOT     ("pilot",      true),
-		DOORS     ("doors",      true),
-		SENSORS   ("sensors",    true),
-		MEDBAY    ("medbay",     false),
-		OXYGEN    ("oxygen",     false),
-		SHIELDS   ("shields",    false),
-		ENGINES   ("engines",    false),
-		WEAPONS   ("weapons",    false),
-		DRONE_CTRL("drones",     false),
-		TELEPORTER("teleporter", false),
-		CLOAKING  ("cloaking",   false),
-		ARTILLERY ("artillery",  false),
-		BATTERY   ("battery",    true),
-		CLONEBAY  ("clonebay",   false),
-		MIND      ("mind",       false),
-		HACKING   ("hacking",    false);
+		PILOT     ( "pilot",      true ),
+		DOORS     ( "doors",      true ),
+		SENSORS   ( "sensors",    true ),
+		MEDBAY    ( "medbay",     false ),
+		OXYGEN    ( "oxygen",     false ),
+		SHIELDS   ( "shields",    false ),
+		ENGINES   ( "engines",    false ),
+		WEAPONS   ( "weapons",    false ),
+		DRONE_CTRL( "drones",     false ),
+		TELEPORTER( "teleporter", false ),
+		CLOAKING  ( "cloaking",   false ),
+		ARTILLERY ( "artillery",  false ),
+		BATTERY   ( "battery",    true ),
+		CLONEBAY  ( "clonebay",   false ),
+		MIND      ( "mind",       false ),
+		HACKING   ( "hacking",    false );
 
 		private String id;
 		private boolean subsystem;
@@ -4746,6 +4750,9 @@ public class SavedGameParser extends Parser {
 
 
 
+	/**
+	 * The direction crew will face when standing at a system room's terminal.
+	 */
 	public static enum StationDirection { DOWN, RIGHT, UP, LEFT, NONE }
 
 	public static class RoomState {
@@ -4830,7 +4837,7 @@ public class SavedGameParser extends Parser {
 			squareList.add( square );
 		}
 		public SquareState getSquare( int n ) {
-			return squareList.get(n);
+			return squareList.get( n );
 		}
 
 		public List<SquareState> getSquareList() { return squareList; }
@@ -6250,6 +6257,18 @@ public class SavedGameParser extends Parser {
 
 
 
+	/**
+	 * Info used for spawning the rebel flagship.
+	 *
+	 * Whereas regular ship encounters are preserved in BeaconStates for repeat
+	 * visits, the flagship is not tied to a location.
+	 *
+	 * In FTL 1.01-1.03.3, this info is not present in saved games until
+	 * after engaging the rebel flagship in sector 8 for the first time.
+	 *
+	 * In FTL 1.5.4, this is always present, though the occupancy map may be
+	 * empty.
+	 */
 	public static class RebelFlagshipState {
 		private int unknownAlpha = 0;
 		private int pendingStage = 1;
@@ -6260,11 +6279,6 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Constructor.
-		 *
-		 * In FTL 1.01-1.03.3, this info is not present in saved games until
-		 * after engaging the rebel flagship in sector 8 for the first time.
-		 *
-		 * In FTL 1.5.4, this is always set, though the occupancy map is empty.
 		 */
 		public RebelFlagshipState() {
 		}
@@ -6326,19 +6340,19 @@ public class SavedGameParser extends Parser {
 		 * Sets whether a room had crew members in the last seen layout.
 		 *
 		 * Stage 1 sets this, but doesn't read it.
-		 * Fleeing stage 1, altering these bytes, then returning
-		 * only results in a fresh fight.
+		 * Fleeing stage 1, editing, then returning only results in a fresh
+		 * fight.
 		 *
 		 * Upon first engaging stage 2, the layout is migrated.
 		 * The occupancy list is truncated to the new layout's rooms.
 		 * (The blueprints happen to have matching low roomIds.)
 		 *
-		 *   Stage 1 (BOSS_1): 0x13=19 rooms
-		 *   Stage 2 (BOSS_2): 0x0F=15 rooms
-		 *   Stage 3 (BOSS_3): 0x0B=11 rooms
+		 *   Stage 1 (BOSS_1): 19 rooms.
+		 *   Stage 2 (BOSS_2): 15 rooms.
+		 *   Stage 3 (BOSS_3): 11 rooms.
 		 *   Having 0 rooms occupied is allowed, meaning AI took over.
 		 *
-		 * Stage 2 will read altered bytes on additional skirmishes.
+		 * Stage 2 will respond to pre-skirmish editing.
 		 *
 		 * Stage 3 probably will, too. (TODO: Confirm this.)
 		 *
@@ -6346,7 +6360,7 @@ public class SavedGameParser extends Parser {
 		 * @param n the number of crew in that room
 		 */
 		public void setPreviousOccupancy( int roomId, int n ) {
-			occupancyMap.put( new Integer(roomId), new Integer(n) );
+			occupancyMap.put( new Integer( roomId ), new Integer( n ) );
 		}
 
 		public Map<Integer, Integer> getOccupancyMap() {

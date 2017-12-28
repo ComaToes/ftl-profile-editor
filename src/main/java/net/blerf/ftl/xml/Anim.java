@@ -10,17 +10,17 @@ import javax.xml.bind.annotation.XmlRootElement;
 import net.blerf.ftl.xml.AnimSpec;
 
 
-@XmlRootElement(name="anim")
+@XmlRootElement(name = "anim")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Anim {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
-	@XmlElement(name="sheet")
+	@XmlElement(name = "sheet")
 	private String sheetId;
 
-	@XmlElement(name="desc")
+	@XmlElement(name = "desc")
 	private AnimSpec spec;
 
 	private float time;

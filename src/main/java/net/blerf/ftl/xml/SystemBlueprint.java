@@ -10,11 +10,11 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="systemBlueprint")
+@XmlRootElement(name = "systemBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SystemBlueprint {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
 	private String type;
@@ -24,13 +24,13 @@ public class SystemBlueprint {
 	private int maxPower;    // Highest possible capacity attainable by upgrading.
 	private int rarity;
 
-	@XmlElementWrapper(name="upgradeCost")
-	@XmlElement(name="level")
+	@XmlElementWrapper(name = "upgradeCost")
+	@XmlElement(name = "level")
 	private List<Integer> upgradeCosts;
 
 	private int cost;
 
-	@XmlElement(required=false)
+	@XmlElement(required = false)
 	private Integer locked;
 
 	public void setId( String id ) {

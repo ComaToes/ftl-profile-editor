@@ -12,13 +12,13 @@ import javax.xml.bind.annotation.XmlRootElement;
 import net.blerf.ftl.xml.BackgroundImage;
 
 
-@XmlRootElement(name="imageList")
+@XmlRootElement(name = "imageList")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class BackgroundImageList {
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
-	@XmlElement(name="img")
+	@XmlElement(name = "img")
 	private List<BackgroundImage> images;
 
 	public List<BackgroundImage> getImages() {

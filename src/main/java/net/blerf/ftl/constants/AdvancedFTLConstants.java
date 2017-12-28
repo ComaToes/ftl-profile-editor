@@ -9,7 +9,7 @@ import net.blerf.ftl.parser.SavedGameParser.CrewType;
 
 
 /**
- * Constants for FTL 1.5.4.
+ * Constants for FTL 1.5.4-1.5.13.
  *
  * TODO: Determine the "ghost" race's skill mastery intervals in AE.
  */

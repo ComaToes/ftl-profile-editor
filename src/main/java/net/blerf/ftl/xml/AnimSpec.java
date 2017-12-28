@@ -13,11 +13,11 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @see net.blerf.ftl.xml.Anim
  * @see net.blerf.ftl.xml.WeaponAnim
  */
-@XmlRootElement(name="desc")
+@XmlRootElement(name = "desc")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AnimSpec {
 
-	@XmlAttribute(name="length")
+	@XmlAttribute(name = "length")
 	public int frameCount;
 
 	@XmlAttribute
@@ -28,6 +28,6 @@ public class AnimSpec {
 
 	@Override
 	public String toString() {
-		return String.format("frames:%s, x:%d, y:%d", frameCount, x, y);
+		return String.format( "frames:%s, x:%d, y:%d", frameCount, x, y );
 	}
 }

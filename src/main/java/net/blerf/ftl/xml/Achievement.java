@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 
-@XmlRootElement(name="achievement")
+@XmlRootElement(name = "achievement")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Achievement {
 
@@ -17,16 +17,16 @@ public class Achievement {
 
 	private String name;
 
-	@XmlElement(name="desc")
+	@XmlElement(name = "desc")
 	private String description;
 
-	@XmlElement(name="img")
+	@XmlElement(name = "img")
 	private String imagePath;
 
-	@XmlElement(name="ship",required=false)
+	@XmlElement(name = "ship", required = false)
 	private String shipId;
 
-	@XmlElement(required=false)
+	@XmlElement(required = false)
 	private int multiDifficulty;
 
 	// Ship Victory achievements track *all* the variants which earned them.

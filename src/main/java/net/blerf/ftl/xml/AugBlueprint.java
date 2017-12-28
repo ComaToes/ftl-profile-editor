@@ -7,17 +7,17 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="augBlueprint")
+@XmlRootElement(name = "augBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AugBlueprint {
 	
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
 	private String title;
 	private String desc;
 
-	@XmlElement(name="bp")
+	@XmlElement(name = "bp")
 	private int bp;  // TODO: Rename this.
 
 	private int cost;

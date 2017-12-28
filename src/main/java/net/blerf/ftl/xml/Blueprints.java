@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="blueprints")
+@XmlRootElement(name = "blueprints")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Blueprints {
 
@@ -18,6 +18,7 @@ public class Blueprints {
 	private List<DroneBlueprint> droneBlueprint;
 	private List<AugBlueprint> augBlueprint;
 	private List<ShipBlueprint> shipBlueprint;
+
 	public List<BlueprintList> getBlueprintList() {
 		return blueprintList;
 	}

@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlValue;
 
 
-@XmlRootElement(name="nameList")
+@XmlRootElement(name = "nameList")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CrewNameList {
 
@@ -20,13 +20,13 @@ public class CrewNameList {
 	@XmlAttribute
 	private String sex;
 
-	@XmlElement(name="name")
+	@XmlElement(name = "name")
 	private List<CrewName> names;
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class CrewName {
 
-		@XmlAttribute(required=false)
+		@XmlAttribute(required = false)
 		public String shortName;
 
 		@XmlValue

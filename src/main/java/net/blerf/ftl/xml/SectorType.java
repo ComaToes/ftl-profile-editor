@@ -9,14 +9,14 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="sectorType")
+@XmlRootElement(name = "sectorType")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SectorType {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
-	@XmlElement(name="sector")
+	@XmlElement(name = "sector")
 	public List<String> sectorIds;
 
 	public void setId( String id ) {

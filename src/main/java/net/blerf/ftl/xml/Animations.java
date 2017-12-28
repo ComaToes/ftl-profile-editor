@@ -12,17 +12,17 @@ import net.blerf.ftl.xml.AnimSheet;
 import net.blerf.ftl.xml.WeaponAnim;
 
 
-@XmlRootElement(name="animations")
+@XmlRootElement(name = "animations")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class Animations {
 
-	@XmlElement(name="animSheet",required=false)
+	@XmlElement(name = "animSheet", required = false)
 	private List<AnimSheet> sheets;
 
-	@XmlElement(name="anim",required=false)
+	@XmlElement(name = "anim", required = false)
 	private List<Anim> anims;
 
-	@XmlElement(name="weaponAnim",required=false)
+	@XmlElement(name = "weaponAnim", required = false)
 	private List<WeaponAnim> weaponAnims;
 
 

@@ -9,11 +9,11 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="sectorDescription")
+@XmlRootElement(name = "sectorDescription")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SectorDescription {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
 	@XmlAttribute
@@ -26,7 +26,7 @@ public class SectorDescription {
 
 	private TrackList trackList;
 
-	@XmlElement(required=false)
+	@XmlElement(required = false)
 	private String startEvent;
 
 	@XmlElement(name="event")
@@ -34,13 +34,13 @@ public class SectorDescription {
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class NameList {
-		@XmlElement(name="name")
+		@XmlElement(name = "name")
 		public List<String> names;
 	}
 
 	@XmlAccessorType(XmlAccessType.FIELD)
 	public static class TrackList {
-		@XmlElement(name="track")
+		@XmlElement(name = "track")
 		public List<String> tracks;
 	}
 

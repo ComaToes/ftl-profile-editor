@@ -113,8 +113,13 @@ public class SavedGameSectorMapPanel extends JPanel {
 	private static final int SCREEN_WIDTH = 1280;
 	private static final int SCREEN_HEIGHT = 720;
 
+	private static final int GRID_GEN_COLS = 6;
+	private static final int GRID_GEN_ROWS = 4;
+	private static final int GRID_GEN_COL_W = 116;
+	private static final int GRID_GEN_ROW_H = 103;
+
 	// mapHolderPanel Layers
-	private static final Integer MAP_LAYER = new Integer(10);
+	private static final Integer MAP_LAYER = new Integer( 10 );
 	private static final Integer MISC_SELECTION_LAYER = new Integer( 50 );
 	// mapPanel Layers
 	//private static final Integer BEACON_LAYER = new Integer(10);
@@ -350,6 +355,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		otherGeneralBtn.addActionListener( ctrlListener );
 		otherFlagshipBtn.addActionListener( ctrlListener );
 
+		otherLayoutBtn.addMouseListener( new StatusbarMouseListener( frame, "Edit the sector layout." ) );
+		otherGeneralBtn.addMouseListener( new StatusbarMouseListener( frame, "Edit the rebel fleet, etc." ) );
+		otherFlagshipBtn.addMouseListener( new StatusbarMouseListener( frame, "Edit the rebel flagship." ) );
+
 		JPanel centerPanel = new JPanel( new GridBagLayout() );
 
 		GridBagConstraints gridC = new GridBagConstraints();
@@ -435,7 +444,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		sectorLayoutSeed = gameState.getSectorLayoutSeed();
 
 		GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
-		GeneratedSectorMap newGenMap = gridMapGen.generateSectorMap( 6, 4, 116, 122 );
+		GeneratedSectorMap newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
 
 		List<GeneratedBeacon> genBeacons = newGenMap.getGeneratedBeaconList();
 		List<Point> newLocations = new ArrayList<Point>( genBeacons.size() );
@@ -1095,7 +1104,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 				if ( LAYOUT_GRID.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
 					GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
-					newGenMap = gridMapGen.generateSectorMap( 6, 4, 116, 122 );
+					newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
 				}
 				else if ( LAYOUT_SEEDED.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
 					Object selectedRNGObj = editorPanel.getCombo( ALGORITHM ).getSelectedItem();
@@ -1158,7 +1167,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 				if ( LAYOUT_GRID.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
 					GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
-					newGenMap = gridMapGen.generateSectorMap( 6, 4, 116, 122 );
+					newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
 				}
 				else if ( LAYOUT_SEEDED.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
 					Object selectedRNGObj = editorPanel.getCombo( ALGORITHM ).getSelectedItem();

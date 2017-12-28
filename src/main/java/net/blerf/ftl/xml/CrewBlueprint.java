@@ -10,32 +10,32 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="crewBlueprint")
+@XmlRootElement(name = "crewBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class CrewBlueprint {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
 	private String desc;
 	private int cost;
 
-	@XmlElement(name="bp")
+	@XmlElement(name = "bp")
 	private int bp;  // TODO: Rename this.
 
 	private String title;
 
-	@XmlElement(name="short")
+	@XmlElement(name = "short")
 	private String shortTitle;
 
 	private int rarity;
 
-	@XmlElementWrapper(name="powerList")
-	@XmlElement(name="power")
+	@XmlElementWrapper(name = "powerList")
+	@XmlElement(name = "power")
 	private List<String> powerList;
 
-	@XmlElementWrapper(name="colorList",required=false)
-	@XmlElement(name="layer",required=false)
+	@XmlElementWrapper(name = "colorList", required = false)
+	@XmlElement(name = "layer", required = false)
 	private List<SpriteTintLayer> spriteTintLayerList;  // FTL 1.5.4 introduced sprite tinting.
 
 	@XmlAccessorType(XmlAccessType.FIELD)

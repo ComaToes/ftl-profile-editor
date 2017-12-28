@@ -11,17 +11,17 @@ import net.blerf.ftl.xml.AnimSpec;
 import net.blerf.ftl.xml.Offset;
 
 
-@XmlRootElement(name="weaponAnim")
+@XmlRootElement(name = "weaponAnim")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class WeaponAnim {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
-	@XmlElement(name="sheet")
+	@XmlElement(name = "sheet")
 	private String sheetId;
 
-	@XmlElement(name="desc")
+	@XmlElement(name = "desc")
 	private AnimSpec spec;
 
 	private int chargedFrame;
@@ -30,10 +30,10 @@ public class WeaponAnim {
 	private Offset firePoint;
 	private Offset mountPoint;
 
-	@XmlElement(name="delayChargeAnim",required=false)
+	@XmlElement(name = "delayChargeAnim", required = false)
 	private Float chargeDelay;
 
-	@XmlElement(name="chargeImage",required=false)
+	@XmlElement(name = "chargeImage", required = false)
 	private String chargeImagePath;
 
 	public void setId( String id ) {

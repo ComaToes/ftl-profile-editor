@@ -603,14 +603,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 		otherGeneralBtn.addActionListener( ctrlListener );
 		otherAugmentsBtn.addActionListener( ctrlListener );
 
-		resetOxygenBtn.addMouseListener( new StatusbarMouseListener(frame, "Set all rooms' oxygen to 100%.") );
-		resetSystemsBtn.addMouseListener( new StatusbarMouseListener(frame, "Clear all system damage and temporary capacity limits.") );
-		resetIntrudersBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all NPC crew.") );
-		resetBreachesBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all breaches.") );
-		resetFiresBtn.addMouseListener( new StatusbarMouseListener(frame, "Remove all fires.") );
+		resetOxygenBtn.addMouseListener( new StatusbarMouseListener( frame, "Set all rooms' oxygen to 100%." ) );
+		resetSystemsBtn.addMouseListener( new StatusbarMouseListener( frame, "Clear all system damage and temporary capacity limits." ) );
+		resetIntrudersBtn.addMouseListener( new StatusbarMouseListener( frame, "Remove all NPC crew." ) );
+		resetBreachesBtn.addMouseListener( new StatusbarMouseListener( frame, "Remove all breaches." ) );
+		resetFiresBtn.addMouseListener( new StatusbarMouseListener( frame, "Remove all fires." ) );
 
-		otherGeneralBtn.addMouseListener( new StatusbarMouseListener(frame, "Edit the ship's name, hull, and supplies.") );
-		otherAugmentsBtn.addMouseListener( new StatusbarMouseListener(frame, "Edit Augments.") );
+		otherGeneralBtn.addMouseListener( new StatusbarMouseListener( frame, "Edit the ship's name, hull, and supplies." ) );
+		otherAugmentsBtn.addMouseListener( new StatusbarMouseListener( frame, "Edit Augments." ) );
 
 		JPanel centerPanel = new JPanel( new GridBagLayout() );
 
@@ -816,11 +816,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 				ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
 				int badRoomId = medicalSystem.getRoomId();
 				int badSquareId = 1;       // TODO: Magic number (when omitted, slot is #1).
-				if ( medicalSlot != null )
+				if ( medicalSlot != null ) {
 					badSquareId = medicalSlot.getNumber();
+				}
 
 				if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
-					log.trace(String.format("Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId) );
+					log.trace(String.format( "Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId ) );
 
 					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( badRoomId );
 					int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();

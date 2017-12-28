@@ -10,10 +10,10 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="event")
+@XmlRootElement(name = "event")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class FTLEvent {
-	@XmlAttribute(name="name",required=false)
+	@XmlAttribute(name = "name", required = false)
 	private String id;
 
 	// The rest is uninteresting. ;)

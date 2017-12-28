@@ -9,23 +9,23 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlValue;
 
 
-@XmlRootElement(name="animSheet")
+@XmlRootElement(name = "animSheet")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AnimSheet {
 
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
-	@XmlAttribute(name="w")
+	@XmlAttribute(name = "w")
 	private int width;
 
-	@XmlAttribute(name="h")
+	@XmlAttribute(name = "h")
 	private int height;
 
-	@XmlAttribute(name="fw")
+	@XmlAttribute(name = "fw")
 	private int frameWidth;
 
-	@XmlAttribute(name="fw")
+	@XmlAttribute(name = "fw")
 	private int frameHeight;
 
 	@XmlValue

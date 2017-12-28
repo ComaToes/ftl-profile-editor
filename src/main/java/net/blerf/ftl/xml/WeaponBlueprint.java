@@ -10,29 +10,29 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name="weaponBlueprint")
+@XmlRootElement(name = "weaponBlueprint")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class WeaponBlueprint {
 	
-	@XmlAttribute(name="name")
+	@XmlAttribute(name = "name")
 	private String id;
 
 	private String type;
 	private String title;
 
-	@XmlElement(name="short")
+	@XmlElement(name = "short")
 	private String shortTitle;
 
-	@XmlElement(required=false)
+	@XmlElement(required = false)
 	private Integer locked;
 
 	private String desc;
 	private String tooltip;
 
-	@XmlElement(name="sp")
+	@XmlElement(name = "sp")
 	private int shieldPiercing;
 
-	@XmlElement(name="bp")
+	@XmlElement(name = "bp")
 	private int bp;  // TODO: Rename this.
 
 	private int damage;
@@ -44,26 +44,26 @@ public class WeaponBlueprint {
 	private int cost;
 	private int rarity;
 
-	@XmlElement(name="image")
+	@XmlElement(name = "image")
 	private String projectileAnimId;  // Projectile / Beam-spot anim.
 
-	@XmlElementWrapper(name="launchSounds")
-	@XmlElement(name="sound")
+	@XmlElementWrapper(name = "launchSounds")
+	@XmlElement(name = "sound")
 	private List<String> launchSounds;
 
-	@XmlElementWrapper(name="hitShipSounds")
-	@XmlElement(name="sound")
+	@XmlElementWrapper(name = "hitShipSounds")
+	@XmlElement(name = "sound")
 	private List<String> hitShipSounds;
 
-	@XmlElementWrapper(name="hitShieldSounds")
-	@XmlElement(name="sound")
+	@XmlElementWrapper(name = "hitShieldSounds")
+	@XmlElement(name = "sound")
 	private List<String> hitShieldSounds;
 
-	@XmlElementWrapper(name="missSounds")
-	@XmlElement(name="sound")
+	@XmlElementWrapper(name = "missSounds")
+	@XmlElement(name = "sound")
 	private List<String> missSounds;
 
-	@XmlElement(name="weaponArt")
+	@XmlElement(name = "weaponArt")
 	private String weaponAnimId;
 	
 	public void setId( String id ) {

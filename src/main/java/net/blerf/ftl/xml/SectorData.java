@@ -11,10 +11,10 @@ import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
 
 
-@XmlRootElement(name="sectorData")
+@XmlRootElement(name = "sectorData")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SectorData {
-	@XmlElement(name="sectorType")
+	@XmlElement(name = "sectorType")
 	private List<SectorType> sectorTypes;
 
 	@XmlElement(name="sectorDescription")
