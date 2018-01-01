@@ -46,15 +46,39 @@ fi
 # Finally, the payload.
 cd "${maindir}";
 # - - -
-# This used to be sufficient.
-#java -jar FTLProfileEditor.jar;
 
-# Java 9 made JAXB opt-in to deprecate it later.
-# Earlier versions won't rcognize that arg.
-# I don't feel like scraping java's version string to conditionally add args.
-# Ignorable args NEED an equals for their value.
+# Search in $PATH among other places.
+java_cmd=$(command -v java);
 
-java -XX:+IgnoreUnrecognizedVMOptions --add-modules=java.xml.bind -jar FTLProfileEditor.jar;
+# OSX uses a command to decide java's location (or prompt the user to install it).
+if [ -x "/usr/libexec/java_home" ]; then
+  export JAVA_HOME=$(/usr/libexec/java_home --request)
+
+  if [ -n "${JAVA_HOME}" ]; then
+    java_cmd=${JAVA_HOME}/bin/java
+  fi
+fi
+
+if [ -n "${java_cmd}" ]; then
+
+  # This used to be sufficient.
+  #"${java_cmd}" -jar FTLProfileEditor.jar;
+
+  # Java 9 made JAXB opt-in, to deprecate it later.
+  # Earlier versions won't rcognize that arg.
+  # I don't feel like scraping java's version string to conditionally add args.
+  # Ignorable args NEED an equals for their value.
+
+  "${java_cmd}" -XX:+IgnoreUnrecognizedVMOptions --add-modules=java.xml.bind -jar FTLProfileEditor.jar;
+
+else
+
+  echo "";
+  echo "This script was unable to find java."
+  echo "";
+
+fi
+
 # - - -
 
 if [ "${ingui}" = "1" ]; then
