@@ -1,15 +1,22 @@
-*.class
-
-# Package Files #
-*.jar
-*.war
-*.ear
-
-.settings/
-bin/
-ftldata/
-ftl-editor.cfg
-ftl-profile-editor.log
 target/
 
-log4j2-test.xml
+*.class
+*.tmp
+*.bak
+~$*
+
+
+# Windows image file caches
+Thumbs.db
+
+# Windows folder config file
+Desktop.ini
+
+
+# Mac junk
+.DS_Store
+
+
+# IdeaJ
+*.idea
+*.iml
