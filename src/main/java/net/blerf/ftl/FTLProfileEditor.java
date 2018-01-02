@@ -214,25 +214,24 @@ public class FTLProfileEditor {
 			}
 
 			if ( writeConfig ) {
-				String wipMsg = "";
-				wipMsg += "FTL:Advanced Edition (1.5.4+) added lots of new info to profiles and saved games.\n";
-				wipMsg += "\n";
-				wipMsg += "Previous editions stored their profile in \"prof.sav\".\n";
-				wipMsg += "AE uses \"ae_prof.sav\" instead.\n";
-				wipMsg += "\n";
-				wipMsg += "AE reads the old profile the first time you play to migrate scores and such.\n";
-				wipMsg += "Profiles from all editions are fully editable.\n";
-				wipMsg += "\n";
-				wipMsg += "Much of the new saved game info has yet to be deciphered, so AE's \"continue.sav\" is \n";
-				wipMsg += "only partially editable for now.\n";
-				wipMsg += "\n";
-				wipMsg += "Saved games from FTL 1.03.3 and earlier are still fully editable.\n";
-				wipMsg += "\n";
-				wipMsg += "An old saved game or profile will just ignore the new fields.\n";
-				wipMsg += "\n";
-				wipMsg += "\n";
-				wipMsg += "If you encounter a read error opening a file, that means the editor saw something \n";
-				wipMsg += "new that it doesn't recognize. Submitting a bug report would be helpful.";
+				String wipMsg = ""
+					+ "FTL has revised its file formats several times, and not everything is deciphered "
+					+ "yet, which limits what can be safely edited.\n"
+					+ "\n"
+					+ "FTL 1.6.1+ profiles are not supported at all.\n"
+					+ "FTL 1.5.4-1.5.13 profiles (ae_prof.sav) are fully editable.\n"
+					+ "FTL 1.01-1.03.3 profiles (prof.sav) are fully editable.\n"
+					+ "\n"
+					+ "FTL 1.6.1+ saved games are not supported at all.\n"
+					+ "FTL 1.5.4-1.5.13 saved games are partially editable.\n"
+					+ "FTL 1.01-1.03.3 saved games are fully editable.\n"
+					+ "\n"
+					+ "Choose the appropriate tab (Profile or SavedGame) and click the \"Open\" button.\n"
+					+ "\n"
+					+ "\n"
+					+ "If you encounter a read error opening a file, that means the editor saw something \n"
+					+ "new that it doesn't recognize. Submitting a bug report would be helpful.";
+
 				JOptionPane.showMessageDialog( null, wipMsg, "Work in Progress", JOptionPane.PLAIN_MESSAGE );
 			}
 

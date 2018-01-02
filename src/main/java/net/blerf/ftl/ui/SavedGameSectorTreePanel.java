@@ -143,25 +143,25 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		miscRandomSeedBtn.addMouseListener( new StatusbarMouseListener( frame, "Generate an entirely new sector tree." ) );
 		miscRestoreBtn.addMouseListener( new StatusbarMouseListener( frame, "Restore the sector tree that was last opened/saved." ) );
 
-		StringBuilder noticeBuf = new StringBuilder();
-		noticeBuf.append( "Saved games contain a seed for building the sector tree, " );
-		noticeBuf.append( "which FTL sends to the OS's random number generator. " );
-		noticeBuf.append( "As such, the tree is fragile: platform-dependent and mod-sensitive.\n" );
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "This editor can reconstruct the tree using various algorithms, " );
-		noticeBuf.append( "or display a flat line for backtracking.\n");
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "Invoking an RNG (switching to the expanded view or setting a new seed) " );
-		noticeBuf.append( "may risk creating visitation breadcrumbs inconsistent with the tree, " );
-		noticeBuf.append( "if FTL interprets the seed differently in-game. " );
-		noticeBuf.append( "In other words, charting a glitchy course through unexpected sectors.\n" );
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "A linear preview with the original seed should always be safe." );
+		String notice = ""
+			+ "Saved games contain a seed for building the sector tree, "
+			+ "which FTL sends to the OS's random number generator. "
+			+ "As such, the tree is fragile: platform-dependent and mod-sensitive.\n"
+			+ "\n"
+			+ "This editor can reconstruct the tree using various algorithms, "
+			+ "or display a flat line for backtracking.\n"
+			+ "\n"
+			+ "Invoking an RNG (switching to the expanded view or setting a new seed) "
+			+ "may risk creating visitation breadcrumbs inconsistent with the tree, "
+			+ "if FTL interprets the seed differently in-game. "
+			+ "In other words, charting a glitchy course through unexpected sectors.\n"
+			+ "\n"
+			+ "A linear preview with the original seed should always be safe.";
 
 		JPanel noticePanel = new JPanel( new BorderLayout() );
 		noticePanel.setBorder( BorderFactory.createEtchedBorder() );
 		JTextArea noticeArea = new JTextArea();
-		noticeArea.setText( noticeBuf.toString() );
+		noticeArea.setText( notice );
 		noticeArea.setBackground( null );
 		noticeArea.setFont( noticeFont );
 		noticeArea.setEditable( false );

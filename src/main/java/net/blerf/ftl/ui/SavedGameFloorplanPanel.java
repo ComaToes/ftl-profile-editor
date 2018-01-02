@@ -2640,15 +2640,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getBoolean(ARMED).addActionListener( droneListener );
 
 		addSidePanelSeparator( 8 );
-		String notice = "";
-		notice += "* Available power is remaining reserve power, up to the usable ";
-		notice += "Drone Ctrl system capacity, that could go to this drone.\n";
-
-		notice += "* This tool doesn't alter nearby ships. It's unknown what will happen ";
-		notice += "if a boarding drone's armed state is changed (what about the body?).\n";
-
-		notice += "* Player Ctrl works as expected while armed, but has the opposite ";
-		notice += "value when disarmed?";
+		String notice = ""
+			+ "* Available power is remaining reserve power, up to the usable "
+			+ "Drone Ctrl system capacity, that could go to this drone.\n"
+			+ ""
+			+ "* This tool doesn't alter nearby ships. It's unknown what will happen "
+			+ "if a boarding drone's armed state is changed (what about the body?).\n"
+			+ ""
+			+ "* Player Ctrl works as expected while armed, but has the opposite "
+			+ "value when disarmed?";
 		addSidePanelNote( notice );
 
 		showSidePanel();
@@ -2857,10 +2857,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getBoolean(ARMED).addActionListener( weaponListener );
 
 		addSidePanelSeparator( 8 );
-		String notice = "";
-		notice += "* Available power is reserve/battery/Zoltan bars not already ";
-		notice += "claimed by other systems, minus other armed weapons' power, ";
-		notice += "after applying Weapons system limits and damage.";
+		String notice = ""
+			+ "* Available power is reserve/battery/Zoltan bars not already "
+			+ "claimed by other systems, minus other armed weapons' power, "
+			+ "after applying Weapons system limits and damage.";
 		addSidePanelNote( notice );
 
 		showSidePanel();
@@ -3257,34 +3257,33 @@ public class SavedGameFloorplanPanel extends JPanel {
 		createSidePanel( title, editorPanel, applyCallback );
 
 		addSidePanelSeparator( 8 );
-		String notice = "";
+		StringBuilder noticeBuf = new StringBuilder();
 		if ( isSubsystem ) {
-			notice += "* This is a subsystem, which means reserves are ignored, ";
-			notice += "and power is always as full as possible.\n\n";
+			noticeBuf.append( "* This is a subsystem, which means reserves are ignored, " );
+			noticeBuf.append( "and power is always as full as possible.\n\n" );
 		}
 		if ( SystemType.SHIELDS.equals( systemRef.get().getSystemType() ) ) {
-			notice += "* Partialy powered shields will steal an extra bar upon loading, ";
-			notice += "from another system if need be.\n\n";
+			noticeBuf.append( "* Partialy powered shields will steal an extra bar upon loading, " );
+			noticeBuf.append( "from another system if need be.\n\n" );
 		}
-		if ( SystemType.WEAPONS.equals( systemRef.get().getSystemType() ) ) {
-			notice += "* Power can't be directly changed for the Weapons system. ";
-			notice += "Toggle paraphernalia separately. ";
-			notice += "If capacity/damage reduce power, ";
-			notice += "things will get disarmed.\n\n";
+		else if ( SystemType.WEAPONS.equals( systemRef.get().getSystemType() ) ) {
+			noticeBuf.append( "* Power can't be directly changed for the Weapons system. " );
+			noticeBuf.append( "Toggle paraphernalia separately. " );
+			noticeBuf.append( "If capacity/damage reduce power, " );
+			noticeBuf.append( "things will get disarmed.\n\n" );
 		}
-		if ( SystemType.DRONE_CTRL.equals( systemRef.get().getSystemType() ) ) {
-			notice += "* Power can't be directly changed for the Drone Ctrl system. ";
-			notice += "Toggle paraphernalia separately. ";
-			notice += "If capacity/damage reduce power, ";
-			notice += "things will get disarmed.\n\n";
+		else if ( SystemType.DRONE_CTRL.equals( systemRef.get().getSystemType() ) ) {
+			noticeBuf.append( "* Power can't be directly changed for the Drone Ctrl system. " );
+			noticeBuf.append( "Toggle paraphernalia separately. " );
+			noticeBuf.append( "If capacity/damage reduce power, " );
+			noticeBuf.append( "things will get disarmed.\n\n" );
 		}
+		noticeBuf.append( "* Ion -1: in Cloaking initates cloak; " );
+		noticeBuf.append( "in Teleporter might not be useful; " );
+		noticeBuf.append( "elsewhere sets a locked appearance indefinitely " );
+		noticeBuf.append( "until hit with an ion weapon.\n" );
 
-		notice += "* Ion -1: in Cloaking initates cloak; ";
-		notice += "in Teleporter might not be useful; ";
-		notice += "elsewhere sets a locked appearance indefinitely ";
-		notice += "until hit with an ion weapon.\n";
-
-		addSidePanelNote( notice );
+		addSidePanelNote( noticeBuf.toString() );
 
 		showSidePanel();
 	}
@@ -3459,9 +3458,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 		createSidePanel( title, editorPanel, applyCallback );
 
 		addSidePanelSeparator( 8 );
-		String notice = "";
-		notice += "* All crew appear in this list, including dead ones awaiting ";
-		notice += "cloned bodies. Living crew can also be clicked directly.\n";
+		String notice = ""
+			+ "* All crew appear in this list, including dead ones awaiting "
+			+ "cloned bodies. Living crew can also be clicked directly.\n";
 
 		addSidePanelNote( notice );
 
@@ -3828,11 +3827,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		});
 
 		addSidePanelSeparator( 8 );
-		String notice = "";
-		notice += "* FTL will crash if you control more than 8 non-drone crew.\n";
-
-		notice += "* Boarding drones are drones on their owner's ship, and crew ";
-		notice += "(race='battle') on the attacked ship.";
+		String notice = ""
+			+ "* FTL will crash if you control more than 8 non-drone crew.\n"
+			+ ""
+			+ "* Boarding drones are drones on their owner's ship, and crew "
+			+ "(race='battle') on the attacked ship.";
 
 		addSidePanelNote( notice );
 

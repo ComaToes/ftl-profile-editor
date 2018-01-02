@@ -1181,11 +1181,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 					if ( sectorLayoutSeed == newSeed && newGenMap.getGeneratedBeaconList().size() != beaconRefs.size() ) {
 						// This never seems to trigger even for bad RNGs!?
 
-						StringBuilder badCountBuf = new StringBuilder();
-						badCountBuf.append( "The RNG-informed map has a beacon count that doesn't match the fixed beacon " );
-						badCountBuf.append( "list. FTL must have used a different RNG." );
+						String badCountNag = ""
+							+ "The RNG-informed map has a beacon count that doesn't match the fixed beacon "
+							+ "list. FTL must have used a different RNG.";
 
-						JOptionPane.showMessageDialog( frame, badCountBuf.toString(), "Bad RNG", JOptionPane.WARNING_MESSAGE );
+						JOptionPane.showMessageDialog( frame, badCountNag, "Bad RNG", JOptionPane.WARNING_MESSAGE );
 						newGenMap = null;
 					}
 				}
@@ -1201,27 +1201,26 @@ public class SavedGameSectorMapPanel extends JPanel {
 		});
 
 		addSidePanelSeparator( 8 );
-		StringBuilder noticeBuf = new StringBuilder();
-		noticeBuf.append( "A sector map is part random, part fixed & editable.\n" );
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "FTL first builds a map with random layout and events. " );
-		noticeBuf.append( "Then FTL overlays it with a flat list of saved beacon " );
-		noticeBuf.append( "details, each overriding the nth random beacon.\n" );
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "FTL sends the sector seed to the OS's random number generator. " );
-		noticeBuf.append( "As such, the map is fragile: platform-dependent.\n" );
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "This editor can reconstruct an RNG-informed preview using " );
-		noticeBuf.append( "various algorithms, or passively display the fixed beacon list " );
-		noticeBuf.append( "wrapped vertically in a grid.\n" );
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "If FTL interprets the seed differently in-game, the beacon count " );
-		noticeBuf.append( "will vary, along with all other random elements.\n" );
-		noticeBuf.append( "\n" );
-		noticeBuf.append( "A grid layout with the original seed should always be safe." );
+		String notice = ""
+			+ "A sector map is part random, part fixed & editable.\n"
+			+ "\n"
+			+ "FTL first builds a map with random layout and events. "
+			+ "Then FTL overlays it with a flat list of saved beacon "
+			+ "details, each overriding the nth random beacon.\n"
+			+ "\n"
+			+ "FTL sends the sector seed to the OS's random number generator. "
+			+ "As such, the map is fragile: platform-dependent.\n"
+			+ "\n"
+			+ "This editor can reconstruct an RNG-informed preview using "
+			+ "various algorithms, or passively display the fixed beacon list "
+			+ "wrapped vertically in a grid.\n"
+			+ "\n"
+			+ "If FTL interprets the seed differently in-game, the beacon count "
+			+ "will vary, along with all other random elements.\n"
+			+ "\n"
+			+ "A grid layout with the original seed should always be safe.";
 
-		noticeBuf.append( "" );
-		addSidePanelNote( noticeBuf.toString() );
+		addSidePanelNote( notice );
 
 		showSidePanel();
 	}
