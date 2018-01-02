@@ -8,7 +8,6 @@
 
 package net.blerf.ftl.parser;
 
-import java.awt.Point;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,6 +33,7 @@ import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.XYPair;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.xml.CrewBlueprint;
@@ -832,7 +832,7 @@ public class SavedGameParser extends Parser {
 		}
 
 		writeInt( out, shipState.getBreachMap().size() );
-		for ( Map.Entry<Point, Integer> entry : shipState.getBreachMap().entrySet() ) {
+		for ( Map.Entry<XYPair, Integer> entry : shipState.getBreachMap().entrySet() ) {
 			writeInt( out, entry.getKey().x );
 			writeInt( out, entry.getKey().y );
 			writeInt( out, entry.getValue().intValue() );
@@ -2901,7 +2901,7 @@ public class SavedGameParser extends Parser {
 		private Map<SystemType, List<SystemState>> systemsMap = new LinkedHashMap<SystemType, List<SystemState>>();
 		private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
 		private List<RoomState> roomList = new ArrayList<RoomState>();
-		private Map<Point, Integer> breachMap = new LinkedHashMap<Point, Integer>();
+		private Map<XYPair, Integer> breachMap = new LinkedHashMap<XYPair, Integer>();
 		private Map<ShipLayout.DoorCoordinate, DoorState> doorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, DoorState>();
 		private int cloakAnimTicks = 0;
 		private List<LockdownCrystal> lockdownCrystalList = new ArrayList<LockdownCrystal>();
@@ -3382,10 +3382,10 @@ public class SavedGameParser extends Parser {
 		 * @param breachHealth 0-100.
 		 */
 		public void setBreach( int x, int y, int breachHealth ) {
-			breachMap.put( new Point( x, y ), breachHealth );
+			breachMap.put( new XYPair( x, y ), breachHealth );
 		}
 
-		public Map<Point, Integer> getBreachMap() { return breachMap; }
+		public Map<XYPair, Integer> getBreachMap() { return breachMap; }
 
 
 		/**
@@ -3560,11 +3560,11 @@ public class SavedGameParser extends Parser {
 			result.append( "\nHull Breaches...\n" );
 			int breachId = -1;
 			first = true;
-			for ( Map.Entry<Point, Integer> entry : breachMap.entrySet() ) {
+			for ( Map.Entry<XYPair, Integer> entry : breachMap.entrySet() ) {
 				if ( first ) { first = false; }
 				else { result.append( ",\n" ); }
 
-				Point breachCoord = entry.getKey();
+				XYPair breachCoord = entry.getKey();
 				int breachHealth = entry.getValue().intValue();
 
 				result.append( String.format( "BreachId: %2d, Raw Coords: %2d,%2d (-Layout Offset: %2d,%2d)\n", ++breachId, breachCoord.x, breachCoord.y, breachCoord.x-shipLayout.getOffsetX(), breachCoord.y-shipLayout.getOffsetY() ) );

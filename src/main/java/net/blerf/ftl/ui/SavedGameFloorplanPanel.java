@@ -78,6 +78,7 @@ import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.XYPair;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.parser.SavedGameParser.BatteryInfo;
@@ -1076,7 +1077,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add breaches.
-		for ( Map.Entry<Point, Integer> breachEntry : shipState.getBreachMap().entrySet() ) {
+		for ( Map.Entry<XYPair, Integer> breachEntry : shipState.getBreachMap().entrySet() ) {
 			int breachCoordX = breachEntry.getKey().x-shipLayout.getOffsetX();
 			int breachCoordY = breachEntry.getKey().y-shipLayout.getOffsetY();
 			int breachX = originX+tileEdge + breachCoordX*squareSize + squareSize/2;
@@ -1092,9 +1093,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 					break;
 				}
 			}
-			if ( squareRegionSquareIdMap.containsKey( squareRect ) )
+			if ( squareRegionSquareIdMap.containsKey( squareRect ) ) {
 				squareId = squareRegionSquareIdMap.get( squareRect ).intValue();
-
+			}
 			addBreachSprite( breachX, breachY, roomId, squareId, breachEntry.getValue().intValue() );
 		}
 
@@ -1259,8 +1260,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Breaches.
-		// TODO: Use an immutable object for keys, not Point!
-		Map<Point, Integer> breachMap = shipState.getBreachMap();
+		Map<XYPair, Integer> breachMap = shipState.getBreachMap();
 		breachMap.clear();
 		for ( BreachSprite breachSprite : breachSprites ) {
 			int roomId = breachSprite.getRoomId();
@@ -1274,7 +1274,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			int breachX = roomLocX + squareId%squaresH + shipLayout.getOffsetX();
 			int breachY = roomLocY + squareId/squaresV + shipLayout.getOffsetY();
-			breachMap.put( new Point(breachX, breachY), breachSprite.getHealth() );
+			breachMap.put( new XYPair( breachX, breachY ), breachSprite.getHealth() );
 		}
 
 		// Fires.
