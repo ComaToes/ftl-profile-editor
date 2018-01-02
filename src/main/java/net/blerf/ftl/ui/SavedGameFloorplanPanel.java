@@ -123,21 +123,21 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private static final Logger log = LoggerFactory.getLogger( SavedGameFloorplanPanel.class );
 
-	private static final Integer WEAPON_LAYER = new Integer(5);
-	private static final Integer BASE_LAYER = new Integer(10);
-	private static final Integer FLOOR_LAYER = new Integer(11);
-	private static final Integer ROOM_LAYER = new Integer(12);
-	private static final Integer DECOR_LAYER = new Integer(13);
-	private static final Integer WALL_LAYER = new Integer(15);
-	private static final Integer SYSTEM_LAYER = new Integer(16);
-	private static final Integer BREACH_LAYER = new Integer(17);
-	private static final Integer FIRE_LAYER = new Integer(18);
-	private static final Integer CREW_LAYER = new Integer(19);
-	private static final Integer DOOR_LAYER = new Integer(20);
-	private static final Integer DRONE_LAYER = new Integer(21);
-	private static final Integer DEFAULT_SELECTION_LAYER = new Integer(50);
-	private static final Integer MISC_SELECTION_LAYER = new Integer(55);
-	private static final Integer SQUARE_SELECTION_LAYER = new Integer(60);
+	private static final Integer WEAPON_LAYER = 5;
+	private static final Integer BASE_LAYER = 10;
+	private static final Integer FLOOR_LAYER = 11;
+	private static final Integer ROOM_LAYER = 12;
+	private static final Integer DECOR_LAYER = 13;
+	private static final Integer WALL_LAYER = 15;
+	private static final Integer SYSTEM_LAYER = 16;
+	private static final Integer BREACH_LAYER = 17;
+	private static final Integer FIRE_LAYER = 18;
+	private static final Integer CREW_LAYER = 19;
+	private static final Integer DOOR_LAYER = 20;
+	private static final Integer DRONE_LAYER = 21;
+	private static final Integer DEFAULT_SELECTION_LAYER = 50;
+	private static final Integer MISC_SELECTION_LAYER = 55;
+	private static final Integer SQUARE_SELECTION_LAYER = 60;
 	private static final int squareSize = 35;
 	private static final int tileEdge = 1;
 	private static final int jambLength = 5;
@@ -799,23 +799,25 @@ public class SavedGameFloorplanPanel extends JPanel {
 				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
 
 				Rectangle roomRect = new Rectangle( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
-				roomRegionRoomIdMap.put( roomRect, new Integer(i) );
+				roomRegionRoomIdMap.put( roomRect, i );
 
 				for ( int s=0; s < squaresH*squaresV; s++ ) {
 					int squareX = roomX + tileEdge + (s%squaresH)*squareSize;
 					int squareY = roomY + tileEdge + (s/squaresH)*squareSize;
 					Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
-					squareRegionRoomIdMap.put( squareRect, new Integer( i ) );
-					squareRegionSquareIdMap.put( squareRect, new Integer( s ) );
+					squareRegionRoomIdMap.put( squareRect, i );
+					squareRegionSquareIdMap.put( squareRect, s );
 				}
 			}
 			// Find squares that don't allow crew in them (medbay's slot, same as clonebay).
+			// TODO: Test if nearby ships have blocked slots.
 			blockedRegions.clear();
 			ShipBlueprint.SystemList.SystemRoom medicalSystem = blueprintSystems.getMedicalRoom();
 			if ( medicalSystem != null ) {
 				ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
 				int badRoomId = medicalSystem.getRoomId();
 				int badSquareId = ftlConstants.getDefaultSystemRoomSlotSquare( SystemType.MEDBAY );
+
 				if ( medicalSlot != null ) {
 					badSquareId = medicalSlot.getNumber();
 				}
@@ -1039,8 +1041,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for ( SystemType systemType : SystemType.values() ) {
 			int[] roomIds = shipBlueprint.getSystemList().getRoomIdBySystemType( systemType );
 			if ( roomIds != null ) {
-				for ( int i=0; i < roomIds.length; i++ ) {
-					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomIds[i] );
+				for ( int roomId : roomIds ) {
+					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomId );
 					int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 					int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
 					int roomX = originX + roomLocX*squareSize;
@@ -1255,6 +1257,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Breaches.
+		// TODO: Use an immutable object for keys, not Point!
 		Map<Point, Integer> breachMap = shipState.getBreachMap();
 		breachMap.clear();
 		for ( BreachSprite breachSprite : breachSprites ) {
@@ -1269,7 +1272,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			int breachX = roomLocX + squareId%squaresH + shipLayout.getOffsetX();
 			int breachY = roomLocY + squareId/squaresV + shipLayout.getOffsetY();
-			breachMap.put( new Point(breachX, breachY), new Integer(breachSprite.getHealth()) );
+			breachMap.put( new Point(breachX, breachY), breachSprite.getHealth() );
 		}
 
 		// Fires.
@@ -1787,11 +1790,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// If the image doesn't have enough rows for all levels, let the rest be null.
 
 		for ( int i=0; i < levelCount && (i+1)*h <= bigImage.getHeight(); i++ ) {
-			closedImages.put( new Integer(i), bigImage.getSubimage(chop, i*h, w-chop*2, h) );
-			openImages.put( new Integer(i), bigImage.getSubimage(4*w+chop, i*h, w-chop*2, h) );
+			closedImages.put( i, bigImage.getSubimage( chop, i*h, w-chop*2, h ) );
+			openImages.put( i, bigImage.getSubimage( 4*w+chop, i*h, w-chop*2, h ) );
 		}
 
-		DoorSprite doorSprite = new DoorSprite( doorRef, closedImages, openImages, new Integer( level ), doorCoord );
+		DoorSprite doorSprite = new DoorSprite( doorRef, closedImages, openImages, level, doorCoord );
 		doorSprite.setSize( doorSprite.getPreferredSize() );
 		doorSprite.setLocation( centerX - doorSprite.getPreferredSize().width/2, centerY - doorSprite.getPreferredSize().height/2 );
 		doorSprites.add( doorSprite );
@@ -2368,12 +2371,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for ( int i=0; i < augSlots.length; i++ ) {
 			editorPanel.addRow( augSlots[i], FieldEditorPanel.ContentType.COMBO );
 
-			editorPanel.getCombo(augSlots[i]).addItem("");
+			editorPanel.getCombo( augSlots[i] ).addItem( "" );
 			for ( AugBlueprint augBlueprint : allAugmentsMap.values() ) {
-				editorPanel.getCombo(augSlots[i]).addItem( augBlueprint );
+				editorPanel.getCombo( augSlots[i] ).addItem( augBlueprint );
 			}
-			if ( shipAugmentIdList.size() > i)
-				editorPanel.getCombo(augSlots[i]).setSelectedItem( allAugmentsMap.get(shipAugmentIdList.get(i)) );
+			if ( shipAugmentIdList.size() > i ) {
+				editorPanel.getCombo( augSlots[i] ).setSelectedItem( allAugmentsMap.get( shipAugmentIdList.get( i ) ) );
+			}
 		}
 
 		final Runnable applyCallback = new Runnable() {
@@ -2381,10 +2385,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public void run() {
 				shipAugmentIdList.clear();
 
-				for ( int i=0; i < augSlots.length; i++ ) {
-					Object augObj = editorPanel.getCombo(augSlots[i]).getSelectedItem();
-					if ( augObj instanceof AugBlueprint )
+				for ( String augSlot : augSlots ) {
+					Object augObj = editorPanel.getCombo( augSlot ).getSelectedItem();
+					if ( augObj instanceof AugBlueprint ) {
 						shipAugmentIdList.add( ((AugBlueprint)augObj).getId() );
+					}
 				}
 				clearSidePanel();
 			}
@@ -2416,8 +2421,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 		};
-		for ( int i=0; i < augSlots.length; i++ ) {
-			editorPanel.getCombo(augSlots[i]).addActionListener( augListener );
+		for ( String augSlot : augSlots ) {
+			editorPanel.getCombo( augSlot ).addActionListener( augListener );
 		}
 
 		showSidePanel();
@@ -4636,6 +4641,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	public interface SquareSelectionCallback {
 		/** Responds to a clicked square, returning true to continue selecting. */
-		public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId );
+		boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId );
 	}
 }

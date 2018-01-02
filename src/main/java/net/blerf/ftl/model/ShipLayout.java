@@ -48,16 +48,17 @@ public class ShipLayout {
 	 */
 	public void setRoom( int roomId, int locationX, int locationY, int squaresH, int squaresV ) {
 		Integer roomIdObj = new Integer( roomId );
+
 		EnumMap<RoomInfo,Integer> infoMap = new EnumMap<RoomInfo,Integer>( RoomInfo.class );
-		infoMap.put( RoomInfo.LOCATION_X, new Integer( locationX ) );
-		infoMap.put( RoomInfo.LOCATION_Y, new Integer( locationY ) );
-		infoMap.put( RoomInfo.SQUARES_H, new Integer( squaresH ) );
-		infoMap.put( RoomInfo.SQUARES_V, new Integer( squaresV ) );
+		infoMap.put( RoomInfo.LOCATION_X, locationX );
+		infoMap.put( RoomInfo.LOCATION_Y, locationY );
+		infoMap.put( RoomInfo.SQUARES_H, squaresH );
+		infoMap.put( RoomInfo.SQUARES_V, squaresV );
 		roomMap.put( roomIdObj, infoMap );
 	}
 
 	public EnumMap<RoomInfo, Integer> getRoomInfo( int roomId ) {
-		return roomMap.get( new Integer(roomId) );
+		return roomMap.get( roomId );
 	}
 
 	/**
@@ -84,9 +85,10 @@ public class ShipLayout {
 	 */
 	public void setDoor( int wallX, int wallY, int vertical, int roomIdA, int roomIdB ) {
 		DoorCoordinate doorCoord = new DoorCoordinate( wallX, wallY, vertical );
+
 		EnumMap<DoorInfo, Integer> infoMap = new EnumMap<DoorInfo, Integer>( DoorInfo.class );
-		infoMap.put( DoorInfo.ROOM_ID_A, new Integer( roomIdA ) );
-		infoMap.put( DoorInfo.ROOM_ID_B, new Integer( roomIdB ) );
+		infoMap.put( DoorInfo.ROOM_ID_A, roomIdA );
+		infoMap.put( DoorInfo.ROOM_ID_B, roomIdB );
 		doorMap.put( doorCoord, infoMap );
 	}
 

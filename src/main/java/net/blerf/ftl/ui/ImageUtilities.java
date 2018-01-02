@@ -249,7 +249,7 @@ public class ImageUtilities {
 			w = Math.abs( w );
 			h = Math.abs( h );
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
-			Graphics2D g2d = (Graphics2D)result.createGraphics();
+			Graphics2D g2d = result.createGraphics();
 			g2d.setColor( new Color( 150, 150, 200 ) );
 			g2d.fillRect( 0, 0, w-1, h-1 );
 			g2d.dispose();
@@ -342,7 +342,7 @@ public class ImageUtilities {
 
 		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
 			result = gc.createCompatibleImage( maxW, maxH, Transparency.OPAQUE );
-			Graphics2D g2d = (Graphics2D)result.createGraphics();
+			Graphics2D g2d = result.createGraphics();
 			g2d.setColor( new Color( 150, 150, 200 ) );
 			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
 			g2d.dispose();
@@ -411,7 +411,7 @@ public class ImageUtilities {
 
 		if ( result == null ) {  // Guarantee a returned image, with a stand-in.
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
-			Graphics2D g2d = (Graphics2D)result.createGraphics();
+			Graphics2D g2d = result.createGraphics();
 			g2d.setColor( new Color( 150, 150, 200 ) );
 			g2d.fillRect( 0, 0, w-1, h-1 );
 			g2d.dispose();

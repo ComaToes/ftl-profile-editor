@@ -19,14 +19,17 @@ import javax.swing.SwingUtilities;
  * To cancel selection, call reset();
  */
 public class SpriteSelector extends JComponent {
+
 	private SpriteCriteria defaultCriteria = new SpriteCriteria();
 
-	private ArrayList<List<? extends JComponent>> spriteLists = new ArrayList<List<? extends JComponent>>();;
+	private ArrayList<List<? extends JComponent>> spriteLists = new ArrayList<List<? extends JComponent>>();
 	private SpriteCriteria spriteCriteria = defaultCriteria;
 	private SpriteSelectionCallback callback = null;
 	private Point mousePoint = new Point( -1, -1 );
 	private JComponent currentSprite = null;
 	private boolean paintDescription = false;
+	private Color descriptionBgColor = new Color( 212, 208, 200 );
+
 
 	public SpriteSelector() {
 	}
@@ -122,9 +125,12 @@ public class SpriteSelector extends JComponent {
 			String desc = spriteCriteria.getDescription();
 			if ( desc != null ) {
 				LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics( desc, g2d );
+				int descWidth = g2d.getFontMetrics().stringWidth( desc );
 				int descHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
 				int descX = 8;
 				int descY = descHeight + 6;
+				g2d.setColor( descriptionBgColor );
+				g2d.fillRect( descX-3, descY-((int)lineMetrics.getAscent())-3, descWidth+6, descHeight+6 );
 				g2d.setColor( Color.BLACK );
 				g2d.drawString( desc, descX, descY );
 			}
@@ -173,8 +179,8 @@ public class SpriteSelector extends JComponent {
 
 
 
-	public static interface SpriteSelectionCallback {
+	public interface SpriteSelectionCallback {
 		/** Responds to a clicked sprite, returning true to continue selecting. */
-		public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite );
+		boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite );
 	}
 }

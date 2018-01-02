@@ -209,8 +209,7 @@ public class RandomSectorTreeGenerator {
 		civilianSectors.add( new Sector( true, 1, "ZOLTAN_HOME", Arrays.asList( "Zoltan Homeworlds" ) ) );
 
 		if ( preAE ) {  // 1.03.3.
-			for ( Iterator<Sector> it=civilianSectors.iterator(); it.hasNext(); ) {
-				Sector s = it.next();
+			for ( Sector s : civilianSectors ) {
 				if ( "ZOLTAN_SECTOR".equals( s.getId() ) ) {
 					s.min = 1;
 				}

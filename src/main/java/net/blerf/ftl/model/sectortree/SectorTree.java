@@ -69,8 +69,7 @@ public class SectorTree {
 	public void setSectorVisitation( List<Boolean> route ) {
 		int dotsSoFar = 0;
 
-		for ( int c=0; c < dotColumns.size(); c++ ) {
-			List<SectorDot> columnDots = dotColumns.get( c );
+		for ( List<SectorDot> columnDots : dotColumns ) {
 
 			for ( int r=0; r < columnDots.size(); r++ ) {
 				boolean visited = route.get( dotsSoFar + r ).booleanValue();
@@ -89,12 +88,11 @@ public class SectorTree {
 	public List<Boolean> getSectorVisitation() {
 		List<Boolean> result = new ArrayList<Boolean>();
 
-		for ( int c=0; c < dotColumns.size(); c++ ) {
-			List<SectorDot> columnDots = dotColumns.get( c );
+		for ( List<SectorDot> columnDots : dotColumns ) {
 
 			for ( int r=0; r < columnDots.size(); r++ ) {
 				boolean visited = columnDots.get( r ).isVisited();
-				result.add( new Boolean( visited ) );
+				result.add( visited );
 			}
 		}
 

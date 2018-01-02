@@ -46,8 +46,8 @@ public class Stats {
 	private List<Score> topScores = new ArrayList<Score>();
 	private List<Score> shipBest = new ArrayList<Score>();
 
-	private Map<StatType,CrewRecord> crewMap = new EnumMap<StatType,CrewRecord>( StatType.class );
-	private Map<StatType,Integer> intMap = new EnumMap<StatType,Integer>( StatType.class );
+	private Map<StatType, CrewRecord> crewMap = new EnumMap<StatType, CrewRecord>( StatType.class );
+	private Map<StatType, Integer> intMap = new EnumMap<StatType, Integer>( StatType.class );
 
 
 	public Stats() {
@@ -72,7 +72,8 @@ public class Stats {
 		}
 
 		for ( Map.Entry<StatType, Integer> entry : srcStats.getIntRecordMap().entrySet() ) {
-			intMap.put( entry.getKey(), new Integer( entry.getValue() ) );
+			// Integer wrapper is immutable, no need for defensive copying.
+			intMap.put( entry.getKey(), entry.getValue() );
 		}
 	}
 
@@ -95,7 +96,7 @@ public class Stats {
 	}
 
 	public void setIntRecord( StatType type, int n ) {
-		intMap.put( type, new Integer( n ) );
+		intMap.put( type, n );
 	}
 	public int getIntRecord( StatType type ) {
 		if ( !intMap.containsKey( type ) )

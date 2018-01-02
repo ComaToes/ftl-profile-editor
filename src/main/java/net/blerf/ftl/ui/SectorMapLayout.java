@@ -165,8 +165,7 @@ public class SectorMapLayout implements LayoutManager2 {
 			comp.setLocation( beaconX, beaconY );
 		}
 
-		for ( int i=0; i < miscBoxList.size(); i++ ) {
-			Component comp = miscBoxList.get( i );
+		for ( Component comp : miscBoxList ) {
 			SectorMapConstraints compC = constraintsMap.get( comp );
 
 			if ( compC.getBeaconId() < beaconList.size() ) {

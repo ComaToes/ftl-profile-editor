@@ -322,7 +322,7 @@ public class DefaultDataManager extends DataManager {
 			generalAchievements = new ArrayList<Achievement>();
 			for( Achievement ach : achievementIdMap.values() ) {
 				if ( ach.getShipId() == null ) {
-					generalAchievements.add(ach);
+					generalAchievements.add( ach );
 				}
 			}
 
@@ -474,12 +474,12 @@ public class DefaultDataManager extends DataManager {
 			for ( String baseId : stdPlayerShipBaseIds ) {
 				stdPlayerShipIds.add( baseId );
 
-				List<ShipBlueprint> variantList = new ArrayList<ShipBlueprint>(2);
+				List<ShipBlueprint> variantList = new ArrayList<ShipBlueprint>( 2 );
 				stdPlayerShipVariantsMap.put( baseId, variantList );
 				variantList.add( stdShipIdMap.get( baseId ) );
 
 				// All ships have a Type-B layout.
-				String variantId = String.format("%s_%d", baseId, 2);
+				String variantId = String.format( "%s_%d", baseId, 2 );
 				stdPlayerShipIds.add( variantId );
 				variantList.add( stdShipIdMap.get( variantId ) );
 			}
@@ -488,18 +488,18 @@ public class DefaultDataManager extends DataManager {
 			for ( String baseId : dlcPlayerShipBaseIds ) {
 				dlcPlayerShipIds.add( baseId );
 
-				List<ShipBlueprint> variantList = new ArrayList<ShipBlueprint>(3);
+				List<ShipBlueprint> variantList = new ArrayList<ShipBlueprint>( 3 );
 				dlcPlayerShipVariantsMap.put( baseId, variantList );
 				variantList.add( dlcShipIdMap.get( baseId ) );
 
 				// All ships have a Type-B layout.
-				String variantId = String.format("%s_%d", baseId, 2);
+				String variantId = String.format( "%s_%d", baseId, 2 );
 				dlcPlayerShipIds.add( variantId );
 				variantList.add( dlcShipIdMap.get( variantId ) );
 
 				// Most ships have a Type-C layout.
-				if ( !baseId.equals("PLAYER_SHIP_CRYSTAL") && !baseId.equals("PLAYER_SHIP_ANAEROBIC") ) {
-					variantId = String.format("%s_%d", baseId, 3);
+				if ( !baseId.equals("PLAYER_SHIP_CRYSTAL") && !baseId.equals( "PLAYER_SHIP_ANAEROBIC" ) ) {
+					variantId = String.format( "%s_%d", baseId, 3 );
 					dlcPlayerShipIds.add( variantId );
 					variantList.add( dlcShipIdMap.get( variantId ) );
 				} else {
@@ -692,8 +692,9 @@ public class DefaultDataManager extends DataManager {
 	@Override
 	public Achievement getAchievement( String id ) {
 		Achievement result = achievementIdMap.get( id );
-		if ( result == null )
+		if ( result == null ) {
 			log.error( "No Achievement found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -711,9 +712,10 @@ public class DefaultDataManager extends DataManager {
 			augments = stdAugmentIdMap;
 		}
 
-		AugBlueprint result = augments.get(id);
-		if ( result == null )
+		AugBlueprint result = augments.get( id );
+		if ( result == null ) {
 			log.error( "No AugBlueprint found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -738,9 +740,10 @@ public class DefaultDataManager extends DataManager {
 			crews = stdCrewIdMap;
 		}
 
-		CrewBlueprint result = crews.get(id);
-		if ( result == null )
+		CrewBlueprint result = crews.get( id );
+		if ( result == null ) {
 			log.error( "No CrewBlueprint found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -765,9 +768,10 @@ public class DefaultDataManager extends DataManager {
 			drones = stdDroneIdMap;
 		}
 
-		DroneBlueprint result = drones.get(id);
-		if ( result == null )
+		DroneBlueprint result = drones.get( id );
+		if ( result == null ) {
 			log.error( "No DroneBlueprint found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -792,9 +796,10 @@ public class DefaultDataManager extends DataManager {
 			systems = stdSystemIdMap;
 		}
 
-		SystemBlueprint result = systems.get(id);
-		if ( result == null )
+		SystemBlueprint result = systems.get( id );
+		if ( result == null ) {
 			log.error( "No SystemBlueprint found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -807,9 +812,10 @@ public class DefaultDataManager extends DataManager {
 			weapons = stdWeaponIdMap;
 		}
 
-		WeaponBlueprint result = weapons.get(id);
-		if ( result == null )
+		WeaponBlueprint result = weapons.get( id );
+		if ( result == null ) {
 			log.error( "No WeaponBlueprint found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -834,9 +840,10 @@ public class DefaultDataManager extends DataManager {
 			ships = stdShipIdMap;
 		}
 
-		ShipBlueprint result = ships.get(id);
-		if ( result == null )
+		ShipBlueprint result = ships.get( id );
+		if ( result == null ) {
 			log.error( "No ShipBlueprint found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -932,7 +939,7 @@ public class DefaultDataManager extends DataManager {
 
 	@Override
 	public ShipLayout getShipLayout( String id ) {
-		ShipLayout result = shipLayouts.get(id);
+		ShipLayout result = shipLayouts.get( id );
 
 		if ( result == null ) {  // Wasn't cached; try parsing it.
 			InputStream in = null;
@@ -958,7 +965,7 @@ public class DefaultDataManager extends DataManager {
 
 	@Override
 	public ShipChassis getShipChassis( String id ) {
-		ShipChassis result = shipChassisMap.get(id);
+		ShipChassis result = shipChassisMap.get( id );
 
 		if ( result == null ) {  // Wasn't cached; try parsing it.
 			InputStream in = null;
@@ -1007,7 +1014,7 @@ public class DefaultDataManager extends DataManager {
 
 		FTLEvent result = null;
 		for ( Map.Entry<String, Encounters> entry : events.entrySet() ) {
-			FTLEvent tmpEvent = entry.getValue().getEventById(id);
+			FTLEvent tmpEvent = entry.getValue().getEventById( id );
 			if ( tmpEvent != null ) result = tmpEvent;
 		}
 		return result;
@@ -1031,7 +1038,7 @@ public class DefaultDataManager extends DataManager {
 
 		FTLEventList result = null;
 		for ( Map.Entry<String, Encounters> entry : events.entrySet() ) {
-			FTLEventList tmpEventList = entry.getValue().getEventListById(id);
+			FTLEventList tmpEventList = entry.getValue().getEventListById( id );
 			if ( tmpEventList != null ) result = tmpEventList;
 		}
 		return result;
@@ -1063,9 +1070,10 @@ public class DefaultDataManager extends DataManager {
 			shipEvents = stdShipEventIdMap;
 		}
 
-		ShipEvent result = shipEvents.get(id);
-		if ( result == null )
+		ShipEvent result = shipEvents.get( id );
+		if ( result == null ) {
 			log.error( "No ShipEvent found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -1082,10 +1090,9 @@ public class DefaultDataManager extends DataManager {
 	}
 
 	/**
-	 * Returns true (male) or false (female).
-	 * All possible names have equal
-	 * probability, which will skew the
-	 * male-to-female ratio.
+	 * Randomly returns true (male) or false (female).
+	 *
+	 * The male vs female probability will be affected by available names.
 	 */
 	@Override
 	public boolean getCrewSex() {
@@ -1096,6 +1103,10 @@ public class DefaultDataManager extends DataManager {
 
 	/**
 	 * Returns a random name for a given sex.
+	 *
+	 * Technically, FTL doesn't do this. If a name shows up in both male and
+	 * female pools of names, the game assigns the name to whichever gender
+	 * appears last in the XML file.
 	 */
 	@Override
 	public String getCrewName( boolean isMale ) {
@@ -1113,9 +1124,10 @@ public class DefaultDataManager extends DataManager {
 			sectorTypes = stdSectorTypeIdMap;
 		}
 
-		SectorType result = sectorTypes.get(id);
-		if ( result == null )
+		SectorType result = sectorTypes.get( id );
+		if ( result == null ) {
 			log.error( "No SectorType found for id: "+ id );
+		}
 		return result;
 	}
 
@@ -1125,8 +1137,9 @@ public class DefaultDataManager extends DataManager {
 	@Override
 	public SectorDescription getSectorDescriptionById( String id ) {
 		SectorDescription result = sectorDescriptionIdMap.get( id );
-		if ( result == null )
+		if ( result == null ) {
 			log.error( "No SectorDescription found for id: "+ id );
+		}
 		return result;
 	}
 

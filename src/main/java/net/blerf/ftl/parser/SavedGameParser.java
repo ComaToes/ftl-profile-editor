@@ -122,7 +122,7 @@ public class SavedGameParser extends Parser {
 			int stateVarCount = readInt( in );
 			for ( int i=0; i < stateVarCount; i++ ) {
 				String stateVarId = readString( in );
-				Integer stateVarValue = new Integer( readInt( in ) );
+				Integer stateVarValue = readInt( in );
 				gameState.setStateVar( stateVarId, stateVarValue );
 			}
 
@@ -171,7 +171,7 @@ public class SavedGameParser extends Parser {
 			int sectorVisitationCount = readInt( in );
 			List<Boolean> route = new ArrayList<Boolean>();
 			for ( int i=0; i < sectorVisitationCount; i++ ) {
-				route.add( new Boolean( readBool( in ) ) );
+				route.add( readBool( in ) );
 			}
 			gameState.setSectorVisitation( route );
 
@@ -246,7 +246,7 @@ public class SavedGameParser extends Parser {
 				gameState.setUnknownNu( readInt( in ) );
 
 				if ( gameState.getNearbyShipState() != null ) {
-					gameState.setUnknownXi( new Integer(readInt( in )) );
+					gameState.setUnknownXi( readInt( in ) );
 				}
 
 				gameState.setAutofire( readBool( in ) );
@@ -530,16 +530,17 @@ public class SavedGameParser extends Parser {
 			shipState.addSystem( readSystem( in, systemType, fileFormat ) );
 
 			// Systems that exist in multiple rooms have additional SystemStates.
-			// Example: Boss' artillery.
+			// Example: Flagship's artillery.
 			//
-			// In FTL 1.01-1.03.3 the boss wasn't a nearby ship outside of combat,
-			// So this never occurred. TODO: There may also have been changes in 
-			// 1.5.4 to allow multi-room systems on non-boss ships.
+			// In FTL 1.01-1.03.3 the flagship wasn't a nearby ship outside of combat,
+			// So this never occurred. TODO: Confirm reports that 1.5.4 allows
+			// multi-room systems on regular ships and check the editor's
+			// compatibility.
 
 			ShipBlueprint.SystemList.SystemRoom[] rooms = shipBlueprint.getSystemList().getSystemRoom( systemType );
 			if ( rooms != null && rooms.length > 1 ) {
 				for ( int q=1; q < rooms.length; q++ ) {
-					shipState.addSystem( readSystem(in, systemType, fileFormat ) );
+					shipState.addSystem( readSystem( in, systemType, fileFormat ) );
 				}
 			}
 		}
@@ -925,7 +926,7 @@ public class SavedGameParser extends Parser {
 			int tintCount = readInt( in );
 			List<Integer> spriteTintIndeces = new ArrayList<Integer>();
 			for ( int i=0; i < tintCount; i++ ) {
-				spriteTintIndeces.add( new Integer(readInt( in )) );
+				spriteTintIndeces.add( readInt( in ) );
 			}
 			crew.setSpriteTintIndeces( spriteTintIndeces );
 
@@ -1321,9 +1322,9 @@ public class SavedGameParser extends Parser {
 			beacon.setBgSpritePosY( readInt( in ) );
 			beacon.setBgSpriteRotation( readInt( in ) );
 		}
-		
+
 		beacon.setSeen( readBool( in ) );
-		
+
 		boolean enemyPresent = readBool( in );
 		beacon.setEnemyPresent( enemyPresent );
 		if ( enemyPresent ) {
@@ -1365,7 +1366,7 @@ public class SavedGameParser extends Parser {
 		}
 
 		return beacon;
-		
+
 	}
 
 	public void writeBeacon( OutputStream out, BeaconState beacon, int fileFormat ) throws IOException {
@@ -1439,7 +1440,7 @@ public class SavedGameParser extends Parser {
 			writeInt( out, store.getDroneParts() );
 		}
 	}
-	
+
 	private StoreShelf readStoreShelf( InputStream in, int fileFormat ) throws IOException {
 		StoreShelf shelf = new StoreShelf();
 
@@ -1483,12 +1484,14 @@ public class SavedGameParser extends Parser {
 		List<StoreItem> items = shelf.getItems();
 		for ( int i=0; i < 3; i++ ) {  // TODO: Magic number.
 			if ( items.size() > i ) {
-				int available = (items.get( i ).isAvailable() ? 1 : 0);
+				StoreItem item = items.get( i );
+
+				int available = (item.isAvailable() ? 1 : 0);
 				writeInt( out, available );
-				writeString( out, items.get( i ).getItemId() );
+				writeString( out, item.getItemId() );
 
 				if ( fileFormat == 8 || fileFormat == 9 ) {
-					writeInt( out, items.get( i ).getExtraData() );
+					writeInt( out, item.getExtraData() );
 				}
 			}
 			else {
@@ -1514,7 +1517,7 @@ public class SavedGameParser extends Parser {
 		int choiceCount = readInt( in );
 		List<Integer> choiceList = new ArrayList<Integer>();
 		for ( int i=0; i < choiceCount; i++ ) {
-			choiceList.add( new Integer(readInt( in )) );
+			choiceList.add( readInt( in ) );
 		}
 		encounter.setChoiceList( choiceList );
 
@@ -2288,7 +2291,7 @@ public class SavedGameParser extends Parser {
 		 * See StateVar enums for known vars and descriptions.
 		 */
 		public void setStateVar( String stateVarId, int stateVarValue ) {
-			stateVars.put( stateVarId, new Integer(stateVarValue) );
+			stateVars.put( stateVarId, stateVarValue );
 		}
 
 		/**
@@ -2535,7 +2538,7 @@ public class SavedGameParser extends Parser {
 		 * @param visited true if visited, false otherwise
 		 */
 		public void setSectorVisited( int sector, boolean visited ) {
-			sectorVisitationList.set( sector, new Boolean(visited) );
+			sectorVisitationList.set( sector, visited );
 		}
 
 		/**
@@ -2586,7 +2589,7 @@ public class SavedGameParser extends Parser {
 		public List<BeaconState> getBeaconList() { return beaconList; }
 
 		public void addQuestEvent( String questEventId, int questBeaconId ) {
-			questEventMap.put( questEventId, new Integer(questBeaconId) );
+			questEventMap.put( questEventId, questBeaconId );
 		}
 
 		public Map<String, Integer> getQuestEventMap() {
@@ -3379,7 +3382,7 @@ public class SavedGameParser extends Parser {
 		 * @param breachHealth 0-100.
 		 */
 		public void setBreach( int x, int y, int breachHealth ) {
-			breachMap.put( new Point( x, y ), new Integer(breachHealth) );
+			breachMap.put( new Point( x, y ), breachHealth );
 		}
 
 		public Map<Point, Integer> getBreachMap() { return breachMap; }
@@ -3762,7 +3765,8 @@ public class SavedGameParser extends Parser {
 			cloneReady = srcCrew.getCloneReady();
 
 			for ( Integer colorIndex : srcCrew.getSpriteTintIndeces() ) {
-				spriteTintIndeces.add( new Integer( colorIndex ) );
+				// Integer wrapper is immutable, no need for defensive copying.
+				spriteTintIndeces.add( colorIndex );
 			}
 
 			mindControlled = srcCrew.isMindControlled();
@@ -3916,8 +3920,8 @@ public class SavedGameParser extends Parser {
 		 * For preserved dead crew, which have no body, this lingers, or may be
 		 * (0,0).
 		 */
-		public void setSpriteX( int n ) { spriteX = n; };
-		public void setSpriteY( int n ) { spriteY = n; };
+		public void setSpriteX( int n ) { spriteX = n; }
+		public void setSpriteY( int n ) { spriteY = n; }
 		public int getSpriteX() { return spriteX; }
 		public int getSpriteY() { return spriteY; }
 
@@ -6104,7 +6108,7 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum HazardVulnerability {
-		PLAYER_SHIP, NEARBY_SHIP, BOTH_SHIPS;
+		PLAYER_SHIP, NEARBY_SHIP, BOTH_SHIPS
 	}
 
 	public static class EnvironmentState {
@@ -6360,7 +6364,7 @@ public class SavedGameParser extends Parser {
 		 * @param n the number of crew in that room
 		 */
 		public void setPreviousOccupancy( int roomId, int n ) {
-			occupancyMap.put( new Integer( roomId ), new Integer( n ) );
+			occupancyMap.put( new Integer( roomId ), n );
 		}
 
 		public Map<Integer, Integer> getOccupancyMap() {
@@ -7147,7 +7151,7 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum ProjectileType {
-		BEAM, BOMB, LASER_OR_BURST, MISSILE, ROCK_OR_EXPLOSION, INVALID;
+		BEAM, BOMB, LASER_OR_BURST, MISSILE, ROCK_OR_EXPLOSION, INVALID
 	}
 
 
@@ -7158,7 +7162,7 @@ public class SavedGameParser extends Parser {
 	 * OwnerId (-1, 0, 1)
 	 */
 	public static enum Affiliation {
-		OTHER, PLAYER_SHIP, NEARBY_SHIP;
+		OTHER, PLAYER_SHIP, NEARBY_SHIP
 	}
 
 
@@ -8756,7 +8760,7 @@ public class SavedGameParser extends Parser {
 	}
 
 	/**
-	 * Extended combat/beam/repair drone info.
+	 * Extended Combat/Beam/Repair drone info.
 	 *
 	 * These drones flit to a random (?) point, stop, then move to another,
 	 * and so on.
@@ -10023,7 +10027,7 @@ public class SavedGameParser extends Parser {
 			hackingPodInfo.setExtensionAnim( readAnim( in ) );
 			extendedInfo = hackingPodInfo;
 		}
-		else if ( DroneType.COMBAT.equals( droneType ) || 
+		else if ( DroneType.COMBAT.equals( droneType ) ||
 		          DroneType.BEAM.equals( droneType ) ) {
 
 			ZigZagDronePodInfo zigPodInfo = new ZigZagDronePodInfo();

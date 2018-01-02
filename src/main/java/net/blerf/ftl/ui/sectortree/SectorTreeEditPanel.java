@@ -220,7 +220,7 @@ public class SectorTreeEditPanel extends JLayeredPane implements SectorTreeListe
 
 		for ( int c=0; c < tree.getColumnsCount(); c++ ) {
 			List<SectorDot> columnDots = tree.getColumn( c );
-			Integer columnInt = new Integer( c );
+			Integer columnInt = c;
 			int columnX = marginX + previewPanel.getDotX( c, 0 );
 
 			for ( int r=0; r < columnDots.size(); r++ ) {

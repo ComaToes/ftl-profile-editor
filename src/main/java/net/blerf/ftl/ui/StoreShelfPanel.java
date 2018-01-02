@@ -86,15 +86,15 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 			editorPanel.addRow( EXTRA[i], FieldEditorPanel.ContentType.INTEGER );
 
 			editorPanel.getBoolean( AVAIL[i] ).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether this item has already been bought." ) );
-			editorPanel.getInt( EXTRA[i] ).addMouseListener( new StatusbarMouseListener( frame, "Misc info (DroneCtrl system only, specifying bonus drone)." ) );
+			editorPanel.getInt( EXTRA[i] ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Seen on DroneCtrl, Cloaking, Clonebay. Reloading sets it to 0!?" ) );
 		}
 
 		this.add( editorPanel, BorderLayout.CENTER );
 
 		editorPanel.getCombo( SHELF_TYPE ).addActionListener( this );
 
-		for ( int i=0; i < SLOTS.length; i++ ) {
-			editorPanel.getCombo( SLOTS[i] ).addActionListener( this );
+		for ( String SLOT : SLOTS ) {
+			editorPanel.getCombo( SLOT ).addActionListener( this );
 		}
 
 		setFTLConstants( ftlConstants );
@@ -136,8 +136,8 @@ public class StoreShelfPanel extends JPanel implements ActionListener {
 		itemLookups.put( StoreItemType.SYSTEM, systemLookup );
 
 		editorPanel.getCombo( SHELF_TYPE ).removeAllItems();
-		for ( int i=0; i < itemTypes.length; i++ ) {
-			editorPanel.getCombo( SHELF_TYPE ).addItem( itemTypes[i] );
+		for ( StoreItemType itemType : itemTypes ) {
+			editorPanel.getCombo( SHELF_TYPE ).addItem( itemType );
 		}
 		typeChanged();
 

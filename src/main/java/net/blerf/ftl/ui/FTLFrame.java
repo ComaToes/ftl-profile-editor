@@ -1161,7 +1161,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 			while ( (line = in.readLine()) != null ) {
 				int releaseVersion = Integer.parseInt( line );
 				List<String> releaseChangeList = new ArrayList<String>();
-				historyMap.put( new Integer( releaseVersion ), releaseChangeList );
+				historyMap.put( releaseVersion, releaseChangeList );
 
 				while ( (line = in.readLine()) != null && !line.equals( "" ) ) {
 					releaseChangeList.add( line );

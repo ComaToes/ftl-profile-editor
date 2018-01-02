@@ -32,7 +32,7 @@ import net.blerf.ftl.ui.RegexDocument;
 
 
 public class FieldEditorPanel extends JPanel {
-	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO, SPINNER };
+	public enum ContentType { WRAPPED_LABEL, LABEL, STRING, INTEGER, BOOLEAN, SLIDER, COMBO, SPINNER }
 
 	private Map<String, JTextArea> wrappedLabelMap = new HashMap<String, JTextArea>();
 	private Map<String, JLabel> labelMap = new HashMap<String, JLabel>();
@@ -389,7 +389,7 @@ public class FieldEditorPanel extends JPanel {
 
 		for ( JSpinner valueSpinner : spinnerMap.values() ) {
 			// Set number spinners to zero (There may be other kinds of spinners).
-			Integer defaultInt = new Integer( 0 );
+			Integer defaultInt = 0;
 			SpinnerModel spinnerModel = valueSpinner.getModel();
 			if ( spinnerModel instanceof SpinnerNumberModel ) {
 				SpinnerNumberModel numberModel = ((SpinnerNumberModel)spinnerModel);

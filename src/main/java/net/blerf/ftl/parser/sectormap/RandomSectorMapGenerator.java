@@ -69,7 +69,7 @@ public class RandomSectorMapGenerator {
 			int n;
 
 			n = rng.rand();
-			genMap.setRebelFleetFudge( new Integer( n % 294 + 50 ) );
+			genMap.setRebelFleetFudge( n % 294 + 50 );
 
 			List<GeneratedBeacon> genBeaconList = new ArrayList<GeneratedBeacon>();
 			int skipInclusiveCount = 0;
@@ -82,7 +82,7 @@ public class RandomSectorMapGenerator {
 					if ( n % 5 == 0 ) {
 						z++;
 
-						if ( (int)(skipInclusiveCount / z) > 4 ) {  // Skip this cell.
+						if ( skipInclusiveCount / z > 4 ) {  // Skip this cell.
 							skipInclusiveCount++;
 							continue;
 						}
@@ -128,7 +128,7 @@ public class RandomSectorMapGenerator {
 			int generations = 0;
 
 			n = rng.rand();
-			genMap.setRebelFleetFudge( new Integer( n % 250 + 50 ) );
+			genMap.setRebelFleetFudge( n % 250 + 50 );
 
 			while ( generations < 50 ) {
 				List<GeneratedBeacon> genBeaconList = new ArrayList<GeneratedBeacon>();
@@ -142,7 +142,7 @@ public class RandomSectorMapGenerator {
 						if ( n % 5 == 0 ) {
 							z++;
 
-							if ( (int)(skipInclusiveCount / z) > 4 ) {  // Skip this cell.
+							if ( skipInclusiveCount / z > 4 ) {  // Skip this cell.
 								skipInclusiveCount++;
 								continue;
 							}
