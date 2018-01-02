@@ -1,5 +1,5 @@
 // Copied from a snapshot of Slipstream Mod Manager after 1.9.
-// https://github.com/Vhati/Slipstream-Mod-Manager/blob/8912fec70ed865d1bb58231214d85f487b4ca8f4/src/main/java/net/vhati/ftldat/FolderPack.java
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/baa60a1b577a5a3006c70a9202b60e4099184d24/src/main/java/net/vhati/ftldat/FolderPack.java
 
 package net.vhati.ftldat;
 
@@ -146,7 +146,7 @@ public class FolderPack extends AbstractPack {
 	 * The location it represents is not guaranteed to exist.
 	 */
 	public File getFile( String innerPath ) {
-		if ( innerPath.indexOf( "\\" ) != -1 ) {
+		if ( innerPath.contains( "\\" ) ) {
 			throw new IllegalArgumentException( "InnerPath contains backslashes: "+ innerPath );
 		}
 		File tmpFile = new File( rootDir, innerPath );

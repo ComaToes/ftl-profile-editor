@@ -1,5 +1,5 @@
 // Copied from a snapshot of Slipstream Mod Manager after 1.9.
-// https://github.com/Vhati/Slipstream-Mod-Manager/blob/8912fec70ed865d1bb58231214d85f487b4ca8f4/src/main/java/net/vhati/ftldat/PkgPack.java
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/baa60a1b577a5a3006c70a9202b60e4099184d24/src/main/java/net/vhati/ftldat/PkgPack.java
 
 package net.vhati.ftldat;
 
@@ -269,7 +269,7 @@ public class PkgPack extends AbstractPack {
 			char c = (char)srcBuf.get();
 
 			if ( c == '\0' ) break;
-			if ( !asciiEncoder.canEncode( c ) ) {
+			if ( !asciiEncoder.reset().canEncode( c ) ) {
 				throw new IOException( String.format( "Unexpected non-ASCII char in null-terminated string: %X", c ) );
 			}
 
@@ -279,7 +279,7 @@ public class PkgPack extends AbstractPack {
 	}
 
 	private int writeNullTerminatedString( ByteBuffer dstBuf, CharSequence s ) throws IOException {
-		if ( !asciiEncoder.canEncode( s ) ) {
+		if ( !asciiEncoder.reset().canEncode( s ) ) {
 			throw new IllegalArgumentException( "The PKG format does not support non-ascii characters: "+ s );
 		}
 
@@ -367,8 +367,8 @@ public class PkgPack extends AbstractPack {
 
 		raf.seek( 0 );
 		raf.setLength( 0 );
-		for ( int i=0; i < signature.length; i++ ) {
-			raf.writeByte( signature[i] );
+		for ( int x : signature ) {
+			raf.writeByte( x );
 		}
 		writeBigUShort( HEADER_SIZE );
 		writeBigUShort( ENTRY_SIZE );
@@ -382,8 +382,8 @@ public class PkgPack extends AbstractPack {
 		raf.seek( 0 );
 
 		// Check the file signature.
-		for ( int i=0; i < signature.length; i++ ) {
-			if ( raf.readUnsignedByte() != signature[i] ) {
+		for ( int x : signature ) {
+			if ( raf.readUnsignedByte() != x ) {
 				throw new IOException( "Unexpected file signature" );
 			}
 		}
@@ -441,7 +441,7 @@ public class PkgPack extends AbstractPack {
 			bigByteBuf.position( entry.innerPathOffset );
 			entry.innerPath = readNullTerminatedString( bigByteBuf );
 
-			pathToIndexMap.put( entry.innerPath, new Integer( i ) );
+			pathToIndexMap.put( entry.innerPath, i );
 		}
 	}
 
@@ -574,13 +574,13 @@ public class PkgPack extends AbstractPack {
 	 */
 	@Override
 	public void add( String innerPath, InputStream is ) throws IOException {
-		if ( innerPath.indexOf( "\\" ) != -1 ) {
+		if ( innerPath.contains( "\\" ) ) {
 			throw new IllegalArgumentException( "InnerPath contains backslashes: "+ innerPath );
 		}
 		if ( pathToIndexMap.containsKey( innerPath ) ) {
 			throw new IOException( "InnerPath already exists: "+ innerPath );
 		}
-		if ( !asciiEncoder.canEncode( innerPath ) ) {
+		if ( !asciiEncoder.reset().canEncode( innerPath ) ) {
 			throw new IllegalArgumentException( "InnerPath contains non-ascii characters: "+ innerPath );
 		}
 
@@ -667,7 +667,7 @@ public class PkgPack extends AbstractPack {
 
 	@Override
 	public void remove( String innerPath ) throws FileNotFoundException, IOException {
-		if ( innerPath.indexOf( "\\" ) != -1 ) {
+		if ( innerPath.contains( "\\" ) ) {
 			throw new IllegalArgumentException( "InnerPath contains backslashes: "+ innerPath );
 		}
 		if ( !pathToIndexMap.containsKey( innerPath ) ) {
@@ -689,7 +689,7 @@ public class PkgPack extends AbstractPack {
 
 	@Override
 	public boolean contains( String innerPath ) {
-		if ( innerPath.indexOf( "\\" ) != -1 ) {
+		if ( innerPath.contains( "\\" ) ) {
 			throw new IllegalArgumentException( "InnerPath contains backslashes: "+ innerPath );
 		}
 		return pathToIndexMap.containsKey( innerPath );
@@ -697,7 +697,7 @@ public class PkgPack extends AbstractPack {
 
 	@Override
 	public InputStream getInputStream( String innerPath ) throws FileNotFoundException, IOException {
-		if ( innerPath.indexOf( "\\" ) != -1 ) {
+		if ( innerPath.contains( "\\" ) ) {
 			throw new IllegalArgumentException( "InnerPath contains backslashes: "+ innerPath );
 		}
 		if ( !pathToIndexMap.containsKey( innerPath ) ) {
@@ -808,8 +808,7 @@ public class PkgPack extends AbstractPack {
 		// Move data toward the top.
 		long pendingDataOffset = neededMinDataOffset;
 
-		for ( int i=0; i < tmpEntries.size(); i++ ) {
-			PkgEntry entry = tmpEntries.get ( i );
+		for ( PkgEntry entry : tmpEntries ) {
 
 			if ( pendingDataOffset != entry.dataOffset ) {
 				long totalBytes = entry.dataSize;
@@ -841,7 +840,7 @@ public class PkgPack extends AbstractPack {
 
 		pathToIndexMap.clear();
 		for ( PkgEntry entry : entryList ) {
-			pathToIndexMap.put( entry.innerPath, new Integer( pathToIndexMap.size() ) );
+			pathToIndexMap.put( entry.innerPath, pathToIndexMap.size() );
 		}
 
 		// Update the header.

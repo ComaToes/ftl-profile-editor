@@ -1,5 +1,5 @@
 // Copied from a snapshot of Slipstream Mod Manager after 1.9.
-// https://github.com/Vhati/Slipstream-Mod-Manager/blob/8912fec70ed865d1bb58231214d85f487b4ca8f4/src/main/java/net/vhati/ftldat/FileChannelRegionInputStream.java
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/baa60a1b577a5a3006c70a9202b60e4099184d24/src/main/java/net/vhati/ftldat/FileChannelRegionInputStream.java
 
 package net.vhati.ftldat;
 
@@ -67,7 +67,7 @@ public class FileChannelRegionInputStream extends InputStream {
 
 		// Do an absolute get() from the buffer,
 		//   and interpret the byte as if it were unsigned.
-		int result = (int)(buf.get( (int)(intraPos - bufOffset) ) & 0xff);
+		int result = buf.get( (int)(intraPos - bufOffset) ) & 0xff;
 		intraPos++;
 		return result;
 	}

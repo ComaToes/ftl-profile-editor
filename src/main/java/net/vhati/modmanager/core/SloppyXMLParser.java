@@ -1,4 +1,5 @@
-// Copied from Slipstream Mod Manager 1.4.
+// Copied from a snapshot of Slipstream Mod Manager after 1.9.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/baa60a1b577a5a3006c70a9202b60e4099184d24/src/main/java/net/vhati/modmanager/core/SloppyXMLParser.java
 
 package net.vhati.modmanager.core;
 
@@ -325,7 +326,7 @@ public class SloppyXMLParser {
 			int colNum = lineAndCol[1];
 
 			String hint = "";
-			if ( e.getMessage() != null && e.getMessage().indexOf( "not allowed at the document root" ) != -1 ) {
+			if ( e.getMessage() != null && e.getMessage().contains( "not allowed at the document root" ) ) {
 				hint = " (There's likely an extraneous closing tag before this point.)";
 			}
 			SAXParseException cause = new SAXParseException( String.format( "At line %d, column %d: %s%s", lineNum, colNum, e.getMessage(), hint ), null, null, lineNum, colNum, e );
