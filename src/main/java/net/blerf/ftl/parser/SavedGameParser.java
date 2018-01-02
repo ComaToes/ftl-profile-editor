@@ -1926,13 +1926,13 @@ public class SavedGameParser extends Parser {
 	private BeamProjectileInfo readBeamProjectileInfo( FileInputStream in ) throws IOException {
 		BeamProjectileInfo beamInfo = new BeamProjectileInfo();
 
-		beamInfo.setFiringShipEndX( readInt( in ) );
-		beamInfo.setFiringShipEndY( readInt( in ) );
-		beamInfo.setTargetShipSourceX( readInt( in ) );
-		beamInfo.setTargetShipSourceY( readInt( in ) );
+		beamInfo.setEmissionEndX( readInt( in ) );
+		beamInfo.setEmissionEndY( readInt( in ) );
+		beamInfo.setStrafeSourceX( readInt( in ) );
+		beamInfo.setStrafeSourceY( readInt( in ) );
 
-		beamInfo.setTargetShipEndX( readInt( in ) );
-		beamInfo.setTargetShipEndY( readInt( in ) );
+		beamInfo.setStrafeEndX( readInt( in ) );
+		beamInfo.setStrafeEndY( readInt( in ) );
 		beamInfo.setUnknownBetaX( readInt( in ) );
 		beamInfo.setUnknownBetaY( readInt( in ) );
 
@@ -1950,11 +1950,11 @@ public class SavedGameParser extends Parser {
 
 		beamInfo.setUnknownZeta( readInt( in ) );
 		beamInfo.setUnknownEta( readInt( in ) );
-		beamInfo.setUnknownTheta( readInt( in ) );
+		beamInfo.setEmissionAngle( readInt( in ) );
 
 		beamInfo.setUnknownIota( readBool( in ) );
 		beamInfo.setUnknownKappa( readBool( in ) );
-		beamInfo.setUnknownLambda( readBool( in ) );
+		beamInfo.setFromDronePod( readBool( in ) );
 		beamInfo.setUnknownMu( readBool( in ) );
 		beamInfo.setUnknownNu( readBool( in ) );
 
@@ -1962,13 +1962,13 @@ public class SavedGameParser extends Parser {
 	}
 
 	public void writeBeamProjectileInfo( OutputStream out, BeamProjectileInfo beamInfo ) throws IOException {
-		writeInt( out, beamInfo.getFiringShipEndX() );
-		writeInt( out, beamInfo.getFiringShipEndY() );
-		writeInt( out, beamInfo.getTargetShipSourceX() );
-		writeInt( out, beamInfo.getTargetShipSourceY() );
+		writeInt( out, beamInfo.getEmissionEndX() );
+		writeInt( out, beamInfo.getEmissionEndY() );
+		writeInt( out, beamInfo.getStrafeSourceX() );
+		writeInt( out, beamInfo.getStrafeSourceY() );
 
-		writeInt( out, beamInfo.getTargetShipEndX() );
-		writeInt( out, beamInfo.getTargetShipEndY() );
+		writeInt( out, beamInfo.getStrafeEndX() );
+		writeInt( out, beamInfo.getStrafeEndY() );
 		writeInt( out, beamInfo.getUnknownBetaX() );
 		writeInt( out, beamInfo.getUnknownBetaY() );
 
@@ -1986,11 +1986,11 @@ public class SavedGameParser extends Parser {
 
 		writeInt( out, beamInfo.getUnknownZeta() );
 		writeInt( out, beamInfo.getUnknownEta() );
-		writeInt( out, beamInfo.getUnknownTheta() );
+		writeInt( out, beamInfo.getEmissionAngle() );
 
 		writeBool( out, beamInfo.getUnknownIota() );
 		writeBool( out, beamInfo.getUnknownKappa() );
-		writeBool( out, beamInfo.getUnknownLambda() );
+		writeBool( out, beamInfo.isFromDronePod() );
 		writeBool( out, beamInfo.getUnknownMu() );
 		writeBool( out, beamInfo.getUnknownNu() );
 	}
@@ -5829,9 +5829,15 @@ public class SavedGameParser extends Parser {
 		public boolean isAvailable() { return available; }
 
 		/**
-		 * Sets misc item-specific data.
+		 * Unknown.
 		 *
-		 * The "drones" system uses this to remember which bonus drone is offered.
+		 * Bonus drones (Repair/Defense 1) are not remembered, so it's not
+		 * that. Reloading at a store offering a bonus Repair always results in
+		 * a Defense 1.
+		 *
+		 * Observed values: 1 (w/Drone_Ctrl+Repair), 2 (w/Cloaking),
+		 * 1 (w/Clonebay), 0 (on them all after reloading!?). Also seen:
+		 * 2 (w/Drone_Ctrl), 1 (w/Teleporter), 2 (w/Battery).
 		 *
 		 * This was introduced in FTL 1.5.12.
 		 */
@@ -5840,7 +5846,7 @@ public class SavedGameParser extends Parser {
 
 		@Override
 		public String toString() {
-			return String.format( "Item: %s, Available: %5b, Extra: %3d\n", itemId, available, extraData );
+			return String.format( "Item: %s, Available: %5b, Extra?: %3d\n", itemId, available, extraData );
 		}
 	}
 
@@ -7773,10 +7779,29 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
+	/**
+	 * Extended info for Beam projectiles.
+	 *
+	 * Beam projectiles have several parts.
+	 *   An emission line, drawn from the weapon.
+	 *   A strafe line, drawn toward the target ship.
+	 *   A spot, where the strafe line hits the target ship.
+	 *   A swath, the path the spot tries to travel along.
+	 *
+	 * For ship weapons, the emission line ends off-screen, and the strafe line
+	 * begins somewhere off-screen. For Beam drones, the emission line is
+	 * ignored, and the strafe line is drawn from the drone pod directly to the
+	 * swath.
+	 *
+	 * The ProjectileState's current/previous position is the emission line's
+	 * source - at the weapon or drone pod that fired. The ProjectileState's
+	 * goal position is where the spot is, along the swath (shield blocking is
+	 * not considered).
+	 */
 	public static class BeamProjectileInfo extends ExtendedProjectileInfo {
-		private int firingShipEndX = 0, firingShipEndY = 0;
-		private int targetShipSourceX = 0, targetShipSourceY = 0;
-		private int targetShipEndX = 0, targetShipEndY = 0;
+		private int emissionEndX = 0, emissionEndY = 0;
+		private int strafeSourceX = 0, strafeSourceY = 0;
+		private int strafeEndX = 0, strafeEndY = 0;
 		private int unknownBetaX = 0, unknownBetaY = 0;
 		private int swathEndX = 0, swathEndY = 0;
 		private int swathStartX = 0, swathStartY = 0;
@@ -7786,21 +7811,12 @@ public class SavedGameParser extends Parser {
 		private int unknownEpsilonX = 0, unknownEpsilonY = 0;
 		private int unknownZeta = 0;
 		private int unknownEta = 0;
-		private int unknownTheta = 0;
+		private int emissionAngle = 0;
 		private boolean unknownIota = false;
 		private boolean unknownKappa = false;
-		private boolean unknownLambda = false;
+		private boolean fromDronePod = false;
 		private boolean unknownMu = false;
 		private boolean unknownNu = false;
-
-		// Beam weapons draw two lines:
-		//   One from the firing ship off-screen.
-		//   One from off-screen to the target ship's rooms (with an endpoint
-		//     moving along a target swath).
-		//
-		// FiringShip's Origin is the projectile's current/previous position.
-		// TargetShip's Spot Position is the projectile's goal position (it doesn't account for shield blocking).
-		//   And also beta, and epsilon here!?
 
 
 		/**
@@ -7815,12 +7831,12 @@ public class SavedGameParser extends Parser {
 		 */
 		protected BeamProjectileInfo( BeamProjectileInfo srcInfo ) {
 			super( srcInfo );
-			firingShipEndX = srcInfo.getFiringShipEndX();
-			firingShipEndY = srcInfo.getFiringShipEndY();
-			targetShipSourceX = srcInfo.getTargetShipSourceX();
-			targetShipSourceY = srcInfo.getTargetShipSourceY();
-			targetShipEndX = srcInfo.getTargetShipEndX();
-			targetShipEndY = srcInfo.getTargetShipEndY();
+			emissionEndX = srcInfo.getEmissionEndX();
+			emissionEndY = srcInfo.getEmissionEndY();
+			strafeSourceX = srcInfo.getStrafeSourceX();
+			strafeSourceY = srcInfo.getStrafeSourceY();
+			strafeEndX = srcInfo.getStrafeEndX();
+			strafeEndY = srcInfo.getStrafeEndY();
 			unknownBetaX = srcInfo.getUnknownBetaX();
 			unknownBetaY = srcInfo.getUnknownBetaY();
 			swathEndX = srcInfo.getSwathEndX();
@@ -7834,10 +7850,10 @@ public class SavedGameParser extends Parser {
 			unknownEpsilonY = srcInfo.getUnknownEpsilonY();
 			unknownZeta = srcInfo.getUnknownZeta();
 			unknownEta = srcInfo.getUnknownEta();
-			unknownTheta = srcInfo.getUnknownTheta();
+			emissionAngle = srcInfo.getEmissionAngle();
 			unknownIota = srcInfo.getUnknownIota();
 			unknownKappa = srcInfo.getUnknownKappa();
-			unknownLambda = srcInfo.getUnknownLambda();
+			fromDronePod = srcInfo.isFromDronePod();
 			unknownMu = srcInfo.getUnknownMu();
 			unknownNu = srcInfo.getUnknownNu();
 		}
@@ -7848,22 +7864,28 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Sets the off-screen endpoint of the line drawn from the weapon.
 		 *
-		 * This is relative to the firing ship.
+		 * For Beam drones, this point will be the same as strafeSource, except
+		 * this y will be shifted upward by -2000. The emission line won't be
+		 * drawn in that case, obvisously, since the drone is right there.
+		 *
+		 * This is relative to the ship space the beam was emitted from
+		 * (e.g., weapon of a player ship, or a drone hovering over a nearby
+		 * ship).
 		 */
-		public void setFiringShipEndX( int n ) { firingShipEndX = n; }
-		public void setFiringShipEndY( int n ) { firingShipEndY = n; }
-		public int getFiringShipEndX() { return firingShipEndX; }
-		public int getFiringShipEndY() { return firingShipEndY; }
+		public void setEmissionEndX( int n ) { emissionEndX = n; }
+		public void setEmissionEndY( int n ) { emissionEndY = n; }
+		public int getEmissionEndX() { return emissionEndX; }
+		public int getEmissionEndY() { return emissionEndY; }
 
 		/**
 		 * Sets the off-screen endpoint of the line drawn toward the swath.
 		 *
-		 * This is relative to the firing ship.
+		 * This is relative to the target ship.
 		 */
-		public void setTargetShipSourceX( int n ) { targetShipSourceX = n; }
-		public void setTargetShipSourceY( int n ) { targetShipSourceY = n; }
-		public int getTargetShipSourceX() { return targetShipSourceX; }
-		public int getTargetShipSourceY() { return targetShipSourceY; }
+		public void setStrafeSourceX( int n ) { strafeSourceX = n; }
+		public void setStrafeSourceY( int n ) { strafeSourceY = n; }
+		public int getStrafeSourceX() { return strafeSourceX; }
+		public int getStrafeSourceY() { return strafeSourceY; }
 
 		/**
 		 * Sets the on-screen endpoint of the line drawn toward the swath.
@@ -7873,10 +7895,10 @@ public class SavedGameParser extends Parser {
 		 *
 		 * This is relative to the target ship.
 		 */
-		public void setTargetShipEndX( int n ) { targetShipEndX = n; }
-		public void setTargetShipEndY( int n ) { targetShipEndY = n; }
-		public int getTargetShipEndX() { return targetShipEndX; }
-		public int getTargetShipEndY() { return targetShipEndY; }
+		public void setStrafeEndX( int n ) { strafeEndX = n; }
+		public void setStrafeEndY( int n ) { strafeEndY = n; }
+		public int getStrafeEndX() { return strafeEndX; }
+		public int getStrafeEndY() { return strafeEndY; }
 
 		/**
 		 * Unknown.
@@ -7968,12 +7990,20 @@ public class SavedGameParser extends Parser {
 		public int getUnknownEta() { return unknownEta; }
 
 		/**
-		 * Unknown.
+		 * Sets the angle of the line drawn from the weapon.
 		 *
-		 * Observed values: 0, 270000.
+		 * For ships, this will be 0 (player ship) or 270000 (nearby ship).
+		 *
+		 * For Beam drones, this is related to the turret angle, though this
+		 * may be a large negative angle while the turret may be a small
+		 * positive one.
+		 *
+		 * Observed values: 0, 270000, -323106.
+		 *
+		 * @param n a pseudo-float (n degrees clockwise from east)
 		 */
-		public void setUnknownTheta( int n ) { unknownTheta = n; }
-		public int getUnknownTheta() { return unknownTheta; }
+		public void setEmissionAngle( int n ) { emissionAngle = n; }
+		public int getEmissionAngle() { return emissionAngle; }
 
 		/**
 		 * Unknown.
@@ -7992,10 +8022,22 @@ public class SavedGameParser extends Parser {
 		public boolean getUnknownKappa() { return unknownKappa; }
 
 		/**
-		 * Unknown.
+		 * Sets whether this this beam was fired from a drone pod or a ship
+		 * weapon.
+		 *
+		 * For ship weapons, this is false, and both the emission and strafe
+		 * lines will be drawn.
+		 *
+		 * If true, only the strafe line be drawn - from the ProjectileState's
+		 * current position (the drone's aperture).
+		 *
+		 * If edited to false on a drone, the emission line will be drawn,
+		 * northward, with no strafe line - completely missing the target ship.
+		 * This weirdness may have to to with current/destination space not
+		 * being separate, as they would be for a ship weapon?
 		 */
-		public void setUnknownLambda( boolean b ) { unknownLambda = b; }
-		public boolean getUnknownLambda() { return unknownLambda; }
+		public void setFromDronePod( boolean b ) { fromDronePod = b; }
+		public boolean isFromDronePod() { return fromDronePod; }
 
 		/**
 		 * Unknown.
@@ -8017,9 +8059,9 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 
 			result.append( String.format( "Type:               Beam Info\n" ) );
-			result.append( String.format( "Firing Ship End:    %8d,%8d (%9.03f,%9.03f) (Off-screen endpoint of line from weapon)\n", firingShipEndX, firingShipEndY, firingShipEndX/1000f, firingShipEndY/1000f ) );
-			result.append( String.format( "Target Ship Source: %8d,%8d (%9.03f,%9.03f) (Off-screen endpoint of line drawn toward swath)\n", targetShipSourceX, targetShipSourceY, targetShipSourceX/1000f, targetShipSourceY/1000f ) );
-			result.append( String.format( "Target Ship End:    %8d,%8d (%9.03f,%9.03f) (On-screen endpoint of line drawn toward swath)\n", targetShipEndX, targetShipEndY, targetShipEndX/1000f, targetShipEndY/1000f ) );
+			result.append( String.format( "Emission End:       %8d,%8d (%9.03f,%9.03f) (Off-screen endpoint of line from weapon)\n", emissionEndX, emissionEndY, emissionEndX/1000f, emissionEndY/1000f ) );
+			result.append( String.format( "Strafe Source:      %8d,%8d (%9.03f,%9.03f) (Off-screen endpoint of line drawn toward swath)\n", strafeSourceX, strafeSourceY, strafeSourceX/1000f, strafeSourceY/1000f ) );
+			result.append( String.format( "Strafe End:         %8d,%8d (%9.03f,%9.03f) (On-screen endpoint of line drawn toward swath)\n", strafeEndX, strafeEndY, strafeEndX/1000f, strafeEndY/1000f ) );
 			result.append( String.format( "Beta?:              %8d,%8d (%9.03f,%9.03f)\n", unknownBetaX, unknownBetaY, unknownBetaX/1000f, unknownBetaY/1000f ) );
 			result.append( String.format( "Swath End:          %8d,%8d (%9.03f,%9.03f)\n", swathEndX, swathEndY, swathEndX/1000f, swathEndY/1000f ) );
 			result.append( String.format( "Swath Start:        %8d,%8d (%9.03f,%9.03f)\n", swathStartX, swathStartY, swathStartX/1000f, swathStartY/1000f ) );
@@ -8029,10 +8071,10 @@ public class SavedGameParser extends Parser {
 			result.append( String.format( "Epsilon?:           %8d,%8d (%9.03f,%9.03f)\n", unknownEpsilonX, unknownEpsilonY, unknownEpsilonX/1000f, unknownEpsilonY/1000f ) );
 			result.append( String.format( "Zeta?:              %8d\n", unknownZeta ) );
 			result.append( String.format( "Eta?:               %8d\n", unknownEta ) );
-			result.append( String.format( "Theta?:             %8d\n", unknownTheta ) );
+			result.append( String.format( "Emission Angle:     %8d\n", emissionAngle ) );
 			result.append( String.format( "Iota?:              %8b\n", unknownIota ) );
 			result.append( String.format( "Kappa?:             %8b\n", unknownKappa ) );
-			result.append( String.format( "Lambda?:            %8b\n", unknownLambda ) );
+			result.append( String.format( "From Drone Pod:     %8b\n", fromDronePod ) );
 			result.append( String.format( "Mu?:                %8b\n", unknownMu ) );
 			result.append( String.format( "Nu?:                %8b\n", unknownNu ) );
 
@@ -8223,8 +8265,8 @@ public class SavedGameParser extends Parser {
 		private int unknownKappa = Integer.MIN_VALUE;
 
 		// This block was formerly a length 14 array named gamma.
-		private int unknownLambda = -1000;
-		private int unknownMu = 0;
+		private int buildupTicks = -1000;
+		private int stationaryTicks = 0;
 		private int cooldownTicks = 0;
 		private int orbitAngle = 0;
 		private int turretAngle = 0;
@@ -8269,8 +8311,8 @@ public class SavedGameParser extends Parser {
 			unknownIota = srcPod.getUnknownIota();
 			unknownKappa = srcPod.getUnknownKappa();
 
-			unknownLambda = srcPod.getUnknownLambda();
-			unknownMu = srcPod.getUnknownMu();
+			buildupTicks = srcPod.getBuildupTicks();
+			stationaryTicks = srcPod.getStationaryTicks();
 			cooldownTicks = srcPod.getCooldownTicks();
 			orbitAngle = srcPod.getOrbitAngle();
 			turretAngle = srcPod.getTurretAngle();
@@ -8303,6 +8345,11 @@ public class SavedGameParser extends Parser {
 			setMourningTicks( 0 );
 			setCurrentSpace( 0 );
 			setDestinationSpace( -1 );
+
+			setBuildupTicks( -1000 );
+			setStationaryTicks( 0 );
+
+			setOverloadTicks( 0 );
 
 			// TODO: Unknowns.
 
@@ -8428,16 +8475,37 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Unknown.
+		 * Sets time elapsed while this drone is about to fire.
 		 *
-		 * Observed values: Went from -1000 to 500 when hacking drone pod
-		 * switched from player space to target space.
+		 * Drones telegraph when they're about to fire, a light will change
+		 * color (COMBAT_1) or glow intensely (COMBAT_BEAM). While positive,
+		 * this value decrements to 0. At that point, this is set to -1000,
+		 * firing occurs and a projectile is launched.
+		 *
+		 * Observed values: 365, 43 (COMBAT_BEAM); 500 (when a launched Hacking
+		 * drone entered the target ship space).
+		 *
+		 * When not set, this is -1000.
 		 */
-		public void setUnknownLambda( int n ) { unknownLambda = n; }
-		public int getUnknownLambda() { return unknownLambda; }
+		public void setBuildupTicks( int n ) { buildupTicks = n; }
+		public int getBuildupTicks() { return buildupTicks; }
 
-		public void setUnknownMu( int n ) { unknownMu = n; }
-		public int getUnknownMu() { return unknownMu; }
+		/**
+		 * Sets time elapsed while this drone is stationary.
+		 *
+		 * While positive, this value decrements to 0. The drone will be
+		 * completely still for the duration. Beam drones set this when
+		 * buildupTicks reaches 0, so the drone will hold still to be the
+		 * beam's origin point.
+		 *
+		 * This works on Combat drones, too, if edited.
+		 *
+		 * Observed values: 470, 322, 167 (COMBAT_BEAM).
+		 *
+		 * When not set, this is 0.
+		 */
+		public void setStationaryTicks( int n ) { stationaryTicks = n; }
+		public int getStationaryTicks() { return stationaryTicks; }
 
 		/**
 		 * Sets time elapsed while this drone is unable to shoot again after
@@ -8445,11 +8513,19 @@ public class SavedGameParser extends Parser {
 		 *
 		 * This is based on the 'cooldown' tag of the DroneBlueprint's xml.
 		 *
-		 * If greater than 0, the drone's light will be red while this number
-		 * decrements to 0. After reaching or passing 0, the light turns
-		 * green, and this is set to -1000.
+		 * While positive, for Defense and Shield drones, this value decrements
+		 * to 0. The drone will be passive (e.g., not firing) for the duration.
+		 * After reaching or passing 0, this is set to -1000.
+		 *
+		 * A Defense drone's light will turn red while passive (as opposed to
+		 * green).
+		 *
+		 * Combat and Beam drones leave this at the xml's value without ever
+		 * decrementing.
 		 *
 		 * When not set, this is 0.
+		 *
+		 * TODO: Check Hacking and Ship Repair drones.
 		 */
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 		public int getCooldownTicks() { return cooldownTicks; }
@@ -8597,9 +8673,9 @@ public class SavedGameParser extends Parser {
 			result.append( String.format( "Iota?, Kappa?:     %7s,%7s\n", prettyInt( unknownIota ), prettyInt( unknownKappa ) ) );
 
 			result.append( String.format( "\n" ));
-			result.append( String.format( "Lambda?:           %7d\n", unknownLambda ) );
-			result.append( String.format( "Mu?:               %7d\n", unknownMu ) );
-			result.append( String.format( "Cooldown Ticks:    %7d (Decrements to 0, green-lit at -1000)\n", cooldownTicks ) );
+			result.append( String.format( "Buildup Ticks:     %7d (Decrements to 0 while about to fire)\n", buildupTicks ) );
+			result.append( String.format( "Stationary Ticks:  %7d (Decrements to 0 while stationary)\n", stationaryTicks ) );
+			result.append( String.format( "Cooldown Ticks:    %7d (Decrements to 0 while passive, Defense/Shield only)\n", cooldownTicks ) );
 			result.append( String.format( "Orbit Angle:       %7d\n", orbitAngle ) );
 			result.append( String.format( "Turret Angle:      %7d\n", turretAngle ) );
 			result.append( String.format( "Xi?:               %7d\n", unknownXi ) );
@@ -9986,8 +10062,8 @@ public class SavedGameParser extends Parser {
 		dronePod.setUnknownIota( readMinMaxedInt( in ) );
 		dronePod.setUnknownKappa( readMinMaxedInt( in ) );
 
-		dronePod.setUnknownLambda( readInt( in ) );
-		dronePod.setUnknownMu( readInt( in ) );
+		dronePod.setBuildupTicks( readInt( in ) );
+		dronePod.setStationaryTicks( readInt( in ) );
 		dronePod.setCooldownTicks( readInt( in ) );
 		dronePod.setOrbitAngle( readInt( in ) );
 		dronePod.setTurretAngle( readInt( in ) );
@@ -10083,8 +10159,8 @@ public class SavedGameParser extends Parser {
 		writeMinMaxedInt( out, dronePod.getUnknownIota() );
 		writeMinMaxedInt( out, dronePod.getUnknownKappa() );
 
-		writeInt( out, dronePod.getUnknownLambda() );
-		writeInt( out, dronePod.getUnknownMu() );
+		writeInt( out, dronePod.getBuildupTicks() );
+		writeInt( out, dronePod.getStationaryTicks() );
 		writeInt( out, dronePod.getCooldownTicks() );
 		writeInt( out, dronePod.getOrbitAngle() );
 		writeInt( out, dronePod.getTurretAngle() );
