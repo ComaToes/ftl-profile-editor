@@ -4868,7 +4868,7 @@ public class SavedGameParser extends Parser {
 		public SquareState() {
 		}
 
-		public SquareState( int fireHealth, int ignitionProgress, int gamma ) {
+		public SquareState( int fireHealth, int ignitionProgress, int extinguishmentProgress ) {
 			this.fireHealth = fireHealth;
 			this.ignitionProgress = ignitionProgress;
 			this.extinguishmentProgress = extinguishmentProgress;
