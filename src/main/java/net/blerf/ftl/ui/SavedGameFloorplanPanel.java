@@ -810,7 +810,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 			// Find squares that don't allow crew in them (medbay's slot, same as clonebay).
-			// TODO: Test if nearby ships have blocked slots.
+			// TODO: Enemy ships don't have a blocked slot.
+			//   Dunno if that's from being in "autoBlueprints.xml" or non-player controlled.
+			//   Commandeer one and find out.
 			blockedRegions.clear();
 			ShipBlueprint.SystemList.SystemRoom medicalSystem = blueprintSystems.getMedicalRoom();
 			if ( medicalSystem != null ) {
