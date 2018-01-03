@@ -462,7 +462,7 @@ public class SavedGameParser extends Parser {
 
 	private ShipState readShip( InputStream in, boolean auto, int fileFormat, boolean dlcEnabled ) throws IOException {
 
-		String shipBlueprintId = readString( in );  // blueprints.xml / autoBlueprints.xml.
+		String shipBlueprintId = readString( in );
 		String shipName = readString( in );
 		String shipGfxBaseName = readString( in );
 
@@ -3026,7 +3026,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This should be called when turning a nearby ship into a player ship.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -3044,94 +3045,16 @@ public class SavedGameParser extends Parser {
 
 			for ( Map.Entry<SystemType, List<SystemState>> entry : getSystemsMap().entrySet() ) {
 				for ( SystemState s : entry.getValue() ) {
-					if ( !entry.getKey().isSubsystem() ) {
-						s.setPower( 0 );
-					}
-					// TODO: Find out if NOT resetting subsystem power is okay.
-					// Otherwise, damage, etc. will need to be taken into account.
-
-					s.setBatteryPower( 0 );
-					s.setHackLevel( 0 );
-					s.setHacked( false );
-					s.setTemporaryCapacityCap( 1000 );
-					s.setTemporaryCapacityLoss( 0 );
-					s.setTemporaryCapacityDivisor( 1 );
+					s.commandeer();
 				}
 			}
 
-			ClonebayInfo clonebayInfo = getExtendedSystemInfo( ClonebayInfo.class );
-			if ( clonebayInfo != null ) {
-				clonebayInfo.setBuildTicks( 0 );
-				clonebayInfo.setBuildTicksGoal( 0 );
-				clonebayInfo.setDoomTicks( 0 );
-			}
-
-			BatteryInfo batteryInfo = getExtendedSystemInfo( BatteryInfo.class );
-			if ( batteryInfo != null ) {
-				batteryInfo.setActive( false );
-				batteryInfo.setUsedBattery( 0 );
-				batteryInfo.setDischargeTicks( 1000 );
-			}
-
-			ShieldsInfo shieldsInfo = getExtendedSystemInfo( ShieldsInfo.class );
-			if ( shieldsInfo != null ) {
-				shieldsInfo.setShieldLayers( 0 );
-				shieldsInfo.setShieldRechargeTicks( 0 );
-				shieldsInfo.setShieldDropAnimOn( false );
-				shieldsInfo.setShieldDropAnimTicks( 0 );   // TODO: Vet this default.
-				shieldsInfo.setShieldRaiseAnimOn( false );
-				shieldsInfo.setShieldRaiseAnimTicks( 0 );  // TODO: Vet this default.
-			}
-
-			CloakingInfo cloakingInfo = getExtendedSystemInfo( CloakingInfo.class );
-			if ( cloakingInfo != null ) {
-				cloakingInfo.setUnknownAlpha( 0 );    // TODO: Vet this default.
-				cloakingInfo.setUnknownBeta( 0 );     // TODO: Vet this default.
-				cloakingInfo.setCloakTicksGoal( 0 );
-				cloakingInfo.setCloakTicks( Integer.MIN_VALUE );
-			}
-
-			HackingInfo hackingInfo = getExtendedSystemInfo( HackingInfo.class );
-			if ( hackingInfo != null ) {
-				hackingInfo.setUnknownAlpha( -1 );
-				hackingInfo.setUnknownBeta( 0 );
-				hackingInfo.setUnknownGamma( 0 );
-				hackingInfo.setUnknownDelta( 0 );
-
-				hackingInfo.setUnknownEpsilon( 0 );
-				hackingInfo.setUnknownZeta( 0 );
-				hackingInfo.setUnknownEta( 0 );
-
-				hackingInfo.setDisruptionTicks( 0 );
-				hackingInfo.setDisruptionTicksGoal( 10000 );
-				hackingInfo.setDisrupting( false );
-
-				DronePodState pod = hackingInfo.getDronePod();
-				if ( pod != null ) {
-					pod.commandeer();
-				}
-			}
-
-			MindInfo mindInfo = getExtendedSystemInfo( MindInfo.class );
-			if ( mindInfo != null ) {
-				mindInfo.setMindControlTicks( 0 );
-				mindInfo.setMindControlTicksGoal( 0 );
-			}
-
-			for ( ArtilleryInfo artilleryInfo : getExtendedSystemInfoList( ArtilleryInfo.class ) ) {
-				WeaponModuleState weaponMod = artilleryInfo.getWeaponModule();
-				if ( weaponMod != null ) {
-					weaponMod.commandeer();
-				}
+			for ( ExtendedSystemInfo info : getExtendedSystemInfoList() ) {
+				info.commandeer();
 			}
 
 			for ( DoorState door : getDoorMap().values() ) {
-				int nominalHealth = door.getNominalHealth();
-				door.setCurrentMaxHealth( nominalHealth );
-				door.setHealth( door.getCurrentMaxHealth() );
-
-				door.setUnknownDelta( 0 );    // TODO: Vet this default.
-				door.setUnknownEpsilon( 0 );  // TODO: Vet this default.
+				door.commandeer();
 			}
 
 			setCloakAnimTicks( 0 );
@@ -3480,7 +3403,7 @@ public class SavedGameParser extends Parser {
 		@Override
 		public String toString() {
 			// The blueprint fetching might vary if auto == true.
-			// See autoBlueprints.xml vs blueprints.xml.
+			// See "autoBlueprints.xml" vs "blueprints.xml".
 			ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintId );
 			ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
@@ -3701,10 +3624,15 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
+	/**
+	 * Crew.
+	 *
+	 * Zoltan-produced power is not stored in SystemState.
+	 *
+	 * TODO: Disrupting Mind stuns and turns enemy crew against each other,
+	 * yet doesn't seem to modify CrewStates!?
+	 */
 	public static class CrewState {
-
-		// Zoltan-produced power is not stored in SystemState.
-
 		private String name = "Frank";
 		private String race = CrewType.HUMAN.getId();
 		private boolean enemyBoardingDrone = false;
@@ -3812,7 +3740,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Normal Crew will NOT have their playerControlled status toggled.
@@ -3868,26 +3797,23 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Sets whether this crew member is a hostile boarding drone.
 		 *
-		 * Upon loading after setting this on a crew member,
-		 * name will change to "Anti-Personnel Drone", race
-		 * will be "battle", and playerControlled will be
-		 * false on the player ship or true on a nearby ship.
+		 * Upon loading after setting this on a crew member, name will change
+		 * to "Anti-Personnel Drone", race will be "battle", and
+		 * playerControlled will be false on the player ship or true on a
+		 * nearby ship.
 		 *
-		 * If after loading in-game, you re-edit this to false
-		 * and leave the "battle" race, the game will change
-		 * it to "human".
+		 * If after loading in-game, you re-edit this to false and leave the
+		 * "battle" race, the game will change it to "human".
 		 *
-		 * Drones on nearby ships (which are playerControlled)
-		 * will not be preserved the next time the game saves,
-		 * even if you modify the player ship's drone list to
-		 * have an armed boarder.
+		 * Drones on nearby ships (which are playerControlled) will not be
+		 * preserved the next time the game saves, even if you modify the
+		 * player ship's drone list to have an armed boarder.
 		 *
-		 * Presumably this is so intruders can persist without
-		 * a ship, which would normally have a drones section
-		 * to contain them.
+		 * Presumably this is so intruders can persist without a ship, which
+		 * would normally have a drones section to contain them.
 		 *
-		 * TODO: Jump away from Boss #2 to see what its
-		 * drone is (blueprints.xml mentions BOARDER_BOSS).
+		 * TODO: Jump away from Boss #2 to see what its drone is
+		 * ("blueprints.xml" mentions BOARDER_BOSS).
 		 */
 		public void setEnemyBoardingDrone( boolean b ) {
 			enemyBoardingDrone = b;
@@ -3965,7 +3891,7 @@ public class SavedGameParser extends Parser {
 		 * Sets a list of tints to apply to the sprite.
 		 *
 		 * The tints themselves are defined in
-		 * blueprints.xml:crewBlueprint/colorList
+		 * "blueprints.xml":crewBlueprint/colorList
 		 *
 		 * The first Integer in the list corresponds to the first 'layer' tag
 		 * in the xml, and the Integer's value is the nth 'color' tag to use.
@@ -3976,7 +3902,7 @@ public class SavedGameParser extends Parser {
 		 * reference the missing layer/colors display as a gray rectangle.
 		 *
 		 * Stock layers(colors): anaerobic=1(4), crystal=1(4), energy=1(5),
-		 * engi=0(0), human=2(2/4), mantis=1(9), rock=1(7) slug=1(8).
+		 * engi=0(0), human=2(2,4), mantis=1(9), rock=1(7), slug=1(8).
 		 *
 		 * TODO: Test if FTL honors non-standard tints of edited NPCs.
 		 *
@@ -4007,8 +3933,7 @@ public class SavedGameParser extends Parser {
 		 *
 		 * roomId and roomSquare need to be specified together.
 		 *
-		 * The "return crew to saved positions" feature was
-		 * introduced in FTL 1.5.4.
+		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setSavedRoomId( int n ) { savedRoomId = n; }
 		public int getSavedRoomId() { return savedRoomId; }
@@ -4031,24 +3956,24 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Toggles sex.
-		 * Humans with this set to false have a
-		 * female image. Other races accept the
-		 * flag but use the same image as male.
+		 * Humans with this set to false have a female image. Other races
+		 * accept the flag but use the same image as male.
 		 *
-		 * No Andorians in the game, so this is
-		 * only a two-state boolean.
+		 * No Andorians in the game, so this is only a two-state boolean.
 		 */
 		public void setMale( boolean b ) { male = b; }
 		public boolean isMale() { return male; }
 
 		public void setRepairs( int n ) { repairs = n; }
-		public void setCombatKills( int n ) { combatKills = n; }
-		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
-		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
-
 		public int getRepairs() { return repairs; }
+
+		public void setCombatKills( int n ) { combatKills = n; }
 		public int getCombatKills() { return combatKills; }
+
+		public void setPilotedEvasions( int n ) { pilotedEvasions = n; }
 		public int getPilotedEvasions() { return pilotedEvasions; }
+
+		public void setJumpsSurvived( int n ) { jumpsSurvived = n; }
 		public int getJumpsSurvived() { return jumpsSurvived; }
 
 		/**
@@ -4443,6 +4368,28 @@ public class SavedGameParser extends Parser {
 			temporaryCapacityDivisor = srcSystem.getTemporaryCapacityDivisor();
 		}
 
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 */
+		public void commandeer() {
+			if ( !systemType.isSubsystem() ) {
+				setPower( 0 );
+			}
+			// TODO: Find out if NOT resetting subsystem power is okay.
+			// Otherwise, damage, etc. will need to be taken into account.
+
+			setBatteryPower( 0 );
+			setHackLevel( 0 );
+			setHacked( false );
+			setTemporaryCapacityCap( 1000 );
+			setTemporaryCapacityLoss( 0 );
+			setTemporaryCapacityDivisor( 1 );
+		}
+
 		public SystemType getSystemType() { return systemType; }
 
 		/**
@@ -4495,11 +4442,13 @@ public class SavedGameParser extends Parser {
 		 *
 		 * When a system disables itself (white lock), this will be -1. For
 		 * the Cloaking system in FTL 1.01-1.03.3, setting this to -1 would
-		 * engage the cloak. Teleporter has not been tested. AE systems have not
-		 * been tested. Systems which do not normally disable themselves will
-		 * remain locked until they get hit with a weapon that produces ion
-		 * damage. See ExtendedSystemInfo classes for timer fields that might
-		 * used to unlock systems on their own.
+		 * engage the cloak. Systems which do not normally disable themselves
+		 * will remain locked until they get hit with a weapon that produces
+		 * ion damage. See ExtendedSystemInfo classes for timer fields that
+		 * might used to unlock systems on their own.
+		 *
+		 * TODO: Teleporter has not been tested. AE systems have not been
+		 * tested.
 		 *
 		 * @see net.blerf.ftl.constants.FTLConstants#getMaxIonizedBars()
 		 */
@@ -4736,7 +4685,7 @@ public class SavedGameParser extends Parser {
 				result.append( String.format( "Ionized Bars:            %3d\n", ionizedBars ) );
 				result.append( String.format( "Repair Progress:         %3d%%\n", repairProgress ) );
 				result.append( String.format( "Damage Progress:         %3d%%\n", damageProgress ) );
-				result.append( String.format( "Deionization Ticks:    %5s\n", (deionizationTicks==Integer.MIN_VALUE ? "N/A" : deionizationTicks) ) );
+				result.append( String.format( "Deionization Ticks:    %5s\n", (deionizationTicks == Integer.MIN_VALUE ? "N/A" : deionizationTicks) ) );
 				result.append( String.format( "Battery Power:           %3d\n", batteryPower ) );
 				result.append( String.format( "Hack Level:              %3d\n", hackLevel ) );
 				result.append( String.format( "Hacked:                %5b\n", hacked ) );
@@ -4964,6 +4913,21 @@ public class SavedGameParser extends Parser {
 			unknownEpsilon = srcDoor.getUnknownEpsilon();
 		}
 
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 */
+		public void commandeer() {
+			setCurrentMaxHealth( getNominalHealth() );
+			setHealth( getCurrentMaxHealth() );
+
+			setUnknownDelta( 0 );    // TODO: Vet this default.
+			setUnknownEpsilon( 0 );  // TODO: Vet this default.
+		}
+
 		public void setOpen( boolean b ) { open = b; }
 		public void setWalkingThrough( boolean b ) { walkingThrough = b; }
 
@@ -5168,11 +5132,11 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
-		 * TODO: Recurse into all nested objects.
 		 */
 		public void commandeer() {
 			setArmed( false );
@@ -5222,7 +5186,7 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 
 			WeaponBlueprint weaponBlueprint = DataManager.get().getWeapon( weaponId );
-			String cooldownString = ( weaponBlueprint!=null ? weaponBlueprint.getCooldown()+"" : "?" );
+			String cooldownString = ( weaponBlueprint != null ? weaponBlueprint.getCooldown()+"" : "?" );
 
 			result.append( String.format( "WeaponId:       %s\n", weaponId ) );
 			result.append( String.format( "Armed:          %b\n", armed ) );
@@ -5332,7 +5296,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -5351,6 +5316,11 @@ public class SavedGameParser extends Parser {
 		public void setDroneId( String s ) { droneId = s; }
 		public String getDroneId() { return droneId; }
 
+		/**
+		 * Sets whether this drone is powered.
+		 *
+		 * @see ExtendedDroneInfo#setArmed(boolean)
+		 */
 		public void setArmed( boolean b ) { armed = b; }
 		public boolean isArmed() { return armed; }
 
@@ -5902,7 +5872,7 @@ public class SavedGameParser extends Parser {
 		 * Sometimes this is blank.
 		 *
 		 * Matthew's hint: There are two kinds of event: static events, assigned
-		 * randomly based on the sector seed and sector_data.xml (like for
+		 * randomly based on the sector seed and "sector_data.xml" (like for
 		 * nebula beacons); and dynamic events. This value only tracks dynamic
 		 * events.
 		 */
@@ -6221,9 +6191,9 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static class AsteroidFieldState {
-		private int unknownAlpha = -1000;  // Decrementing ticks from ~1545, or -1000.
+		private int unknownAlpha = -1000;
 		private int strayRockTicks = 0;
-		private int unknownGamma = 0;      // Incrementing counter. 0-based Nth rock? Total rocks?
+		private int unknownGamma = 0;
 		private int bgDriftTicks = 0;
 		private int currentTarget = 0;
 
@@ -6231,20 +6201,45 @@ public class SavedGameParser extends Parser {
 		public AsteroidFieldState() {
 		}
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 3, 0; 4.
+		 */
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public int getUnknownAlpha() { return unknownAlpha; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 15853, 15195, 14786, 12873, 12741, 12931. It's been
+		 * seen at 6545 immediately after reaching 0 (random starting value?).
+		 */
 		public void setStrayRockTicks( int n ) { strayRockTicks = n; }
 		public int getStrayRockTicks() { return strayRockTicks; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0, 1, 2, 0, 1.
+		 */
 		public void setUnknownGamma( int n ) { unknownGamma = n; }
 		public int getUnknownGamma() { return unknownGamma; }
 
+		/**
+		 * Sets time elapsed while the background shifts left.
+		 *
+		 * Observed values: 1952, 1294, 885, 817, 685, 335. It's been seen
+		 * stuck at 143 until strayRockTicks hit 0, then became 1102!? Then
+		 * seen decrementing to 0, then became 1399.
+		 */
 		public void setBgDriftTicks( int n ) { bgDriftTicks = n; }
 		public int getBgDriftTicks() { return bgDriftTicks; }
 
 		/**
 		 * Unknown.
+		 *
+		 * This seems to be an incrementing counter.
 		 *
 		 * Observed values: 1, 8, 13.
 		 */
@@ -6258,7 +6253,7 @@ public class SavedGameParser extends Parser {
 			result.append( String.format( "Alpha?:            %7d\n", unknownAlpha ) );
 			result.append( String.format( "Stray Rock Ticks?: %7d\n", strayRockTicks ) );
 			result.append( String.format( "Gamma?:            %7d\n", unknownGamma ) );
-			result.append( String.format( "Bkg Drift Ticks:   %7d\n", bgDriftTicks ) );
+			result.append( String.format( "Bkg Drift Ticks?:  %7d\n", bgDriftTicks ) );
 			result.append( String.format( "Current Target?:   %7d\n", currentTarget ) );
 
 			return result.toString();
@@ -6439,7 +6434,7 @@ public class SavedGameParser extends Parser {
 		 * Sets the current frame of this anim (0-based).
 		 *
 		 * Start/end frames during playback vary. Anims, and their important
-		 * frames, are defined in animations.xml.
+		 * frames, are defined in "animations.xml".
 		 *
 		 * FTL seems to clobber this value upon loading, based on the
 		 * circumstances driving the anim, so editing it is probably useless.
@@ -6517,6 +6512,15 @@ public class SavedGameParser extends Parser {
 		 * Subclasses override this with return values of their own type.
 		 */
 		public abstract ExtendedSystemInfo copy();
+
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 */
+		public abstract void commandeer();
 	}
 
 	public static class ClonebayInfo extends ExtendedSystemInfo {
@@ -6541,6 +6545,18 @@ public class SavedGameParser extends Parser {
 
 		@Override
 		public ClonebayInfo copy() { return new ClonebayInfo( this ); }
+
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 */
+		@Override
+		public void commandeer() {
+			setBuildTicks( 0 );
+			setBuildTicksGoal( 0 );
+			setDoomTicks( 0 );
+		}
 
 		/**
 		 * Sets elapsed time while building a clone.
@@ -6578,7 +6594,7 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format( "SystemId:                 %s\n", SystemType.CLONEBAY.toString() ) );
+			result.append( String.format( "SystemId:                 %s\n", SystemType.CLONEBAY.getId() ) );
 			result.append( String.format( "Build Ticks:            %7d (For the current dead crew being cloned)\n", buildTicks ) );
 			result.append( String.format( "Build Ticks Goal:       %7d\n", buildTicksGoal ) );
 			result.append( String.format( "DoomTicks:              %7d (If unpowered, dead crew are lost at 3000)\n", doomTicks ) );
@@ -6612,6 +6628,18 @@ public class SavedGameParser extends Parser {
 
 		@Override
 		public BatteryInfo copy() { return new BatteryInfo( this ); }
+
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 */
+		@Override
+		public void commandeer() {
+			setActive( false );
+			setUsedBattery( 0 );
+			setDischargeTicks( 1000 );
+		}
 
 		/**
 		 * Toggles whether the battery is turned on.
@@ -6648,7 +6676,7 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format( "SystemId:                 %s\n", SystemType.BATTERY.toString() ) );
+			result.append( String.format( "SystemId:                 %s\n", SystemType.BATTERY.getId() ) );
 			result.append( String.format( "Active:                   %5b\n", active ) );
 			result.append( String.format( "Battery Power in Use:     %5d\n", usedBattery ) );
 			result.append( String.format( "Discharge Ticks:          %5d\n", dischargeTicks ) );
@@ -6705,6 +6733,23 @@ public class SavedGameParser extends Parser {
 
 		@Override
 		public ShieldsInfo copy() { return new ShieldsInfo( this ); }
+
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 */
+		@Override
+		public void commandeer() {
+			setShieldLayers( 0 );
+			setShieldRechargeTicks( 0 );
+			setShieldDropAnimOn( false );
+			setShieldDropAnimTicks( 0 );   // TODO: Vet this default.
+			setShieldRaiseAnimOn( false );
+			setShieldRaiseAnimTicks( 0 );  // TODO: Vet this default.
+		}
 
 		/**
 		 * Sets the current number of normal shield layers.
@@ -6800,7 +6845,7 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format( "SystemId:                 %s\n", SystemType.SHIELDS.toString() ) );
+			result.append( String.format( "SystemId:                 %s\n", SystemType.SHIELDS.getId() ) );
 			result.append( String.format( "Shield Layers:            %5d (Currently filled bubbles)\n", shieldLayers ) );
 			result.append( String.format( "Energy Shield Layers:     %5d\n", energyShieldLayers ) );
 			result.append( String.format( "Energy Shield Max:        %5d (Layers when fully charged)\n", energyShieldLayers ) );
@@ -6840,6 +6885,21 @@ public class SavedGameParser extends Parser {
 		@Override
 		public CloakingInfo copy() { return new CloakingInfo( this ); }
 
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 */
+		@Override
+		public void commandeer() {
+			setUnknownAlpha( 0 );    // TODO: Vet this default.
+			setUnknownBeta( 0 );     // TODO: Vet this default.
+			setCloakTicksGoal( 0 );
+			setCloakTicks( Integer.MIN_VALUE );
+		}
+
 		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
 		public void setUnknownBeta( int n ) { unknownBeta = n; }
 
@@ -6874,20 +6934,27 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format( "SystemId:                 %s\n", SystemType.CLOAKING.toString() ) );
+			result.append( String.format( "SystemId:                 %s\n", SystemType.CLOAKING.getId() ) );
 			result.append( String.format( "Alpha?:                 %7d\n", unknownAlpha ) );
 			result.append( String.format( "Beta?:                  %7d\n", unknownBeta ) );
 			result.append( String.format( "Cloak Ticks Goal:       %7d\n", cloakTicksGoal ) );
-			result.append( String.format( "Cloak Ticks:            %7s\n", (cloakTicks==Integer.MIN_VALUE ? "MIN" : cloakTicks) ) );
+			result.append( String.format( "Cloak Ticks:            %7s\n", (cloakTicks == Integer.MIN_VALUE ? "MIN" : cloakTicks) ) );
 
 			return result.toString();
 		}
 	}
 
+	/**
+	 * Extended info about the Hacking system.
+	 *
+	 * @see DoorState
+	 * @see SystemState#setHacked(boolean)
+	 * @see SystemState#setHackLevel(int)
+	 */
 	public static class HackingInfo extends ExtendedSystemInfo {
-		private int unknownAlpha = -1;
+		private SystemType targetSystemType = null;
 		private int unknownBeta = 0;
-		private int unknownGamma = 0;
+		private boolean dronePodVisible = false;
 		private int unknownDelta = 0;
 
 		private int unknownEpsilon = 0;
@@ -6917,9 +6984,9 @@ public class SavedGameParser extends Parser {
 		 */
 		protected HackingInfo( HackingInfo srcInfo ) {
 			super( srcInfo );
-			unknownAlpha = srcInfo.getUnknownAlpha();
+			targetSystemType = srcInfo.getTargetSystemType();
 			unknownBeta = srcInfo.getUnknownBeta();
-			unknownGamma = srcInfo.getUnknownGamma();
+			dronePodVisible = srcInfo.isDronePodVisible();
 			unknownDelta = srcInfo.getUnknownDelta();
 			unknownEpsilon = srcInfo.getUnknownEpsilon();
 			unknownZeta = srcInfo.getUnknownZeta();
@@ -6934,31 +7001,85 @@ public class SavedGameParser extends Parser {
 		public HackingInfo copy() { return new HackingInfo( this ); }
 
 		/**
-		 * Unknown.
+		 * Resets aspects of an existing object to be viable for player use.
 		 *
-		 * Went from -1 to 1 when hacking drone pod was launched.
-		 * While the pod is attached, this becomes a small int under 10.
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
 		 */
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public int getUnknownAlpha() { return unknownAlpha; }
+		@Override
+		public void commandeer() {
+			setTargetSystemType( null );
+			setUnknownBeta( 0 );
+			setDronePodVisible( false );
+			setUnknownDelta( 0 );
+
+			setUnknownEpsilon( 0 );
+			setUnknownZeta( 0 );
+			setUnknownEta( 0 );
+
+			setDisruptionTicks( 0 );
+			setDisruptionTicksGoal( 10000 );
+			setDisrupting( false );
+
+			if ( getDronePod() != null ) {
+				getDronePod().commandeer();
+			}
+		}
+
+		/**
+		 * Sets the target system to hack.
+		 *
+		 * This is set when the drone pod is launched. Pressing the hack
+		 * button to select a system while paused will have no immediate
+		 * effect on a saved game; unpausing is necessary for tha pod to
+		 * launch and commit the changes.
+		 *
+		 * Editing this value when a system had already been hacked will not
+		 * unhack the original system. Upon loading, FTL will modify the new
+		 * system's hacked and hackLevel values, reveal the room, lock the
+		 * doors, etc. If edited while disrupting, the previous system will
+		 * stay disrupted indefinitely. Only the current system will return to
+		 * normal when disruptionTicks reaches its goal.
+		 *
+		 * FTL 1.5.13 bug: The hacking system only remembers the type of system
+		 * targeted, not a specific room. The rebel flagship has multiple
+		 * artillery rooms. An in-game choice to hack any of the right three
+		 * rooms will set the 'hacked' flag on that SystemState, but upon
+		 * reloading, the hacking system will seek the *first* artillery room
+		 * (the leftmost one) instead, which will get marked as 'hacked' and be
+		 * subject to disruption. The original room will still have its flag
+		 * lingering from before, but the hacking system only affects one room
+		 * and it already picked the left one. Both flagged rooms will be
+		 * revealed, but disruption will only affect only the left one.
+		 *
+		 * When not set, this is null.
+		 */
+		public void setTargetSystemType( SystemType systemType ) { targetSystemType = systemType; }
+		public SystemType getTargetSystemType() { return targetSystemType; }
 
 		/**
 		 * Unknown.
 		 *
-		 * Went from 0 to 1 when hacking drone pod was launched.
-		 * Went from 1 to 0 when hacking system was damaged and inoperative
-		 * while the pod was still attached.
+		 * Observed values: Went from 0 to 1 when drone pod was launched.
+		 * Went from 1 to 0 when hacking system was inoperative (either from
+		 * damage or depowering) while the pod was still attached.
 		 */
 		public void setUnknownBeta( int n ) { unknownBeta = n; }
 		public int getUnknownBeta() { return unknownBeta; }
 
 		/**
-		 * Unknown.
+		 * Sets the drone pod's visibility.
 		 *
-		 * Went from 0 to 1 when hacking drone pod was launched.
+		 * Editing this to false after the drone pod has been launched will
+		 * only make the pod invisible. The Hacking system will continue to
+		 * function normally as if the pod were there.
+		 *
+		 * Observed values: true (when launched), false (when the nearby ship
+		 * is defeated and has disappeared).
 		 */
-		public void setUnknownGamma( int n ) { unknownGamma = n; }
-		public int getUnknownGamma() { return unknownGamma; }
+		public void setDronePodVisible( boolean b ) { dronePodVisible = b; }
+		public boolean isDronePodVisible() { return dronePodVisible; }
 
 		/**
 		 * Unknown.
@@ -7029,10 +7150,10 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
 
-			result.append( String.format( "SystemId:                 %s\n", SystemType.HACKING.toString() ) );
-			result.append( String.format( "Alpha?:                 %7d\n", unknownAlpha ) );
+			result.append( String.format( "SystemId:                 %s\n", SystemType.HACKING.getId() ) );
+			result.append( String.format( "Target SystemId:          %s\n", (targetSystemType != null ? targetSystemType.getId() : "N/A") ) );
 			result.append( String.format( "Beta?:                  %7d\n", unknownBeta ) );
-			result.append( String.format( "Gamma?:                 %7d\n", unknownGamma ) );
+			result.append( String.format( "Drone Pod Visible:      %7b\n", dronePodVisible ) );
 			result.append( String.format( "Delta?:                 %7d\n", unknownDelta ) );
 			result.append( String.format( "Epsilon?:               %7d\n", unknownEpsilon ) );
 			result.append( String.format( "Zeta?:                  %7d\n", unknownZeta ) );
@@ -7075,6 +7196,17 @@ public class SavedGameParser extends Parser {
 		public MindInfo copy() { return new MindInfo( this ); }
 
 		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 */
+		@Override
+		public void commandeer() {
+			setMindControlTicks( 0 );
+			setMindControlTicksGoal( 0 );
+		}
+
+		/**
 		 * Sets elapsed time while crew are mind controlled.
 		 *
 		 * After reaching or passing the goal, this value lingers.
@@ -7104,7 +7236,7 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format( "SystemId:                 %s\n", SystemType.MIND.toString() ) );
+			result.append( String.format( "SystemId:                 %s\n", SystemType.MIND.getId() ) );
 			result.append( String.format( "Mind Ctrl Ticks:        %7d\n", mindControlTicks ) );
 			result.append( String.format( "Mind Ctrl Ticks Goal:   %7d\n", mindControlTicksGoal ) );
 
@@ -7136,6 +7268,20 @@ public class SavedGameParser extends Parser {
 		@Override
 		public ArtilleryInfo copy() { return new ArtilleryInfo( this ); }
 
+		/**
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
+		 * This will be called by the ship object when it is commandeered.
+		 *
+		 * Warning: Dangerous while values remain undeciphered.
+		 */
+		@Override
+		public void commandeer() {
+			if ( getWeaponModule() != null ) {
+				getWeaponModule().commandeer();
+			}
+		}
+
 		public void setWeaponModule( WeaponModuleState weaponMod ) { this.weaponMod = weaponMod; }
 		public WeaponModuleState getWeaponModule() { return weaponMod; }
 
@@ -7143,7 +7289,7 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format( "SystemId:                 %s\n", SystemType.ARTILLERY.toString() ) );
+			result.append( String.format( "SystemId:                 %s\n", SystemType.ARTILLERY.getId() ) );
 
 			result.append( "\nWeapon Module...\n" );
 			if ( weaponMod != null ) {
@@ -7417,20 +7563,48 @@ public class SavedGameParser extends Parser {
 
 		public void setVelocityX( int n ) { velocityX = n; }
 		public void setVelocityY( int n ) { velocityY = n; }
-
 		public int getVelocityX() { return velocityX; }
 		public int getVelocityY() { return velocityY; }
 
+		/**
+		 * Sets whether this projectile will never hit its target.
+		 *
+		 * FTL will mark it as missed before it passes its target. This is
+		 * probably set when it's created.
+		 *
+		 * @see #setPassedTarget(boolean)
+		 */
 		public void setMissed( boolean b ) { missed = b; }
-		public void setHitTarget( boolean b ) { hitTarget = b; }
-		public void setHitSolidSound( String s ) { hitSolidSound = s; }
-		public void setHitShieldSound( String s ) { hitShieldSound = s; }
-		public void setMissSound( String s ) { missSound = s; }
-
 		public boolean hasMissed() { return missed; }
+
+		/**
+		 * Sets whether this projectile hit a target (even shields).
+		 */
+		public void setHitTarget( boolean b ) { hitTarget = b; }
 		public boolean hasHitTarget() { return hitTarget; }
+
+		/**
+		 * Sets the sound to play when this projectile hits something solid.
+		 *
+		 * This will be a tag name from "sounds.xml", such as "hitHull2".
+		 */
+		public void setHitSolidSound( String s ) { hitSolidSound = s; }
 		public String getHitSolidSound() { return hitSolidSound; }
+
+		/**
+		 * Sets the sound to play when this projectile hits shields.
+		 *
+		 * This will be a tag name from "sounds.xml", such as "hitShield3".
+		 */
+		public void setHitShieldSound( String s ) { hitShieldSound = s; }
 		public String getHitShieldSound() { return hitShieldSound; }
+
+		/**
+		 * Sets the sound to play when this projectile misses.
+		 *
+		 * This will be a tag name from "sounds.xml", such as "miss".
+		 */
+		public void setMissSound( String s ) { missSound = s; }
 		public String getMissSound() { return missSound; }
 
 		/**
@@ -7441,10 +7615,20 @@ public class SavedGameParser extends Parser {
 		public void setEntryAngle( int n ) { entryAngle = n; }
 		public int getEntryAngle() { return entryAngle; }
 
+		/**
+		 * Unknown.
+		 */
 		public void setStartedDying( boolean b ) { startedDying = b; }
-		public void setPassedTarget( boolean b ) { passedTarget = b; }
-
 		public boolean hasStartedDying() { return startedDying; }
+
+		/**
+		 * Sets whether this projectile has passed its target.
+		 *
+		 * FTL will have already marked it as having missed first.
+		 *
+		 * @see setMissed(boolean)
+		 */
+		public void setPassedTarget( boolean b ) { passedTarget = b; }
 		public boolean hasPassedTarget() { return passedTarget; }
 
 		public void setType( int n ) { type = n; }
@@ -7525,7 +7709,7 @@ public class SavedGameParser extends Parser {
 			result.append( String.format( "Velocity (x,y):    %8d,%8d (%9.03f,%9.03f)\n", velocityX, velocityY, velocityX/1000f, velocityY/1000f));
 			result.append( String.format( "Missed:            %8b\n", missed ) );
 			result.append( String.format( "Hit Target:        %8b\n", hitTarget ) );
-			result.append( String.format( "Hit Hull Sound:    %s\n", hitSolidSound ) );
+			result.append( String.format( "Hit Solid Sound:   %s\n", hitSolidSound ) );
 			result.append( String.format( "Hit Shield Sound:  %s\n", hitShieldSound ) );
 			result.append( String.format( "Miss Sound:        %s\n", missSound ) );
 			result.append( String.format( "Entry Angle?:      %8s\n", prettyInt( entryAngle ) ) );
@@ -8335,11 +8519,11 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
-		 * TODO: Recurse into all nested objects.
 		 */
 		public void commandeer() {
 			setMourningTicks( 0 );
@@ -8720,7 +8904,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -8872,7 +9057,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -8998,7 +9184,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -9094,7 +9281,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -9127,8 +9315,8 @@ public class SavedGameParser extends Parser {
 	}
 
 	public static class HackingDronePodInfo extends ExtendedDronePodInfo {
-		private int unknownAlpha = 0;
-		private int unknownBeta = 0;
+		private int attachPositionX = 0;
+		private int attachPositionY = 0;
 		private int unknownGamma = 0;
 		private int unknownDelta = 0;
 		private AnimState landingAnim = new AnimState();
@@ -9146,8 +9334,8 @@ public class SavedGameParser extends Parser {
 		 */
 		protected HackingDronePodInfo( HackingDronePodInfo srcInfo ) {
 			super( srcInfo );
-			unknownAlpha = srcInfo.getUnknownAlpha();
-			unknownBeta = srcInfo.getUnknownBeta();
+			attachPositionX = srcInfo.getAttachPositionX();
+			attachPositionY = srcInfo.getAttachPositionY();
 			unknownGamma = srcInfo.getUnknownGamma();
 			unknownDelta = srcInfo.getUnknownDelta();
 			landingAnim = new AnimState( srcInfo.getLandingAnim() );
@@ -9159,7 +9347,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -9167,8 +9356,8 @@ public class SavedGameParser extends Parser {
 		 */
 		@Override
 		public void commandeer() {
-			setUnknownAlpha( 0 );
-			setUnknownBeta( 0 );
+			setAttachPositionX( 0 );
+			setAttachPositionY( 0 );
 			setUnknownGamma( 0 );
 			setUnknownDelta( 0 );
 
@@ -9181,22 +9370,23 @@ public class SavedGameParser extends Parser {
 			getExtensionAnim().setProgressTicks( 0 );
 		}
 
+		//Alpha and beta might be xy of the center of the claw on the wall.
 
 		/**
-		 * Unknown.
+		 * Sets the position of this drone pod's attachment to a ship wall.
 		 *
-		 * Observed values: 0 (in flight), 4736 (on contact).
-		 */
-		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
-		public int getUnknownAlpha() { return unknownAlpha; }
-
-		/**
-		 * Unknown.
+		 * This is the center of the claw-side edge of the drone sprite, at the
+		 * senter of the wall of the room it attached to. This point might not
+		 * be ON the wall, possibly be a few pixels outside or inside.
 		 *
-		 * Observed values: 0 (in flight), 52000 (on contact).
+		 * This is set when the done pod makes contact with the wall.
+		 *
+		 * When not set, this is (0, 0).
 		 */
-		public void setUnknownBeta( int n ) { unknownBeta = n; }
-		public int getUnknownBeta() { return unknownBeta; }
+		public void setAttachPositionX( int n ) { attachPositionX = n; }
+		public void setAttachPositionY( int n ) { attachPositionY = n; }
+		public int getAttachPositionX() { return attachPositionX; }
+		public int getAttachPositionY() { return attachPositionY; }
 
 		/**
 		 * Unknown.
@@ -9237,10 +9427,9 @@ public class SavedGameParser extends Parser {
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 
-			result.append( String.format( "Alpha?:             %7d\n", unknownAlpha ) );
-			result.append( String.format( "Beta?:              %7d\n", unknownBeta ) );
-			result.append( String.format( "Gamma?:             %7d\n", unknownGamma ) );
-			result.append( String.format( "Delta?:             %7d\n", unknownDelta ) );
+			result.append( String.format( "Attach Position: %7s,%7s\n", attachPositionX, attachPositionY ) );
+			result.append( String.format( "Gamma?:              %7d\n", unknownGamma ) );
+			result.append( String.format( "Delta?:              %7d\n", unknownDelta ) );
 
 			result.append( String.format( "\nLanding Anim?...\n" ) );
 			if ( landingAnim != null ) {
@@ -9288,7 +9477,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -9303,11 +9493,25 @@ public class SavedGameParser extends Parser {
 			}
 		}
 
-
+		/**
+		 * Sets whether the drone's body/pod exists.
+		 *
+		 * Re-arming an already deployed drone doesn't cost a drone part.
+		 *
+		 * After defeating a nearby ship, and the window disappears, player
+		 * drone pods there are lost and this is set to false.
+		 */
 		public void setDeployed( boolean b ) { deployed = b; }
-		public void setArmed( boolean b ) { armed = b; }
-
 		public boolean isDeployed() { return deployed; }
+
+		/**
+		 * Sets whether this drone is powered.
+		 *
+		 * TODO: See what happens when this conflists with the DroneState.
+		 *
+		 * @see DroneState#setArmed(boolean)
+		 */
+		public void setArmed( boolean b ) { armed = b; }
 		public boolean isArmed() { return armed; }
 
 		/**
@@ -9458,7 +9662,8 @@ public class SavedGameParser extends Parser {
 
 
 		/**
-		 * Resets aspects of an existing object to be viable for use by players.
+		 * Resets aspects of an existing object to be viable for player use.
+		 *
 		 * This will be called by the ship object when it is commandeered.
 		 *
 		 * Warning: Dangerous while values remain undeciphered.
@@ -9886,9 +10091,32 @@ public class SavedGameParser extends Parser {
 		if ( hackingState != null && hackingState.getCapacity() > 0 ) {
 			HackingInfo hackingInfo = new HackingInfo();
 
-			hackingInfo.setUnknownAlpha( readInt( in ) );
+			int targetSystemTypeFlag = readInt( in );
+			SystemType targetSystemType;
+			if ( targetSystemTypeFlag == -1 ) targetSystemType = null;
+			else if ( targetSystemTypeFlag == 0 ) targetSystemType = SystemType.SHIELDS;
+			else if ( targetSystemTypeFlag == 1 ) targetSystemType = SystemType.ENGINES;
+			else if ( targetSystemTypeFlag == 2 ) targetSystemType = SystemType.OXYGEN;
+			else if ( targetSystemTypeFlag == 3 ) targetSystemType = SystemType.WEAPONS;
+			else if ( targetSystemTypeFlag == 4 ) targetSystemType = SystemType.DRONE_CTRL;
+			else if ( targetSystemTypeFlag == 5 ) targetSystemType = SystemType.MEDBAY;
+			else if ( targetSystemTypeFlag == 6 ) targetSystemType = SystemType.PILOT;
+			else if ( targetSystemTypeFlag == 7 ) targetSystemType = SystemType.SENSORS;
+			else if ( targetSystemTypeFlag == 8 ) targetSystemType = SystemType.DOORS;
+			else if ( targetSystemTypeFlag == 9 ) targetSystemType = SystemType.TELEPORTER;
+			else if ( targetSystemTypeFlag == 10 ) targetSystemType = SystemType.CLOAKING;
+			else if ( targetSystemTypeFlag == 11 ) targetSystemType = SystemType.ARTILLERY;
+			else if ( targetSystemTypeFlag == 12 ) targetSystemType = SystemType.BATTERY;
+			else if ( targetSystemTypeFlag == 13 ) targetSystemType = SystemType.CLONEBAY;
+			else if ( targetSystemTypeFlag == 14 ) targetSystemType = SystemType.MIND;
+			else if ( targetSystemTypeFlag == 15 ) targetSystemType = SystemType.HACKING;
+			else {
+				throw new IOException( String.format( "Unsupported hacking targetSystemTypeFlag: %d", targetSystemTypeFlag ) );
+			}
+			hackingInfo.setTargetSystemType( targetSystemType );
+
 			hackingInfo.setUnknownBeta( readInt( in ) );
-			hackingInfo.setUnknownGamma( readInt( in ) );
+			hackingInfo.setDronePodVisible( readBool( in ) );
 			hackingInfo.setUnknownDelta( readInt( in ) );
 
 			hackingInfo.setDisruptionTicks( readInt( in ) );
@@ -9988,9 +10216,33 @@ public class SavedGameParser extends Parser {
 
 			HackingInfo hackingInfo = shipState.getExtendedSystemInfo( HackingInfo.class );
 			// This should not be null.
-			writeInt( out, hackingInfo.getUnknownAlpha() );
+
+			SystemType targetSystemType = hackingInfo.getTargetSystemType();
+			int targetSystemTypeFlag;
+			if ( targetSystemType == null ) targetSystemTypeFlag = -1;
+			else if ( SystemType.SHIELDS.equals( targetSystemType ) ) targetSystemTypeFlag = 0;
+			else if ( SystemType.ENGINES.equals( targetSystemType ) ) targetSystemTypeFlag = 1;
+			else if ( SystemType.OXYGEN.equals( targetSystemType ) ) targetSystemTypeFlag = 2;
+			else if ( SystemType.WEAPONS.equals( targetSystemType ) ) targetSystemTypeFlag = 3;
+			else if ( SystemType.DRONE_CTRL.equals( targetSystemType ) ) targetSystemTypeFlag = 4;
+			else if ( SystemType.MEDBAY.equals( targetSystemType ) ) targetSystemTypeFlag = 5;
+			else if ( SystemType.PILOT.equals( targetSystemType ) ) targetSystemTypeFlag = 6;
+			else if ( SystemType.SENSORS.equals( targetSystemType ) ) targetSystemTypeFlag = 7;
+			else if ( SystemType.DOORS.equals( targetSystemType ) ) targetSystemTypeFlag = 8;
+			else if ( SystemType.TELEPORTER.equals( targetSystemType ) ) targetSystemTypeFlag = 9;
+			else if ( SystemType.CLOAKING.equals( targetSystemType ) ) targetSystemTypeFlag = 10;
+			else if ( SystemType.ARTILLERY.equals( targetSystemType ) ) targetSystemTypeFlag = 11;
+			else if ( SystemType.BATTERY.equals( targetSystemType ) ) targetSystemTypeFlag = 12;
+			else if ( SystemType.CLONEBAY.equals( targetSystemType ) ) targetSystemTypeFlag = 13;
+			else if ( SystemType.MIND.equals( targetSystemType ) ) targetSystemTypeFlag = 14;
+			else if ( SystemType.HACKING.equals( targetSystemType ) ) targetSystemTypeFlag = 15;
+			else {
+				throw new IOException( String.format( "Unsupported hacking targetSystemType: %s", targetSystemType.getId() ) );
+			}
+			writeInt( out, targetSystemTypeFlag );
+
 			writeInt( out, hackingInfo.getUnknownBeta() );
-			writeInt( out, hackingInfo.getUnknownGamma() );
+			writeBool( out, hackingInfo.isDronePodVisible() );
 			writeInt( out, hackingInfo.getUnknownDelta() );
 
 			writeInt( out, hackingInfo.getDisruptionTicks() );
@@ -10095,8 +10347,8 @@ public class SavedGameParser extends Parser {
 		}
 		else if ( DroneType.HACKING.equals( droneType ) ) {
 			HackingDronePodInfo hackingPodInfo = new HackingDronePodInfo();
-			hackingPodInfo.setUnknownAlpha( readInt( in ) );
-			hackingPodInfo.setUnknownBeta( readInt( in ) );
+			hackingPodInfo.setAttachPositionX( readInt( in ) );
+			hackingPodInfo.setAttachPositionY( readInt( in ) );
 			hackingPodInfo.setUnknownGamma( readInt( in ) );
 			hackingPodInfo.setUnknownDelta( readInt( in ) );
 			hackingPodInfo.setLandingAnim( readAnim( in ) );
@@ -10201,8 +10453,8 @@ public class SavedGameParser extends Parser {
 		}
 		else if ( extendedInfo instanceof HackingDronePodInfo ) {
 			HackingDronePodInfo hackingPodInfo = dronePod.getExtendedInfo( HackingDronePodInfo.class );
-			writeInt( out, hackingPodInfo.getUnknownAlpha() );
-			writeInt( out, hackingPodInfo.getUnknownBeta() );
+			writeInt( out, hackingPodInfo.getAttachPositionX() );
+			writeInt( out, hackingPodInfo.getAttachPositionY() );
 			writeInt( out, hackingPodInfo.getUnknownGamma() );
 			writeInt( out, hackingPodInfo.getUnknownDelta() );
 			writeAnim( out, hackingPodInfo.getLandingAnim() );
