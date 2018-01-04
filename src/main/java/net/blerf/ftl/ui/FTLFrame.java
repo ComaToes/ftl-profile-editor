@@ -27,6 +27,7 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1077,23 +1078,37 @@ public class FTLFrame extends JFrame implements Statusbar {
 			request = new HttpGet( versionHistoryUrl );
 			TaggedString historyResult = httpClient.execute( request, responseHandler );
 
-			Map<Integer, List<String>> historyMap = new LinkedHashMap<Integer, List<String>>();
-			Scanner historyScanner = new Scanner( historyResult.text );
-			while ( historyScanner.hasNextLine() ) {
-				int releaseVersion = Integer.parseInt( historyScanner.nextLine() );
-				List<String> releaseChangeList = new ArrayList<String>();
-				historyMap.put( releaseVersion, releaseChangeList );
+			final Map<Integer, List<String>> historyMap = parseVersionHistory( historyResult.text );
 
-				while ( historyScanner.hasNextLine() ) {
-					String line = historyScanner.nextLine();
-					if ( line.isEmpty() ) break;
-
-					releaseChangeList.add( line );
+			// Make changes from the GUI thread.
+			Runnable r = new Runnable() {
+				@Override
+				public void run() {
+					setVersionHistory( historyMap );
 				}
+			};
+			SwingUtilities.invokeLater( r );
+		}
+		catch( ClientProtocolException e ) {
+			log.error( "GET request failed for url: "+ request.getURI().toString(), e );
+		}
+		catch ( Exception e ) {
+			log.error( "Checking for latest version failed", e );
+			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e.toString() );
+		}
+		finally {
+			try{httpClient.close();}
+			catch ( IOException e ) {}
+		}
+	}
 
-				// Must've either hit a blank or done.
-			}
-			historyScanner.close();
+	/**
+	 * Sets the appearance and behavior of the updates button.
+	 */
+	public void setVersionHistory( Map<Integer, List<String>> historyMap ) {
+
+		try {
+			int latestVersion = Collections.max( historyMap.keySet() );
 
 			String releaseTemplate;
 			int minHistory;
@@ -1144,38 +1159,50 @@ public class FTLFrame extends JFrame implements Statusbar {
 				}
 			};
 
-			// Make changes from the GUI thread.
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					updatesCallback = newCallback;
-					for ( JButton updatesBtn : updatesButtonList ) {
-						updatesBtn.setBackground( updatesBtnColor );
-						updatesBtn.setIcon( updatesBtnIcon );
-						updatesBtn.setEnabled( true );
-					}
-					setStatusText( statusMessage );
-				}
-			};
-			SwingUtilities.invokeLater( r );
+			updatesCallback = newCallback;
+			for ( JButton updatesBtn : updatesButtonList ) {
+				updatesBtn.setBackground( updatesBtnColor );
+				updatesBtn.setIcon( updatesBtnIcon );
+				updatesBtn.setEnabled( true );
+			}
+			setStatusText( statusMessage );
 		}
-		catch( ClientProtocolException e ) {
-			log.error( "GET request failed for url: "+ request.getURI().toString(), e );
+		catch ( IOException e ) {
+			// Probably an exception from reading template resources.
+			log.error( "Failed to set version history", e );
 		}
-		catch ( Exception e ) {
-			log.error( "Checking for latest version failed", e );
-			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e.toString() );
+	}
+
+	/**
+	 * Parses history text to a Map of release versions with itemized changes.
+	 */
+	private Map<Integer, List<String>> parseVersionHistory( String historyText ) {
+		Map<Integer, List<String>> historyMap = new LinkedHashMap<Integer, List<String>>();
+
+		Scanner historyScanner = new Scanner( historyText );
+		while ( historyScanner.hasNextLine() ) {
+			int releaseVersion = Integer.parseInt( historyScanner.nextLine() );
+			List<String> releaseChangeList = new ArrayList<String>();
+			historyMap.put( releaseVersion, releaseChangeList );
+
+			while ( historyScanner.hasNextLine() ) {
+				String line = historyScanner.nextLine();
+				if ( line.isEmpty() ) break;
+
+				releaseChangeList.add( line );
+			}
+
+			// Must've either hit a blank or done.
 		}
-		finally {
-			try{httpClient.close();}
-			catch ( IOException e ) {}
-		}
+		historyScanner.close();
+
+		return historyMap;
 	}
 
 	/**
 	 * Returns an HTML summary of changes since a given version.
 	 *
-	 * @param historyMap a list of release versions with itemized changes
+	 * @param historyMap a Map of release versions with itemized changes
 	 * @param releaseTemplate a template to use for formatting each release
 	 * @param sinceVersion the earliest release to include
 	 */
