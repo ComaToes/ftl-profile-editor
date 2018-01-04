@@ -36,17 +36,20 @@ To build, run "mvn clean" and "mvn package" in this folder.
 
 
 This project depends on the following libraries.
+- Apache HttpComponents
+    https://hc.apache.org/
+    (For JavaDocs, click HttpCore or HttpClient, then again under "Project reports".)
 - Java Native Access
     https://github.com/twall/jna
     (JavaDocs are linked from readme.md)
 - JDOM 2.x
     http://www.jdom.org/
     (For JavaDocs, look left.)
-- SLF4J
-    https://www.slf4j.org/
-    (For JavaDocs, look left.)
 - Logback
     https://logback.qos.ch/
+    (For JavaDocs, look left.)
+- SLF4J
+    https://www.slf4j.org/
     (For JavaDocs, look left.)
 
 

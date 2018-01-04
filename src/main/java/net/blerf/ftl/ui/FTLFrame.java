@@ -22,9 +22,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
@@ -34,6 +31,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
@@ -64,10 +62,18 @@ import javax.swing.filechooser.FileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+
 import net.vhati.ftldat.PackUtilities;
 import net.vhati.modmanager.core.FTLUtilities;
 
 import net.blerf.ftl.model.Profile;
+import net.blerf.ftl.net.TaggedString;
+import net.blerf.ftl.net.TaggedStringResponseHandler;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
 import net.blerf.ftl.parser.ProfileParser;
@@ -1033,39 +1039,61 @@ public class FTLFrame extends JFrame implements Statusbar {
 		}
 	}
 
-	// TODO: May need to reimplement the http client with nio.
-	// System.exit() interrupts daemon threads, but blocked sockets need explicit close().
-	// Java's built-in URLConnections don't expose sockets to allow that.
-
-	/**
-	 * Returns an InputStream to read an HTTP URL.
-	 */
-	private InputStream fetchURL( URL url ) throws SocketTimeoutException, UnknownHostException, IOException {
-		HttpURLConnection httpConn = (HttpURLConnection)url.openConnection();
-		httpConn.setConnectTimeout( 5000 );
-		httpConn.setReadTimeout( 10000 );
-		httpConn.connect();
-
-		int responseCode = httpConn.getResponseCode();
-		if ( responseCode != HttpURLConnection.HTTP_OK ) {
-			throw new IOException( String.format( "Download request failed for \"%s\": HTTP Code %d (%s)", httpConn.getURL(), responseCode, httpConn.getResponseMessage() ) );
-		}
-
-		return httpConn.getInputStream();
-	}
-
 	private void checkForUpdate() {
 
-		InputStream is = null;
-		BufferedReader in = null;
+		RequestConfig requestConfig = RequestConfig.custom()
+			.setConnectionRequestTimeout( 5000 )
+			.setConnectTimeout( 5000 )
+			.setSocketTimeout( 10000 )
+			.setRedirectsEnabled( true )
+			.build();
+
+		CloseableHttpClient httpClient = HttpClientBuilder.create()
+			.setDefaultRequestConfig( requestConfig )
+			.disableAuthCaching()
+			.disableAutomaticRetries()
+			.disableConnectionState()
+			.disableCookieManagement()
+			//.setUserAgent( "" )
+			.build();
+
+		String eTagCached = null;  // TODO.
+
+		HttpGet request = null;
 		try {
+			TaggedStringResponseHandler responseHandler = new TaggedStringResponseHandler();
+
 			log.debug( "Checking for latest version" );
+			request = new HttpGet( latestVersionUrl );
 
-			is = fetchURL( new URL( latestVersionUrl ) );
+			if ( eTagCached != null ) request.addHeader( "If-None-Match", eTagCached );
 
-			in = new BufferedReader( new InputStreamReader( is, "UTF-8" ) );
-			int latestVersion = Integer.parseInt( in.readLine() );
-			in.close();
+			TaggedString latestResult = httpClient.execute( request, responseHandler );
+			// TODO: Remember latestResult.etag.
+
+			int latestVersion = Integer.parseInt( latestResult.text.trim() );
+			// TODO: When ETag is provided, latestResult itself may be null.
+
+			request = new HttpGet( versionHistoryUrl );
+			TaggedString historyResult = httpClient.execute( request, responseHandler );
+
+			Map<Integer, List<String>> historyMap = new LinkedHashMap<Integer, List<String>>();
+			Scanner historyScanner = new Scanner( historyResult.text );
+			while ( historyScanner.hasNextLine() ) {
+				int releaseVersion = Integer.parseInt( historyScanner.nextLine() );
+				List<String> releaseChangeList = new ArrayList<String>();
+				historyMap.put( releaseVersion, releaseChangeList );
+
+				while ( historyScanner.hasNextLine() ) {
+					String line = historyScanner.nextLine();
+					if ( line.isEmpty() ) break;
+
+					releaseChangeList.add( line );
+				}
+
+				// Must've either hit a blank or done.
+			}
+			historyScanner.close();
 
 			String releaseTemplate;
 			int minHistory;
@@ -1095,7 +1123,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 				statusMessage = "No new updates.";
 			}
 
-			final String historyHtml = getVersionHistoryHtml( releaseTemplate, minHistory );
+			final String historyHtml = formatVersionHistoryHtml( historyMap, releaseTemplate, minHistory );
 
 			final Runnable newCallback = new Runnable() {
 				@Override
@@ -1130,54 +1158,16 @@ public class FTLFrame extends JFrame implements Statusbar {
 				}
 			};
 			SwingUtilities.invokeLater( r );
-
+		}
+		catch( ClientProtocolException e ) {
+			log.error( "GET request failed for url: "+ request.getURI().toString(), e );
 		}
 		catch ( Exception e ) {
 			log.error( "Checking for latest version failed", e );
 			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e.toString() );
 		}
 		finally {
-			try {if ( in != null ) in.close();}
-			catch ( IOException e ) {}
-
-			try {if ( is != null ) is.close();}
-			catch ( IOException e ) {}
-		}
-	}
-
-	/**
-	 * Returns a Map of versions (in descending order) and their lists of changes.
-	 */
-	private Map<Integer, List<String>> fetchVersionHistory() throws IOException {
-		Map<Integer, List<String>> historyMap = new LinkedHashMap<Integer, List<String>>();
-
-		InputStream is = null;
-		BufferedReader in = null;
-		String line = null;
-		try {
-			is = fetchURL( new URL( versionHistoryUrl ) );
-			in = new BufferedReader( new InputStreamReader( is, "UTF-8" ) );
-
-			while ( (line = in.readLine()) != null ) {
-				int releaseVersion = Integer.parseInt( line );
-				List<String> releaseChangeList = new ArrayList<String>();
-				historyMap.put( releaseVersion, releaseChangeList );
-
-				while ( (line = in.readLine()) != null && !line.equals( "" ) ) {
-					releaseChangeList.add( line );
-				}
-
-				// Must've either hit a blank or done.
-			}
-			in.close();
-
-			return historyMap;
-		}
-		finally {
-			try {if ( in != null ) in.close();}
-			catch ( IOException e ) {}
-
-			try {if ( is != null ) is.close();}
+			try{httpClient.close();}
 			catch ( IOException e ) {}
 		}
 	}
@@ -1185,15 +1175,14 @@ public class FTLFrame extends JFrame implements Statusbar {
 	/**
 	 * Returns an HTML summary of changes since a given version.
 	 *
-	 * @see #fetchVersionHistory()
+	 * @param historyMap a list of release versions with itemized changes
+	 * releaseTemplate a template to use for formatting each release
+	 * @param sinceVersion the earliest release to include
 	 */
-	private String getVersionHistoryHtml( String releaseTemplate, int sinceVersion ) throws IOException {
+	private String formatVersionHistoryHtml( Map<Integer, List<String>> historyMap, String releaseTemplate, int sinceVersion ) throws IOException {
 
 		// Buffer for presentation-ready html.
 		StringBuilder historyBuf = new StringBuilder();
-
-		// Fetch the changelog.
-		Map<Integer, List<String>> historyMap = fetchVersionHistory();
 
 		StringBuilder releaseBuf = new StringBuilder();
 
