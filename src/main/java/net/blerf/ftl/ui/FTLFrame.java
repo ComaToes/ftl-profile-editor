@@ -1176,7 +1176,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 	 * Returns an HTML summary of changes since a given version.
 	 *
 	 * @param historyMap a list of release versions with itemized changes
-	 * releaseTemplate a template to use for formatting each release
+	 * @param releaseTemplate a template to use for formatting each release
 	 * @param sinceVersion the earliest release to include
 	 */
 	private String formatVersionHistoryHtml( Map<Integer, List<String>> historyMap, String releaseTemplate, int sinceVersion ) throws IOException {
