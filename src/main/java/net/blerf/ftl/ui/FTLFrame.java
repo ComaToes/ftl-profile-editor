@@ -124,11 +124,10 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private ImageIcon unlockIcon = new ImageIcon( ClassLoader.getSystemResource( "unlock.png" ) );
 	private ImageIcon aboutIcon = new ImageIcon( ClassLoader.getSystemResource( "about.gif" ) );
 	private final ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource( "update.gif" ) );
-	private final ImageIcon releaseNotesIcon = new ImageIcon( ClassLoader.getSystemResource( "release-notes.png" ) );
 
 	private URL aboutPageURL = ClassLoader.getSystemResource( "about.html" );
-	private URL latestVersionTemplateURL = ClassLoader.getSystemResource( "update.html" );
-	private URL releaseNotesTemplateURL = ClassLoader.getSystemResource( "release-notes.html" );
+	private URL historyTemplateMainURL = ClassLoader.getSystemResource( "history_template_main.html" );
+	private URL historyTemplateReleaseURL = ClassLoader.getSystemResource( "history_template_release.html" );
 
 	private final String latestVersionUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/latest-version.txt";
 	private final String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
@@ -1014,7 +1013,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 					updatesCallback.run();
 			}
 		});
-		updatesButton.addMouseListener( new StatusbarMouseListener( this, "Update this tool or review past changes." ) );
+		updatesButton.addMouseListener( new StatusbarMouseListener( this, "Show info about the latest version." ) );
 		return updatesButton;
 	}
 
@@ -1110,40 +1109,21 @@ public class FTLFrame extends JFrame implements Statusbar {
 		try {
 			int latestVersion = Collections.max( historyMap.keySet() );
 
-			String releaseTemplate;
-			int minHistory;
-			final String dialogTitle;
-			final Color updatesBtnColor;
-			final ImageIcon updatesBtnIcon;
-			final String statusMessage;
-
-			if ( latestVersion > appVersion ) {
-				log.debug( "New version available" );
-
-				releaseTemplate = readResourceText( latestVersionTemplateURL );
-				minHistory = appVersion;
-				dialogTitle = "Update Available";
-				updatesBtnColor = new Color( 0xff, 0xaa, 0xaa );
-				updatesBtnIcon = updateIcon;
-				statusMessage = "A new version has been released.";
-			}
-			else {
-				log.debug( "Already up-to-date" );
-
-				releaseTemplate = readResourceText( releaseNotesTemplateURL );
-				minHistory = 0;
-				dialogTitle = "Release Notes";
-				updatesBtnColor = UIManager.getColor( "Button.background" );
-				updatesBtnIcon = releaseNotesIcon;
-				statusMessage = "No new updates.";
+			if ( latestVersion <= appVersion ) {
+				log.debug( String.format( "Latest version (%d) <= App version (%d)", latestVersion, appVersion ) );
+				return;
 			}
 
-			final String historyHtml = formatVersionHistoryHtml( historyMap, releaseTemplate, minHistory );
+			String mainTemplate = readResourceText( historyTemplateMainURL );
+			String releaseTemplate = readResourceText( historyTemplateReleaseURL );
+			int minHistory = appVersion;
+
+			final String historyHtml = formatVersionHistoryHtml( historyMap, mainTemplate, releaseTemplate, minHistory );
 
 			final Runnable newCallback = new Runnable() {
 				@Override
 				public void run() {
-					JDialog updatesDlg = new JDialog( FTLFrame.this, dialogTitle, true );
+					JDialog updatesDlg = new JDialog( FTLFrame.this, "Update Available", true );
 
 					JEditorPane editor = new JEditorPane( "text/html", historyHtml );
 					editor.setEditable( false );
@@ -1161,11 +1141,11 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 			updatesCallback = newCallback;
 			for ( JButton updatesBtn : updatesButtonList ) {
-				updatesBtn.setBackground( updatesBtnColor );
-				updatesBtn.setIcon( updatesBtnIcon );
+				updatesBtn.setBackground( new Color( 0xff, 0xaa, 0xaa ) );
+				updatesBtn.setIcon( updateIcon );
 				updatesBtn.setEnabled( true );
 			}
-			setStatusText( statusMessage );
+			setStatusText( "A new version has been released." );
 		}
 		catch ( IOException e ) {
 			// Probably an exception from reading template resources.
@@ -1206,12 +1186,13 @@ public class FTLFrame extends JFrame implements Statusbar {
 	 * @param releaseTemplate a template to use for formatting each release
 	 * @param sinceVersion the earliest release to include
 	 */
-	private String formatVersionHistoryHtml( Map<Integer, List<String>> historyMap, String releaseTemplate, int sinceVersion ) throws IOException {
+	private String formatVersionHistoryHtml( Map<Integer, List<String>> historyMap, String mainTemplate, String releaseTemplate, int sinceVersion ) throws IOException {
 
-		// Buffer for presentation-ready html.
-		StringBuilder historyBuf = new StringBuilder();
+		StringBuilder mainBuf = new StringBuilder();     // Insert releases into main template.
+		StringBuffer historyBuf = new StringBuffer();    // Regex append all releases.
+		StringBuilder releaseBuf = new StringBuilder();  // Accumulate per-release changes.
 
-		StringBuilder releaseBuf = new StringBuilder();
+		Pattern placeHolderPtn = Pattern.compile( "\\{([^}]+)\\}" );  // "{blah}"
 
 		for ( Map.Entry<Integer, List<String>> releaseEntry : historyMap.entrySet() ) {
 			if ( releaseEntry.getKey().intValue() <= sinceVersion ) break;
@@ -1224,18 +1205,26 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 			if ( releaseBuf.length() > 0 ) {
 				Map<String, String> placeholderMap = new HashMap<String, String>();
-				placeholderMap.put( "{version}", String.format( "v%s", releaseEntry.getKey() ) );
-				placeholderMap.put( "{items}", releaseBuf.toString() );
+				placeholderMap.put( "version", String.format( "v%s", releaseEntry.getKey() ) );
+				placeholderMap.put( "changes", releaseBuf.toString() );
 
-				String releaseDesc = releaseTemplate;
-				for ( Map.Entry<String, String> dictEntry : placeholderMap.entrySet() ) {
-					releaseDesc = releaseDesc.replaceAll( Pattern.quote( dictEntry.getKey() ), Matcher.quoteReplacement( dictEntry.getValue() ) );
+				Matcher m = placeHolderPtn.matcher( releaseTemplate );
+				while ( m.find() ) {
+					String key = m.group( 1 );
+					if ( placeholderMap.containsKey( key ) ) {
+						m.appendReplacement( historyBuf, placeholderMap.get( key ) );
+					} else {
+						m.appendReplacement( historyBuf, m.group( 0 ) );
+					}
 				}
-				historyBuf.append( releaseDesc );
+				m.appendTail( historyBuf );
 			}
 		}
 
-		return historyBuf.toString();
+		String mainDesc = mainTemplate;
+		mainDesc = mainDesc.replaceFirst( Pattern.quote( "{releases}" ), historyBuf.toString() );
+
+		return mainDesc;
 	}
 
 	/**
