@@ -1078,8 +1078,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add breaches.
 		for ( Map.Entry<XYPair, Integer> breachEntry : shipState.getBreachMap().entrySet() ) {
-			int breachCoordX = breachEntry.getKey().x-shipLayout.getOffsetX();
-			int breachCoordY = breachEntry.getKey().y-shipLayout.getOffsetY();
+			int breachCoordX = breachEntry.getKey().x - shipLayout.getOffsetX();
+			int breachCoordY = breachEntry.getKey().y - shipLayout.getOffsetY();
 			int breachX = originX+tileEdge + breachCoordX*squareSize + squareSize/2;
 			int breachY = originY+tileEdge + breachCoordY*squareSize + squareSize/2;
 
@@ -1136,8 +1136,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Add crew.
-		// TODO: Use the crew's actual spriteX/spriteY instead of room/square.
-		// TODO: Add dead crew at their spriteX/spriteY but toggle visibility.
+		// TODO: Add dead crew at their spriteX/spriteY but toggle visibility?
 		int hadesX = 100 - (int)(squareSize * 1.5);
 		int hadesY = shipChassis.getImageBounds().h;
 
@@ -1146,10 +1145,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 			crewRefs.add( crewRef );
 
 			int crewX = 0, crewY = 0;
+			int goalX = 0, goalY = 0;
 
 			if ( crewState.getRoomId() != -1 ) {
-				// TODO: Place living crew at their real spriteX/spriteY.
+				crewX = originX+tileEdge + crewState.getSpriteX() - shipLayout.getOffsetX()*squareSize;
+				crewY = originY+tileEdge + crewState.getSpriteY() - shipLayout.getOffsetY()*squareSize;
 
+				// TODO: Draw lines to goal dots for walking crew?
 				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( crewState.getRoomId() );
 				int roomLocX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 				int roomLocY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
@@ -1158,8 +1160,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
 				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
 
-				crewX = roomX + tileEdge + (crewState.getRoomSquare()%squaresH)*squareSize + squareSize/2;
-				crewY = roomY + tileEdge + (crewState.getRoomSquare()/squaresH)*squareSize + squareSize/2;
+				goalX = roomX + tileEdge + (crewState.getRoomSquare()%squaresH)*squareSize + squareSize/2;
+				goalY = roomY + tileEdge + (crewState.getRoomSquare()/squaresH)*squareSize + squareSize/2;
 			}
 			else {
 				crewX = hadesX;
@@ -1399,37 +1401,34 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void selectCrew() {
-		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+		miscSelector.clearSpriteLists();
+		miscSelector.addSpriteList( crewSprites );
+		miscSelector.reset();
+
+		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Crew";
 
 			@Override
 			public String getDescription() { return desc; }
 
 			@Override
-			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-				if ( roomId < 0 || squareId < 0 ) return false;
-				for ( SpriteReference<CrewState> crewRef : crewRefs ) {
-					if ( crewRef.get().getRoomId() == roomId && crewRef.get().getRoomSquare() == squareId ) {
-						return true;
-					}
-				}
+			public boolean isSpriteValid( SpriteSelector spriteSelector, JComponent sprite ) {
+				if ( sprite == null || !sprite.isVisible() ) return false;
+				if ( sprite instanceof CrewSprite ) return true;
 				return false;
 			}
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		miscSelector.setCallback(new SpriteSelectionCallback() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
-				for ( SpriteReference<CrewState> crewRef : crewRefs ) {
-					if ( crewRef.get().getRoomId() == roomId && crewRef.get().getRoomSquare() == squareId ) {
-						showCrewEditor( crewRef );
-						break;
-					}
+			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
+				if ( sprite instanceof CrewSprite ) {
+					SpriteReference<CrewState> crewRef = ((CrewSprite)sprite).getReference();
+					showCrewEditor( crewRef );
 				}
 				return true;
 			}
 		});
-		squareSelector.setVisible( true );
+		miscSelector.setVisible( true );
 
 		showCrewRoster();  // A list of all sprites, including dead crew.
 	}
