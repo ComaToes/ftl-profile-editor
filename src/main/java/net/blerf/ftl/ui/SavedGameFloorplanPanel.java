@@ -3481,7 +3481,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String COMBAT_KILLS = "Combat Kills";
 		final String PILOTED_EVASIONS = "Piloted Evasions";
 		final String JUMPS_SURVIVED = "Jumps Survived";
-		final String SKILL_MASTERIES = "Skill Masteries";
+		final String SKILL_MASTERIES = "Skill Masteries Earned";
 		final String SEX = "Male";
 		final String ENEMY_DRONE = "Enemy Drone";
 		final String PLAYER_CONTROLLED = "Player Ctrl";
@@ -3534,32 +3534,32 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( ENEMY_DRONE, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( PLAYER_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( CLONE_READY, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(CLONE_READY).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( CLONE_READY ).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( MIND_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( STUN_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( HEALTH_BOOST, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(HEALTH_BOOST).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( HEALTH_BOOST ).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( CLONEBAY_PRIORITY, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(CLONEBAY_PRIORITY).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( CLONEBAY_PRIORITY ).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( DAMAGE_BOOST, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(DAMAGE_BOOST).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( DAMAGE_BOOST ).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( LAMBDA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(LAMBDA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( LAMBDA ).setDocument( new RegexDocument("-?[0-9]*") );
 		editorPanel.addRow( UNIV_DEATH_COUNT, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addBlankRow();
-		editorPanel.addRow( PILOT_MASTERY_ONE, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( PILOT_MASTERY_TWO, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( ENGINE_MASTERY_ONE, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( ENGINE_MASTERY_TWO, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( SHIELD_MASTERY_ONE, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( SHIELD_MASTERY_TWO, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( WEAPON_MASTERY_ONE, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( WEAPON_MASTERY_TWO, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( REPAIR_MASTERY_ONE, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( REPAIR_MASTERY_TWO, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( COMBAT_MASTERY_ONE, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.addRow( COMBAT_MASTERY_TWO, FieldEditorPanel.ContentType.INTEGER );
+		editorPanel.addRow( PILOT_MASTERY_ONE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( PILOT_MASTERY_TWO, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( ENGINE_MASTERY_ONE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( ENGINE_MASTERY_TWO, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( SHIELD_MASTERY_ONE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( SHIELD_MASTERY_TWO, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( WEAPON_MASTERY_ONE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( WEAPON_MASTERY_TWO, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( REPAIR_MASTERY_ONE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( REPAIR_MASTERY_TWO, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( COMBAT_MASTERY_ONE, FieldEditorPanel.ContentType.BOOLEAN );
+		editorPanel.addRow( COMBAT_MASTERY_TWO, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( NU, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( PHI, FieldEditorPanel.ContentType.BOOLEAN );
@@ -3567,28 +3567,44 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( LOCKDOWN_RECHARGE_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( LOCKDOWN_RECHARGE_GOAL, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( OMEGA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(OMEGA).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( OMEGA ).setDocument( new RegexDocument("-?[0-9]*") );
 
-		editorPanel.getInt(HEALTH).addMouseListener( new StatusbarMouseListener(frame, "Current health, including temporary boost. FTL 1.01-1.03.3 capped this at the race's max.") );
-		editorPanel.getInt(SKILL_MASTERIES).addMouseListener( new StatusbarMouseListener(frame, "Total skill mastery levels ever earned. Up to two from each skill.") );
-		editorPanel.getBoolean(SEX).addMouseListener( new StatusbarMouseListener(frame, "Only human females have a distinct sprite (Other races look the same either way).") );
-		editorPanel.getBoolean(ENEMY_DRONE).addMouseListener( new StatusbarMouseListener(frame, "Turn into a boarding drone (clobbering other fields), hostile to this ship.") );
-		editorPanel.getBoolean(PLAYER_CONTROLLED).addMouseListener( new StatusbarMouseListener(frame, "Player controlled vs NPC.") );
-		editorPanel.getInt(PILOT_MASTERY_ONE).addMouseListener( new StatusbarMouseListener(frame, "Total times the first skill mastery was earned.") );
-		editorPanel.getInt(PILOT_MASTERY_TWO).addMouseListener( new StatusbarMouseListener(frame, "Total times the second skill mastery was earned.") );
-		editorPanel.getInt(ENGINE_MASTERY_ONE).addMouseListener( new StatusbarMouseListener(frame, "Total times the first skill mastery was earned.") );
-		editorPanel.getInt(ENGINE_MASTERY_TWO).addMouseListener( new StatusbarMouseListener(frame, "Total times the second skill mastery was earned.") );
-		editorPanel.getInt(SHIELD_MASTERY_ONE).addMouseListener( new StatusbarMouseListener(frame, "Total times the first skill mastery was earned.") );
-		editorPanel.getInt(SHIELD_MASTERY_TWO).addMouseListener( new StatusbarMouseListener(frame, "Total times the second skill mastery was earned.") );
-		editorPanel.getInt(REPAIR_MASTERY_ONE).addMouseListener( new StatusbarMouseListener(frame, "Total times the first skill mastery was earned.") );
-		editorPanel.getInt(REPAIR_MASTERY_TWO).addMouseListener( new StatusbarMouseListener(frame, "Total times the second skill mastery was earned.") );
-		editorPanel.getInt(COMBAT_MASTERY_ONE).addMouseListener( new StatusbarMouseListener(frame, "Total times the first skill mastery was earned.") );
-		editorPanel.getInt(COMBAT_MASTERY_TWO).addMouseListener( new StatusbarMouseListener(frame, "Total times the second skill mastery was earned.") );
-		editorPanel.getBoolean(NU).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Related to cloning?") );
-		editorPanel.getBoolean(PHI).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Related to walking?") );
-		editorPanel.getInt(LOCKDOWN_RECHARGE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while waiting for the lockdown ability to recharge (Crystal only).") );
-		editorPanel.getInt(LOCKDOWN_RECHARGE_GOAL).addMouseListener( new StatusbarMouseListener(frame, "Time required for the lockdown ability to recharge (Crystal only).") );
-		editorPanel.getInt(OMEGA).addMouseListener( new StatusbarMouseListener(frame, "Unknown (Crystal only).") );
+		editorPanel.getInt( HEALTH ).addMouseListener( new StatusbarMouseListener( frame, "Current health, including temporary boost. FTL 1.01-1.03.3 capped this at the race's max." ) );
+
+		editorPanel.getInt( REPAIRS ).addMouseListener( new StatusbarMouseListener( frame, "Counter for the Hall of Fame." ) );
+		editorPanel.getInt( COMBAT_KILLS ).addMouseListener( new StatusbarMouseListener( frame, "Counter for the Hall of Fame." ) );
+		editorPanel.getInt( PILOTED_EVASIONS ).addMouseListener( new StatusbarMouseListener( frame, "Counter for the Hall of Fame." ) );
+		editorPanel.getInt( JUMPS_SURVIVED ).addMouseListener( new StatusbarMouseListener( frame, "Counter for the Hall of Fame." ) );
+		editorPanel.getInt( SKILL_MASTERIES ).addMouseListener( new StatusbarMouseListener( frame, "Total skill mastery levels ever earned, for the Hall of Fame. (FTL 1.5.12+ tallies individually)." ) );
+		editorPanel.getBoolean( SEX ).addMouseListener( new StatusbarMouseListener( frame, "Only human females have a distinct sprite (Other races look the same either way)." ) );
+		editorPanel.getBoolean( ENEMY_DRONE ).addMouseListener( new StatusbarMouseListener( frame, "Turn into a boarding drone (clobbering other fields), hostile to this ship." ) );
+		editorPanel.getBoolean( PLAYER_CONTROLLED ).addMouseListener( new StatusbarMouseListener( frame, "Whether this crew is player controlled or an NPC." ) );
+		editorPanel.getBoolean( MIND_CONTROLLED ).addMouseListener( new StatusbarMouseListener( frame, "Whether this crew is mind controlled." ) );
+
+		editorPanel.getInt( STUN_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Time elapsed while waiting for a stun effect to wear off (Decrements to 0)." ) );
+		editorPanel.getInt( HEALTH_BOOST ).addMouseListener( new StatusbarMouseListener( frame, "Temporary HP added from a foreign Mind Control system." ) );
+		editorPanel.getInt( CLONEBAY_PRIORITY ).addMouseListener( new StatusbarMouseListener( frame, "Priority in the Clonebay's resurrection queue (Lowest first)." ) );
+		editorPanel.getInt( DAMAGE_BOOST ).addMouseListener( new StatusbarMouseListener( frame, "Multiplier to apply to damage dealt by this crew (pseudo-float)." ) );
+		editorPanel.getInt( LAMBDA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
+		editorPanel.getInt( UNIV_DEATH_COUNT ).addMouseListener( new StatusbarMouseListener( frame, "A value shared across crew everywhere. A death increments it to assign the next Clonebay priority." ) );
+
+		editorPanel.getBoolean( PILOT_MASTERY_ONE ).addMouseListener( new StatusbarMouseListener( frame, "Whether the first skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( PILOT_MASTERY_TWO ).addMouseListener( new StatusbarMouseListener( frame, "Whether the second skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( ENGINE_MASTERY_ONE ).addMouseListener( new StatusbarMouseListener( frame, "Whether the first skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( ENGINE_MASTERY_TWO ).addMouseListener( new StatusbarMouseListener( frame, "Whether the second skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( SHIELD_MASTERY_ONE ).addMouseListener( new StatusbarMouseListener( frame, "Whether the first skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( SHIELD_MASTERY_TWO ).addMouseListener( new StatusbarMouseListener( frame, "Whether the second skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( REPAIR_MASTERY_ONE ).addMouseListener( new StatusbarMouseListener( frame, "Whether the first skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( REPAIR_MASTERY_TWO ).addMouseListener( new StatusbarMouseListener( frame, "Whether the second skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( COMBAT_MASTERY_ONE ).addMouseListener( new StatusbarMouseListener( frame, "Whether the first skill mastery was earned (Tallied for the Hall of Fame)." ) );
+		editorPanel.getBoolean( COMBAT_MASTERY_TWO ).addMouseListener( new StatusbarMouseListener( frame, "Whether the second skill mastery was earned (Tallied for the Hall of Fame)." ) );
+
+		editorPanel.getBoolean( NU ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Related to cloning?" ) );
+		editorPanel.getBoolean( PHI ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Related to walking?" ) );
+
+		editorPanel.getInt( LOCKDOWN_RECHARGE_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Time elapsed while waiting for the lockdown ability to recharge (Crystal only)." ) );
+		editorPanel.getInt( LOCKDOWN_RECHARGE_GOAL ).addMouseListener( new StatusbarMouseListener( frame, "Time required for the lockdown ability to recharge (Crystal only)." ) );
+		editorPanel.getInt( OMEGA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown (Crystal only)." ) );
 
 		ActionListener crewListener = new ActionListener() {
 			private JComboBox raceCombo = editorPanel.getCombo(RACE);
@@ -3609,171 +3625,159 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 					healthField.setText( ""+crewType.getMaxHealth() );
 
-					editorPanel.getSlider(PILOT_SKILL).setMaximum( pilotInterval*2 );
-					editorPanel.getSlider(ENGINE_SKILL).setMaximum( engineInterval*2 );
-					editorPanel.getSlider(SHIELD_SKILL).setMaximum( shieldInterval*2 );
-					editorPanel.getSlider(WEAPON_SKILL).setMaximum( weaponInterval*2 );
-					editorPanel.getSlider(REPAIR_SKILL).setMaximum( repairInterval*2 );
-					editorPanel.getSlider(COMBAT_SKILL).setMaximum( combatInterval*2 );
+					editorPanel.getSlider( PILOT_SKILL ).setMaximum( pilotInterval*2 );
+					editorPanel.getSlider( ENGINE_SKILL ).setMaximum( engineInterval*2 );
+					editorPanel.getSlider( SHIELD_SKILL ).setMaximum( shieldInterval*2 );
+					editorPanel.getSlider( WEAPON_SKILL ).setMaximum( weaponInterval*2 );
+					editorPanel.getSlider( REPAIR_SKILL ).setMaximum( repairInterval*2 );
+					editorPanel.getSlider( COMBAT_SKILL ).setMaximum( combatInterval*2 );
 				}
 			}
 		};
-		editorPanel.getCombo(RACE).addActionListener( crewListener );
+		editorPanel.getCombo( RACE ).addActionListener( crewListener );
 
 		for ( CrewType crewType : ftlConstants.getCrewTypes() ) {
-			editorPanel.getCombo(RACE).addItem( crewType );
+			editorPanel.getCombo( RACE ).addItem( crewType );
 		}
-		editorPanel.getCombo(RACE).setSelectedItem( CrewType.findById( crewRef.get().getRace() ) );
+		editorPanel.getCombo( RACE ).setSelectedItem( CrewType.findById( crewRef.get().getRace() ) );
 
 		SwingUtilities.invokeLater(new Runnable() {  // Set health after the race combo listener triggers.
 			@Override
 			public void run() {
-				editorPanel.getInt(HEALTH).setText( ""+crewRef.get().getHealth() );
+				editorPanel.getInt( HEALTH ).setText( ""+crewRef.get().getHealth() );
 			}
 		});
 
-		editorPanel.getString(NAME).setText( crewRef.get().getName() );
+		editorPanel.getString( NAME ).setText( crewRef.get().getName() );
 
-		editorPanel.getSlider(PILOT_SKILL).setValue( crewRef.get().getPilotSkill() );
-		editorPanel.getSlider(ENGINE_SKILL).setValue( crewRef.get().getEngineSkill() );
-		editorPanel.getSlider(SHIELD_SKILL).setValue( crewRef.get().getShieldSkill() );
-		editorPanel.getSlider(WEAPON_SKILL).setValue( crewRef.get().getWeaponSkill() );
-		editorPanel.getSlider(REPAIR_SKILL).setValue( crewRef.get().getRepairSkill() );
-		editorPanel.getSlider(COMBAT_SKILL).setValue( crewRef.get().getCombatSkill() );
+		editorPanel.getSlider( PILOT_SKILL ).setValue( crewRef.get().getPilotSkill() );
+		editorPanel.getSlider( ENGINE_SKILL ).setValue( crewRef.get().getEngineSkill() );
+		editorPanel.getSlider( SHIELD_SKILL ).setValue( crewRef.get().getShieldSkill() );
+		editorPanel.getSlider( WEAPON_SKILL ).setValue( crewRef.get().getWeaponSkill() );
+		editorPanel.getSlider( REPAIR_SKILL ).setValue( crewRef.get().getRepairSkill() );
+		editorPanel.getSlider( COMBAT_SKILL ).setValue( crewRef.get().getCombatSkill() );
 
-		editorPanel.getInt(REPAIRS).setText( ""+crewRef.get().getRepairs() );
-		editorPanel.getInt(COMBAT_KILLS).setText( ""+crewRef.get().getCombatKills() );
-		editorPanel.getInt(PILOTED_EVASIONS).setText( ""+crewRef.get().getPilotedEvasions() );
-		editorPanel.getInt(JUMPS_SURVIVED).setText( ""+crewRef.get().getJumpsSurvived() );
-		editorPanel.getInt(SKILL_MASTERIES).setText( ""+crewRef.get().getSkillMasteries() );
-		editorPanel.getBoolean(SEX).setSelected( crewRef.get().isMale() );
-		editorPanel.getBoolean(ENEMY_DRONE).setSelected( crewRef.get().isEnemyBoardingDrone() );
-		editorPanel.getBoolean(PLAYER_CONTROLLED).setSelected( crewRef.get().isPlayerControlled() );
-		editorPanel.getInt(CLONE_READY).setText( ""+crewRef.get().getCloneReady() );
-		editorPanel.getBoolean(MIND_CONTROLLED).setSelected( crewRef.get().isMindControlled() );
+		editorPanel.getInt( REPAIRS ).setText( ""+crewRef.get().getRepairs() );
+		editorPanel.getInt( COMBAT_KILLS ).setText( ""+crewRef.get().getCombatKills() );
+		editorPanel.getInt( PILOTED_EVASIONS ).setText( ""+crewRef.get().getPilotedEvasions() );
+		editorPanel.getInt( JUMPS_SURVIVED ).setText( ""+crewRef.get().getJumpsSurvived() );
+		editorPanel.getInt( SKILL_MASTERIES ).setText( ""+crewRef.get().getSkillMasteriesEarned() );
+		editorPanel.getBoolean( SEX ).setSelected( crewRef.get().isMale() );
+		editorPanel.getBoolean( ENEMY_DRONE ).setSelected( crewRef.get().isEnemyBoardingDrone() );
+		editorPanel.getBoolean( PLAYER_CONTROLLED ).setSelected( crewRef.get().isPlayerControlled() );
+		editorPanel.getInt( CLONE_READY ).setText( ""+crewRef.get().getCloneReady() );
+		editorPanel.getBoolean( MIND_CONTROLLED ).setSelected( crewRef.get().isMindControlled() );
 
-		editorPanel.getInt(STUN_TICKS).setText( ""+crewRef.get().getStunTicks() );
-		editorPanel.getInt(HEALTH_BOOST).setText( ""+crewRef.get().getHealthBoost() );
-		editorPanel.getInt(CLONEBAY_PRIORITY).setText( ""+crewRef.get().getClonebayPriority() );
-		editorPanel.getInt(DAMAGE_BOOST).setText( ""+crewRef.get().getDamageBoost() );
-		editorPanel.getInt(LAMBDA).setText( ""+crewRef.get().getUnknownLambda() );
-		editorPanel.getInt(UNIV_DEATH_COUNT).setText( ""+crewRef.get().getUniversalDeathCount() );
+		editorPanel.getInt( STUN_TICKS ).setText( ""+crewRef.get().getStunTicks() );
+		editorPanel.getInt( HEALTH_BOOST ).setText( ""+crewRef.get().getHealthBoost() );
+		editorPanel.getInt( CLONEBAY_PRIORITY ).setText( ""+crewRef.get().getClonebayPriority() );
+		editorPanel.getInt( DAMAGE_BOOST ).setText( ""+crewRef.get().getDamageBoost() );
+		editorPanel.getInt( LAMBDA ).setText( ""+crewRef.get().getUnknownLambda() );
+		editorPanel.getInt( UNIV_DEATH_COUNT ).setText( ""+crewRef.get().getUniversalDeathCount() );
 
-		editorPanel.getInt(PILOT_MASTERY_ONE).setText( ""+crewRef.get().getPilotMasteryOne() );
-		editorPanel.getInt(PILOT_MASTERY_TWO).setText( ""+crewRef.get().getPilotMasteryTwo() );
-		editorPanel.getInt(ENGINE_MASTERY_ONE).setText( ""+crewRef.get().getEngineMasteryOne() );
-		editorPanel.getInt(ENGINE_MASTERY_TWO).setText( ""+crewRef.get().getEngineMasteryTwo() );
-		editorPanel.getInt(SHIELD_MASTERY_ONE).setText( ""+crewRef.get().getShieldMasteryOne() );
-		editorPanel.getInt(SHIELD_MASTERY_TWO).setText( ""+crewRef.get().getShieldMasteryTwo() );
-		editorPanel.getInt(WEAPON_MASTERY_ONE).setText( ""+crewRef.get().getWeaponMasteryOne() );
-		editorPanel.getInt(WEAPON_MASTERY_TWO).setText( ""+crewRef.get().getWeaponMasteryTwo() );
-		editorPanel.getInt(REPAIR_MASTERY_ONE).setText( ""+crewRef.get().getRepairMasteryOne() );
-		editorPanel.getInt(REPAIR_MASTERY_TWO).setText( ""+crewRef.get().getRepairMasteryTwo() );
-		editorPanel.getInt(COMBAT_MASTERY_ONE).setText( ""+crewRef.get().getCombatMasteryOne() );
-		editorPanel.getInt(COMBAT_MASTERY_TWO).setText( ""+crewRef.get().getCombatMasteryTwo() );
+		editorPanel.getBoolean( PILOT_MASTERY_ONE ).setSelected( crewRef.get().getPilotMasteryOne() );
+		editorPanel.getBoolean( PILOT_MASTERY_TWO ).setSelected( crewRef.get().getPilotMasteryTwo() );
+		editorPanel.getBoolean( ENGINE_MASTERY_ONE ).setSelected( crewRef.get().getEngineMasteryOne() );
+		editorPanel.getBoolean( ENGINE_MASTERY_TWO ).setSelected( crewRef.get().getEngineMasteryTwo() );
+		editorPanel.getBoolean( SHIELD_MASTERY_ONE ).setSelected( crewRef.get().getShieldMasteryOne() );
+		editorPanel.getBoolean( SHIELD_MASTERY_TWO ).setSelected( crewRef.get().getShieldMasteryTwo() );
+		editorPanel.getBoolean( WEAPON_MASTERY_ONE ).setSelected( crewRef.get().getWeaponMasteryOne() );
+		editorPanel.getBoolean( WEAPON_MASTERY_TWO ).setSelected( crewRef.get().getWeaponMasteryTwo() );
+		editorPanel.getBoolean( REPAIR_MASTERY_ONE ).setSelected( crewRef.get().getRepairMasteryOne() );
+		editorPanel.getBoolean( REPAIR_MASTERY_TWO ).setSelected( crewRef.get().getRepairMasteryTwo() );
+		editorPanel.getBoolean( COMBAT_MASTERY_ONE ).setSelected( crewRef.get().getCombatMasteryOne() );
+		editorPanel.getBoolean( COMBAT_MASTERY_TWO ).setSelected( crewRef.get().getCombatMasteryTwo() );
 
-		editorPanel.getBoolean(NU).setSelected( crewRef.get().getUnknownNu() );
-		editorPanel.getBoolean(PHI).setSelected( crewRef.get().getUnknownPhi() );
-		editorPanel.getInt(LOCKDOWN_RECHARGE_TICKS).setText( ""+crewRef.get().getLockdownRechargeTicks() );
-		editorPanel.getInt(LOCKDOWN_RECHARGE_GOAL).setText( ""+crewRef.get().getLockdownRechargeTicksGoal() );
-		editorPanel.getInt(OMEGA).setText( ""+crewRef.get().getUnknownOmega() );
+		editorPanel.getBoolean( NU ).setSelected( crewRef.get().getUnknownNu() );
+		editorPanel.getBoolean( PHI ).setSelected( crewRef.get().getUnknownPhi() );
+		editorPanel.getInt( LOCKDOWN_RECHARGE_TICKS ).setText( ""+crewRef.get().getLockdownRechargeTicks() );
+		editorPanel.getInt( LOCKDOWN_RECHARGE_GOAL ).setText( ""+crewRef.get().getLockdownRechargeTicksGoal() );
+		editorPanel.getInt( OMEGA ).setText( ""+crewRef.get().getUnknownOmega() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
 				String prevRace = crewRef.get().getRace();
 
-				crewRef.get().setName( editorPanel.getString(NAME).getText() );
-				crewRef.get().setRace( ((CrewType)editorPanel.getCombo(RACE).getSelectedItem()).getId() );
+				crewRef.get().setName( editorPanel.getString( NAME ).getText() );
+				crewRef.get().setRace( ((CrewType)editorPanel.getCombo( RACE ).getSelectedItem()).getId() );
 
-				try { crewRef.get().setHealth( editorPanel.parseInt(HEALTH) ); }
+				try { crewRef.get().setHealth( editorPanel.parseInt( HEALTH ) ); }
 				catch ( NumberFormatException e ) {}
 
-				crewRef.get().setPilotSkill( editorPanel.getSlider(PILOT_SKILL).getValue() );
-				crewRef.get().setEngineSkill( editorPanel.getSlider(ENGINE_SKILL).getValue() );
-				crewRef.get().setShieldSkill( editorPanel.getSlider(SHIELD_SKILL).getValue() );
-				crewRef.get().setWeaponSkill( editorPanel.getSlider(WEAPON_SKILL).getValue() );
-				crewRef.get().setRepairSkill( editorPanel.getSlider(REPAIR_SKILL).getValue() );
-				crewRef.get().setCombatSkill( editorPanel.getSlider(COMBAT_SKILL).getValue() );
+				crewRef.get().setPilotSkill( editorPanel.getSlider( PILOT_SKILL ).getValue() );
+				crewRef.get().setEngineSkill( editorPanel.getSlider( ENGINE_SKILL ).getValue() );
+				crewRef.get().setShieldSkill( editorPanel.getSlider( SHIELD_SKILL ).getValue() );
+				crewRef.get().setWeaponSkill( editorPanel.getSlider( WEAPON_SKILL ).getValue() );
+				crewRef.get().setRepairSkill( editorPanel.getSlider( REPAIR_SKILL ).getValue() );
+				crewRef.get().setCombatSkill( editorPanel.getSlider( COMBAT_SKILL ).getValue() );
 
-				try { crewRef.get().setRepairs( editorPanel.parseInt(REPAIRS) ); }
+				try { crewRef.get().setRepairs( editorPanel.parseInt( REPAIRS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setCombatKills( editorPanel.parseInt(COMBAT_KILLS) ); }
+				try { crewRef.get().setCombatKills( editorPanel.parseInt( COMBAT_KILLS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setPilotedEvasions( editorPanel.parseInt(PILOTED_EVASIONS) ); }
+				try { crewRef.get().setPilotedEvasions( editorPanel.parseInt( PILOTED_EVASIONS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setJumpsSurvived( editorPanel.parseInt(JUMPS_SURVIVED) ); }
+				try { crewRef.get().setJumpsSurvived( editorPanel.parseInt( JUMPS_SURVIVED ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setSkillMasteries( editorPanel.parseInt(SKILL_MASTERIES) ); }
+				try { crewRef.get().setSkillMasteriesEarned( editorPanel.parseInt( SKILL_MASTERIES ) ); }
 				catch ( NumberFormatException e ) {}
 
-				crewRef.get().setMale( editorPanel.getBoolean(SEX).isSelected() );
-				crewRef.get().setEnemyBoardingDrone( editorPanel.getBoolean(ENEMY_DRONE).isSelected() );
-				crewRef.get().setPlayerControlled( editorPanel.getBoolean(PLAYER_CONTROLLED).isSelected() );
+				crewRef.get().setMale( editorPanel.getBoolean( SEX ).isSelected() );
+				crewRef.get().setEnemyBoardingDrone( editorPanel.getBoolean( ENEMY_DRONE ).isSelected() );
+				crewRef.get().setPlayerControlled( editorPanel.getBoolean( PLAYER_CONTROLLED ).isSelected() );
 
-				try { crewRef.get().setCloneReady( editorPanel.parseInt(CLONE_READY) ); }
+				try { crewRef.get().setCloneReady( editorPanel.parseInt( CLONE_READY ) ); }
 				catch ( NumberFormatException e ) {}
 
-				crewRef.get().setMindControlled( editorPanel.getBoolean(MIND_CONTROLLED).isSelected() );
+				crewRef.get().setMindControlled( editorPanel.getBoolean( MIND_CONTROLLED ).isSelected() );
 
-				try { crewRef.get().setStunTicks( editorPanel.parseInt(STUN_TICKS) ); }
+				try { crewRef.get().setStunTicks( editorPanel.parseInt( STUN_TICKS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setHealthBoost( editorPanel.parseInt(HEALTH_BOOST) ); }
+				try { crewRef.get().setHealthBoost( editorPanel.parseInt( HEALTH_BOOST ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setClonebayPriority( editorPanel.parseInt(CLONEBAY_PRIORITY) ); }
+				try { crewRef.get().setClonebayPriority( editorPanel.parseInt( CLONEBAY_PRIORITY ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setDamageBoost( editorPanel.parseInt(DAMAGE_BOOST) ); }
+				try { crewRef.get().setDamageBoost( editorPanel.parseInt( DAMAGE_BOOST ) ); }
 				catch ( NumberFormatException e ) {}
 
 				try { crewRef.get().setUnknownLambda( editorPanel.parseInt(LAMBDA) ); }
 				catch ( NumberFormatException e ) {}
 
 				// TODO: Synchronize universal death count across all CrewStates on both ships.
-				try { crewRef.get().setUniversalDeathCount( editorPanel.parseInt(UNIV_DEATH_COUNT) ); }
+				try { crewRef.get().setUniversalDeathCount( editorPanel.parseInt( UNIV_DEATH_COUNT ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setPilotMasteryOne( editorPanel.parseInt(PILOT_MASTERY_ONE) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setPilotMasteryTwo( editorPanel.parseInt(PILOT_MASTERY_TWO) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setEngineMasteryOne( editorPanel.parseInt(ENGINE_MASTERY_ONE) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setEngineMasteryTwo( editorPanel.parseInt(ENGINE_MASTERY_TWO) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setShieldMasteryOne( editorPanel.parseInt(SHIELD_MASTERY_ONE) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setShieldMasteryTwo( editorPanel.parseInt(SHIELD_MASTERY_TWO) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setWeaponMasteryOne( editorPanel.parseInt(WEAPON_MASTERY_ONE) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setWeaponMasteryTwo( editorPanel.parseInt(WEAPON_MASTERY_TWO) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setRepairMasteryOne( editorPanel.parseInt(REPAIR_MASTERY_ONE) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setRepairMasteryTwo( editorPanel.parseInt(REPAIR_MASTERY_TWO) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setCombatMasteryOne( editorPanel.parseInt(COMBAT_MASTERY_ONE) ); }
-				catch ( NumberFormatException e ) {}
-				try { crewRef.get().setCombatMasteryTwo( editorPanel.parseInt(COMBAT_MASTERY_TWO) ); }
+				crewRef.get().setPilotMasteryOne( editorPanel.getBoolean( PILOT_MASTERY_ONE ).isSelected() );
+				crewRef.get().setPilotMasteryTwo( editorPanel.getBoolean( PILOT_MASTERY_TWO ).isSelected() );
+				crewRef.get().setEngineMasteryOne( editorPanel.getBoolean( ENGINE_MASTERY_ONE ).isSelected() );
+				crewRef.get().setEngineMasteryTwo( editorPanel.getBoolean( ENGINE_MASTERY_TWO ).isSelected() );
+				crewRef.get().setShieldMasteryOne( editorPanel.getBoolean( SHIELD_MASTERY_ONE ).isSelected() );
+				crewRef.get().setShieldMasteryTwo( editorPanel.getBoolean( SHIELD_MASTERY_TWO ).isSelected() );
+				crewRef.get().setWeaponMasteryOne( editorPanel.getBoolean( WEAPON_MASTERY_ONE ).isSelected() );
+				crewRef.get().setWeaponMasteryTwo( editorPanel.getBoolean( WEAPON_MASTERY_TWO ).isSelected() );
+				crewRef.get().setRepairMasteryOne( editorPanel.getBoolean( REPAIR_MASTERY_ONE ).isSelected() );
+				crewRef.get().setRepairMasteryTwo( editorPanel.getBoolean( REPAIR_MASTERY_TWO ).isSelected() );
+				crewRef.get().setCombatMasteryOne( editorPanel.getBoolean( COMBAT_MASTERY_ONE ).isSelected() );
+				crewRef.get().setCombatMasteryTwo( editorPanel.getBoolean( COMBAT_MASTERY_TWO ).isSelected() );
+
+				crewRef.get().setUnknownNu( editorPanel.getBoolean( NU ).isSelected() );
+				crewRef.get().setUnknownPhi( editorPanel.getBoolean( PHI ).isSelected() );
+
+				try { crewRef.get().setLockdownRechargeTicks( editorPanel.parseInt( LOCKDOWN_RECHARGE_TICKS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				crewRef.get().setUnknownNu( editorPanel.getBoolean(NU).isSelected() );
-				crewRef.get().setUnknownPhi( editorPanel.getBoolean(PHI).isSelected() );
-
-				try { crewRef.get().setLockdownRechargeTicks( editorPanel.parseInt(LOCKDOWN_RECHARGE_TICKS) ); }
+				try { crewRef.get().setLockdownRechargeTicksGoal( editorPanel.parseInt( LOCKDOWN_RECHARGE_GOAL ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setLockdownRechargeTicksGoal( editorPanel.parseInt(LOCKDOWN_RECHARGE_GOAL) ); }
-				catch ( NumberFormatException e ) {}
-
-				try { crewRef.get().setUnknownOmega( editorPanel.parseInt(OMEGA) ); }
+				try { crewRef.get().setUnknownOmega( editorPanel.parseInt( OMEGA ) ); }
 				catch ( NumberFormatException e ) {}
 
 				// FTL would do the following as it loaded.

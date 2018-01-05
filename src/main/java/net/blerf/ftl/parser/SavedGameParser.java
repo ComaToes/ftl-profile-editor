@@ -946,7 +946,7 @@ public class SavedGameParser extends Parser {
 		crew.setCombatKills( readInt( in ) );
 		crew.setPilotedEvasions( readInt( in ) );
 		crew.setJumpsSurvived( readInt( in ) );
-		crew.setSkillMasteries( readInt( in ) );
+		crew.setSkillMasteriesEarned( readInt( in ) );
 
 		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
 			crew.setStunTicks( readInt( in ) );
@@ -957,18 +957,18 @@ public class SavedGameParser extends Parser {
 			crew.setUniversalDeathCount( readInt( in ) );
 
 			if ( fileFormat == 8 || fileFormat == 9 ) {
-				crew.setPilotMasteryOne( readInt( in ) );
-				crew.setPilotMasteryTwo( readInt( in ) );
-				crew.setEngineMasteryOne( readInt( in ) );
-				crew.setEngineMasteryTwo( readInt( in ) );
-				crew.setShieldMasteryOne( readInt( in ) );
-				crew.setShieldMasteryTwo( readInt( in ) );
-				crew.setWeaponMasteryOne( readInt( in ) );
-				crew.setWeaponMasteryTwo( readInt( in ) );
-				crew.setRepairMasteryOne( readInt( in ) );
-				crew.setRepairMasteryTwo( readInt( in ) );
-				crew.setCombatMasteryOne( readInt( in ) );
-				crew.setCombatMasteryTwo( readInt( in ) );
+				crew.setPilotMasteryOne( readBool( in ) );
+				crew.setPilotMasteryTwo( readBool( in ) );
+				crew.setEngineMasteryOne( readBool( in ) );
+				crew.setEngineMasteryTwo( readBool( in ) );
+				crew.setShieldMasteryOne( readBool( in ) );
+				crew.setShieldMasteryTwo( readBool( in ) );
+				crew.setWeaponMasteryOne( readBool( in ) );
+				crew.setWeaponMasteryTwo( readBool( in ) );
+				crew.setRepairMasteryOne( readBool( in ) );
+				crew.setRepairMasteryTwo( readBool( in ) );
+				crew.setCombatMasteryOne( readBool( in ) );
+				crew.setCombatMasteryTwo( readBool( in ) );
 			}
 
 			crew.setUnknownNu( readBool( in ) );
@@ -1025,7 +1025,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, crew.getCombatKills() );
 		writeInt( out, crew.getPilotedEvasions() );
 		writeInt( out, crew.getJumpsSurvived() );
-		writeInt( out, crew.getSkillMasteries() );
+		writeInt( out, crew.getSkillMasteriesEarned() );
 
 		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
 			writeInt( out, crew.getStunTicks() );
@@ -1036,18 +1036,18 @@ public class SavedGameParser extends Parser {
 			writeInt( out, crew.getUniversalDeathCount() );
 
 			if ( fileFormat == 8 || fileFormat == 9 ) {
-				writeInt( out, crew.getPilotMasteryOne() );
-				writeInt( out, crew.getPilotMasteryTwo() );
-				writeInt( out, crew.getEngineMasteryOne() );
-				writeInt( out, crew.getEngineMasteryTwo() );
-				writeInt( out, crew.getShieldMasteryOne() );
-				writeInt( out, crew.getShieldMasteryTwo() );
-				writeInt( out, crew.getWeaponMasteryOne() );
-				writeInt( out, crew.getWeaponMasteryTwo() );
-				writeInt( out, crew.getRepairMasteryOne() );
-				writeInt( out, crew.getRepairMasteryTwo() );
-				writeInt( out, crew.getCombatMasteryOne() );
-				writeInt( out, crew.getCombatMasteryTwo() );
+				writeBool( out, crew.getPilotMasteryOne() );
+				writeBool( out, crew.getPilotMasteryTwo() );
+				writeBool( out, crew.getEngineMasteryOne() );
+				writeBool( out, crew.getEngineMasteryTwo() );
+				writeBool( out, crew.getShieldMasteryOne() );
+				writeBool( out, crew.getShieldMasteryTwo() );
+				writeBool( out, crew.getWeaponMasteryOne() );
+				writeBool( out, crew.getWeaponMasteryTwo() );
+				writeBool( out, crew.getRepairMasteryOne() );
+				writeBool( out, crew.getRepairMasteryTwo() );
+				writeBool( out, crew.getCombatMasteryOne() );
+				writeBool( out, crew.getCombatMasteryTwo() );
 			}
 
 			writeBool( out, crew.getUnknownNu() );
@@ -3649,20 +3649,23 @@ public class SavedGameParser extends Parser {
 		private int pilotSkill = 0, engineSkill = 0, shieldSkill = 0;
 		private int weaponSkill = 0, repairSkill = 0, combatSkill = 0;
 		private boolean male = true;
-		private int repairs = 0, combatKills = 0, pilotedEvasions = 0;
-		private int jumpsSurvived = 0, skillMasteries = 0;
+		private int repairs = 0;
+		private int combatKills = 0;
+		private int pilotedEvasions = 0;
+		private int jumpsSurvived = 0;
+		private int skillMasteriesEarned = 0;
 		private int stunTicks = 0;
 		private int healthBoost = 0;
 		private int clonebayPriority = -1;
 		private int damageBoost = 1000;
 		private int unknownLambda = 0;
 		private int universalDeathCount = 0;
-		private int pilotMasteryOne = 0, pilotMasteryTwo = 0;
-		private int engineMasteryOne = 0, engineMasteryTwo = 0;
-		private int shieldMasteryOne = 0, shieldMasteryTwo = 0;
-		private int weaponMasteryOne = 0, weaponMasteryTwo = 0;
-		private int repairMasteryOne = 0, repairMasteryTwo = 0;
-		private int combatMasteryOne = 0, combatMasteryTwo = 0;
+		private boolean pilotMasteryOne = false, pilotMasteryTwo = false;
+		private boolean engineMasteryOne = false, engineMasteryTwo = false;
+		private boolean shieldMasteryOne = false, shieldMasteryTwo = false;
+		private boolean weaponMasteryOne = false, weaponMasteryTwo = false;
+		private boolean repairMasteryOne = false, repairMasteryTwo = false;
+		private boolean combatMasteryOne = false, combatMasteryTwo = false;
 		private boolean unknownNu = false;
 		private AnimState teleportAnim = new AnimState();
 		private boolean unknownPhi = false;
@@ -3711,7 +3714,7 @@ public class SavedGameParser extends Parser {
 			combatKills = srcCrew.getCombatKills();
 			pilotedEvasions = srcCrew.getPilotedEvasions();
 			jumpsSurvived = srcCrew.getJumpsSurvived();
-			skillMasteries = srcCrew.getSkillMasteries();
+			skillMasteriesEarned = srcCrew.getSkillMasteriesEarned();
 			stunTicks = srcCrew.getStunTicks();
 			healthBoost = srcCrew.getHealthBoost();
 			clonebayPriority = srcCrew.getClonebayPriority();
@@ -3990,11 +3993,11 @@ public class SavedGameParser extends Parser {
 		 *
 		 * @see #setPilotMasteryOne(int)
 		 */
-		public void setSkillMasteries( int n ) { skillMasteries = n; }
-		public int getSkillMasteries() { return skillMasteries; }
+		public void setSkillMasteriesEarned( int n ) { skillMasteriesEarned = n; }
+		public int getSkillMasteriesEarned() { return skillMasteriesEarned; }
 
 		/**
-		 * Sets time required for stun to wear off.
+		 * Sets time elapsed while waiting for a stun effect to wear off.
 		 *
 		 * If greater than 0, the crew will become unresponsive while this
 		 * number decrements to 0.
@@ -4033,9 +4036,9 @@ public class SavedGameParser extends Parser {
 		 * death count. Then this value lingers. When this crew has not yet
 		 * died, this is -1.
 		 *
-		 * @see #setUniversalDeathCount(int)
-		 *
 		 * This was introduced in FTL 1.5.4.
+		 *
+		 * @see #setUniversalDeathCount(int)
 		 */
 		public void setClonebayPriority( int n ) { clonebayPriority = n; }
 		public int getClonebayPriority() { return clonebayPriority; }
@@ -4088,38 +4091,39 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Sets whether this crew ever earned the first level of pilot mastery.
 		 *
-		 * Matthew's hint: He says it's an int. Maybe this increments?
-		 * TODO: Repeatedly clone someone and re-earn the first mastery.
+		 * This value does not affect the in-game progress bars. It's probably
+		 * solely for the "Most Skill Masteries" stat.
 		 *
 		 * This was introduced in FTL 1.5.12.
 		 *
 		 * @see #setSkillMasteries(int)
+		 * @see net.blerf.ftl.model.Stats.StatType#MOST_SKILL_MASTERIES
 		 */
-		public void setPilotMasteryOne( int n ) { pilotMasteryOne = n; }
-		public void setPilotMasteryTwo( int n ) { pilotMasteryTwo = n; }
-		public void setEngineMasteryOne( int n ) { engineMasteryOne = n; }
-		public void setEngineMasteryTwo( int n ) { engineMasteryTwo = n; }
-		public void setShieldMasteryOne( int n ) { shieldMasteryOne = n; }
-		public void setShieldMasteryTwo( int n ) { shieldMasteryTwo = n; }
-		public void setWeaponMasteryOne( int n ) { weaponMasteryOne = n; }
-		public void setWeaponMasteryTwo( int n ) { weaponMasteryTwo = n; }
-		public void setRepairMasteryOne( int n ) { repairMasteryOne = n; }
-		public void setRepairMasteryTwo( int n ) { repairMasteryTwo = n; }
-		public void setCombatMasteryOne( int n ) { combatMasteryOne = n; }
-		public void setCombatMasteryTwo( int n ) { combatMasteryTwo = n; }
+		public void setPilotMasteryOne( boolean b ) { pilotMasteryOne = b; }
+		public void setPilotMasteryTwo( boolean b ) { pilotMasteryTwo = b; }
+		public void setEngineMasteryOne( boolean b ) { engineMasteryOne = b; }
+		public void setEngineMasteryTwo( boolean b ) { engineMasteryTwo = b; }
+		public void setShieldMasteryOne( boolean b ) { shieldMasteryOne = b; }
+		public void setShieldMasteryTwo( boolean b ) { shieldMasteryTwo = b; }
+		public void setWeaponMasteryOne( boolean b ) { weaponMasteryOne = b; }
+		public void setWeaponMasteryTwo( boolean b ) { weaponMasteryTwo = b; }
+		public void setRepairMasteryOne( boolean b ) { repairMasteryOne = b; }
+		public void setRepairMasteryTwo( boolean b ) { repairMasteryTwo = b; }
+		public void setCombatMasteryOne( boolean b ) { combatMasteryOne = b; }
+		public void setCombatMasteryTwo( boolean b ) { combatMasteryTwo = b; }
 
-		public int getPilotMasteryOne() { return pilotMasteryOne; }
-		public int getPilotMasteryTwo() { return pilotMasteryTwo; }
-		public int getEngineMasteryOne() { return engineMasteryOne; }
-		public int getEngineMasteryTwo() { return engineMasteryTwo; }
-		public int getShieldMasteryOne() { return shieldMasteryOne; }
-		public int getShieldMasteryTwo() { return shieldMasteryTwo; }
-		public int getWeaponMasteryOne() { return weaponMasteryOne; }
-		public int getWeaponMasteryTwo() { return weaponMasteryTwo; }
-		public int getRepairMasteryOne() { return repairMasteryOne; }
-		public int getRepairMasteryTwo() { return repairMasteryTwo; }
-		public int getCombatMasteryOne() { return combatMasteryOne; }
-		public int getCombatMasteryTwo() { return combatMasteryTwo; }
+		public boolean getPilotMasteryOne() { return pilotMasteryOne; }
+		public boolean getPilotMasteryTwo() { return pilotMasteryTwo; }
+		public boolean getEngineMasteryOne() { return engineMasteryOne; }
+		public boolean getEngineMasteryTwo() { return engineMasteryTwo; }
+		public boolean getShieldMasteryOne() { return shieldMasteryOne; }
+		public boolean getShieldMasteryTwo() { return shieldMasteryTwo; }
+		public boolean getWeaponMasteryOne() { return weaponMasteryOne; }
+		public boolean getWeaponMasteryTwo() { return weaponMasteryTwo; }
+		public boolean getRepairMasteryOne() { return repairMasteryOne; }
+		public boolean getRepairMasteryTwo() { return repairMasteryTwo; }
+		public boolean getCombatMasteryOne() { return combatMasteryOne; }
+		public boolean getCombatMasteryTwo() { return combatMasteryTwo; }
 
 		/**
 		 * Unknown.
@@ -4201,17 +4205,17 @@ public class SavedGameParser extends Parser {
 				tintLayerList = crewBlueprint.getSpriteTintLayerList();
 			}
 
-			result.append( String.format( "Name:                  %s\n", name ) );
-			result.append( String.format( "Race:                  %s\n", race ) );
-			result.append( String.format( "Enemy Drone:           %5b\n", enemyBoardingDrone ) );
-			result.append( String.format( "Sex:                   %s\n", (male ? "Male" : "Female") ) );
-			result.append( String.format( "Health:                %5d\n", health));
-			result.append( String.format( "Sprite Position:         %3d,%3d\n", spriteX, spriteY ) );
-			result.append( String.format( "Room Id:               %5d\n", roomId ) );
-			result.append( String.format( "Room Square:           %5d\n", roomSquare ) );
-			result.append( String.format( "Player Controlled:     %5b\n", playerControlled ) );
-			result.append( String.format( "Clone Ready?:          %5d\n", cloneReady ) );
-			result.append( String.format( "Mind Controlled:       %5b\n", mindControlled ) );
+			result.append( String.format( "Name:                   %s\n", name ) );
+			result.append( String.format( "Race:                   %s\n", race ) );
+			result.append( String.format( "Enemy Drone:            %5b\n", enemyBoardingDrone ) );
+			result.append( String.format( "Sex:                    %s\n", (male ? "Male" : "Female") ) );
+			result.append( String.format( "Health:                 %5d\n", health));
+			result.append( String.format( "Sprite Position:          %3d,%3d\n", spriteX, spriteY ) );
+			result.append( String.format( "Room Id:                %5d\n", roomId ) );
+			result.append( String.format( "Room Square:            %5d\n", roomSquare ) );
+			result.append( String.format( "Player Controlled:      %5b\n", playerControlled ) );
+			result.append( String.format( "Clone Ready?:           %5d\n", cloneReady ) );
+			result.append( String.format( "Mind Controlled:        %5b\n", mindControlled ) );
 
 			result.append( "\nSprite Tints...\n" );
 			for ( int i=0; i < spriteTintIndeces.size(); i++ ) {
@@ -4237,32 +4241,32 @@ public class SavedGameParser extends Parser {
 			FTLConstants origConstants = new OriginalFTLConstants();
 			FTLConstants advConstants = new AdvancedFTLConstants();
 
-			result.append( String.format( "Saved Room Id:         %5d\n", savedRoomId));
-			result.append( String.format( "Saved Room Square:     %5d\n", savedRoomSquare));
-			result.append( String.format( "Pilot Skill:           %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot( race ), advConstants.getMasteryIntervalPilot( race ) ) );
-			result.append( String.format( "Engine Skill:          %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine( race ), advConstants.getMasteryIntervalEngine( race ) ) );
-			result.append( String.format( "Shield Skill:          %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", shieldSkill, origConstants.getMasteryIntervalShield( race ), advConstants.getMasteryIntervalShield( race ) ) );
-			result.append( String.format( "Weapon Skill:          %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", weaponSkill, origConstants.getMasteryIntervalWeapon( race ), advConstants.getMasteryIntervalWeapon( race ) ) );
-			result.append( String.format( "Repair Skill:          %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", repairSkill, origConstants.getMasteryIntervalRepair( race ), advConstants.getMasteryIntervalRepair( race ) ) );
-			result.append( String.format( "Combat Skill:          %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", combatSkill, origConstants.getMasteryIntervalCombat( race ), advConstants.getMasteryIntervalCombat( race ) ) );
-			result.append( String.format( "Repairs:               %5d\n", repairs ) );
-			result.append( String.format( "Combat Kills:          %5d\n", combatKills ) );
-			result.append( String.format( "Piloted Evasions:      %5d\n", pilotedEvasions ) );
-			result.append( String.format( "Jumps Survived:        %5d\n", jumpsSurvived ) );
-			result.append( String.format( "Skill Masteries:       %5d\n", skillMasteries ) );
-			result.append( String.format( "Stun Ticks:           %6d (Decrements to 0)\n", stunTicks ) );
-			result.append( String.format( "Health Boost:         %6d (Subtracted from health when Mind Ctrl expires)\n", healthBoost ) );
-			result.append( String.format( "Clonebay Priority:    %6d (On death, copies Universal Death Count for a big number)\n", clonebayPriority ) );
-			result.append( String.format( "Damage Boost:         %6d (%5.03f)\n", damageBoost, damageBoost/1000f ) );
-			result.append( String.format( "Dying Ticks?:         %6d\n", unknownLambda ) );
-			result.append( String.format( "Universal Death Count: %5d (Shared across all crew everywhere)\n", universalDeathCount ) );
-			result.append( String.format( "Pilot Mastery:             %1d, %1d\n", pilotMasteryOne, pilotMasteryTwo ) );
-			result.append( String.format( "Engine Mastery:            %1d, %1d\n", engineMasteryOne, engineMasteryTwo ) );
-			result.append( String.format( "Shield Mastery:            %1d, %1d\n", shieldMasteryOne, shieldMasteryTwo ) );
-			result.append( String.format( "Weapon Mastery:            %1d, %1d\n", weaponMasteryOne, weaponMasteryTwo ) );
-			result.append( String.format( "Repair Mastery:            %1d, %1d\n", repairMasteryOne, repairMasteryTwo ) );
-			result.append( String.format( "Combat Mastery:            %1d, %1d\n", combatMasteryOne, combatMasteryTwo ) );
-			result.append( String.format( "Nu?:                  %6b\n", unknownNu ) );
+			result.append( String.format( "Saved Room Id:          %5d\n", savedRoomId));
+			result.append( String.format( "Saved Room Square:      %5d\n", savedRoomSquare));
+			result.append( String.format( "Pilot Skill:            %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", pilotSkill, origConstants.getMasteryIntervalPilot( race ), advConstants.getMasteryIntervalPilot( race ) ) );
+			result.append( String.format( "Engine Skill:           %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", engineSkill, origConstants.getMasteryIntervalEngine( race ), advConstants.getMasteryIntervalEngine( race ) ) );
+			result.append( String.format( "Shield Skill:           %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", shieldSkill, origConstants.getMasteryIntervalShield( race ), advConstants.getMasteryIntervalShield( race ) ) );
+			result.append( String.format( "Weapon Skill:           %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", weaponSkill, origConstants.getMasteryIntervalWeapon( race ), advConstants.getMasteryIntervalWeapon( race ) ) );
+			result.append( String.format( "Repair Skill:           %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", repairSkill, origConstants.getMasteryIntervalRepair( race ), advConstants.getMasteryIntervalRepair( race ) ) );
+			result.append( String.format( "Combat Skill:           %5d (Mastery Interval: %2d in FTL:AE, Originally %2d)\n", combatSkill, origConstants.getMasteryIntervalCombat( race ), advConstants.getMasteryIntervalCombat( race ) ) );
+			result.append( String.format( "Repairs:                %5d\n", repairs ) );
+			result.append( String.format( "Combat Kills:           %5d\n", combatKills ) );
+			result.append( String.format( "Piloted Evasions:       %5d\n", pilotedEvasions ) );
+			result.append( String.format( "Jumps Survived:         %5d\n", jumpsSurvived ) );
+			result.append( String.format( "Skill Masteries Earned: %5d\n", skillMasteriesEarned ) );
+			result.append( String.format( "Stun Ticks:            %6d (Decrements to 0)\n", stunTicks ) );
+			result.append( String.format( "Health Boost:          %6d (Subtracted from health when Mind Ctrl expires)\n", healthBoost ) );
+			result.append( String.format( "Clonebay Priority:     %6d (On death, copies Universal Death Count for a big number)\n", clonebayPriority ) );
+			result.append( String.format( "Damage Boost:          %6d (%5.03f)\n", damageBoost, damageBoost/1000f ) );
+			result.append( String.format( "Dying Ticks?:          %6d\n", unknownLambda ) );
+			result.append( String.format( "Universal Death Count:  %5d (Shared across crew everywhere, for assigning next Clonebay priority)\n", universalDeathCount ) );
+			result.append( String.format( "Pilot Mastery (1,2):   %6b, %5b\n", pilotMasteryOne, pilotMasteryTwo ) );
+			result.append( String.format( "Engine Mastery (1,2):  %6b, %5b\n", engineMasteryOne, engineMasteryTwo ) );
+			result.append( String.format( "Shield Mastery (1,2):  %6b, %5b\n", shieldMasteryOne, shieldMasteryTwo ) );
+			result.append( String.format( "Weapon Mastery (1,2):  %6b, %5b\n", weaponMasteryOne, weaponMasteryTwo ) );
+			result.append( String.format( "Repair Mastery (1,2):  %6b, %5b\n", repairMasteryOne, repairMasteryTwo ) );
+			result.append( String.format( "Combat Mastery (1,2):  %6b, %5b\n", combatMasteryOne, combatMasteryTwo ) );
+			result.append( String.format( "Nu?:                   %6b\n", unknownNu ) );
 
 			result.append( "\nTeleport Anim...\n" );
 			if ( teleportAnim != null) {
@@ -4271,10 +4275,10 @@ public class SavedGameParser extends Parser {
 
 			result.append( "\n" );
 
-			result.append( String.format( "Phi?:                 %6b\n", unknownPhi ) );
-			result.append( String.format( "Lockdown Ticks:       %6d (Crystal only, time elapsed recharging ability)\n", lockdownRechargeTicks ) );
-			result.append( String.format( "Lockdown Ticks Goal:  %6d (Crystal only, time needed to recharge)\n", lockdownRechargeTicksGoal ) );
-			result.append( String.format( "Omega?:               %6d (Crystal only)\n", unknownOmega ) );
+			result.append( String.format( "Phi?:                  %6b\n", unknownPhi ) );
+			result.append( String.format( "Lockdown Ticks:        %6d (Crystal only, time elapsed recharging ability)\n", lockdownRechargeTicks ) );
+			result.append( String.format( "Lockdown Ticks Goal:   %6d (Crystal only, time needed to recharge)\n", lockdownRechargeTicksGoal ) );
+			result.append( String.format( "Omega?:                %6d (Crystal only)\n", unknownOmega ) );
 			return result.toString();
 		}
 	}

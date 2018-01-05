@@ -152,6 +152,8 @@ public class EditorInitThread extends Thread {
 				if ( updateAvailable ) {
 					// Fetch the detailed version history.
 
+					log.debug( "A newer version is available, fetching version history..." );
+
 					request = new HttpGet( versionHistoryUrl );
 					TaggedString historyResult = httpClient.execute( request, responseHandler );
 
