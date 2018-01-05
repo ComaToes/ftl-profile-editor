@@ -8,6 +8,8 @@ import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -164,10 +166,9 @@ public class FTLFrame extends JFrame implements Statusbar {
 		this.appName = appName;
 		this.appVersion = appVersion;
 
-		this.setDefaultCloseOperation( EXIT_ON_CLOSE );
-		this.setSize( 800, 700 );
-		this.setLocationRelativeTo( null );
 		this.setTitle( String.format( "%s v%d", appName, appVersion ) );
+		this.setDefaultCloseOperation( JFrame.DO_NOTHING_ON_CLOSE );
+
 		this.setIconImage( unlockIcon.getImage() );
 
 		linkListener = new HyperlinkListener() {
@@ -274,6 +275,34 @@ public class FTLFrame extends JFrame implements Statusbar {
 		statusLbl.setAlignmentX( Component.LEFT_ALIGNMENT );
 		statusPanel.add( statusLbl );
 		contentPane.add( statusPanel, BorderLayout.SOUTH );
+
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing( WindowEvent e ) {
+				// The close button was clicked.
+				FTLFrame.this.setVisible( false );
+				FTLFrame.this.dispose();
+			}
+
+			@Override
+			public void windowClosed( WindowEvent e ) {
+				// dispose() was called.
+				EditorConfig appConfig = FTLFrame.this.appConfig;
+
+				try {
+					appConfig.writeConfig();
+				}
+				catch ( IOException f ) {
+					log.error( String.format( "Error writing config to \"%s\"", appConfig.getConfigFile().getName() ), f );
+				}
+
+				System.gc();
+				//System.exit( 0 );  // Don't do this (InterruptedException). Let EDT end gracefully.
+			}
+		});
+
+		this.setSize( 800, 700 );
+		this.setLocationRelativeTo( null );
 
 		// Load blank profile (sets Kestrel unlock).
 		stockProfile = Profile.createEmptyProfile();
