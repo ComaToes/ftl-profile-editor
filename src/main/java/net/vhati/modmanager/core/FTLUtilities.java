@@ -147,10 +147,12 @@ public class FTLUtilities {
 	public static File promptForDatsDir( Component parentComponent ) {
 		File result = null;
 
-		String message = "";
-		message += "You will now be prompted to locate FTL manually.\n";
-		message += "Select '(FTL dir)/resources/data.dat'.\n";
-		message += "Or 'FTL.app', if you're on OSX.";
+		String message = ""
+			+ "You will now be prompted to locate FTL manually.\n"
+			+ "\n"
+			+ "Select '(FTL dir)/resources/data.dat'.\n"
+			+ "Or 'FTL.app', if you're on OSX.";
+
 		JOptionPane.showMessageDialog( parentComponent, message, "Find FTL", JOptionPane.INFORMATION_MESSAGE );
 
 		final JFileChooser fc = new JFileChooser();

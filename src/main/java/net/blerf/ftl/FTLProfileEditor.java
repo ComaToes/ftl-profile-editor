@@ -200,7 +200,7 @@ public class FTLProfileEditor {
 			}
 
 			if ( datsDir == null ) {
-				showErrorDialog( "FTL resources were not found.\nFTL Profile Editor will now exit." );
+				showErrorDialog( "FTL resources were not found.\nThe editor will now exit." );
 				log.debug( "No FTL dats path found, exiting." );
 
 				throw new ExitException();
