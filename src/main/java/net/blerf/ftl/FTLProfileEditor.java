@@ -215,19 +215,18 @@ public class FTLProfileEditor {
 
 			if ( writeConfig ) {
 				String wipMsg = ""
-					+ "FTL has revised its file formats several times, and not everything is deciphered "
+					+ "FTL has revised its file formats several times, and not everything is deciphered \n"
 					+ "yet, which limits what can be safely edited.\n"
 					+ "\n"
 					+ "FTL 1.6.1+ profiles are not supported at all.\n"
-					+ "FTL 1.5.4-1.5.13 profiles (ae_prof.sav) are fully editable.\n"
-					+ "FTL 1.01-1.03.3 profiles (prof.sav) are fully editable.\n"
+					+ "FTL 1.5.4-1.5.13 profiles are fully editable. (ae_prof.sav)\n"
+					+ "FTL 1.01-1.03.3 profiles are fully editable. (prof.sav)\n"
 					+ "\n"
 					+ "FTL 1.6.1+ saved games are not supported at all.\n"
 					+ "FTL 1.5.4-1.5.13 saved games are partially editable.\n"
 					+ "FTL 1.01-1.03.3 saved games are fully editable.\n"
 					+ "\n"
-					+ "Choose the appropriate tab (Profile or SavedGame) and click the \"Open\" button.\n"
-					+ "\n"
+					+ "Choose the appropriate tab (Profile or Saved Game) and click the \"Open\" button.\n"
 					+ "\n"
 					+ "If you encounter a read error opening a file, that means the editor saw something \n"
 					+ "new that it doesn't recognize. Submitting a bug report would be helpful.";
