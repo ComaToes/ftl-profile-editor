@@ -1,9 +1,9 @@
 @ECHO OFF
 SETLOCAL
 SET L4J_LOG_NAME=launch4j.log
-SET EDITOR_LOG_NAME=profile-editor-log.txt
+SET EDITOR_LOG_NAME=ftl-editor-log.txt
 SET L4J_LOG_PATH=%~dp0launch4j.log
-SET EDITOR_LOG_PATH=%~dp0profile-editor-log.txt
+SET EDITOR_LOG_PATH=%~dp0ftl-editor-log.txt
 
 IF EXIST "%L4J_LOG_PATH%" DEL /Q "%L4J_LOG_PATH%"
 IF EXIST "%EDITOR_LOG_PATH%" DEL /Q "%EDITOR_LOG_PATH%"

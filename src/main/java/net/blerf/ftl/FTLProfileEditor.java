@@ -59,7 +59,7 @@ public class FTLProfileEditor {
 		FileAppender<ILoggingEvent> fileAppender = new FileAppender<ILoggingEvent>();
 		fileAppender.setContext( lc );
 		fileAppender.setName( "LogFile" );
-		fileAppender.setFile( new File( "./profile-editor-log.txt" ).getAbsolutePath() );
+		fileAppender.setFile( new File( "./ftl-editor-log.txt" ).getAbsolutePath() );
 		fileAppender.setAppend( false );
 		fileAppender.setEncoder( encoder );
 		fileAppender.start();
