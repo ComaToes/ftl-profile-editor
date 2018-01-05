@@ -5,11 +5,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Font;
-import java.awt.Image;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -29,10 +27,8 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
@@ -41,7 +37,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
@@ -72,6 +67,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import net.vhati.ftldat.PackUtilities;
 import net.vhati.modmanager.core.FTLUtilities;
 
+import net.blerf.ftl.core.EditorConfig;
 import net.blerf.ftl.model.Profile;
 import net.blerf.ftl.net.TaggedString;
 import net.blerf.ftl.net.TaggedStringResponseHandler;
@@ -129,8 +125,6 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private URL historyTemplateMainURL = ClassLoader.getSystemResource( "history_template_main.html" );
 	private URL historyTemplateReleaseURL = ClassLoader.getSystemResource( "history_template_release.html" );
 
-	private final String latestVersionUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/latest-version.txt";
-	private final String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://subsetgames.com/forum/viewtopic.php?f=7&t=10959";
 
@@ -160,11 +154,13 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 
+	private EditorConfig appConfig;
 	private final String appName;
 	private final int appVersion;
 
 
-	public FTLFrame( String appName, int appVersion ) {
+	public FTLFrame( EditorConfig appConfig, String appName, int appVersion ) {
+		this.appConfig = appConfig;
 		this.appName = appName;
 		this.appVersion = appVersion;
 
@@ -284,17 +280,20 @@ public class FTLFrame extends JFrame implements Statusbar {
 		loadProfile( stockProfile );
 
 		loadGameState( null );
+	}
 
-		// Check for updates in a seperate thread.
-		setStatusText( "Checking for updates..." );
-		Thread t = new Thread( "CheckVersion" ) {
-			@Override
-			public void run() {
-				checkForUpdate();
-			}
-		};
-		t.setDaemon( true );
-		t.start();
+	/**
+	 * Extra initialization that must be called after the constructor.
+	 */
+	public void init() {
+		EditorInitThread initThread = new EditorInitThread(
+			this,
+			new EditorConfig( appConfig ),
+			appVersion
+		);
+		initThread.setDaemon( true );
+		initThread.setPriority( Thread.MIN_PRIORITY );
+		initThread.start();
 	}
 
 	private void showErrorDialog( String message ) {
@@ -1039,68 +1038,6 @@ public class FTLFrame extends JFrame implements Statusbar {
 		}
 	}
 
-	private void checkForUpdate() {
-
-		RequestConfig requestConfig = RequestConfig.custom()
-			.setConnectionRequestTimeout( 5000 )
-			.setConnectTimeout( 5000 )
-			.setSocketTimeout( 10000 )
-			.setRedirectsEnabled( true )
-			.build();
-
-		CloseableHttpClient httpClient = HttpClientBuilder.create()
-			.setDefaultRequestConfig( requestConfig )
-			.disableAuthCaching()
-			.disableAutomaticRetries()
-			.disableConnectionState()
-			.disableCookieManagement()
-			//.setUserAgent( "" )
-			.build();
-
-		String eTagCached = null;  // TODO.
-
-		HttpGet request = null;
-		try {
-			TaggedStringResponseHandler responseHandler = new TaggedStringResponseHandler();
-
-			log.debug( "Checking for latest version" );
-			request = new HttpGet( latestVersionUrl );
-
-			if ( eTagCached != null ) request.addHeader( "If-None-Match", eTagCached );
-
-			TaggedString latestResult = httpClient.execute( request, responseHandler );
-			// TODO: Remember latestResult.etag.
-
-			int latestVersion = Integer.parseInt( latestResult.text.trim() );
-			// TODO: When ETag is provided, latestResult itself may be null.
-
-			request = new HttpGet( versionHistoryUrl );
-			TaggedString historyResult = httpClient.execute( request, responseHandler );
-
-			final Map<Integer, List<String>> historyMap = parseVersionHistory( historyResult.text );
-
-			// Make changes from the GUI thread.
-			Runnable r = new Runnable() {
-				@Override
-				public void run() {
-					setVersionHistory( historyMap );
-				}
-			};
-			SwingUtilities.invokeLater( r );
-		}
-		catch( ClientProtocolException e ) {
-			log.error( "GET request failed for url: "+ request.getURI().toString(), e );
-		}
-		catch ( Exception e ) {
-			log.error( "Checking for latest version failed", e );
-			showErrorDialog( "Error checking for latest version.\n(Use the About window to check the download page manually)\n"+ e.toString() );
-		}
-		finally {
-			try{httpClient.close();}
-			catch ( IOException e ) {}
-		}
-	}
-
 	/**
 	 * Sets the appearance and behavior of the updates button.
 	 */
@@ -1151,32 +1088,6 @@ public class FTLFrame extends JFrame implements Statusbar {
 			// Probably an exception from reading template resources.
 			log.error( "Failed to set version history", e );
 		}
-	}
-
-	/**
-	 * Parses history text to a Map of release versions with itemized changes.
-	 */
-	private Map<Integer, List<String>> parseVersionHistory( String historyText ) {
-		Map<Integer, List<String>> historyMap = new LinkedHashMap<Integer, List<String>>();
-
-		Scanner historyScanner = new Scanner( historyText );
-		while ( historyScanner.hasNextLine() ) {
-			int releaseVersion = Integer.parseInt( historyScanner.nextLine() );
-			List<String> releaseChangeList = new ArrayList<String>();
-			historyMap.put( releaseVersion, releaseChangeList );
-
-			while ( historyScanner.hasNextLine() ) {
-				String line = historyScanner.nextLine();
-				if ( line.isEmpty() ) break;
-
-				releaseChangeList.add( line );
-			}
-
-			// Must've either hit a blank or done.
-		}
-		historyScanner.close();
-
-		return historyMap;
 	}
 
 	/**

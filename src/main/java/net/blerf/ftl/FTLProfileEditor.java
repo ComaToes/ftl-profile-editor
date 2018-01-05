@@ -249,7 +249,8 @@ public class FTLProfileEditor {
 			}
 
 			try {
-				FTLFrame frame = new FTLFrame( APP_NAME, APP_VERSION );
+				FTLFrame frame = new FTLFrame( appConfig, APP_NAME, APP_VERSION );
+				frame.init();
 				frame.setVisible( true );
 			}
 			catch ( Exception e ) {
