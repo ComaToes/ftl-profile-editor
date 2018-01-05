@@ -91,7 +91,12 @@ public class FTLProfileEditor {
 
 			boolean writeConfig = false;
 			Properties props = new Properties();
+			props.setProperty( EditorConfig.FTL_DATS_PATH, "" );  // Prompt.
+			props.setProperty( EditorConfig.UPDATE_APP, "" );     // Prompt.
 			props.setProperty( EditorConfig.USE_DEFAULT_UI, "false" );
+			// "app_update_timestamp" doesn't have a default.
+			// "app_update_etag" doesn't have a default.
+			// "app_update_available" doesn't have a default.
 
 			// Read the config file.
 			InputStream in = null;
@@ -199,6 +204,24 @@ public class FTLProfileEditor {
 				log.debug( "No FTL dats path found, exiting." );
 
 				throw new ExitException();
+			}
+
+			// Prompt if update_catalog is invalid or hasn't been set.
+			boolean askAboutUpdates = false;
+			if ( !appConfig.getProperty( EditorConfig.UPDATE_APP, "" ).matches( "^\\d+$" ) )
+				askAboutUpdates = true;
+
+			if ( askAboutUpdates ) {
+				String updatePrompt = "Would you like to periodically check for updates?";
+
+				int response = JOptionPane.showConfirmDialog( null, updatePrompt, "Updates", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE );
+				if ( response == JOptionPane.YES_OPTION ) {
+					appConfig.setProperty( EditorConfig.UPDATE_APP, "4" );
+				}
+				else {
+					appConfig.setProperty( EditorConfig.UPDATE_APP, "0" );
+				}
+				writeConfig = true;
 			}
 
 			if ( writeConfig ) {

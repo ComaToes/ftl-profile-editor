@@ -325,6 +325,15 @@ public class FTLFrame extends JFrame implements Statusbar {
 		initThread.start();
 	}
 
+	/**
+	 * Returns the apps's config.
+	 *
+	 * Values put into it will be saved on exit.
+	 */
+	public EditorConfig getConfig() {
+		return appConfig;
+	}
+
 	private void showErrorDialog( String message ) {
 		JOptionPane.showMessageDialog( this, message, "Error", JOptionPane.ERROR_MESSAGE );
 	}

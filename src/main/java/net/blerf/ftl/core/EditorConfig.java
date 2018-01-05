@@ -15,7 +15,11 @@ import java.util.Properties;
 public class EditorConfig {
 
 	public static final String FTL_DATS_PATH = "ftl_dats_path";
+	public static final String UPDATE_APP = "update_app";
 	public static final String USE_DEFAULT_UI = "use_default_ui";
+	public static final String APP_UPDATE_TIMESTAMP = "app_update_timestamp";
+	public static final String APP_UPDATE_ETAG = "app_update_etag";
+	public static final String APP_UPDATE_AVAILABLE = "app_update_available";
 
 	private Properties config;
 	private File configFile;
@@ -71,12 +75,17 @@ public class EditorConfig {
 			Map<String, String> userFieldsMap = new LinkedHashMap<String, String>();
 			Map<String, String> appFieldsMap = new LinkedHashMap<String, String>();
 
-			userFieldsMap.put( FTL_DATS_PATH,     "The path to FTL's resources folder. If invalid, you'll be prompted." );
-			userFieldsMap.put( USE_DEFAULT_UI,    "If true, no attempt will be made to resemble a native GUI. Default: false." );
+			userFieldsMap.put( FTL_DATS_PATH,       "The path to FTL's resources folder. If invalid, you'll be prompted." );
+			userFieldsMap.put( USE_DEFAULT_UI,      "If true, no attempt will be made to resemble a native GUI. Default: false." );
+			userFieldsMap.put( UPDATE_APP,          "If a number greater than 0, check for newer app versions every N days." );
+
+			appFieldsMap.put( APP_UPDATE_TIMESTAMP, "Last update check's timestamp." );
+			appFieldsMap.put( APP_UPDATE_ETAG,      "Last update check's ETag." );
+			appFieldsMap.put( APP_UPDATE_AVAILABLE, "Last update check's result." );
 
 			List<String> allFieldsList = new ArrayList<String>( userFieldsMap.size() + appFieldsMap.size() );
 			allFieldsList.addAll( userFieldsMap.keySet() );
-			allFieldsList.addAll( userFieldsMap.keySet() );
+			allFieldsList.addAll( appFieldsMap.keySet() );
 			int fieldWidth = 0;
 			for ( String fieldName : allFieldsList ) {
 				fieldWidth = Math.max( fieldName.length(), fieldWidth );

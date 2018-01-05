@@ -2,7 +2,9 @@ package net.blerf.ftl.ui;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,14 +34,14 @@ public class EditorInitThread extends Thread {
 	private final String versionHistoryUrl = "https://raw.github.com/Vhati/ftl-profile-editor/master/release-notes.txt";
 
 	private final FTLFrame frame;
-	private final EditorConfig appConfig;
+	private final EditorConfig initConfig;
 	private final int appVersion;
 
 
-	public EditorInitThread( FTLFrame frame, EditorConfig appConfig, int appVersion ) {
+	public EditorInitThread( FTLFrame frame, EditorConfig initConfig, int appVersion ) {
 		super( "init" );
 		this.frame = frame;
-		this.appConfig = appConfig;
+		this.initConfig = initConfig;
 		this.appVersion = appVersion;
 	}
 
@@ -49,72 +51,141 @@ public class EditorInitThread extends Thread {
 			init();
 		}
 		catch ( Exception e ) {
-			log.error( "Error during EditorFrame init.", e );
+			log.error( "Error during EditorFrame init", e );
 		}
 	}
 
 	private void init() {
-		RequestConfig requestConfig = RequestConfig.custom()
-			.setConnectionRequestTimeout( 5000 )
-			.setConnectTimeout( 5000 )
-			.setSocketTimeout( 10000 )
-			.setRedirectsEnabled( true )
-			.build();
+		SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd" );
 
-		CloseableHttpClient httpClient = HttpClientBuilder.create()
-			.setDefaultRequestConfig( requestConfig )
-			.disableAuthCaching()
-			.disableAutomaticRetries()
-			.disableConnectionState()
-			.disableCookieManagement()
-			//.setUserAgent( "" )
-			.build();
+		int appUpdateInterval = initConfig.getPropertyAsInt( EditorConfig.UPDATE_APP, 0 );
+		boolean needAppUpdate = false;
 
-		String eTagCached = null;  // TODO.
+		if ( appUpdateInterval > 0 ) {
+			String prevTimestampString = initConfig.getProperty( EditorConfig.APP_UPDATE_TIMESTAMP, "" );
 
-		HttpGet request = null;
-		try {
-			TaggedStringResponseHandler responseHandler = new TaggedStringResponseHandler();
+			if ( "true".equals( initConfig.getProperty( EditorConfig.APP_UPDATE_AVAILABLE, "false" ) ) ) {
+				// Previously saw an update was available. Keep nagging.
 
-			log.debug( "Checking for latest version" );
-			request = new HttpGet( latestVersionUrl );
+				log.debug( "Overriding update check interval because a new version has been seen already" );
+				needAppUpdate = true;
+			}
+			else if ( prevTimestampString.matches( "^\\d+$" ) ) {
+				// Only check if it's been a while since last time.
 
-			if ( eTagCached != null ) request.addHeader( "If-None-Match", eTagCached );
+				long prevTimestamp = Long.parseLong( prevTimestampString ) * 1000L;
+				Calendar prevCal = Calendar.getInstance();
+				prevCal.setTimeInMillis( prevTimestamp );
+				prevCal.getTimeInMillis();  // Re-calculate calendar fields.
 
-			TaggedString latestResult = httpClient.execute( request, responseHandler );
-			// TODO: Remember latestResult.etag.
+				Calendar freshCal = Calendar.getInstance();
+				freshCal.add( Calendar.DATE, appUpdateInterval * -1 );
+				freshCal.getTimeInMillis();  // Re-calculate calendar fields.
 
-			// When an ETag is known and the file hasn't changed, latestResult will be null.
+				needAppUpdate = (prevCal.compareTo( freshCal ) < 0);
 
-			if ( latestResult != null ) {
-				int latestVersion = Integer.parseInt( latestResult.text.trim() );
+				if ( needAppUpdate ) {
+					log.debug( String.format( "App update info is older than %d days: %s", appUpdateInterval, dateFormat.format( prevCal.getTime() ) ) );
+				} else {
+					log.debug( String.format( "App update info isn't stale yet: %s", dateFormat.format( prevCal.getTime() ) ) );
+				}
+			}
+			else {
+				needAppUpdate = true;
+			}
+		}
 
-				if ( latestVersion > appVersion ) {
+		if ( needAppUpdate ) {
+			RequestConfig requestConfig = RequestConfig.custom()
+				.setConnectionRequestTimeout( 5000 )
+				.setConnectTimeout( 5000 )
+				.setSocketTimeout( 10000 )
+				.setRedirectsEnabled( true )
+				.build();
+
+			CloseableHttpClient httpClient = HttpClientBuilder.create()
+				.setDefaultRequestConfig( requestConfig )
+				.disableAuthCaching()
+				.disableAutomaticRetries()
+				.disableConnectionState()
+				.disableCookieManagement()
+				//.setUserAgent( "" )
+				.build();
+
+			String eTagCached = null;  // TODO.
+
+			HttpGet request = null;
+			try {
+				TaggedStringResponseHandler responseHandler = new TaggedStringResponseHandler();
+
+				final long updateTimestamp = System.currentTimeMillis() / 1000L;
+				final String updateETag;
+				final boolean updateAvailable;
+				final Map<Integer, List<String>> historyMap;
+
+				// Fetch the latest version number.
+
+				log.debug( "Checking for the latest version" );
+
+				request = new HttpGet( latestVersionUrl );
+
+				if ( eTagCached != null ) request.addHeader( "If-None-Match", eTagCached );
+
+				TaggedString latestResult = httpClient.execute( request, responseHandler );
+
+				// When an ETag is known and the file hasn't changed, latestResult will be null.
+
+				int latestVersion = -1;
+				if ( latestResult != null ) {
+					String latestVersionString = latestResult.text.trim();  // Trailing line break.
+					if ( latestVersionString.matches( "^\\d+$" ) ) {
+						latestVersion = Integer.parseInt( latestVersionString );
+					}
+
+					updateETag = (latestResult.etag != null ? latestResult.etag : "");
+				}
+				else {
+					updateETag = "";
+				}
+				updateAvailable = (latestVersion > appVersion);
+
+				if ( updateAvailable ) {
+					// Fetch the detailed version history.
+
 					request = new HttpGet( versionHistoryUrl );
 					TaggedString historyResult = httpClient.execute( request, responseHandler );
 
-					final Map<Integer, List<String>> historyMap = parseVersionHistory( historyResult.text );
+					historyMap = parseVersionHistory( historyResult.text );
+				}
+				else {
+					historyMap = null;
+				}
 
-					// Make changes from the GUI thread.
-					Runnable r = new Runnable() {
-						@Override
-						public void run() {
+				// Make changes from the GUI thread.
+				Runnable r = new Runnable() {
+					@Override
+					public void run() {
+						if ( historyMap != null ) {
 							frame.setVersionHistory( historyMap );
 						}
-					};
-					SwingUtilities.invokeLater( r );
-				}
+						EditorConfig frameConfig = frame.getConfig();
+						frameConfig.setProperty( EditorConfig.APP_UPDATE_TIMESTAMP, ""+ updateTimestamp );
+						frameConfig.setProperty( EditorConfig.APP_UPDATE_ETAG, updateETag );
+						frameConfig.setProperty( EditorConfig.APP_UPDATE_AVAILABLE, (updateAvailable ? "true" : "false") );
+					}
+				};
+				SwingUtilities.invokeLater( r );
 			}
-		}
-		catch( ClientProtocolException e ) {
-			log.error( "GET request failed for url: "+ request.getURI().toString(), e );
-		}
-		catch ( Exception e ) {
-			log.error( "Checking for latest version failed", e );
-		}
-		finally {
-			try{httpClient.close();}
-			catch ( IOException e ) {}
+			catch( ClientProtocolException e ) {
+				log.error( "GET request failed for url: "+ request.getURI().toString(), e );
+			}
+			catch ( Exception e ) {
+				log.error( "Checking for latest version failed", e );
+			}
+			finally {
+				try{httpClient.close();}
+				catch ( IOException e ) {}
+			}
 		}
 	}
 
