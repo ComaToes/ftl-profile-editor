@@ -1,9 +1,13 @@
 @ECHO OFF
 SETLOCAL
 SET L4J_LOG_NAME=launch4j.log
-SET EDITOR_LOG_NAME=ftl-editor-log.txt
 SET L4J_LOG_PATH=%~dp0launch4j.log
+
+SET EDITOR_LOG_NAME=ftl-editor-log.txt
 SET EDITOR_LOG_PATH=%~dp0ftl-editor-log.txt
+
+SET EDITOR_CFG_NAME=ftl-editor.cfg
+SET EDITOR_CFG_PATH=%~dp0ftl-editor.cfg
 
 IF EXIST "%L4J_LOG_PATH%" DEL /Q "%L4J_LOG_PATH%"
 IF EXIST "%EDITOR_LOG_PATH%" DEL /Q "%EDITOR_LOG_PATH%"
@@ -19,14 +23,14 @@ ECHO.
 
 
 ECHO Some users reported interface glitches if they had custom Windows themes.
-ECHO Setting 'use_default_ui=true' in ftl-editor.cfg is a workaround.
+ECHO Setting 'use_default_ui=true' in %EDITOR_CFG_NAME% is a workaround.
 ECHO.
-SET /P YN="Create a new ftl-editor.cfg to do this? (y/N): "
+SET /P YN="Create a new %EDITOR_CFG_NAME% to do this? (y/N): "
 ECHO.
 
 IF /I [%YN%]==[y] (
   ECHO Creating a new config.
-  ECHO use_default_ui=true>ftl-editor.cfg
+  ECHO use_default_ui=true>"%EDITOR_CFG_PATH%"
   ECHO.
 )
 ECHO.
