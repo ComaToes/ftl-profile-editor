@@ -11,7 +11,7 @@ Status
 * FTL 1.6.1+ profiles are not supported at all.
 * FTL 1.5.4-1.5.13 profiles are fully editable. (ae_prof.sav)
 * FTL 1.01-1.03.3 profiles are fully editable. (prof.sav)
-
+<br /><br />
 * FTL 1.6.1+ saved games are not supported at all.
 * FTL 1.5.4-1.5.13 saved games are partially editable.
 * FTL 1.01-1.03.3 saved games are fully editable.
