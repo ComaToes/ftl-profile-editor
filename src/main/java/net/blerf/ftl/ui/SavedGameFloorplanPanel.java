@@ -3971,7 +3971,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				bodyX = droneRef.get().getBodyX();
 				bodyY = droneRef.get().getBodyY();
 
-				if ( droneRef.get().isArmed() && needsBody && (bodyX < 0 || bodyY < 0) ) {
+				if ( droneRef.get().isArmed() && needsBody && droneRef.get().getBodyRoomId() < 0 ) {
 					// Search for an empty square in DroneCtrl.
 					// This code assumes the room HAS an empty square, or it gives up and disarms.
 					// TODO: Rework this.
@@ -4018,7 +4018,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						}
 					}
 				}
-				if ( droneRef.get().isArmed() && needsBody && (bodyX < 0 || bodyY < 0) ) {
+				if ( droneRef.get().isArmed() && needsBody && droneRef.get().getBodyRoomId() < 0 ) {
 					log.warn( "Failed to place an armed drone's body in a room: "+ droneRef.get().getDroneId() );
 				}
 
@@ -4036,7 +4036,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				// TODO: Grr, bounds manipulation...
 				this.setSize( this.getPreferredSize() );
 
-				if ( bodyX >=0 && bodyY >= 0 ) {
+				if ( droneRef.get().getBodyRoomId() >= 0 ) {
 					int bodySpriteX =  originX + bodyX;
 					int bodySpriteY =  originY + bodyY;
 					this.setLocation( bodySpriteX - newW/2, bodySpriteY - newH/2 );
