@@ -1047,7 +1047,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add rooms.
 		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
+			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
 			int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 			int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
 			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
@@ -1127,7 +1127,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add fires.
 		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
+			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
 			int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 			int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
 			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
@@ -1135,7 +1135,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int roomX = layoutX + roomCoordX*squareSize;
 			int roomY = layoutY + roomCoordY*squareSize;
 
-			RoomState roomState = shipState.getRoom(i);
+			RoomState roomState = shipState.getRoom( i );
 			for ( int s=0; s < squaresH*squaresV; s++ ) {
 				int fireHealth = roomState.getSquare( s ).getFireHealth();
 				if ( fireHealth > 0 ) {
@@ -1880,7 +1880,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = null;
 
 		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(i);
+			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
 			int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
 			int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
 			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
@@ -2191,7 +2191,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.revalidate();
 		int sideWidth = sidePanel.getPreferredSize().width;
 		int vbarWidth = sideScroll.getVerticalScrollBar().getPreferredSize().width;
-		sideScroll.setPreferredSize( new Dimension(sideWidth + vbarWidth, 1) );
+		sideScroll.setPreferredSize( new Dimension( sideWidth + vbarWidth, 1 ) );
 		sideScroll.setVisible( true );
 
 		this.revalidate();
@@ -2200,7 +2200,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				sideScroll.getVerticalScrollBar().setValue(0);
+				sideScroll.getVerticalScrollBar().setValue( 0 );
 			}
 		});
 	}
@@ -2303,7 +2303,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
 		editorPanel.addRow( HULL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(HULL).setMaximum( shipBlueprint.getHealth().amount );
+		editorPanel.getSlider( HULL ).setMaximum( shipBlueprint.getHealth().amount );
 		editorPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
@@ -2315,60 +2315,60 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addBlankRow();
 		editorPanel.addRow( JUMPING, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( JUMP_ANIM_TICKS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(JUMP_ANIM_TICKS).setMaximum( 2000 );  // TODO: Magic number.
+		editorPanel.getSlider( JUMP_ANIM_TICKS ).setMaximum( 2000 );  // TODO: Magic number.
 		editorPanel.addBlankRow();
 		editorPanel.addRow( CLOAK_ANIM_TICKS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(CLOAK_ANIM_TICKS).setMaximum( 500 );  // TODO: Magic number.
+		editorPanel.getSlider( CLOAK_ANIM_TICKS ).setMaximum( 500 );  // TODO: Magic number.
 
-		editorPanel.getString(SHIP_NAME).setText( shipName );
-		editorPanel.getSlider(HULL).setValue( shipHull );
-		editorPanel.getInt(FUEL).setText( ""+shipFuel );
-		editorPanel.getInt(DRONE_PARTS).setText( ""+shipDroneParts );
-		editorPanel.getInt(MISSILES).setText( ""+shipMissiles );
-		editorPanel.getInt(SCRAP).setText( ""+shipScrap );
-		editorPanel.getBoolean(HOSTILE).setSelected( shipHostile );
-		editorPanel.getInt(JUMP_CHARGE_TICKS).setText( ""+shipJumpChargeTicks );
-		editorPanel.getBoolean(JUMPING).setSelected( shipJumping );
-		editorPanel.getSlider(JUMP_ANIM_TICKS).setValue( shipJumpAnimTicks );
-		editorPanel.getSlider(CLOAK_ANIM_TICKS).setValue( shipCloakAnimTicks );
+		editorPanel.getString( SHIP_NAME ).setText( shipName );
+		editorPanel.getSlider( HULL ).setValue( shipHull );
+		editorPanel.getInt( FUEL ).setText( ""+shipFuel );
+		editorPanel.getInt( DRONE_PARTS ).setText( ""+shipDroneParts );
+		editorPanel.getInt( MISSILES ).setText( ""+shipMissiles );
+		editorPanel.getInt( SCRAP ).setText( ""+shipScrap );
+		editorPanel.getBoolean( HOSTILE ).setSelected( shipHostile );
+		editorPanel.getInt( JUMP_CHARGE_TICKS ).setText( ""+shipJumpChargeTicks );
+		editorPanel.getBoolean( JUMPING ).setSelected( shipJumping );
+		editorPanel.getSlider( JUMP_ANIM_TICKS ).setValue( shipJumpAnimTicks );
+		editorPanel.getSlider( CLOAK_ANIM_TICKS ).setValue( shipCloakAnimTicks );
 
-		editorPanel.getBoolean(HOSTILE).addMouseListener( new StatusbarMouseListener(frame, "Toggle hostile/neutral status (No effect on player ships).") );
-		editorPanel.getInt(JUMP_CHARGE_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed waiting for the FTL to charge (Counts to 85000).") );
-		editorPanel.getBoolean(JUMPING).addMouseListener( new StatusbarMouseListener(frame, "Toggle whether the ship is jumping away (No effect on player ships).") );
-		editorPanel.getSlider(JUMP_ANIM_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed while jumping away (0=Normal to 2000=Gone; No effect on player ships).") );
-		editorPanel.getSlider(CLOAK_ANIM_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Cloak image visibility (0=Uncloaked to 500=Cloaked).") );
+		editorPanel.getBoolean( HOSTILE ).addMouseListener( new StatusbarMouseListener( frame, "Toggle hostile/neutral status (No effect on player ships)." ) );
+		editorPanel.getInt( JUMP_CHARGE_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Time elapsed waiting for the FTL to charge (Counts to 85000)." ) );
+		editorPanel.getBoolean( JUMPING ).addMouseListener( new StatusbarMouseListener( frame, "Toggle whether the ship is jumping away (No effect on player ships)." ) );
+		editorPanel.getSlider( JUMP_ANIM_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Time elapsed while jumping away (0=Normal to 2000=Gone; No effect on player ships)." ) );
+		editorPanel.getSlider( CLOAK_ANIM_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Cloak image visibility (0=Uncloaked to 500=Cloaked)." ) );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
 				String newString;
-				newString = editorPanel.getString(SHIP_NAME).getText();
+				newString = editorPanel.getString( SHIP_NAME ).getText();
 				if ( newString.length() > 0 ) shipName = newString;
 
-				shipHull = editorPanel.getSlider(HULL).getValue();
+				shipHull = editorPanel.getSlider( HULL ).getValue();
 
-				try { shipFuel = editorPanel.parseInt(FUEL); }
+				try { shipFuel = editorPanel.parseInt( FUEL ); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipDroneParts = editorPanel.parseInt(DRONE_PARTS); }
+				try { shipDroneParts = editorPanel.parseInt( DRONE_PARTS ); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipMissiles = editorPanel.parseInt(MISSILES); }
+				try { shipMissiles = editorPanel.parseInt( MISSILES ); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipScrap = editorPanel.parseInt(SCRAP); }
+				try { shipScrap = editorPanel.parseInt( SCRAP ); }
 				catch ( NumberFormatException e ) {}
 
-				shipHostile = editorPanel.getBoolean(HOSTILE).isSelected();
+				shipHostile = editorPanel.getBoolean( HOSTILE ).isSelected();
 
-				try { shipJumpChargeTicks = editorPanel.parseInt(JUMP_CHARGE_TICKS); }
+				try { shipJumpChargeTicks = editorPanel.parseInt( JUMP_CHARGE_TICKS ); }
 				catch ( NumberFormatException e ) {}
 
-				shipJumping = editorPanel.getBoolean(JUMPING).isSelected();
+				shipJumping = editorPanel.getBoolean( JUMPING ).isSelected();
 
-				shipJumpAnimTicks = editorPanel.getSlider(JUMP_ANIM_TICKS).getValue();
+				shipJumpAnimTicks = editorPanel.getSlider( JUMP_ANIM_TICKS ).getValue();
 
-				shipCloakAnimTicks = editorPanel.getSlider(CLOAK_ANIM_TICKS).getValue();
+				shipCloakAnimTicks = editorPanel.getSlider( CLOAK_ANIM_TICKS ).getValue();
 
 				clearSidePanel();
 			}
@@ -2391,8 +2391,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( DESC, FieldEditorPanel.ContentType.WRAPPED_LABEL );
-		editorPanel.getWrappedLabel(DESC).setRows(12);  // Help layoutmanagers calc height.
-		editorPanel.getWrappedLabel(DESC).setMinimumSize( new Dimension(0, editorPanel.getWrappedLabel(DESC).getPreferredSize().height) );
+		editorPanel.getWrappedLabel( DESC ).setRows( 12 );  // Help layoutmanagers calc height.
+		editorPanel.getWrappedLabel( DESC ).setMinimumSize( new Dimension( 0, editorPanel.getWrappedLabel( DESC ).getPreferredSize().height ) );
 		editorPanel.addBlankRow();
 
 		for ( int i=0; i < augSlots.length; i++ ) {
@@ -2432,14 +2432,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 					if ( source == augCombo ) {
 						Object augObj = augCombo.getSelectedItem();
 						if ( augObj instanceof AugBlueprint ) {
-							editorPanel.getWrappedLabel(DESC).setText( ((AugBlueprint)augObj).getDescription() );
+							editorPanel.getWrappedLabel( DESC ).setText( ((AugBlueprint)augObj).getDescription() );
 
 							if ( ((AugBlueprint)augObj).isStackable() == false ) {
 								// Clear other slots' copies of this unique augment.
 								for ( int j=0; j < augSlots.length; j++ ) {
 									if ( j == i ) continue;
 									if ( editorPanel.getCombo(augSlots[j]).getSelectedItem() == augObj )
-										editorPanel.getCombo(augSlots[j]).setSelectedItem("");
+										editorPanel.getCombo(augSlots[j]).setSelectedItem( "" );
 								}
 							}
 						}
@@ -2491,41 +2491,41 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( AVAILABLE_POWER, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(AVAILABLE_POWER).setMaximum( shipReserveCapacity );
-		editorPanel.getSlider(AVAILABLE_POWER).setValue( availablePower );
-		editorPanel.getSlider(AVAILABLE_POWER).setEnabled( false );
+		editorPanel.getSlider( AVAILABLE_POWER ).setMaximum( shipReserveCapacity );
+		editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower );
+		editorPanel.getSlider( AVAILABLE_POWER ).setEnabled( false );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( ID, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.addRow( DESC, FieldEditorPanel.ContentType.WRAPPED_LABEL );
-		editorPanel.getWrappedLabel(DESC).setRows(8);  // Help layoutmanagers calc height.
-		editorPanel.getWrappedLabel(DESC).setMinimumSize( new Dimension(0, editorPanel.getWrappedLabel(DESC).getPreferredSize().height) );
+		editorPanel.getWrappedLabel( DESC ).setRows( 8 );  // Help layoutmanagers calc height.
+		editorPanel.getWrappedLabel( DESC ).setMinimumSize( new Dimension( 0, editorPanel.getWrappedLabel( DESC ).getPreferredSize().height ) );
 		editorPanel.addRow( POWER_REQ, FieldEditorPanel.ContentType.LABEL );
 		editorPanel.addRow( ARMED, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(ARMED).setEnabled( false );
+		editorPanel.getBoolean( ARMED ).setEnabled( false );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(HEALTH).setMaximum( 0 );
+		editorPanel.getSlider( HEALTH ).setMaximum( 0 );
 		editorPanel.addRow( PLAYER_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
 
-		editorPanel.getCombo(ID).addItem("");
+		editorPanel.getCombo( ID ).addItem( "" );
 		for ( DroneBlueprint droneBlueprint : allDronesMap.values() ) {
-			editorPanel.getCombo(ID).addItem( droneBlueprint );
+			editorPanel.getCombo( ID ).addItem( droneBlueprint );
 		}
 
 		if ( droneRef.get() != null ) {
 			DroneBlueprint selectedBlueprint = allDronesMap.get( droneRef.get().getDroneId() );
 			boolean armable = (availablePower >= selectedBlueprint.getPower());
 
-			editorPanel.getSlider(AVAILABLE_POWER).setValue( availablePower - (armable && droneRef.get().isArmed() ? selectedBlueprint.getPower() : 0) );
-			editorPanel.getCombo(ID).setSelectedItem( selectedBlueprint );
-			editorPanel.getWrappedLabel(DESC).setText( selectedBlueprint.getDescription() );
-			editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
-			editorPanel.getBoolean(ARMED).setEnabled( armable );
-			editorPanel.getBoolean(PLAYER_CONTROLLED).setSelected( droneRef.get().isPlayerControlled() );
-			editorPanel.getSlider(HEALTH).setMaximum( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
-			editorPanel.getSlider(HEALTH).setValue( droneRef.get().getHealth() );
+			editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower - (armable && droneRef.get().isArmed() ? selectedBlueprint.getPower() : 0) );
+			editorPanel.getCombo( ID ).setSelectedItem( selectedBlueprint );
+			editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getDescription() );
+			editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
+			editorPanel.getBoolean( ARMED ).setEnabled( armable );
+			editorPanel.getBoolean( PLAYER_CONTROLLED ).setSelected( droneRef.get().isPlayerControlled() );
+			editorPanel.getSlider( HEALTH ).setMaximum( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
+			editorPanel.getSlider( HEALTH ).setValue( droneRef.get().getHealth() );
 
 			if ( armable && droneRef.get().isArmed() ) {
-				editorPanel.getBoolean(ARMED).setSelected( true );
+				editorPanel.getBoolean( ARMED ).setSelected( true );
 			}
 
 			editorPanel.revalidate();
@@ -2534,16 +2534,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				Object blueprintObj = editorPanel.getCombo(ID).getSelectedItem();
+				Object blueprintObj = editorPanel.getCombo( ID ).getSelectedItem();
 
 				if ( blueprintObj instanceof DroneBlueprint ) {
 					String droneId = ((DroneBlueprint)blueprintObj).getId();
 					if ( droneRef.get() == null ) droneRef.set( new DroneState() );
 					droneRef.get().setDroneId( droneId );
 
-					droneRef.get().setArmed( editorPanel.getBoolean(ARMED).isSelected() );
-					droneRef.get().setPlayerControlled( editorPanel.getBoolean(PLAYER_CONTROLLED).isSelected() );
-					droneRef.get().setHealth( editorPanel.getSlider(HEALTH).getValue() );
+					droneRef.get().setArmed( editorPanel.getBoolean( ARMED ).isSelected() );
+					droneRef.get().setPlayerControlled( editorPanel.getBoolean( PLAYER_CONTROLLED ).isSelected() );
+					droneRef.get().setHealth( editorPanel.getSlider( HEALTH ).getValue() );
 				}
 				else {
 					droneRef.set( null );
@@ -2615,19 +2615,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 		createSidePanel( title, editorPanel, applyCallback );
 
 		ActionListener droneListener = new ActionListener() {
-			private JSlider availablePowerSlider = editorPanel.getSlider(AVAILABLE_POWER);
-			private JComboBox idCombo = editorPanel.getCombo(ID);
-			private JCheckBox armedCheck = editorPanel.getBoolean(ARMED);
-			private JCheckBox playerControlledCheck = editorPanel.getBoolean(PLAYER_CONTROLLED);
-			private JSlider healthSlider = editorPanel.getSlider(HEALTH);
+			private JSlider availablePowerSlider = editorPanel.getSlider( AVAILABLE_POWER );
+			private JComboBox idCombo = editorPanel.getCombo( ID );
+			private JCheckBox armedCheck = editorPanel.getBoolean( ARMED );
+			private JCheckBox playerControlledCheck = editorPanel.getBoolean( PLAYER_CONTROLLED );
+			private JSlider healthSlider = editorPanel.getSlider( HEALTH );
 
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				if ( source == idCombo ) {
 					availablePowerSlider.setValue( availablePower );
-					editorPanel.getWrappedLabel(DESC).setText("");
-					editorPanel.getLabel(POWER_REQ).setText("");
+					editorPanel.getWrappedLabel( DESC ).setText( "" );
+					editorPanel.getLabel( POWER_REQ ).setText( "" );
 					armedCheck.setSelected( false );
 					armedCheck.setEnabled( false );
 					healthSlider.setMaximum( 0 );
@@ -2637,8 +2637,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 						DroneBlueprint selectedBlueprint = (DroneBlueprint)blueprintObj;
 						boolean armable = (availablePower >= selectedBlueprint.getPower());
 
-						editorPanel.getWrappedLabel(DESC).setText( ""+selectedBlueprint.getDescription() );
-						editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
+						editorPanel.getWrappedLabel( DESC ).setText( ""+selectedBlueprint.getDescription() );
+						editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
 						healthSlider.setMaximum( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
 						healthSlider.setValue( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
 
@@ -2661,8 +2661,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 		};
-		editorPanel.getCombo(ID).addActionListener( droneListener );
-		editorPanel.getBoolean(ARMED).addActionListener( droneListener );
+		editorPanel.getCombo( ID ).addActionListener( droneListener );
+		editorPanel.getBoolean( ARMED ).addActionListener( droneListener );
 
 		addSidePanelSeparator( 8 );
 		String notice = ""
@@ -2713,37 +2713,37 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( AVAILABLE_POWER, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(AVAILABLE_POWER).setMaximum( shipReserveCapacity );
-		editorPanel.getSlider(AVAILABLE_POWER).setValue( availablePower );
-		editorPanel.getSlider(AVAILABLE_POWER).setEnabled( false );
+		editorPanel.getSlider( AVAILABLE_POWER ).setMaximum( shipReserveCapacity );
+		editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower );
+		editorPanel.getSlider( AVAILABLE_POWER ).setEnabled( false );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( ID, FieldEditorPanel.ContentType.COMBO );
 		editorPanel.addRow( DESC, FieldEditorPanel.ContentType.WRAPPED_LABEL );
-		editorPanel.getWrappedLabel(DESC).setRows(8);  // Help layoutmanagers calc height.
-		editorPanel.getWrappedLabel(DESC).setMinimumSize( new Dimension(0, editorPanel.getWrappedLabel(DESC).getPreferredSize().height) );
+		editorPanel.getWrappedLabel( DESC ).setRows( 8 );  // Help layoutmanagers calc height.
+		editorPanel.getWrappedLabel( DESC ).setMinimumSize( new Dimension( 0, editorPanel.getWrappedLabel( DESC ).getPreferredSize().height ) );
 		editorPanel.addRow( POWER_REQ, FieldEditorPanel.ContentType.LABEL );
 		editorPanel.addRow( ARMED, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(ARMED).setEnabled( false );
+		editorPanel.getBoolean( ARMED ).setEnabled( false );
 		editorPanel.addRow( COOLDOWN_TICKS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(COOLDOWN_TICKS).setMaximum( 0 );
-		editorPanel.getSlider(COOLDOWN_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Seconds spent cooling down.") );
+		editorPanel.getSlider( COOLDOWN_TICKS ).setMaximum( 0 );
+		editorPanel.getSlider( COOLDOWN_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Seconds spent cooling down." ) );
 
-		editorPanel.getCombo(ID).addItem("");
+		editorPanel.getCombo( ID ).addItem( "" );
 		for ( WeaponBlueprint weaponBlueprint : allWeaponsMap.values() )
-			editorPanel.getCombo(ID).addItem(weaponBlueprint);
+			editorPanel.getCombo( ID ).addItem(weaponBlueprint);
 
 		if ( weaponRef.get() != null ) {
 			WeaponBlueprint selectedBlueprint = allWeaponsMap.get( weaponRef.get().getWeaponId() );
 			boolean armable = (availablePower >= selectedBlueprint.getPower());
 
-			editorPanel.getSlider(AVAILABLE_POWER).setValue( availablePower - (weaponRef.get().isArmed() ? selectedBlueprint.getPower() : 0) );
-			editorPanel.getCombo(ID).setSelectedItem( selectedBlueprint );
-			editorPanel.getWrappedLabel(DESC).setText( selectedBlueprint.getTooltip() );
-			editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
-			editorPanel.getBoolean(ARMED).setSelected( (weaponRef.get().isArmed() && armable) );
-			editorPanel.getBoolean(ARMED).setEnabled( armable );
-			editorPanel.getSlider(COOLDOWN_TICKS).setMaximum( selectedBlueprint.getCooldown() );
-			editorPanel.getSlider(COOLDOWN_TICKS).setValue( weaponRef.get().getCooldownTicks() );
+			editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower - (weaponRef.get().isArmed() ? selectedBlueprint.getPower() : 0) );
+			editorPanel.getCombo( ID ).setSelectedItem( selectedBlueprint );
+			editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getTooltip() );
+			editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
+			editorPanel.getBoolean( ARMED ).setSelected( (weaponRef.get().isArmed() && armable) );
+			editorPanel.getBoolean( ARMED ).setEnabled( armable );
+			editorPanel.getSlider( COOLDOWN_TICKS ).setMaximum( selectedBlueprint.getCooldown() );
+			editorPanel.getSlider( COOLDOWN_TICKS ).setValue( weaponRef.get().getCooldownTicks() );
 
 			editorPanel.revalidate();
 		}
@@ -2751,15 +2751,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				Object blueprintObj = editorPanel.getCombo(ID).getSelectedItem();
+				Object blueprintObj = editorPanel.getCombo( ID ).getSelectedItem();
 
 				if ( blueprintObj instanceof WeaponBlueprint ) {
 					String weaponId = ((WeaponBlueprint)blueprintObj).getId();
 					if ( weaponRef.get() == null ) weaponRef.set( new WeaponState() );
 					weaponRef.get().setWeaponId( weaponId );
 
-					weaponRef.get().setArmed( editorPanel.getBoolean(ARMED).isSelected() );
-					weaponRef.get().setCooldownTicks( editorPanel.getSlider(COOLDOWN_TICKS).getValue() );
+					weaponRef.get().setArmed( editorPanel.getBoolean( ARMED ).isSelected() );
+					weaponRef.get().setCooldownTicks( editorPanel.getSlider( COOLDOWN_TICKS ).getValue() );
 				}
 				else {
 					weaponRef.set( null );
@@ -2832,18 +2832,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 		createSidePanel( title, editorPanel, applyCallback );
 
 		ActionListener weaponListener = new ActionListener() {
-			private JSlider availablePowerSlider = editorPanel.getSlider(AVAILABLE_POWER);
-			private JComboBox idCombo = editorPanel.getCombo(ID);
-			private JCheckBox armedCheck = editorPanel.getBoolean(ARMED);
-			private JSlider cooldownSlider = editorPanel.getSlider(COOLDOWN_TICKS);
+			private JSlider availablePowerSlider = editorPanel.getSlider( AVAILABLE_POWER );
+			private JComboBox idCombo = editorPanel.getCombo( ID );
+			private JCheckBox armedCheck = editorPanel.getBoolean( ARMED );
+			private JSlider cooldownSlider = editorPanel.getSlider( COOLDOWN_TICKS );
 
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				Object source = e.getSource();
 				if ( source == idCombo ) {
 					availablePowerSlider.setValue( availablePower );
-					editorPanel.getWrappedLabel(DESC).setText("");
-					editorPanel.getLabel(POWER_REQ).setText("");
+					editorPanel.getWrappedLabel( DESC ).setText( "" );
+					editorPanel.getLabel( POWER_REQ ).setText( "" );
 					armedCheck.setSelected( false );
 					armedCheck.setEnabled( false );
 					cooldownSlider.setMaximum( 0 );
@@ -2853,8 +2853,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 						WeaponBlueprint selectedBlueprint = (WeaponBlueprint)blueprintObj;
 						boolean armable = (availablePower >= selectedBlueprint.getPower());
 
-						editorPanel.getWrappedLabel(DESC).setText( selectedBlueprint.getTooltip() );
-						editorPanel.getLabel(POWER_REQ).setText( ""+selectedBlueprint.getPower() );
+						editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getTooltip() );
+						editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
 						if ( armable ) {
 							armedCheck.setEnabled( true );
 						}
@@ -2878,8 +2878,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 		};
-		editorPanel.getCombo(ID).addActionListener( weaponListener );
-		editorPanel.getBoolean(ARMED).addActionListener( weaponListener );
+		editorPanel.getCombo( ID ).addActionListener( weaponListener );
+		editorPanel.getBoolean( ARMED ).addActionListener( weaponListener );
 
 		addSidePanelSeparator( 8 );
 		String notice = ""
@@ -2903,64 +2903,64 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( OXYGEN, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(OXYGEN).setMaximum( 100 );
-		editorPanel.getSlider(OXYGEN).addMouseListener( new StatusbarMouseListener(frame, "Oxygen level for the room as a whole.") );
+		editorPanel.getSlider( OXYGEN ).setMaximum( 100 );
+		editorPanel.getSlider( OXYGEN ).addMouseListener( new StatusbarMouseListener( frame, "Oxygen level for the room as a whole." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( STATION_HERE, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(STATION_HERE).addMouseListener( new StatusbarMouseListener(frame, "Toggles whether this square has a station for manning a system.") );
+		editorPanel.getBoolean( STATION_HERE ).addMouseListener( new StatusbarMouseListener( frame, "Toggles whether this square has a station for manning a system." ) );
 		editorPanel.addRow( STATION_DIR, FieldEditorPanel.ContentType.COMBO );
-		editorPanel.getCombo(STATION_DIR).addMouseListener( new StatusbarMouseListener(frame, "Placement of the station on the square (DOWN means on the bottom edge).") );
+		editorPanel.getCombo( STATION_DIR ).addMouseListener( new StatusbarMouseListener( frame, "Placement of the station on the square (DOWN means on the bottom edge)." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( IGNITION, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(IGNITION).setMaximum( 100 );
-		editorPanel.getSlider(IGNITION).addMouseListener( new StatusbarMouseListener(frame, "A new fire spawns in this square at 100.") );
+		editorPanel.getSlider( IGNITION ).setMaximum( 100 );
+		editorPanel.getSlider( IGNITION ).addMouseListener( new StatusbarMouseListener( frame, "A new fire spawns in this square at 100." ) );
 		editorPanel.addRow( EXTINGUISHMENT, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(EXTINGUISHMENT).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.getInt(EXTINGUISHMENT).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Usually -1. When fire disappears in a puff of smoke, it's 9,8...,1,0.") );
+		editorPanel.getInt( EXTINGUISHMENT ).setDocument( new RegexDocument( "-?[0-9]*" ) );
+		editorPanel.getInt( EXTINGUISHMENT ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Usually -1. When fire disappears in a puff of smoke, it's 9,8...,1,0." ) );
 
-		editorPanel.getCombo(STATION_DIR).addItem( StationDirection.DOWN );
-		editorPanel.getCombo(STATION_DIR).addItem( StationDirection.RIGHT );
-		editorPanel.getCombo(STATION_DIR).addItem( StationDirection.UP );
-		editorPanel.getCombo(STATION_DIR).addItem( StationDirection.LEFT );
+		editorPanel.getCombo( STATION_DIR ).addItem( StationDirection.DOWN );
+		editorPanel.getCombo( STATION_DIR ).addItem( StationDirection.RIGHT );
+		editorPanel.getCombo( STATION_DIR ).addItem( StationDirection.UP );
+		editorPanel.getCombo( STATION_DIR ).addItem( StationDirection.LEFT );
 		// NONE is omitted here, since the combo's disabled when there's no station.
 
-		editorPanel.getSlider(OXYGEN).setValue( roomRef.get().getOxygen() );
+		editorPanel.getSlider( OXYGEN ).setValue( roomRef.get().getOxygen() );
 
-		editorPanel.getBoolean(STATION_HERE).setSelected( (squareId == roomRef.get().getStationSquare()) );
+		editorPanel.getBoolean( STATION_HERE ).setSelected( (squareId == roomRef.get().getStationSquare()) );
 		if ( squareId == roomRef.get().getStationSquare() ) {
-			editorPanel.getCombo(STATION_DIR).setSelectedItem( roomRef.get().getStationDirection() );
+			editorPanel.getCombo( STATION_DIR ).setSelectedItem( roomRef.get().getStationDirection() );
 		}
 
-		editorPanel.getSlider(IGNITION).setValue( roomRef.get().getSquare( squareId ).getIgnitionProgress() );
-		editorPanel.getInt(EXTINGUISHMENT).setText( ""+roomRef.get().getSquare( squareId ).getExtinguishmentProgress() );
+		editorPanel.getSlider( IGNITION ).setValue( roomRef.get().getSquare( squareId ).getIgnitionProgress() );
+		editorPanel.getInt( EXTINGUISHMENT ).setText( ""+roomRef.get().getSquare( squareId ).getExtinguishmentProgress() );
 
-		editorPanel.getBoolean(STATION_HERE).addItemListener(new ItemListener() {
+		editorPanel.getBoolean( STATION_HERE ).addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged( ItemEvent e ) {
 				boolean stationHere = ( e.getStateChange() == ItemEvent.SELECTED );
-				editorPanel.getCombo(STATION_DIR).setEnabled( stationHere );
+				editorPanel.getCombo( STATION_DIR ).setEnabled( stationHere );
 			}
 		});
-		editorPanel.getCombo(STATION_DIR).setEnabled( editorPanel.getBoolean(STATION_HERE).isSelected() );
+		editorPanel.getCombo( STATION_DIR ).setEnabled( editorPanel.getBoolean( STATION_HERE ).isSelected() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				roomRef.get().setOxygen( editorPanel.getSlider(OXYGEN).getValue() );
+				roomRef.get().setOxygen( editorPanel.getSlider( OXYGEN ).getValue() );
 
-				boolean stationHere = editorPanel.getBoolean(STATION_HERE).isSelected();
+				boolean stationHere = editorPanel.getBoolean( STATION_HERE ).isSelected();
 				if ( !stationHere && roomRef.get().getStationSquare() == squareId ) {
 					roomRef.get().setStationSquare( -1 );
 					roomRef.get().setStationDirection( StationDirection.NONE );
 				}
 				else if ( stationHere ) {  // Square and/or dir may have changed.
 					roomRef.get().setStationSquare( squareId );
-					roomRef.get().setStationDirection( (StationDirection)editorPanel.getCombo(STATION_DIR).getSelectedItem() );
+					roomRef.get().setStationDirection( (StationDirection)editorPanel.getCombo( STATION_DIR ).getSelectedItem() );
 				}
 
-				roomRef.get().getSquare( squareId ).setIgnitionProgress( editorPanel.getSlider(IGNITION).getValue() );
+				roomRef.get().getSquare( squareId ).setIgnitionProgress( editorPanel.getSlider( IGNITION ).getValue() );
 
-				try { roomRef.get().getSquare( squareId ).setExtinguishmentProgress( editorPanel.parseInt(EXTINGUISHMENT) ); }
+				try { roomRef.get().getSquare( squareId ).setExtinguishmentProgress( editorPanel.parseInt( EXTINGUISHMENT ) ); }
 				catch ( NumberFormatException e ) {}
 
 				roomRef.fireReferenceChange();
@@ -3004,79 +3004,79 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( RESERVE_CAPACITY, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(RESERVE_CAPACITY).addMouseListener( new StatusbarMouseListener(frame, "Total possible reactor bars (Increase to upgrade).") );
+		editorPanel.getSlider( RESERVE_CAPACITY ).addMouseListener( new StatusbarMouseListener( frame, "Total possible reactor bars (Increase to upgrade)." ) );
 		editorPanel.addRow( RESERVE_POWER, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(RESERVE_POWER).addMouseListener( new StatusbarMouseListener(frame, "Unallocated power.") );
+		editorPanel.getSlider( RESERVE_POWER ).addMouseListener( new StatusbarMouseListener( frame, "Unallocated power." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( CAPACITY, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(CAPACITY).addMouseListener( new StatusbarMouseListener(frame, "Possible system bars (Increase to buy/upgrade, 0=absent).") );
+		editorPanel.getSlider( CAPACITY ).addMouseListener( new StatusbarMouseListener( frame, "Possible system bars (Increase to buy/upgrade, 0=absent)." ) );
 		editorPanel.addRow( POWER, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(POWER).addMouseListener( new StatusbarMouseListener(frame, "System bars from reserve.") );
+		editorPanel.getSlider( POWER ).addMouseListener( new StatusbarMouseListener( frame, "System bars from reserve." ) );
 		editorPanel.addRow( BATTERY, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(BATTERY).addMouseListener( new StatusbarMouseListener(frame, "System bars from battery.") );
+		editorPanel.getSlider( BATTERY ).addMouseListener( new StatusbarMouseListener( frame, "System bars from battery." ) );
 		editorPanel.addRow( DAMAGED_BARS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(DAMAGED_BARS).addMouseListener( new StatusbarMouseListener(frame, "Completely damaged bars.") );
+		editorPanel.getSlider( DAMAGED_BARS ).addMouseListener( new StatusbarMouseListener( frame, "Completely damaged bars." ) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( IONIZED_BARS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(IONIZED_BARS).setDocument( new RegexDocument("-?1?|[0-9]*") );
-		editorPanel.getInt(IONIZED_BARS).addMouseListener( new StatusbarMouseListener(frame, String.format("Ionized bars (can exceed %d but the number won't appear in-game).", ftlConstants.getMaxIonizedBars())) );
+		editorPanel.getInt( IONIZED_BARS ).setDocument( new RegexDocument("-?1?|[0-9]*") );
+		editorPanel.getInt( IONIZED_BARS ).addMouseListener( new StatusbarMouseListener(frame, String.format("Ionized bars (can exceed %d but the number won't appear in-game).", ftlConstants.getMaxIonizedBars())) );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( REPAIR_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(REPAIR_PROGRESS).addMouseListener( new StatusbarMouseListener(frame, "Turns a damaged bar yellow until restored.") );
+		editorPanel.getSlider( REPAIR_PROGRESS ).addMouseListener( new StatusbarMouseListener( frame, "Turns a damaged bar yellow until restored." ) );
 		editorPanel.addRow( DAMAGE_PROGRESS, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(DAMAGE_PROGRESS).addMouseListener( new StatusbarMouseListener(frame, "Turns an undamaged bar red until damaged.") );
+		editorPanel.getSlider( DAMAGE_PROGRESS ).addMouseListener( new StatusbarMouseListener( frame, "Turns an undamaged bar red until damaged." ) );
 		editorPanel.addRow( DEIONIZATION_TICKS, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(DEIONIZATION_TICKS).setDocument( new RegexDocument("-?[0-9]*") );
-		editorPanel.getInt(DEIONIZATION_TICKS).addMouseListener( new StatusbarMouseListener(frame, "Time elapsed deionizing a bar: 0-5000 (Resets upon loading, weird values sometimes, -2147...=N/A, 0 is safe).") );
+		editorPanel.getInt( DEIONIZATION_TICKS ).setDocument( new RegexDocument( "-?[0-9]*" ) );
+		editorPanel.getInt( DEIONIZATION_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Time elapsed deionizing a bar: 0-5000 (Resets upon loading, weird values sometimes, -2147...=N/A, 0 is safe)." ) );
 
-		editorPanel.getSlider(RESERVE_CAPACITY).setMaximum( ftlConstants.getMaxReservePoolCapacity() );
-		editorPanel.getSlider(RESERVE_CAPACITY).setMinimum( ftlConstants.getMaxReservePoolCapacity() - excludedReservePool );  // otherSystemsPower
-		editorPanel.getSlider(RESERVE_CAPACITY).setValue( shipReserveCapacity );
-		editorPanel.getSlider(RESERVE_POWER).setMaximum( shipReserveCapacity );
+		editorPanel.getSlider( RESERVE_CAPACITY ).setMaximum( ftlConstants.getMaxReservePoolCapacity() );
+		editorPanel.getSlider( RESERVE_CAPACITY ).setMinimum( ftlConstants.getMaxReservePoolCapacity() - excludedReservePool );  // otherSystemsPower
+		editorPanel.getSlider( RESERVE_CAPACITY ).setValue( shipReserveCapacity );
+		editorPanel.getSlider( RESERVE_POWER ).setMaximum( shipReserveCapacity );
 		// Reserve power's value is set later.
-		editorPanel.getSlider(RESERVE_POWER).setEnabled( false );
-		editorPanel.getSlider(CAPACITY).setMaximum( maxSystemCapacity );
-		editorPanel.getSlider(CAPACITY).setValue( systemRef.get().getCapacity() );
+		editorPanel.getSlider( RESERVE_POWER ).setEnabled( false );
+		editorPanel.getSlider( CAPACITY ).setMaximum( maxSystemCapacity );
+		editorPanel.getSlider( CAPACITY ).setValue( systemRef.get().getCapacity() );
 		// Nothing for power here.
-		editorPanel.getSlider(DAMAGED_BARS).setMaximum( systemRef.get().getCapacity() );
-		editorPanel.getSlider(DAMAGED_BARS).setValue( systemRef.get().getDamagedBars() );
-		editorPanel.getInt(IONIZED_BARS).setText( ""+systemRef.get().getIonizedBars() );
-		editorPanel.getSlider(REPAIR_PROGRESS).setMaximum( (systemRef.get().getDamagedBars() == 0 ? 0 : 100) );
-		editorPanel.getSlider(REPAIR_PROGRESS).setValue( systemRef.get().getRepairProgress() );
-		editorPanel.getSlider(DAMAGE_PROGRESS).setMaximum( (systemRef.get().getDamagedBars() >= systemRef.get().getCapacity() ? 0 : 100) );
-		editorPanel.getSlider(DAMAGE_PROGRESS).setValue( systemRef.get().getDamageProgress() );
-		editorPanel.getInt(DEIONIZATION_TICKS).setText( ""+systemRef.get().getDeionizationTicks() );
+		editorPanel.getSlider( DAMAGED_BARS ).setMaximum( systemRef.get().getCapacity() );
+		editorPanel.getSlider( DAMAGED_BARS ).setValue( systemRef.get().getDamagedBars() );
+		editorPanel.getInt( IONIZED_BARS ).setText( ""+systemRef.get().getIonizedBars() );
+		editorPanel.getSlider( REPAIR_PROGRESS ).setMaximum( (systemRef.get().getDamagedBars() == 0 ? 0 : 100) );
+		editorPanel.getSlider( REPAIR_PROGRESS ).setValue( systemRef.get().getRepairProgress() );
+		editorPanel.getSlider( DAMAGE_PROGRESS ).setMaximum( (systemRef.get().getDamagedBars() >= systemRef.get().getCapacity() ? 0 : 100) );
+		editorPanel.getSlider( DAMAGE_PROGRESS ).setValue( systemRef.get().getDamageProgress() );
+		editorPanel.getInt( DEIONIZATION_TICKS ).setText( ""+systemRef.get().getDeionizationTicks() );
 
 		if ( isSubsystem ) {
-			editorPanel.getSlider(RESERVE_CAPACITY).setEnabled( false );
-			editorPanel.getSlider(RESERVE_POWER).setValue( excludedReservePool );
-			editorPanel.getSlider(POWER).setMaximum( systemRef.get().getCapacity() );
-			editorPanel.getSlider(POWER).setValue( systemRef.get().getPower() );
-			editorPanel.getSlider(POWER).setEnabled( false );
-			editorPanel.getSlider(BATTERY).setMaximum( excludedBatteryPool );
-			editorPanel.getSlider(BATTERY).setValue( systemRef.get().getBatteryPower() );
-			editorPanel.getSlider(BATTERY).setEnabled( false );
+			editorPanel.getSlider( RESERVE_CAPACITY ).setEnabled( false );
+			editorPanel.getSlider( RESERVE_POWER ).setValue( excludedReservePool );
+			editorPanel.getSlider( POWER ).setMaximum( systemRef.get().getCapacity() );
+			editorPanel.getSlider( POWER ).setValue( systemRef.get().getPower() );
+			editorPanel.getSlider( POWER ).setEnabled( false );
+			editorPanel.getSlider( BATTERY ).setMaximum( excludedBatteryPool );
+			editorPanel.getSlider( BATTERY ).setValue( systemRef.get().getBatteryPower() );
+			editorPanel.getSlider( BATTERY ).setEnabled( false );
 		}
 		else {
-			editorPanel.getSlider(RESERVE_POWER).setValue( excludedReservePool - systemRef.get().getPower() );
-			editorPanel.getSlider(POWER).setMaximum(Math.min( systemRef.get().getCapacity(), excludedReservePool ));
+			editorPanel.getSlider( RESERVE_POWER ).setValue( excludedReservePool - systemRef.get().getPower() );
+			editorPanel.getSlider( POWER ).setMaximum(Math.min( systemRef.get().getCapacity(), excludedReservePool ));
 
 			// Trust the power value on Weapons and DroneCtrl systems.
-			editorPanel.getSlider(POWER).setValue( systemRef.get().getPower() );
+			editorPanel.getSlider( POWER ).setValue( systemRef.get().getPower() );
 
-			editorPanel.getSlider(BATTERY).setMaximum( excludedBatteryPool );
-			editorPanel.getSlider(BATTERY).setValue( systemRef.get().getBatteryPower() );
+			editorPanel.getSlider( BATTERY ).setMaximum( excludedBatteryPool );
+			editorPanel.getSlider( BATTERY ).setValue( systemRef.get().getBatteryPower() );
 		}
 
 		ChangeListener barListener = new ChangeListener() {
-			private JSlider reserveCapacitySlider = editorPanel.getSlider(RESERVE_CAPACITY);
-			private JSlider reservePowerSlider = editorPanel.getSlider(RESERVE_POWER);
-			private JSlider capacitySlider = editorPanel.getSlider(CAPACITY);
-			private JSlider powerSlider = editorPanel.getSlider(POWER);
-			private JSlider batterySlider = editorPanel.getSlider(BATTERY);
-			private JSlider damagedBarsSlider = editorPanel.getSlider(DAMAGED_BARS);
-			private JSlider repairProgressSlider = editorPanel.getSlider(REPAIR_PROGRESS);
-			private JSlider damageProgressSlider = editorPanel.getSlider(DAMAGE_PROGRESS);
+			private JSlider reserveCapacitySlider = editorPanel.getSlider( RESERVE_CAPACITY );
+			private JSlider reservePowerSlider = editorPanel.getSlider( RESERVE_POWER );
+			private JSlider capacitySlider = editorPanel.getSlider( CAPACITY );
+			private JSlider powerSlider = editorPanel.getSlider( POWER );
+			private JSlider batterySlider = editorPanel.getSlider( BATTERY );
+			private JSlider damagedBarsSlider = editorPanel.getSlider( DAMAGED_BARS );
+			private JSlider repairProgressSlider = editorPanel.getSlider( REPAIR_PROGRESS );
+			private JSlider damageProgressSlider = editorPanel.getSlider( DAMAGE_PROGRESS );
 			private boolean ignoreChanges = false;
 			// Avoid getValueIsAdjusting() checks, which can fail on brief drags.
 
@@ -3170,34 +3170,34 @@ public class SavedGameFloorplanPanel extends JPanel {
 				return usableCapacity;
 			}
 		};
-		editorPanel.getSlider(RESERVE_CAPACITY).addChangeListener( barListener );
-		editorPanel.getSlider(CAPACITY).addChangeListener( barListener );
-		editorPanel.getSlider(POWER).addChangeListener( barListener );
-		editorPanel.getSlider(BATTERY).addChangeListener( barListener );
-		editorPanel.getSlider(DAMAGED_BARS).addChangeListener( barListener );
-		editorPanel.getSlider(REPAIR_PROGRESS).addChangeListener( barListener );
-		editorPanel.getSlider(DAMAGE_PROGRESS).addChangeListener( barListener );
+		editorPanel.getSlider( RESERVE_CAPACITY ).addChangeListener( barListener );
+		editorPanel.getSlider( CAPACITY ).addChangeListener( barListener );
+		editorPanel.getSlider( POWER ).addChangeListener( barListener );
+		editorPanel.getSlider( BATTERY ).addChangeListener( barListener );
+		editorPanel.getSlider( DAMAGED_BARS ).addChangeListener( barListener );
+		editorPanel.getSlider( REPAIR_PROGRESS ).addChangeListener( barListener );
+		editorPanel.getSlider( DAMAGE_PROGRESS ).addChangeListener( barListener );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				shipReserveCapacity = editorPanel.getSlider(RESERVE_CAPACITY).getValue();
+				shipReserveCapacity = editorPanel.getSlider( RESERVE_CAPACITY ).getValue();
 
-				systemRef.get().setCapacity( editorPanel.getSlider(CAPACITY).getValue() );
+				systemRef.get().setCapacity( editorPanel.getSlider( CAPACITY ).getValue() );
 
 				// Do stuff with this below...
-				int systemPower = editorPanel.getSlider(POWER).getValue();
-				int systemBattery = editorPanel.getSlider(BATTERY).getValue();
+				int systemPower = editorPanel.getSlider( POWER ).getValue();
+				int systemBattery = editorPanel.getSlider( BATTERY ).getValue();
 
-				systemRef.get().setDamagedBars( editorPanel.getSlider(DAMAGED_BARS).getValue() );
+				systemRef.get().setDamagedBars( editorPanel.getSlider( DAMAGED_BARS ).getValue() );
 
-				try { systemRef.get().setIonizedBars( editorPanel.parseInt(IONIZED_BARS) ); }
+				try { systemRef.get().setIonizedBars( editorPanel.parseInt( IONIZED_BARS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				systemRef.get().setRepairProgress( editorPanel.getSlider(REPAIR_PROGRESS).getValue() );
-				systemRef.get().setDamageProgress( editorPanel.getSlider(DAMAGE_PROGRESS).getValue() );
+				systemRef.get().setRepairProgress( editorPanel.getSlider( REPAIR_PROGRESS ).getValue() );
+				systemRef.get().setDamageProgress( editorPanel.getSlider( DAMAGE_PROGRESS ).getValue() );
 
-				try { systemRef.get().setDeionizationTicks( editorPanel.parseInt(DEIONIZATION_TICKS) ); }
+				try { systemRef.get().setDeionizationTicks( editorPanel.parseInt( DEIONIZATION_TICKS ) ); }
 				catch ( NumberFormatException e ) {}
 
 				if ( SystemType.WEAPONS.equals( systemRef.get().getSystemType() ) ) {
@@ -3320,13 +3320,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(HEALTH).setMaximum( 100 );
-		editorPanel.getSlider(HEALTH).setValue( breachSprite.getHealth() );
+		editorPanel.getSlider( HEALTH ).setMaximum( 100 );
+		editorPanel.getSlider( HEALTH ).setValue( breachSprite.getHealth() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				breachSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
+				breachSprite.setHealth( editorPanel.getSlider( HEALTH ).getValue() );
 
 				clearSidePanel();
 			}
@@ -3358,13 +3358,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider(HEALTH).setMaximum( 100 );
-		editorPanel.getSlider(HEALTH).setValue( fireSprite.getHealth() );
+		editorPanel.getSlider( HEALTH ).setMaximum( 100 );
+		editorPanel.getSlider( HEALTH ).setValue( fireSprite.getHealth() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				fireSprite.setHealth( editorPanel.getSlider(HEALTH).getValue() );
+				fireSprite.setHealth( editorPanel.getSlider( HEALTH ).getValue() );
 
 				clearSidePanel();
 			}
@@ -3401,49 +3401,49 @@ public class SavedGameFloorplanPanel extends JPanel {
 		DoorSprite doorSprite = doorRef.getSprite( DoorSprite.class );
 
 		ShipLayout.DoorCoordinate doorCoord = doorSprite.getCoordinate();
-		String title = String.format("Door (%2d,%2d, %s)", doorCoord.x, doorCoord.y, (doorCoord.v==1 ? "V" : "H"));
+		String title = String.format( "Door (%2d,%2d, %s)", doorCoord.x, doorCoord.y, (doorCoord.v==1 ? "V" : "H") );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( OPEN, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( WALKING_THROUGH, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.getBoolean(WALKING_THROUGH).addMouseListener( new StatusbarMouseListener(frame, "Momentarily open as someone walks through.") );
+		editorPanel.getBoolean( WALKING_THROUGH ).addMouseListener( new StatusbarMouseListener( frame, "Momentarily open as someone walks through." ) );
 		editorPanel.addRow( MAX_HEALTH, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(MAX_HEALTH).addMouseListener( new StatusbarMouseListener(frame, "Nominal Health, plus situatinal modifiers like hacking?") );
+		editorPanel.getInt( MAX_HEALTH ).addMouseListener( new StatusbarMouseListener( frame, "Nominal Health, plus situatinal modifiers like hacking?" ) );
 		editorPanel.addRow( HEALTH, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( NOMINAL_HEALTH, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(NOMINAL_HEALTH).addMouseListener( new StatusbarMouseListener(frame, "Default to reset Health to... sometime after combat?") );
+		editorPanel.getInt( NOMINAL_HEALTH ).addMouseListener( new StatusbarMouseListener( frame, "Default to reset Health to... sometime after combat?" ) );
 		editorPanel.addRow( DELTA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(DELTA).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Hacking related.") );
+		editorPanel.getInt( DELTA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Hacking related." ) );
 		editorPanel.addRow( EPSILON, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt(EPSILON).addMouseListener( new StatusbarMouseListener(frame, "Unknown. Hacking related.") );
+		editorPanel.getInt( EPSILON ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Hacking related." ) );
 
-		editorPanel.getBoolean(OPEN).setSelected( doorRef.get().isOpen() );
-		editorPanel.getBoolean(WALKING_THROUGH).setSelected( doorRef.get().isWalkingThrough() );
-		editorPanel.getInt(MAX_HEALTH).setText( ""+doorRef.get().getCurrentMaxHealth() );
-		editorPanel.getInt(HEALTH).setText( ""+doorRef.get().getHealth() );
-		editorPanel.getInt(NOMINAL_HEALTH).setText( ""+doorRef.get().getNominalHealth() );
-		editorPanel.getInt(DELTA).setText( ""+doorRef.get().getUnknownDelta() );
-		editorPanel.getInt(EPSILON).setText( ""+doorRef.get().getUnknownEpsilon() );
+		editorPanel.getBoolean( OPEN ).setSelected( doorRef.get().isOpen() );
+		editorPanel.getBoolean( WALKING_THROUGH ).setSelected( doorRef.get().isWalkingThrough() );
+		editorPanel.getInt( MAX_HEALTH ).setText( ""+doorRef.get().getCurrentMaxHealth() );
+		editorPanel.getInt( HEALTH ).setText( ""+doorRef.get().getHealth() );
+		editorPanel.getInt( NOMINAL_HEALTH ).setText( ""+doorRef.get().getNominalHealth() );
+		editorPanel.getInt( DELTA ).setText( ""+doorRef.get().getUnknownDelta() );
+		editorPanel.getInt( EPSILON ).setText( ""+doorRef.get().getUnknownEpsilon() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				doorRef.get().setOpen( editorPanel.getBoolean(OPEN).isSelected() );
-				doorRef.get().setWalkingThrough( editorPanel.getBoolean(WALKING_THROUGH).isSelected() );
+				doorRef.get().setOpen( editorPanel.getBoolean( OPEN ).isSelected() );
+				doorRef.get().setWalkingThrough( editorPanel.getBoolean( WALKING_THROUGH ).isSelected() );
 
-				try { doorRef.get().setCurrentMaxHealth( editorPanel.parseInt(MAX_HEALTH) ); }
+				try { doorRef.get().setCurrentMaxHealth( editorPanel.parseInt( MAX_HEALTH ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { doorRef.get().setHealth( editorPanel.parseInt(HEALTH) ); }
+				try { doorRef.get().setHealth( editorPanel.parseInt( HEALTH ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { doorRef.get().setNominalHealth( editorPanel.parseInt(NOMINAL_HEALTH) ); }
+				try { doorRef.get().setNominalHealth( editorPanel.parseInt( NOMINAL_HEALTH ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { doorRef.get().setUnknownDelta( editorPanel.parseInt(DELTA) ); }
+				try { doorRef.get().setUnknownDelta( editorPanel.parseInt( DELTA ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { doorRef.get().setUnknownEpsilon( editorPanel.parseInt(EPSILON) ); }
+				try { doorRef.get().setUnknownEpsilon( editorPanel.parseInt( EPSILON ) ); }
 				catch ( NumberFormatException e ) {}
 
 				doorRef.fireReferenceChange();
@@ -3466,13 +3466,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		for ( SpriteReference<CrewState> crewRef : crewRefs ) {
 			CrewSprite crewSprite = crewRef.getSprite( CrewSprite.class );
-			editorPanel.getCombo(CREW).addItem( crewSprite );
+			editorPanel.getCombo( CREW ).addItem( crewSprite );
 		}
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				Object crewObj = editorPanel.getCombo(CREW).getSelectedItem();
+				Object crewObj = editorPanel.getCombo( CREW ).getSelectedItem();
 				if ( crewObj instanceof CrewSprite ) {
 					SpriteReference<CrewState> crewRef = ((CrewSprite)crewObj).getReference();
 					showCrewEditor( crewRef );
@@ -3559,18 +3559,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( ENEMY_DRONE, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( PLAYER_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( CLONE_READY, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( CLONE_READY ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( CLONE_READY ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( MIND_CONTROLLED, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( STUN_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( HEALTH_BOOST, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( HEALTH_BOOST ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( HEALTH_BOOST ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( CLONEBAY_PRIORITY, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( CLONEBAY_PRIORITY ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( CLONEBAY_PRIORITY ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( DAMAGE_BOOST, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( DAMAGE_BOOST ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( DAMAGE_BOOST ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( LAMBDA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( LAMBDA ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( LAMBDA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		editorPanel.addRow( UNIV_DEATH_COUNT, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addBlankRow();
 		editorPanel.addRow( PILOT_MASTERY_ONE, FieldEditorPanel.ContentType.BOOLEAN );
@@ -3592,7 +3592,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( LOCKDOWN_RECHARGE_TICKS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( LOCKDOWN_RECHARGE_GOAL, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( OMEGA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( OMEGA ).setDocument( new RegexDocument("-?[0-9]*") );
+		editorPanel.getInt( OMEGA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 
 		editorPanel.getInt( HEALTH ).addMouseListener( new StatusbarMouseListener( frame, "Current health, including temporary boost. FTL 1.01-1.03.3 capped this at the race's max." ) );
 
@@ -3632,8 +3632,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt( OMEGA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown (Crystal only)." ) );
 
 		ActionListener crewListener = new ActionListener() {
-			private JComboBox raceCombo = editorPanel.getCombo(RACE);
-			private JTextField healthField = editorPanel.getInt(HEALTH);
+			private JComboBox raceCombo = editorPanel.getCombo( RACE );
+			private JTextField healthField = editorPanel.getInt( HEALTH );
 
 			@Override
 			public void actionPerformed( ActionEvent e ) {
@@ -3773,7 +3773,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				try { crewRef.get().setDamageBoost( editorPanel.parseInt( DAMAGE_BOOST ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { crewRef.get().setUnknownLambda( editorPanel.parseInt(LAMBDA) ); }
+				try { crewRef.get().setUnknownLambda( editorPanel.parseInt( LAMBDA ) ); }
 				catch ( NumberFormatException e ) {}
 
 				// TODO: Synchronize universal death count across all CrewStates on both ships.
@@ -3904,7 +3904,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			int w = this.getWidth(), h = this.getHeight();
@@ -4055,7 +4055,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 
@@ -4109,7 +4109,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			int w = this.getWidth(), h = this.getHeight();
@@ -4186,7 +4186,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			Color prevColor = g2d.getColor();
@@ -4268,7 +4268,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.drawImage( currentImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
@@ -4301,7 +4301,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.drawImage( breachImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
@@ -4334,7 +4334,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.drawImage( fireImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
@@ -4402,7 +4402,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			Color prevColor = g2d.getColor();
@@ -4483,7 +4483,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.drawImage( crewImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
@@ -4609,7 +4609,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
+			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
 			Color prevColor = g2d.getColor();
