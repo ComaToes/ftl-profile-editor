@@ -95,7 +95,8 @@ public class ProfileShipUnlockPanel extends JPanel {
 			IconCycleButton shipBBox = ImageUtilities.createDummyCycleButton();
 			shipBBox.addMouseListener( new StatusbarMouseListener( frame, "Type-B: "+ variantBShip.getName() +" (To unlock, choose two ship achievements below.)" ) );
 			panel.add( shipBBox );
-		} else {
+		}
+		else {
 			IconCycleButton shipBBox = ImageUtilities.createDummyCycleButton();
 			shipBBox.addMouseListener( new StatusbarMouseListener( frame, "Type-B: N/A" ) );
 			panel.add( shipBBox );
@@ -106,7 +107,8 @@ public class ProfileShipUnlockPanel extends JPanel {
 			shipCBox.addMouseListener( new StatusbarMouseListener( frame, "Type-C: "+ variantCShip.getName() ) );
 			shipCBoxes.put( baseId, shipCBox );
 			panel.add( shipCBox );
-		} else {
+		}
+		else {
 			IconCycleButton shipCBox = ImageUtilities.createDummyCycleButton();
 			shipCBox.addMouseListener( new StatusbarMouseListener( frame, "Type-C: N/A" ) );
 			shipCBoxes.put( baseId, shipCBox );
@@ -163,19 +165,22 @@ public class ProfileShipUnlockPanel extends JPanel {
 
 	public void unlockAllShips() {
 		for ( IconCycleButton box : shipABoxes.values() ) {
-			if ( box.getSelectedState() == SHIP_LOCKED )
+			if ( box.getSelectedState() == SHIP_LOCKED ) {
 				box.setSelectedState( SHIP_UNLOCKED );
+			}
 		}
 		for ( IconCycleButton box : shipCBoxes.values() ) {
-			if ( box.getSelectedState() == SHIP_LOCKED )
+			if ( box.getSelectedState() == SHIP_LOCKED ) {
 				box.setSelectedState( SHIP_UNLOCKED );
+			}
 		}
 	}
 
 	public void unlockAllShipAchievements() {
 		for ( IconCycleButton box : shipAchBoxes.values() ) {
-			if ( box.getSelectedState() == ACH_LOCKED )
+			if ( box.getSelectedState() == ACH_LOCKED ) {
 				box.setSelectedState( getCycleStateForDifficulty( Difficulty.EASY ) );
+			}
 		}
 	}
 
@@ -189,7 +194,8 @@ public class ProfileShipUnlockPanel extends JPanel {
 			if ( shipAvail != null ) {
 				if ( shipABox != null ) shipABox.setSelectedState( (shipAvail.isUnlockedA() ? SHIP_UNLOCKED : SHIP_LOCKED) );
 				if ( shipCBox != null ) shipCBox.setSelectedState( (shipAvail.isUnlockedC() ? SHIP_UNLOCKED : SHIP_LOCKED) );
-			} else {
+			}
+			else {
 				if ( shipABox != null ) shipABox.setSelectedState( SHIP_LOCKED );
 				if ( shipCBox != null ) shipCBox.setSelectedState( SHIP_LOCKED );
 			}
@@ -226,7 +232,8 @@ public class ProfileShipUnlockPanel extends JPanel {
 				AchievementRecord rec = AchievementRecord.getFromListById( newAchRecs, achId );
 				if ( rec != null ) {
 					rec.setDifficulty( diff );
-				} else {
+				}
+				else {
 					rec = new AchievementRecord( achId, diff );
 					newAchRecs.add( rec );
 				}
@@ -257,17 +264,17 @@ public class ProfileShipUnlockPanel extends JPanel {
 			// Remove ship achievements for locked ships.
 			// TODO: FTL:AE permits Type-B and Type-C ships in the absense of Type-A.
 			// Original FTL's menus expected Type-A at least to be present.
-			if ( !unlockedA ) {
-				List<Achievement> shipAchs = DataManager.get().getShipAchievements( DataManager.get().getPlayerShipVariant( baseId, 0 ) );
-				if ( shipAchs != null ) {
-					for ( Achievement shipAch : shipAchs ) {
-						if ( shipAch.isVictory() || shipAch.isQuest() ) continue;
-
-						// Search for records with the doomed id.
-						AchievementRecord.removeFromListById( newAchRecs, shipAch.getId() );
-					}
-				}
-			}
+			//if ( !unlockedA ) {
+			//	List<Achievement> shipAchs = DataManager.get().getShipAchievements( DataManager.get().getPlayerShipVariant( baseId, 0 ) );
+			//	if ( shipAchs != null ) {
+			//		for ( Achievement shipAch : shipAchs ) {
+			//			if ( shipAch.isVictory() || shipAch.isQuest() ) continue;
+			//
+			//			// Search for records with the doomed id.
+			//			AchievementRecord.removeFromListById( newAchRecs, shipAch.getId() );
+			//		}
+			//	}
+			//}
 		}
 		p.setShipUnlockMap( shipUnlockMap );
 
