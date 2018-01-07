@@ -5,10 +5,16 @@ A 3rd-party tool to edit user files for [FTL](https://subsetgames.com/). It depe
 
 With this, you can unlock any or all ships and achievements in your user profile, or tweak most aspects of saved games: crew, systems, weapons, fires, breaches, etc.
 
-Note:
-* FTL 1.01-1.03.3: "prof.sav" and "continue.sav" files are fully editable.
-* FTL 1.5.4-1.5.13: "ae_prof.sav" is fully editable.
-* FTL 1.5.4-1.5.13: "continue.sav" is only partially editable.
+
+Status
+-----
+* FTL 1.6.1+ profiles are not supported at all.
+* FTL 1.5.4-1.5.13 profiles are fully editable. (ae_prof.sav)
+* FTL 1.01-1.03.3 profiles are fully editable. (prof.sav)
+
+* FTL 1.6.1+ saved games are not supported at all.
+* FTL 1.5.4-1.5.13 saved games are partially editable.
+* FTL 1.01-1.03.3 saved games are fully editable.
 
 <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05_thumb.jpg" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04_thumb.jpg" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02_thumb.jpg" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot03_thumb.jpg" width="145px" height="auto" /></a>
 
@@ -44,4 +50,4 @@ Requirements
 
 History
 -------
-This project forked after extended inactivity prevented the release of v12. The original codebase started by ComaToes can be found [here](https://github.com/ComaToes/ftl-profile-editor) and its associated forum thread is [here](http://www.ftlgame.com/forum/viewtopic.php?f=7&t=2877).
+This project forked to release v12 and continue development. The original codebase started by ComaToes can be found [here](https://github.com/ComaToes/ftl-profile-editor) and its associated forum thread is [here](https://subsetgames.com/forum/viewtopic.php?f=7&t=2877).
