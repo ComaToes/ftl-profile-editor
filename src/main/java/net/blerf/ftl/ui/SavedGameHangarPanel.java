@@ -174,11 +174,11 @@ public class SavedGameHangarPanel extends JPanel {
 
 		SavedGameParser.ShipState shipState = new SavedGameParser.ShipState( "The Nameless One", shipBlueprint, auto );
 		shipState.refit();
-		gameState.setPlayerShipState( shipState );
+		gameState.setPlayerShip( shipState );
 
 		// Sync session's redundant ship info with player ship.
-		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
-		gameState.setPlayerShipBlueprintId( gameState.getPlayerShipState().getShipBlueprintId() );
+		gameState.setPlayerShipName( gameState.getPlayerShip().getShipName() );
+		gameState.setPlayerShipBlueprintId( gameState.getPlayerShip().getShipBlueprintId() );
 
 		frame.loadGameState( gameState );
 	}
@@ -200,16 +200,16 @@ public class SavedGameHangarPanel extends JPanel {
 		// Apply all other pending changes.
 		frame.updateGameState( gameState );
 
-		if ( gameState.getNearbyShipState() == null ) {
+		if ( gameState.getNearbyShip() == null ) {
 			JOptionPane.showMessageDialog( frame, "There is no nearby ship to steal.", "Steal Nearby Ship", JOptionPane.WARNING_MESSAGE );
 			return;
 		}
 
-		SavedGameParser.ShipState shipState = gameState.getNearbyShipState();
-		gameState.setNearbyShipState( null );
+		SavedGameParser.ShipState shipState = gameState.getNearbyShip();
+		gameState.setNearbyShip( null );
 		gameState.setNearbyShipAI( null );
 		shipState.commandeer();
-		gameState.setPlayerShipState( shipState );
+		gameState.setPlayerShip( shipState );
 
 		gameState.getProjectileList().clear();
 
@@ -225,8 +225,8 @@ public class SavedGameHangarPanel extends JPanel {
 		}
 
 		// Sync session's redundant ship info with player ship.
-		gameState.setPlayerShipName( gameState.getPlayerShipState().getShipName() );
-		gameState.setPlayerShipBlueprintId( gameState.getPlayerShipState().getShipBlueprintId() );
+		gameState.setPlayerShipName( gameState.getPlayerShip().getShipName() );
+		gameState.setPlayerShipBlueprintId( gameState.getPlayerShip().getShipBlueprintId() );
 
 		frame.loadGameState( gameState );
 	}
@@ -241,7 +241,7 @@ public class SavedGameHangarPanel extends JPanel {
 			autoCombo.setEnabled( true );
 			createAutoBtn.setEnabled( true );
 
-			stealNearbyShipBtn.setEnabled( (gameState.getNearbyShipState() != null) );
+			stealNearbyShipBtn.setEnabled( (gameState.getNearbyShip() != null) );
 		}
 		else if ( gameState != null && ( gameState.getFileFormat() == 7 || gameState.getFileFormat() == 8 || gameState.getFileFormat() == 9 ) ) {
 			// FTL 1.5.4 is only partially editable.
@@ -251,7 +251,7 @@ public class SavedGameHangarPanel extends JPanel {
 			autoCombo.setEnabled( false );
 			createAutoBtn.setEnabled( false );
 
-			stealNearbyShipBtn.setEnabled( (gameState.getNearbyShipState() != null) );
+			stealNearbyShipBtn.setEnabled( (gameState.getNearbyShip() != null) );
 		}
 		else {
 			shipCombo.setEnabled( false );

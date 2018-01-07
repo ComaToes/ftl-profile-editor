@@ -127,7 +127,7 @@ public class SavedGameParser extends Parser {
 			}
 
 			ShipState playerShipState = readShip( in, false, fileFormat, gameState.isDLCEnabled() );
-			gameState.setPlayerShipState( playerShipState );
+			gameState.setPlayerShip( playerShipState );
 
 			// Nearby ships have no cargo, so this isn't in readShip().
 			int cargoCount = readInt( in );
@@ -204,7 +204,7 @@ public class SavedGameParser extends Parser {
 				boolean shipNearby = readBool( in );
 				if ( shipNearby ) {
 					ShipState nearbyShipState = readShip( in, true, fileFormat, gameState.isDLCEnabled() );
-					gameState.setNearbyShipState( nearbyShipState );
+					gameState.setNearbyShip( nearbyShipState );
 				}
 
 				RebelFlagshipState flagshipState = readRebelFlagship( in );
@@ -223,7 +223,7 @@ public class SavedGameParser extends Parser {
 					gameState.setRebelFlagshipNearby( readBool( in ) );
 
 					ShipState nearbyShipState = readShip( in, true, fileFormat, gameState.isDLCEnabled() );
-					gameState.setNearbyShipState( nearbyShipState );
+					gameState.setNearbyShip( nearbyShipState );
 
 					gameState.setNearbyShipAI( readNearbyShipAI( in ) );
 				}
@@ -237,15 +237,15 @@ public class SavedGameParser extends Parser {
 					gameState.addProjectile( readProjectile( in ) );
 				}
 
-				readExtendedShipInfo( in, gameState.getPlayerShipState(), fileFormat );
+				readExtendedShipInfo( in, gameState.getPlayerShip(), fileFormat );
 
-				if ( gameState.getNearbyShipState() != null ) {
-					readExtendedShipInfo( in, gameState.getNearbyShipState(), fileFormat );
+				if ( gameState.getNearbyShip() != null ) {
+					readExtendedShipInfo( in, gameState.getNearbyShip(), fileFormat );
 				}
 
 				gameState.setUnknownNu( readInt( in ) );
 
-				if ( gameState.getNearbyShipState() != null ) {
+				if ( gameState.getNearbyShip() != null ) {
 					gameState.setUnknownXi( readInt( in ) );
 				}
 
@@ -337,7 +337,7 @@ public class SavedGameParser extends Parser {
 			writeInt( out, entry.getValue().intValue() );
 		}
 
-		writeShip( out, gameState.getPlayerShipState(), fileFormat );
+		writeShip( out, gameState.getPlayerShip(), fileFormat );
 
 		writeInt( out, gameState.getCargoIdList().size() );
 		for ( String cargoItemId : gameState.getCargoIdList() ) {
@@ -397,7 +397,7 @@ public class SavedGameParser extends Parser {
 		if ( fileFormat == 2 ) {
 			writeInt( out, gameState.getCurrentBeaconId() );
 
-			ShipState nearbyShip = gameState.getNearbyShipState();
+			ShipState nearbyShip = gameState.getNearbyShip();
 			writeBool( out, (nearbyShip != null) );
 			if ( nearbyShip != null ) {
 				writeShip( out, nearbyShip, fileFormat );
@@ -412,7 +412,7 @@ public class SavedGameParser extends Parser {
 
 			writeEncounter( out, gameState.getEncounter() );
 
-			ShipState nearbyShip = gameState.getNearbyShipState();
+			ShipState nearbyShip = gameState.getNearbyShip();
 			writeBool( out, (nearbyShip != null) );
 			if ( nearbyShip != null ) {
 				writeBool( out, gameState.isRebelFlagshipNearby() );
@@ -431,15 +431,15 @@ public class SavedGameParser extends Parser {
 				writeProjectile( out, projectile );
 			}
 
-			writeExtendedShipInfo( out, gameState.getPlayerShipState(), fileFormat );
+			writeExtendedShipInfo( out, gameState.getPlayerShip(), fileFormat );
 
-			if ( gameState.getNearbyShipState() != null ) {
-				writeExtendedShipInfo( out, gameState.getNearbyShipState(), fileFormat );
+			if ( gameState.getNearbyShip() != null ) {
+				writeExtendedShipInfo( out, gameState.getNearbyShip(), fileFormat );
 			}
 
 			writeInt( out, gameState.getUnknownNu() );
 
-			if ( gameState.getNearbyShipState() != null ) {
+			if ( gameState.getNearbyShip() != null ) {
 				writeInt( out, gameState.getUnknownXi().intValue() );
 			}
 
@@ -2314,10 +2314,10 @@ public class SavedGameParser extends Parser {
 
 		public Map<String, Integer> getStateVars() { return stateVars; }
 
-		public void setPlayerShipState( ShipState shipState ) {
+		public void setPlayerShip( ShipState shipState ) {
 			this.playerShipState = shipState;
 		}
-		public ShipState getPlayerShipState() { return playerShipState; }
+		public ShipState getPlayerShip() { return playerShipState; }
 
 		/**
 		 * Sets the seed for generating the sector tree.
@@ -2651,10 +2651,10 @@ public class SavedGameParser extends Parser {
 		 *
 		 * @see #setNearbyShipAI(NearbyShipAIState)
 		 */
-		public void setNearbyShipState( ShipState shipState ) {
+		public void setNearbyShip( ShipState shipState ) {
 			this.nearbyShipState = shipState;
 		}
-		public ShipState getNearbyShipState() { return nearbyShipState; }
+		public ShipState getNearbyShip() { return nearbyShipState; }
 
 		/**
 		 * Sets fields related to AI that controls the nearby ship, or null.

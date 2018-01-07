@@ -1336,8 +1336,8 @@ public class FTLFrame extends JFrame implements Statusbar {
 		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9}, gs.getFileFormat() ) >= 0 ) {
 			savedGameDumpPanel.setText( gs.toString() );
 			savedGameGeneralPanel.setGameState( gs );
-			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShipState() );
-			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShipState() );
+			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShip() );
+			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShip() );
 			savedGameHangarPanel.setGameState( gs );
 			savedGameSectorMapPanel.setGameState( gs );
 			savedGameSectorTreePanel.setGameState( gs );
@@ -1371,16 +1371,16 @@ public class FTLFrame extends JFrame implements Statusbar {
 		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9}, gs.getFileFormat() ) >= 0 ) {
 			// savedGameDumpPanel doesn't modify anything.
 			savedGameGeneralPanel.updateGameState( gs );
-			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShipState() );
-			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShipState() );
+			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShip() );
+			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShip() );
 			// savedGameHangarPanel doesn't modify anything.
 			savedGameSectorMapPanel.updateGameState( gs );
 			savedGameSectorTreePanel.updateGameState( gs );
 			savedGameStateVarsPanel.updateGameState( gs );
 
 			// Sync session's redundant ship info with player ship.
-			gs.setPlayerShipName( gs.getPlayerShipState().getShipName() );
-			gs.setPlayerShipBlueprintId( gs.getPlayerShipState().getShipBlueprintId() );
+			gs.setPlayerShipName( gs.getPlayerShip().getShipName() );
+			gs.setPlayerShipBlueprintId( gs.getPlayerShip().getShipBlueprintId() );
 		}
 
 		loadGameState( gs );

@@ -781,17 +781,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipJumping = shipState.isJumping();
 		shipJumpAnimTicks = shipState.getJumpAnimTicks();
 		shipCloakAnimTicks = shipState.getCloakAnimTicks();
-		shipPlayerControlled = ( shipState == gameState.getPlayerShipState() );
+		shipPlayerControlled = ( shipState == gameState.getPlayerShip() );
 		shipAugmentIdList.addAll( shipState.getAugmentIdList() );
 		ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
-		if ( shipState == gameState.getNearbyShipState() ) {
-			originX = 100;
-			originY = 100;
-		}
-		else {
+		if ( shipPlayerControlled ) {
 			originX = 0;
 			originY = 0;
+		}
+		else {
+			originX = 100;
+			originY = 100;
 		}
 		originX += shipChassis.getImageBounds().x * -1;  // Allow ship images their negative offsets.
 		originY += shipChassis.getImageBounds().y * -1;

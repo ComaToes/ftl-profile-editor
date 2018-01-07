@@ -32,7 +32,6 @@ import net.blerf.ftl.ui.FieldEditorPanel;
 import net.blerf.ftl.ui.FTLFrame;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.xml.DroneBlueprint;
-import net.blerf.ftl.xml.ShipBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
 
@@ -328,11 +327,6 @@ public class SavedGameGeneralPanel extends JPanel {
 		unknownsPanel.reset();
 
 		if ( gameState != null ) {
-			SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
-			ShipBlueprint shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
-			if ( shipBlueprint == null )
-				throw new RuntimeException( String.format("Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName()) );
-
 			for ( Difficulty d : Difficulty.values() ) {
 				sessionPanel.getCombo( DIFFICULTY ).addItem( d );
 			}
@@ -490,7 +484,6 @@ public class SavedGameGeneralPanel extends JPanel {
 
 	@SuppressWarnings("unchecked")
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
-		SavedGameParser.ShipState shipState = gameState.getPlayerShipState();
 
 		try { gameState.setTotalShipsDefeated( sessionPanel.parseInt( TOTAL_SHIPS_DEFEATED ) ); }
 		catch ( NumberFormatException e ) {}

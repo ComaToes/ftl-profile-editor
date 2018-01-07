@@ -3,37 +3,64 @@ package net.blerf.ftl.model;
 import java.awt.Rectangle;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
-import java.util.TreeMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.TreeMap;
 
 
 public class ShipLayout {
+
 	public enum RoomInfo { LOCATION_X, LOCATION_Y, SQUARES_H, SQUARES_V }
 	public enum DoorInfo { ROOM_ID_A, ROOM_ID_B }
 
-	private int offsetX = 0, offsetY = 0, horizontal = 0, vertical = 0;
+	private int offsetX = 0, offsetY = 0;
+	private int horizontal = 0, vertical = 0;
 	private Rectangle shieldEllipse = new Rectangle();
-	private TreeMap<Integer, EnumMap<RoomInfo,Integer>> roomMap = new TreeMap<Integer, EnumMap<RoomInfo,Integer>>();
-	private LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo,Integer>> doorMap = new LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo,Integer>>();
+	private TreeMap<Integer, EnumMap<RoomInfo, Integer>> roomMap = new TreeMap<Integer, EnumMap<RoomInfo, Integer>>();
+	private Map<DoorCoordinate, EnumMap<DoorInfo, Integer>> doorMap = new LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo, Integer>>();
+
 
 	/**
 	 * Constructs a layout with uninteresting defaults.
 	 */
-	public ShipLayout() {}
+	public ShipLayout() {
+	}
 
+	/**
+	 * Sets a positive offset to the entire ship in square-sized (35x35) units.
+	 *
+	 * This positive offset shifts right/down.
+	 *
+	 * Sprite locations in saved games will have this offset baked in.
+	 *
+	 * ShipChassis will further offset the ship images specifically.
+	 *
+	 * @see net.blerf.ftl.xml.ShipChassis
+	 */
 	public void setOffsetX( int n ) { offsetX = n; }
 	public void setOffsetY( int n ) { offsetY = n; }
+	public int getOffsetX() { return offsetX; }
+	public int getOffsetY() { return offsetY; }
+
+	/**
+	 * Sets an additional whole-ship offest in pixel units.
+	 *
+	 * TODO: Reportedly horizontal doesn't apply for nearby ships!?
+	 */
 	public void setHorizontal( int n ) { horizontal = n; }
 	public void setVertical( int n ) { vertical = n; }
+	public int getHorizontal() { return horizontal; }
+	public int getVertical() { return vertical; }
 
+	/**
+	 * Sets the collision/orbit ellipse.
+	 *
+	 * Note: This is abstract and does not affect how shields are painted.
+	 */
 	public void setShieldEllipse( int w, int h, int x, int y ) {
 		shieldEllipse = new Rectangle( x, y, w, h );
 	}
 
-	public int getOffsetX() { return offsetX; }
-	public int getOffsetY() { return offsetY; }
-	public int getHorizontal() { return horizontal; }
-	public int getVertical() { return vertical; }
 	public Rectangle getShieldEllipse() { return shieldEllipse; }
 
 	/**
@@ -105,7 +132,7 @@ public class ShipLayout {
 	 * Keys are in the order of the original layout config file.
 	 * That is NOT the same order as doors in saved games.
 	 */
-	public LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo,Integer>> getDoorMap() {
+	public Map<DoorCoordinate, EnumMap<DoorInfo,Integer>> getDoorMap() {
 		return doorMap;
 	}
 
