@@ -3,13 +3,13 @@ Changelog
 26:
 - Fixed a crash when editing shops
 - Fixed a crash when saving a saved game with missiles/asteroids/explosions
-- Fixed Floorplan doors not repainting after open/closed changes are applied
-- Fixed Floorplan selector overlay not filling visible area to catch mouse events
-- Fixed Floorplan crew mid-walk being placed at their destination
-- Fixed Floorplan battle/repair drone bodies losing their move goals upon saving
-- Moved General tab's Sector and Boss panels into the SectorMap tab
-- Fixed General tab's Encounter panel not disabling for old saved game formats
-- Fixed Crew Records not listing all AE races when editing (Geneal Stats tab)
+- Fixed "Ship" tab doors not repainting after open/closed changes are applied
+- Fixed "Ship" tab selector overlay not filling visible area to catch mouse events
+- Fixed "Ship" tab crew mid-walk being placed at their destination
+- Fixed "Ship" tab battle/repair drone bodies losing their move goals upon saving
+- Moved "General" tab's Sector and Boss panels into the "Sector Map" tab
+- Fixed "General" tab's Encounter panel not disabling for old saved game formats
+- Fixed Crew Records not listing all AE races when editing ("General Stats" tab)
 - Fixed Achievements' dump text repeating 'With Type-B' value for Type-C
 - Fixed launcher scripts/executable for Java 9 (NoClassDefFoundError: javax/xml/bind)
 - Fixed hidden files not shown when locating FTL resources
@@ -17,8 +17,6 @@ Changelog
 - Changed the config file's keys from camelCase to underscores
 - Added RNG-informed previews for sector map layouts
 - Added a warning when attempting to dump the blank default profile
-- Added partial drone editing (arming not yet possible)
-- Added partial weapon editing (arming not yet possible)
 - Added alternate locations to locate FTL resources on Linux
 - Added 'FTLProfileEditor_debug.bat' for troubleshooting on Windows
 - Changed logging framework to SLF4J/Logback
@@ -27,20 +25,20 @@ Changelog
 - Made update checking optional and less frequent
 
 25:
-- Reinstated nearby ship stealing in saved games (Change Ship tab)
-- Improved sector tree editing in saved games (Sector Tree tab)
+- Reinstated nearby ship stealing in saved games ("Change Ship" tab)
+- Improved sector tree editing in saved games ("Sector Tree" tab)
 - Added top score removal in profiles
-- Added hangar's newbie tip level in profiles (General Achievements tab)
-- Added current event editing in saved games (General tab)
+- Added hangar's newbie tip level in profiles ("General Achievements" tab)
+- Added current event editing in saved games ("General" tab)
 - Fixed fire placement (Previously, rows/cols were mixed up)
 - Fixed misreported difficulty in old "profile.sav" scores
 - Fixed FTLProfileEditor.command double-clicking on linux?
 
 24:
 - Added support for FTL 1.5.12/1.5.13 saved games
-- Added Quest/Victory achievement editing in profiles (Ship Stats tab)
+- Added Quest/Victory achievement editing in profiles ("Ship Stats" tab)
 - Fixed a bug that omitted the Fed Cruiser Quest achievement in profiles
-- Fixed slow mouse wheel scrolling in side panels of Ship and SectorMap tabs
+- Fixed slow mouse wheel scrolling in side panels of "Ship" and "Sector Map" tabs
 
 23:
 - Partial ship editing for 1.5.4 saved games (systems/drones/weapons excluded)
@@ -53,7 +51,7 @@ Changelog
 - Added a warning when attempting to save the blank default profile
 
 22:
-- Partial editing for 1.5.4 saved games (ships themselves are not editable yet)
+- Partial editing for 1.5.4 saved games (ships themselves are not editable yet
 - Added "Ship Best" score editing in profiles
 - Added backups when overwriting a profile or saved game
 - Fixed read error when a ship's system spans multiple rooms (boss artillery)
@@ -91,14 +89,14 @@ Changelog
 - Allowed DataManager subclasses to be set as the global instance
 
 16:
-- Added profile score editing
+- Added profile score editing.
 
 15:
-- Added sector number rollback under the General tab
+- Added sector number rollback under the "General" tab
 - Added "State Vars" tab
 - Added automated finding of data.dat for OSX-Steam
 - Added a prompt to override automatically found data.dat location
-- Fixed manual data.dat choosing on OSX (Thanks to wilerson)
+- Fixed manual data.dat choosing on OSX. (Thanks to wilerson)
 - Allowed negative background sprite rotation for SectorMap beacons
 
 14:
@@ -119,15 +117,16 @@ Changelog
 - The profile editor can unlock at specific difficulties
 
 11:
-- Added saved game (continue.sav) parsing
+- Added saved game (continue.sav) parsing.
 - Some general ship attributes (hull/fuel/scrap/etc) are editable
 - Fires, breaches and oxygen levels can be reset
 - Fixed crash when Type B Crystal ship appears in high scores
 
 10:
 - Stats tab now shows all stats (Session/Crew/Totals areas were previously blank)
-- FTL data is now accessed without needing to unpack the data files - Older versions of this tool will have unpacked to a folder called "ftldata". You should delete this to free up disk space
-- Data files can be unpacked if desired - A new button has been added to the toolbar for this
+- FTL data is now accessed without needing to unpack the data files
+- Older versions of this tool will have unpacked to a folder called "ftldata" - You should delete this to free up disk space
+- Added a toolbar button to unpack data files
 - Added release notes viewer
 
 9:
@@ -149,7 +148,7 @@ Changelog
 - Added a check when opening a profile to ensure the app can read and write it without losing data
 
 4:
-- Added automatic version check so you don't need to manually check this thread or the download page for updates. More actual features coming soon
+- Added automatic update checking
 
 3:
 - Bug fixes
