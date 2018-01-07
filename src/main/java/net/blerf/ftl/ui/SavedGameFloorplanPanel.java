@@ -991,9 +991,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		List<ShipChassis.WeaponMount> weaponMounts = shipChassis.getWeaponMountList();
 		List<WeaponState> weaponList = shipState.getWeaponList();
 
-		// TODO: Magic number (when null: it's omitted in autoBlueprints.xml).
+		// TODO: Magic number (when null: it's omitted in "autoBlueprints.xml").
 		// In-game GUI shows 3 or 4.
-		// rebel_long's chassis has extra mounts!
 		int blueprintWeaponSlots = 4;
 		if ( shipBlueprint.getWeaponSlots() != null ) blueprintWeaponSlots = shipBlueprint.getWeaponSlots();
 
@@ -1001,7 +1000,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		int actualWeaponSlots = Math.min( weaponMounts.size(), blueprintWeaponSlots );
 
 		if ( weaponList.size() > weaponMounts.size() || blueprintWeaponSlots > weaponMounts.size() ) {
-			log.warn( String.format("Ship state has %d weapons, the ship blueprint expects %d mounts, the chassis only has %d mounts", weaponList.size(), blueprintWeaponSlots, weaponMounts.size()) );
+			log.warn( String.format( "Ship state has %d weapons, the ship blueprint expects %d mounts, the chassis only has %d mounts", weaponList.size(), blueprintWeaponSlots, weaponMounts.size() ) );
 		}
 
 		for ( int i=0; i < actualWeaponSlots; i++ ) {
@@ -1018,6 +1017,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			addWeaponSprite( weaponMount, i, weaponRef );
 		}
+
+		// Flagship has no Weapons system but it omits weaponSlots, so first 4 mounts are junk.
+		if ( shipBlueprint.getSystemList().getWeaponRoom() == null ) {
+			for ( WeaponSprite weaponSprite : weaponSprites ) {
+				weaponSprite.setVisible( false );
+			}
+		}
+
+		// TODO: Artillery weaponMounts come after the regular weaponMounts (see "fed_cruiser.xml").
+		// Flagship has 4 Artillery.
+
+		// Any more after that are junk (see "rebel_long.xml").
 
 		// Add rooms.
 		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
