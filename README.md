@@ -28,13 +28,18 @@ That would be fantastic.
 
 Usage
 -----
-* Exit FTL. The game must NOT be running.
-* Double-click FTLProfileEditor.exe (Win) or FTLProfileEditor.command (Mac/Linux).
-* On the first run, you may be prompted to locate your FTL data file. This is called "data.dat" in the "resources" directory under your FTL install. In most cases, this should be located automatically.
+* Quit FTL to before editing profiles.
+<br /><br />
+* For saved games, you must NOT be actively playing a campaign.
+    * FTL 1.5.4+: The main menu is safe.
+    * FTL 1.01-1.03.3: "Save+Quit".
+<br /><br />
+* Double-click FTLProfileEditor.exe.
+* Switch to the appropriate tab: "Profile" or "Saved Game".
 * Open a profile (ae_prof.sav or prof.sav) or saved game (continue.sav).
-* Make any desired changes.
-* Save, and close the editor.
-* Fire up FTL and try out your new ship.
+* Make any desired changes, and save.
+<br /><br />
+* Continue playing FTL.
 
 
 Requirements

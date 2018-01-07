@@ -48,13 +48,18 @@ Setup
 
 Usage
 
-  Exit FTL. The game must NOT be running.
-  Double-click FTLProfileEditor.command.
+  Quit FTL to before editing profiles.
+
+  For saved games, you must NOT be actively playing a campaign.
+    FTL 1.5.4+: The main menu is safe.
+    FTL 1.01-1.03.3: "Save+Quit".
+
+  Double-click FTLProfileEditor.exe.
   Switch to the appropriate tab: "Profile" or "Saved Game".
   Open a profile (ae_prof.sav or prof.sav) or saved game (continue.sav).
-  Make any desired changes.
-  Save, and close the editor.
-  Fire up FTL and try out your new ship.
+  Make any desired changes, and save.
+
+  Continue playing FTL.
 
 
 Troubleshooting
