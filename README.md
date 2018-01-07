@@ -3,7 +3,7 @@ ftl-profile-editor
 
 A 3rd-party tool to edit user files for [FTL](https://subsetgames.com/). It depends on resources from the game directory, but the game itself will not be modified.
 
-With this, you can unlock any or all ships and achievements in your user profile, or tweak most aspects of saved games: crew, systems, weapons, fires, breaches, etc.
+With this, you can unlock any or all ships and achievements in your profile, or tweak most aspects of saved games: crew, fires, breaches, stores, etc.
 
 
 Status
