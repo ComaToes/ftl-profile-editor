@@ -155,7 +155,7 @@ public class SavedGameParser extends Parser {
 				gameState.setRebelFlagshipVisible( readBool( in ) );
 				gameState.setRebelFlagshipHop( readInt( in ) );
 				gameState.setRebelFlagshipMoving( readBool( in ) );
-				gameState.setUnknownKappa( readInt( in ) );
+				gameState.setRebelFlagshipRetreating( readBool( in ) );
 				gameState.setRebelFlagshipBaseTurns( readInt( in ) );
 			}
 			else if ( fileFormat == 2 ) {
@@ -360,7 +360,7 @@ public class SavedGameParser extends Parser {
 			writeBool( out, gameState.isRebelFlagshipVisible() );
 			writeInt( out, gameState.getRebelFlagshipHop() );
 			writeBool( out, gameState.isRebelFlagshipMoving() );
-			writeInt( out, gameState.getUnknownKappa() );
+			writeBool( out, gameState.isRebelFlagshipRetreating() );
 			writeInt( out, gameState.getRebelFlagshipBaseTurns() );
 		}
 		else if ( fileFormat == 2 ) {
@@ -2110,7 +2110,7 @@ public class SavedGameParser extends Parser {
 		private boolean rebelFlagshipVisible = false;
 		private int rebelFlagshipHop = 0;
 		private boolean rebelFlagshipMoving = false;
-		private int unknownKappa = 0;
+		private boolean rebelFlagshipRetreating = false;
 		private int rebelFlagshipBaseTurns = 0;
 		private List<Boolean> sectorVisitationList = new ArrayList<Boolean>();
 		private boolean sectorIsHiddenCrystalWorlds = false;
@@ -2492,29 +2492,29 @@ public class SavedGameParser extends Parser {
 		public int getRebelFlagshipHop() { return rebelFlagshipHop; }
 
 		/**
-		 * Sets whether the flagship's circling its beacon or moving toward the next.
+		 * Sets whether the flagship is circling its beacon or moving toward the next.
 		 */
 		public void setRebelFlagshipMoving( boolean b ) { rebelFlagshipMoving = b; }
 		public boolean isRebelFlagshipMoving() { return rebelFlagshipMoving; }
 
 		/**
-		 * Unknown.
+		 * Sets whether the flagship is reversing course to a previous beacon.
 		 *
-		 * If edited to 2, bouncing to the main menu for re-saving causes this
-		 * to decrement toward 0. It glitches the hop index, sometimes
-		 * resetting it to 0 or seemingly causing the flagship to backtrack?
+		 * FTL sets this immediately after defeating the flagship.
 		 *
-		 * Even when FTL increments this, re-saving messes with the hops.
-		 *
-		 * Observed values: 0 (Almost always!?), 1 (Immediately after defeating
+		 * Observed values: 0 (Almost always), 1 (Immediately after defeating
 		 * the flagship, but reverts if loaded and saved again!?).
+		 *
+		 * Bug in FTL 1.5.4-1.6.2: Bouncing to thhe main menu twice after
+		 * defeating the flagship at the base will reset hops and baseTurns to
+		 * 0, teleporting it to where it started.
 		 *
 		 * This was introduced in FTL 1.5.4.
 		 *
 		 * @see #setRebelFlagshipHop(int)
 		 */
-		public void setUnknownKappa( int n ) { unknownKappa = n; }
-		public int getUnknownKappa() { return unknownKappa; }
+		public void setRebelFlagshipRetreating( boolean b ) { rebelFlagshipRetreating = b; }
+		public boolean isRebelFlagshipRetreating() { return rebelFlagshipRetreating; }
 
 		/**
 		 * Sets the number of turns the rebel flagship has started at the
@@ -2777,23 +2777,23 @@ public class SavedGameParser extends Parser {
 			}
 
 			result.append( "\nSector Data...\n" );
-			result.append( String.format( "Sector Tree Seed:   %5d\n", sectorTreeSeed ) );
-			result.append( String.format( "Sector Layout Seed: %5d\n", sectorLayoutSeed ) );
-			result.append( String.format( "Rebel Fleet Offset: %5d\n", rebelFleetOffset ) );
-			result.append( String.format( "Rebel Fleet Fudge:  %5d\n", rebelFleetFudge ) );
-			result.append( String.format( "Rebel Pursuit Mod:  %5d\n", rebelPursuitMod ) );
-			result.append( String.format( "Player BeaconId:    %5d\n", currentBeaconId ) );
-			result.append( String.format( "Waiting:            %5b\n", waiting ) );
-			result.append( String.format( "Wait Event Seed:    %5d\n", waitEventSeed ) );
-			result.append( String.format( "Epsilon?:           %s\n", unknownEpsilon ) );
-			result.append( String.format( "Sector Hazards Map: %5b\n", sectorHazardsVisible ) );
-			result.append( String.format( "In Hidden Sector:   %5b\n", sectorIsHiddenCrystalWorlds ) );
+			result.append( String.format( "Sector Tree Seed:    %5d\n", sectorTreeSeed ) );
+			result.append( String.format( "Sector Layout Seed:  %5d\n", sectorLayoutSeed ) );
+			result.append( String.format( "Rebel Fleet Offset:  %5d\n", rebelFleetOffset ) );
+			result.append( String.format( "Rebel Fleet Fudge:   %5d\n", rebelFleetFudge ) );
+			result.append( String.format( "Rebel Pursuit Mod:   %5d\n", rebelPursuitMod ) );
+			result.append( String.format( "Player BeaconId:     %5d\n", currentBeaconId ) );
+			result.append( String.format( "Waiting:             %5b\n", waiting ) );
+			result.append( String.format( "Wait Event Seed:     %5d\n", waitEventSeed ) );
+			result.append( String.format( "Epsilon?:            %s\n", unknownEpsilon ) );
+			result.append( String.format( "Sector Hazards Map:  %5b\n", sectorHazardsVisible ) );
+			result.append( String.format( "In Hidden Sector:    %5b\n", sectorIsHiddenCrystalWorlds ) );
 			result.append( "\n" );
-			result.append( String.format( "Rebel Flagship On:  %5b\n", rebelFlagshipVisible ) );
-			result.append( String.format( "Flagship Nth Hop:   %5d\n", rebelFlagshipHop ) );
-			result.append( String.format( "Flagship Moving:    %5b\n", rebelFlagshipMoving ) );
-			result.append( String.format( "Kappa?:             %5d\n", unknownKappa ) );
-			result.append( String.format( "Flagship Base Turns:%5d\n", rebelFlagshipBaseTurns ) );
+			result.append( String.format( "Flagship Visible:    %5b\n", rebelFlagshipVisible ) );
+			result.append( String.format( "Flagship Nth Hop:    %5d\n", rebelFlagshipHop ) );
+			result.append( String.format( "Flagship Moving:     %5b\n", rebelFlagshipMoving ) );
+			result.append( String.format( "Flagship Retreating: %5b\n", rebelFlagshipRetreating ) );
+			result.append( String.format( "Flagship Base Turns: %5d\n", rebelFlagshipBaseTurns ) );
 
 			result.append( "\nSector Tree Breadcrumbs...\n" );
 			first = true;

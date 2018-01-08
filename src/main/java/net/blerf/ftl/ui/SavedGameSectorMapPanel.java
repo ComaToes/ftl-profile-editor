@@ -148,7 +148,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 	private boolean flagshipVisible = false;
 	private int flagshipHop = 0;
 	private boolean flagshipMoving = false;
-	private int topUnknownKappa = 0;
+	private boolean flagshipRetreating = false;
 	private int flagshipBaseTurns = 0;
 	private boolean flagshipNearby = false;
 	private RebelFlagshipState flagship = null;
@@ -504,7 +504,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		flagshipVisible = gameState.isRebelFlagshipVisible();
 		flagshipHop = gameState.getRebelFlagshipHop();
 		flagshipMoving = gameState.isRebelFlagshipMoving();
-		topUnknownKappa = gameState.getUnknownKappa();
+		flagshipRetreating = gameState.isRebelFlagshipRetreating();
 		flagshipBaseTurns = gameState.getRebelFlagshipBaseTurns();
 		flagshipNearby = gameState.isRebelFlagshipNearby();
 		flagship = gameState.getRebelFlagshipState();
@@ -558,7 +558,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		gameState.setRebelFlagshipVisible( flagshipVisible );
 		gameState.setRebelFlagshipHop( flagshipHop );
 		gameState.setRebelFlagshipMoving( flagshipMoving );
-		gameState.setUnknownKappa( topUnknownKappa );
+		gameState.setRebelFlagshipRetreating( flagshipRetreating );
 		gameState.setRebelFlagshipBaseTurns( flagshipBaseTurns );
 		gameState.setRebelFlagshipNearby( flagshipNearby );
 		gameState.setRebelFlagshipState( flagship );
@@ -1285,7 +1285,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		final String FLAGSHIP_VISIBLE = "Flagship Visible";
 		final String FLAGSHIP_HOP = "Flagship Hop";
 		final String FLAGSHIP_MOVING = "Flagship Moving";
-		final String TOP_KAPPA = "Kappa?";
+		final String FLAGSHIP_RETREATING = "Flagship Retreating";
 		final String FLAGSHIP_BASE_TURNS = "Flagship Base Turns";
 		final String FLAGSHIP_NEARBY = "Flagship Nearby";
 		final String FLAGSHIP_ALPHA = "Alpha?";
@@ -1299,8 +1299,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.addRow( FLAGSHIP_HOP, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider( FLAGSHIP_HOP ).setMaximum( 10 );
 		editorPanel.addRow( FLAGSHIP_MOVING, FieldEditorPanel.ContentType.BOOLEAN );
-		editorPanel.addRow( TOP_KAPPA, FieldEditorPanel.ContentType.INTEGER );
-		editorPanel.getInt( TOP_KAPPA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
+		editorPanel.addRow( FLAGSHIP_RETREATING, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addRow( FLAGSHIP_BASE_TURNS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( FLAGSHIP_NEARBY, FieldEditorPanel.ContentType.BOOLEAN );
 		editorPanel.addBlankRow();
@@ -1314,7 +1313,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getBoolean( FLAGSHIP_VISIBLE ).addMouseListener( new StatusbarMouseListener( frame, "Toggle the rebel flagship on the map. (FTL 1.01-1.03.3: Instant loss if not in sector 8)" ) );
 		editorPanel.getSlider( FLAGSHIP_HOP ).addMouseListener( new StatusbarMouseListener( frame, "The flagship is at it's Nth random beacon. (0-based) Sector layout seed affects where that will be. (FTL 1.01-1.03.3: Instant loss may occur beyond 4)" ) );
 		editorPanel.getBoolean( FLAGSHIP_MOVING ).addMouseListener( new StatusbarMouseListener( frame, "The flagship is moving from its current beacon toward the next." ) );
-		editorPanel.getInt( TOP_KAPPA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Increments after defeating the flagship. Decrements on re-saving. It glitches the hop index!?" ) );
+		editorPanel.getBoolean( FLAGSHIP_RETREATING ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Increments after defeating the flagship. Decrements on re-saving. It glitches the hop index!?" ) );
 		editorPanel.getInt( FLAGSHIP_BASE_TURNS ).addMouseListener( new StatusbarMouseListener( frame, "Number of turns the flagship has started at the fed base. Instant loss will occur beyond 3." ) );
 		editorPanel.getBoolean( FLAGSHIP_NEARBY ).addMouseListener( new StatusbarMouseListener( frame, "True if nearby ship is the flagship. Only set when a nearby ship is present." ) );
 		editorPanel.getInt( FLAGSHIP_ALPHA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown. Last seen rebel flagship stage, or 0. Redundant?" ) );
@@ -1324,7 +1323,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.setBoolAndReminder( FLAGSHIP_VISIBLE, flagshipVisible );
 		editorPanel.setSliderAndReminder( FLAGSHIP_HOP, flagshipHop );
 		editorPanel.setBoolAndReminder( FLAGSHIP_MOVING, flagshipMoving );
-		editorPanel.setIntAndReminder( TOP_KAPPA, topUnknownKappa );
+		editorPanel.setBoolAndReminder( FLAGSHIP_RETREATING, flagshipRetreating );
 		editorPanel.setIntAndReminder( FLAGSHIP_BASE_TURNS, flagshipBaseTurns );
 		editorPanel.setBoolAndReminder( FLAGSHIP_NEARBY, flagshipNearby );
 
@@ -1347,9 +1346,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				if ( flagshipVisible ) {
 					flagshipHop = editorPanel.getSlider( FLAGSHIP_HOP ).getValue();
 					flagshipMoving = editorPanel.getBoolean( FLAGSHIP_MOVING ).isSelected();
-
-					try { topUnknownKappa = editorPanel.parseInt( TOP_KAPPA ); }
-					catch ( NumberFormatException e ) {}
+					flagshipRetreating = editorPanel.getBoolean( FLAGSHIP_RETREATING ).isSelected();
 
 					try { flagshipBaseTurns = editorPanel.parseInt( FLAGSHIP_BASE_TURNS ); }
 					catch ( NumberFormatException e ) {}
@@ -1357,7 +1354,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 				else {
 					flagshipHop = 0;
 					flagshipMoving = false;
-					topUnknownKappa = 0;
+					flagshipRetreating = false;
 					flagshipBaseTurns = 0;
 				}
 				flagshipNearby = editorPanel.getBoolean( FLAGSHIP_NEARBY ).isSelected();
@@ -1386,12 +1383,12 @@ public class SavedGameSectorMapPanel extends JPanel {
 				if ( !flagshipVisible ) {
 					editorPanel.getSlider( FLAGSHIP_HOP ).setValue( 0 );
 					editorPanel.getBoolean( FLAGSHIP_MOVING ).setSelected( false );
-					editorPanel.getInt( TOP_KAPPA ).setText( "0" );
+					editorPanel.getBoolean( FLAGSHIP_RETREATING ).setSelected( false );
 					editorPanel.getInt( FLAGSHIP_BASE_TURNS ).setText( "0" );
 				}
 				editorPanel.getSlider( FLAGSHIP_HOP ).setEnabled( flagshipVisible );
 				editorPanel.getBoolean( FLAGSHIP_MOVING ).setEnabled( flagshipVisible );
-				editorPanel.getInt( TOP_KAPPA ).setEnabled( flagshipVisible );
+				editorPanel.getBoolean( FLAGSHIP_RETREATING ).setEnabled( flagshipVisible );
 				editorPanel.getInt( FLAGSHIP_BASE_TURNS ).setEnabled( flagshipVisible );
 			}
 		};
@@ -2143,6 +2140,10 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public StoreSprite( SpriteReference<BeaconState> beaconRef ) {
 			this.beaconRef = beaconRef;
 
+			// FTL 1.03.3: "img/map/map_box_store.png" (128x64, extra black padding down and right)
+			// FTL 1.5.13: "img/map/map_box_store.png" (80x40, as before but trimmed bottom and right padding)
+			// FTL 1.6.1: "img/map/map_box_white_[123].png" (19x32, 1x32, 15x32, side-stretch-side)
+
 			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_store.png", -1*80, -1*40, cachedImages );
 			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
 
@@ -2176,6 +2177,11 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		public QuestSprite( String questId ) {
 			this.questId = questId;
+
+			// FTL 1.03.3: "img/map/map_box_quest.png" (128x64, extra black padding down and right)
+			// FTL 1.5.13: "img/map/map_box_quest.png" (80x40, as before but trimmed bottom and right padding)
+			// FTL 1.6.1: "img/map/map_box_white_[123].png" (19x32, 1x32, 15x32, side-stretch-side)
+
 			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_quest.png", -1*80, -1*40, cachedImages );
 			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
 		}
