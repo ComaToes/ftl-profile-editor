@@ -8,12 +8,14 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
 
-@XmlRootElement(name = "sectorDescription")
-@XmlAccessorType(XmlAccessType.FIELD)
+
+@XmlRootElement( name = "sectorDescription" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class SectorDescription {
 
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
 	@XmlAttribute
@@ -26,25 +28,25 @@ public class SectorDescription {
 
 	private TrackList trackList;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private String startEvent;
 
-	@XmlElement(name="event")
+	@XmlElement( name="event" )
 	private List<EventDistribution> eventDistributions;
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class NameList {
 		@XmlElement(name = "name")
-		public List<String> names;
+		public List<DefaultDeferredText> names;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class TrackList {
-		@XmlElement(name = "track")
+		@XmlElement( name = "track" )
 		public List<String> tracks;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class EventDistribution {
 		@XmlAttribute
 		public String name;

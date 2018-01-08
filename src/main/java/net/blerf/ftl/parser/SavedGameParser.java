@@ -9451,6 +9451,11 @@ public class SavedGameParser extends Parser {
 
 
 
+	/**
+	 * Extra drone info stored separately from the original DroneState.
+	 *
+	 * This was introduced in FTL 1.5.4.
+	 */
 	public static class ExtendedDroneInfo {
 		private boolean deployed = false;
 		private boolean armed = false;
@@ -9519,7 +9524,7 @@ public class SavedGameParser extends Parser {
 		public boolean isArmed() { return armed; }
 
 		/**
-		 * Sets extended drone info, which varies by DroneType.
+		 * Sets a drone pod, which varies by DroneType.
 		 *
 		 * For BATTLE and REPAIR, this should be null.
 		 */

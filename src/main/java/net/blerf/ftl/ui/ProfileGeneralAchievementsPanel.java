@@ -85,9 +85,9 @@ public class ProfileGeneralAchievementsPanel extends JPanel {
 			log.trace( "Setting icons for cycle button. Base image: " + "img/" + ach.getImagePath() );
 
 			IconCycleButton box = ImageUtilities.createCycleButton( "img/" + ach.getImagePath(), true );
-			box.setToolTipText( ach.getName() );
+			box.setToolTipText( ach.getName().getTextValue() );
 
-			String achDesc = ach.getDescription().replaceAll( "(\r\n|\r|\n)+", " " );
+			String achDesc = ach.getDescription().getTextValue().replaceAll( "(\r\n|\r|\n)+", " " );
 			box.addMouseListener( new StatusbarMouseListener( frame, achDesc ) );
 
 			generalAchBoxes.put( ach, box );

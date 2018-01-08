@@ -6,48 +6,51 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
 
-@XmlRootElement(name = "droneBlueprint")
-@XmlAccessorType(XmlAccessType.FIELD)
+
+@XmlRootElement( name = "droneBlueprint" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class DroneBlueprint {
 
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
 	private String type;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private Integer locked;
 
-	private String title;
+	private DefaultDeferredText title;
 
-	@XmlElement(name = "short")
+	@XmlElement( name = "short" )
 	private String shortTitle;
 
-	private String desc;
+	private DefaultDeferredText desc;
 
-	@XmlElement(name = "bp")
+	@XmlElement( name = "bp" )
 	private int bp;  // TODO: Rename this.
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private Integer cooldown, dodge, speed;
 
 	private int power;
 	private int cost;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private String droneImage;
 
-	@XmlElement(name="image", required = false)
+	@XmlElement( name="image", required = false )
 	private String imagePath;  // InnerPath of a projectile anim sheet. Unused?
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private String iconImage;  // TODO: FTL 1.5.4 introduced this. For iPad?
 
-	@XmlElement(name="weaponBlueprint", required = false)
+	@XmlElement( name="weaponBlueprint", required = false )
 	private String weaponId;
 
 	private int rarity;
+
 
 	public void setId( String id ) {
 		this.id = id;
@@ -73,11 +76,11 @@ public class DroneBlueprint {
 		return locked;
 	}
 
-	public void setTitle( String title ) {
+	public void setTitle( DefaultDeferredText title ) {
 		this.title = title;
 	}
 
-	public String getTitle() {
+	public DefaultDeferredText getTitle() {
 		return title;
 	}
 
@@ -89,11 +92,11 @@ public class DroneBlueprint {
 		return shortTitle;
 	}
 
-	public void setDescription( String desc ) {
+	public void setDescription( DefaultDeferredText desc ) {
 		this.desc = desc;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getDescription() {
 		return desc;
 	}
 

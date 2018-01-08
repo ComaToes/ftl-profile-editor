@@ -40,7 +40,7 @@ public class TaggedStringResponseHandler implements ResponseHandler<TaggedString
 
 			return new TaggedString( responseText, eTagCurrent );
 		}
-		if ( status == 304 ) {  // Not modified.
+		else if ( status == 304 ) {  // Not modified.
 			// Nothing to see.
 			return null;
 		}

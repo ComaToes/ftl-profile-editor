@@ -8,18 +8,21 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
 
-@XmlRootElement(name = "ship")
-@XmlAccessorType(XmlAccessType.FIELD)
+
+@XmlRootElement( name = "ship" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class ShipEvent {
 
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
-	@XmlAttribute(name = "auto_blueprint")
+	@XmlAttribute( name = "auto_blueprint" )
 	private String autoBlueprintId;
 
 	// The rest is uninteresting. ;)
+
 
 	public String getId() {
 		return id;

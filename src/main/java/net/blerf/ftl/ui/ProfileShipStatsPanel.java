@@ -140,7 +140,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 		questAchs.put( baseId, questAch );
 		victoryAchs.put( baseId, victoryAch );
 
-		String shipClass = variantAShip.getShipClass();
+		String shipClass = variantAShip.getShipClass().getTextValue();
 
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
@@ -160,7 +160,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
 		if ( victoryAch != null ) {
 			IconCycleButton victoryABox = ImageUtilities.createCycleButton( victoryAImage, true );
-			victoryABox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-A: "+ variantAShip.getName() ) );
+			victoryABox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-A: "+ variantAShip.getName().getTextValue() ) );
 			victoryABoxes.put( baseId, victoryABox );
 			panel.add( victoryABox );
 		} else {
@@ -172,7 +172,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
 		if ( victoryAch != null && variantBShip != null ) {
 			IconCycleButton victoryBBox = ImageUtilities.createCycleButton( victoryBImage, true );
-			victoryBBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-B: "+ variantBShip.getName() ) );
+			victoryBBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-B: "+ variantBShip.getName().getTextValue() ) );
 			victoryBBoxes.put( baseId, victoryBBox );
 			panel.add( victoryBBox );
 		} else {
@@ -184,7 +184,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
 		if ( victoryAch != null && variantCShip != null ) {
 			IconCycleButton victoryCBox = ImageUtilities.createCycleButton( victoryCImage, true );
-			victoryCBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-C: "+ variantCShip.getName() ) );
+			victoryCBox.addMouseListener( new StatusbarMouseListener( frame, "Victory with Type-C: "+ variantCShip.getName().getTextValue() ) );
 			victoryCBoxes.put( baseId, victoryCBox );
 			panel.add( victoryCBox );
 		} else {

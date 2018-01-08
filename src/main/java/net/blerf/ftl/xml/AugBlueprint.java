@@ -6,24 +6,27 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
 
-@XmlRootElement(name = "augBlueprint")
-@XmlAccessorType(XmlAccessType.FIELD)
+
+@XmlRootElement( name = "augBlueprint" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class AugBlueprint {
 	
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
-	private String title;
-	private String desc;
+	private DefaultDeferredText title;
+	private DefaultDeferredText desc;
 
-	@XmlElement(name = "bp")
+	@XmlElement( name = "bp" )
 	private int bp;  // TODO: Rename this.
 
 	private int cost;
 	private int rarity;
 	private boolean stackable;
 	private float value;
+
 
 	public void setId( String id ) {
 		this.id = id;
@@ -33,19 +36,19 @@ public class AugBlueprint {
 		return id;
 	}
 
-	public void setTitle( String title ) {
+	public void setTitle( DefaultDeferredText title ) {
 		this.title = title;
 	}
 
-	public String getTitle() {
+	public DefaultDeferredText getTitle() {
 		return title;
 	}
 
-	public void setDescription( String desc ) {
+	public void setDescription( DefaultDeferredText desc ) {
 		this.desc = desc;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getDescription() {
 		return desc;
 	}
 

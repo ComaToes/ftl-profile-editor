@@ -9,42 +9,44 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
 
-@XmlRootElement(name = "crewBlueprint")
-@XmlAccessorType(XmlAccessType.FIELD)
+
+@XmlRootElement( name = "crewBlueprint" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class CrewBlueprint {
 
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
-	private String desc;
+	private DefaultDeferredText desc;
 	private int cost;
 
-	@XmlElement(name = "bp")
+	@XmlElement( name = "bp" )
 	private int bp;  // TODO: Rename this.
 
-	private String title;
+	private DefaultDeferredText title;
 
-	@XmlElement(name = "short")
-	private String shortTitle;
+	@XmlElement( name = "short" )
+	private DefaultDeferredText shortTitle;
 
 	private int rarity;
 
-	@XmlElementWrapper(name = "powerList")
-	@XmlElement(name = "power")
-	private List<String> powerList;
+	@XmlElementWrapper( name = "powerList" )
+	@XmlElement( name = "power" )
+	private List<DefaultDeferredText> powerList;
 
-	@XmlElementWrapper(name = "colorList", required = false)
-	@XmlElement(name = "layer", required = false)
+	@XmlElementWrapper( name = "colorList", required = false )
+	@XmlElement( name = "layer", required = false )
 	private List<SpriteTintLayer> spriteTintLayerList;  // FTL 1.5.4 introduced sprite tinting.
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class SpriteTintLayer {
 
-		@XmlElement(name="color")
+		@XmlElement( name="color" )
 		public List<SpriteTintColor> tintList;
 
-		@XmlAccessorType(XmlAccessType.FIELD)
+		@XmlAccessorType( XmlAccessType.FIELD )
 		public static class SpriteTintColor {
 			@XmlAttribute
 			public int r, g, b;
@@ -52,6 +54,7 @@ public class CrewBlueprint {
 			public float a;
 		}
 	}
+
 
 	public void setId( String id ) {
 		this.id = id;
@@ -61,11 +64,11 @@ public class CrewBlueprint {
 		return id;
 	}
 
-	public void setDescription( String desc ) {
+	public void setDescription( DefaultDeferredText desc ) {
 		this.desc = desc;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getDescription() {
 		return desc;
 	}
 
@@ -85,19 +88,19 @@ public class CrewBlueprint {
 		return bp;
 	}
 
-	public void setTitle( String title ) {
+	public void setTitle( DefaultDeferredText title ) {
 		this.title = title;
 	}
 
-	public String getTitle() {
+	public DefaultDeferredText getTitle() {
 		return title;
 	}
 
-	public void setShortTitle( String shortTitle ) {
+	public void setShortTitle( DefaultDeferredText shortTitle ) {
 		this.shortTitle = shortTitle;
 	}
 
-	public String getShortTitle() {
+	public DefaultDeferredText getShortTitle() {
 		return shortTitle;
 	}
 
@@ -109,11 +112,11 @@ public class CrewBlueprint {
 		return rarity;
 	}
 
-	public void setPowerList( List<String> powerList ) {
+	public void setPowerList( List<DefaultDeferredText> powerList ) {
 		this.powerList = powerList;
 	}
 
-	public List<String> getPowerList() {
+	public List<DefaultDeferredText> getPowerList() {
 		return powerList;
 	}
 

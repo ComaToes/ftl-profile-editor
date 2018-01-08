@@ -8,6 +8,7 @@ import java.util.List;
 import net.blerf.ftl.model.sectortree.SectorDot;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.random.RandRNG;
+import net.blerf.ftl.xml.DefaultDeferredText;
 import net.blerf.ftl.xml.SectorDescription;
 import net.blerf.ftl.xml.SectorType;
 
@@ -193,7 +194,12 @@ public class RandomSectorTreeGenerator {
 		for ( String sectorId : tmpType.getSectorIds() ) {
 			SectorDescription tmpDesc = DataManager.getInstance().getSectorDescriptionById( sectorId );
 
-			Sector tmpSector = new Sector( tmpDesc.isUnique(), tmpDesc.getMinSector(), tmpDesc.getId(), new ArrayList<String>( tmpDesc.getNameList().names ) );
+			List<DefaultDeferredText> titlesDeferred = tmpDesc.getNameList().names;
+			List<String> titleList = new ArrayList<String>( titlesDeferred.size() );
+			for ( DefaultDeferredText t : titlesDeferred ) {
+				titleList.add( t.getTextValue() );
+			}
+			Sector tmpSector = new Sector( tmpDesc.isUnique(), tmpDesc.getMinSector(), tmpDesc.getId(), titleList );
 			result.add( tmpSector );
 		}
 

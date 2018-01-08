@@ -23,6 +23,7 @@ import net.vhati.ftldat.AbstractPack;
 import net.vhati.ftldat.FolderPack;
 import net.vhati.ftldat.FTLPack;
 import net.vhati.ftldat.PackContainer;
+import net.vhati.ftldat.PkgPack;
 
 import net.blerf.ftl.model.ShipLayout;
 import net.blerf.ftl.parser.DatParser;
@@ -32,10 +33,12 @@ import net.blerf.ftl.xml.BackgroundImageList;
 import net.blerf.ftl.xml.Blueprints;
 import net.blerf.ftl.xml.CrewBlueprint;
 import net.blerf.ftl.xml.CrewNameList;
+import net.blerf.ftl.xml.DefaultDeferredText;
 import net.blerf.ftl.xml.DroneBlueprint;
 import net.blerf.ftl.xml.Encounters;
 import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
+import net.blerf.ftl.xml.NamedText;
 import net.blerf.ftl.xml.SectorData;
 import net.blerf.ftl.xml.SectorDescription;
 import net.blerf.ftl.xml.SectorType;
@@ -51,6 +54,8 @@ public class DefaultDataManager extends DataManager {
 	
 	private static final Logger log = LoggerFactory.getLogger( DefaultDataManager.class );
 
+	private List<String> textLookupFileNames;
+
 	private List<String> stdBlueprintsFileNames;
 	private List<String> dlcBlueprintsFileNames;
 	private List<String> stdEventsFileNames;
@@ -59,6 +64,8 @@ public class DefaultDataManager extends DataManager {
 	private List<String> dlcPlayerShipBaseIds;
 	private List<String> stdPlayerShipIds;
 	private List<String> dlcPlayerShipIds;
+
+	private Map<String, String> textLookupMap;
 
 	private Map<String, BackgroundImageList> backgroundImageLists;
 
@@ -122,11 +129,22 @@ public class DefaultDataManager extends DataManager {
 		List<InputStream> streams = new ArrayList<InputStream>();
 
 		try {
+			File ftlDatFile = new File( datsDir, "ftl.dat" );
 			File dataDatFile = new File( datsDir, "data.dat" );
 			File resourceDatFile = new File( datsDir, "resource.dat" );
 
 			packContainer = new PackContainer();
-			if ( dataDatFile.exists() && resourceDatFile.exists() ) {  // FTL 1.01-1.5.13.
+			if ( ftlDatFile.exists() ) {  // FTL 1.6.1.
+				AbstractPack ftlPack = new PkgPack( ftlDatFile, "r" );
+
+				packContainer.setPackFor( "audio/", ftlPack );
+				packContainer.setPackFor( "data/", ftlPack );
+				packContainer.setPackFor( "fonts/", ftlPack );
+				packContainer.setPackFor( "img/", ftlPack );
+				packContainer.setPackFor( null, ftlPack );
+				// Supposedly "exe_icon.png" has been observed at top-level?
+			}
+			else if ( dataDatFile.exists() && resourceDatFile.exists() ) {  // FTL 1.01-1.5.13.
 				AbstractPack dataPack = new FTLPack( dataDatFile, "r" );
 				packContainer.setPackFor( "data/", dataPack );
 
@@ -136,16 +154,47 @@ public class DefaultDataManager extends DataManager {
 				packContainer.setPackFor( "img/", resourcePack );
 			}
 			else {
-				throw new IOException( String.format( "Could not find both \"%s\" and \"%s\"", dataDatFile.getName(), resourceDatFile.getName() ) );
+				throw new IOException( String.format( "Could not find either \"%s\" or both \"%s\" and \"%s\"", ftlDatFile.getName(), dataDatFile.getName(), resourceDatFile.getName() ) );
 			}
 
 			datParser = new DatParser();
+
+			// Central string lookups.
+			// Blank tags elsewhere can have an "id" attribute.
+			//   Look up a text tag with that "name" attribute.
+			//   Take that value, replace "\\n" with "\n".
+			//   Make that the value of the original tag.
+			textLookupFileNames = new ArrayList<String>();
+			// FTL 1.5.4-1.5.13.
+			textLookupFileNames.add( "misc.xml" );
+			// FTL 1.6.1.
+			textLookupFileNames.add( "text_achievements.xml" );
+			textLookupFileNames.add( "text_blueprints.xml" );
+			textLookupFileNames.add( "text_events.xml" );
+			textLookupFileNames.add( "text_misc.xml" );
+			textLookupFileNames.add( "text_sectorname.xml" );
+			textLookupFileNames.add( "text_tooltips.xml" );
+			textLookupFileNames.add( "text_tutorial.xml" );
+
+			log.info( "Reading text..." );
+			textLookupMap = new HashMap<String, String>();
+			for ( String textLookupFileName : textLookupFileNames ) {
+				if ( !hasResourceInputStream( "data/"+ textLookupFileName ) ) continue;
+
+				log.debug( String.format( "Reading \"data/%s\"...", textLookupFileName ) );
+				InputStream tmpStream = getResourceInputStream( "data/"+ textLookupFileName );
+				streams.add( tmpStream );
+				List<NamedText> tmpNamedTextList = datParser.readNamedTextList( tmpStream, textLookupFileName );
+				for ( NamedText namedText : tmpNamedTextList ) {
+					textLookupMap.put( namedText.getId(), namedText.getText() );
+				}
+			}
 
 			log.info( "Reading Achievements..." );
 			log.debug( "Reading \"data/achievements.xml\"..." );
 			InputStream achStream = getResourceInputStream( "data/achievements.xml" );
 			streams.add( achStream );
-			List<Achievement> achievements = datParser.readAchievements( achStream, "achievements.xml" );
+			List<Achievement> achievements = datParser.readAchievements( achStream, "achievements.xml", textLookupMap );
 
 			log.info( "Reading Blueprints..." );
 			stdBlueprintsFileNames = new ArrayList<String>();
@@ -165,7 +214,7 @@ public class DefaultDataManager extends DataManager {
 				log.debug( String.format( "Reading \"data/%s\"...", blueprintsFileName ) );
 				InputStream tmpStream = getResourceInputStream( "data/"+ blueprintsFileName );
 				streams.add( tmpStream );
-				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName );
+				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName, textLookupMap );
 				allBlueprints.put( blueprintsFileName, tmpBlueprints );
 			}
 
@@ -175,7 +224,7 @@ public class DefaultDataManager extends DataManager {
 				log.debug( String.format( "Reading \"data/%s\"...", blueprintsFileName ) );
 				InputStream tmpStream = getResourceInputStream( "data/"+ blueprintsFileName );
 				streams.add( tmpStream );
-				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName );
+				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName, textLookupMap );
 				allBlueprints.put( blueprintsFileName, tmpBlueprints );
 			}
 
@@ -206,7 +255,7 @@ public class DefaultDataManager extends DataManager {
 				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
 				InputStream tmpStream = getResourceInputStream( "data/"+ eventsFileName );
 				streams.add( tmpStream );
-				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName );
+				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName, textLookupMap );
 				allEvents.put( eventsFileName, tmpEncounters );
 			}
 
@@ -216,7 +265,7 @@ public class DefaultDataManager extends DataManager {
 				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
 				InputStream tmpStream = getResourceInputStream( "data/"+ eventsFileName );
 				streams.add( tmpStream );
-				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName );
+				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName, textLookupMap );
 				allEvents.put( eventsFileName, tmpEncounters );
 			}
 
@@ -230,7 +279,7 @@ public class DefaultDataManager extends DataManager {
 			log.debug( "Reading \"data/sector_data.xml\"..." );
 			InputStream sectorDataStream = getResourceInputStream( "data/sector_data.xml" );
 			streams.add( sectorDataStream );
-			SectorData tmpSectorData = datParser.readSectorData( sectorDataStream, "sector_data.xml" );
+			SectorData tmpSectorData = datParser.readSectorData( sectorDataStream, "sector_data.xml", textLookupMap );
 			sectorDescriptionIdMap = new LinkedHashMap<String, SectorDescription>();
 			for ( SectorDescription tmpDesc : tmpSectorData.getSectorDescriptions() ) {
 				sectorDescriptionIdMap.put( tmpDesc.getId(), tmpDesc );
@@ -284,8 +333,8 @@ public class DefaultDataManager extends DataManager {
 				if ( questAch == null ) {
 					questAch = new Achievement();
 					questAch.setId( entry.getValue() );
-					questAch.setName( entry.getValue() );
-					questAch.setDescription( "Dummy quest achievement." );
+					questAch.setName( new DefaultDeferredText( entry.getValue() ) );
+					questAch.setDescription( new DefaultDeferredText( "Dummy quest achievement." ) );
 					questAch.setImagePath( null );
 					questAch.setShipId( entry.getKey() );
 					achievementIdMap.put( questAch.getId(), questAch );
@@ -310,8 +359,8 @@ public class DefaultDataManager extends DataManager {
 				if ( victoryAch == null ) {
 					victoryAch = new Achievement();
 					victoryAch.setId( entry.getValue() );
-					victoryAch.setName( entry.getValue() );
-					victoryAch.setDescription( "Dummy victory achievement." );
+					victoryAch.setName( new DefaultDeferredText( entry.getValue() ) );
+					victoryAch.setDescription( new DefaultDeferredText( "Dummy victory achievement." ) );
 					victoryAch.setImagePath( null );
 					victoryAch.setShipId( entry.getKey() );
 					achievementIdMap.put( victoryAch.getId(), victoryAch );
@@ -498,7 +547,7 @@ public class DefaultDataManager extends DataManager {
 				variantList.add( dlcShipIdMap.get( variantId ) );
 
 				// Most ships have a Type-C layout.
-				if ( !baseId.equals("PLAYER_SHIP_CRYSTAL") && !baseId.equals( "PLAYER_SHIP_ANAEROBIC" ) ) {
+				if ( !baseId.equals( "PLAYER_SHIP_CRYSTAL" ) && !baseId.equals( "PLAYER_SHIP_ANAEROBIC" ) ) {
 					variantId = String.format( "%s_%d", baseId, 3 );
 					dlcPlayerShipIds.add( variantId );
 					variantList.add( dlcShipIdMap.get( variantId ) );

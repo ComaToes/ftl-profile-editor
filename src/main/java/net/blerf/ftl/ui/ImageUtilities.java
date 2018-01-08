@@ -235,7 +235,7 @@ public class ImageUtilities {
 			log.error( "Failed to load and scale image: "+ innerPath, e );
 		}
 		catch ( FileNotFoundException e ) {
-			log.error( String.format( "Failed to load and scale image (\"%s\"). Its innerPath was not found.", innerPath ) );
+			log.error( String.format( "Failed to load and scale image (\"%s\"): innerPath was not found", innerPath ) );
 		}
 		catch ( IOException e ) {
 			log.error( "Failed to load and scale image: "+ innerPath, e );
@@ -330,7 +330,7 @@ public class ImageUtilities {
 			log.error( "Failed to load and proportionally scale image: "+ innerPath, e );
 		}
 		catch ( FileNotFoundException e ) {
-			log.error( String.format( "Failed to load and proportionally scale image (\"%s\"). Its innerPath was not found.", innerPath ) );
+			log.error( String.format( "Failed to load and proportionally scale image (\"%s\"): innerPath was not found", innerPath ) );
 		}
 		catch ( IOException e ) {
 			log.error( "Failed to load and proportionally scale image: "+ innerPath, e );
@@ -399,7 +399,7 @@ public class ImageUtilities {
 			log.error( "Failed to load and crop image: "+ innerPath, e );
 		}
 		catch ( FileNotFoundException e ) {
-			log.error( String.format( "Failed to load and crop image (\"%s\"). Its innerPath was not found.", innerPath ) );
+			log.error( String.format( "Failed to load and crop image (\"%s\"): innerPath was not found", innerPath ) );
 		}
 		catch ( IOException e ) {
 			log.error( "Failed to load and crop image: "+ innerPath, e );

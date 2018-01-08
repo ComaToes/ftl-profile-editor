@@ -80,20 +80,20 @@ public class ProfileShipUnlockPanel extends JPanel {
 		ShipBlueprint variantCShip = DataManager.get().getPlayerShipVariant( baseId, 2 );
 		if ( variantAShip == null ) return null;
 
-		String shipClass = variantAShip.getShipClass();
+		String shipClass = variantAShip.getShipClass().getTextValue();
 
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout( panel, BoxLayout.X_AXIS ) );
 		panel.setBorder( BorderFactory.createTitledBorder( shipClass ) );
 
 		IconCycleButton shipABox = ImageUtilities.createCycleButton( "img/ship/"+ variantAShip.getGraphicsBaseName() +"_base.png", false );
-		shipABox.addMouseListener( new StatusbarMouseListener( frame, "Type-A: "+ variantAShip.getName() ) );
+		shipABox.addMouseListener( new StatusbarMouseListener( frame, "Type-A: "+ variantAShip.getName().getTextValue() ) );
 		shipABoxes.put( baseId, shipABox );
 		panel.add( shipABox );
 
 		if ( variantBShip != null ) {
 			IconCycleButton shipBBox = ImageUtilities.createDummyCycleButton();
-			shipBBox.addMouseListener( new StatusbarMouseListener( frame, "Type-B: "+ variantBShip.getName() +" (To unlock, choose two ship achievements below.)" ) );
+			shipBBox.addMouseListener( new StatusbarMouseListener( frame, "Type-B: "+ variantBShip.getName().getTextValue() +" (To unlock, choose two ship achievements below.)" ) );
 			panel.add( shipBBox );
 		}
 		else {
@@ -104,7 +104,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 
 		if ( variantCShip != null ) {
 			IconCycleButton shipCBox = ImageUtilities.createCycleButton( "img/ship/"+ variantCShip.getGraphicsBaseName() +"_base.png", false );
-			shipCBox.addMouseListener( new StatusbarMouseListener( frame, "Type-C: "+ variantCShip.getName() ) );
+			shipCBox.addMouseListener( new StatusbarMouseListener( frame, "Type-C: "+ variantCShip.getName().getTextValue() ) );
 			shipCBoxes.put( baseId, shipCBox );
 			panel.add( shipCBox );
 		}
@@ -125,7 +125,7 @@ public class ProfileShipUnlockPanel extends JPanel {
 		ShipBlueprint variantAShip = DataManager.get().getPlayerShipVariant( baseId, 0 );
 		if ( variantAShip == null ) return null;
 
-		String shipClass = variantAShip.getShipClass();
+		String shipClass = variantAShip.getShipClass().getTextValue();
 
 		JPanel panel = new JPanel();
 		panel.setLayout( new BoxLayout(panel, BoxLayout.X_AXIS) );
@@ -137,9 +137,9 @@ public class ProfileShipUnlockPanel extends JPanel {
 				if ( shipAch.isVictory() || shipAch.isQuest() ) continue;
 
 				IconCycleButton box = ImageUtilities.createCycleButton( "img/" + shipAch.getImagePath(), true );
-				box.setToolTipText( shipAch.getName() );
+				box.setToolTipText( shipAch.getName().getTextValue() );
 
-				String achDesc = shipAch.getDescription().replaceAll( "(\r\n|\r|\n)+", " " );
+				String achDesc = shipAch.getDescription().getTextValue().replaceAll( "(\r\n|\r|\n)+", " " );
 				box.addMouseListener( new StatusbarMouseListener( frame, achDesc ) );
 
 				shipAchBoxes.put( shipAch, box );

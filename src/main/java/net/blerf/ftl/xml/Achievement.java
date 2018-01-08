@@ -7,6 +7,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
+
 
 @XmlRootElement(name = "achievement")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -15,10 +17,13 @@ public class Achievement {
 	@XmlAttribute
 	private String id;
 
-	private String name;
+	private DefaultDeferredText name;
+
+	@XmlElement(required = false)
+	private DefaultDeferredText shortName;
 
 	@XmlElement(name = "desc")
-	private String description;
+	private DefaultDeferredText description;
 
 	@XmlElement(name = "img")
 	private String imagePath;
@@ -47,19 +52,27 @@ public class Achievement {
 		return id;
 	}
 
-	public void setName( String name ) {
+	public void setName( DefaultDeferredText name ) {
 		this.name = name;
 	}
 
-	public String getName() {
+	public DefaultDeferredText getName() {
 		return name;
 	}
 
-	public void setDescription( String description ) {
+	public void setShortName( DefaultDeferredText shortName ) {
+		this.shortName = shortName;
+	}
+
+	public DefaultDeferredText getShortName() {
+		return shortName;
+	}
+
+	public void setDescription( DefaultDeferredText description ) {
 		this.description = description;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getDescription() {
 		return description;
 	}
 

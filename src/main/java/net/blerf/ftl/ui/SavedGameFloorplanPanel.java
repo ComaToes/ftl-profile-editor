@@ -2432,7 +2432,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					if ( source == augCombo ) {
 						Object augObj = augCombo.getSelectedItem();
 						if ( augObj instanceof AugBlueprint ) {
-							editorPanel.getWrappedLabel( DESC ).setText( ((AugBlueprint)augObj).getDescription() );
+							editorPanel.getWrappedLabel( DESC ).setText( ((AugBlueprint)augObj).getDescription().getTextValue() );
 
 							if ( ((AugBlueprint)augObj).isStackable() == false ) {
 								// Clear other slots' copies of this unique augment.
@@ -2517,7 +2517,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower - (armable && droneRef.get().isArmed() ? selectedBlueprint.getPower() : 0) );
 			editorPanel.getCombo( ID ).setSelectedItem( selectedBlueprint );
-			editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getDescription() );
+			editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getDescription().getTextValue() );
 			editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
 			editorPanel.getBoolean( ARMED ).setEnabled( armable );
 			editorPanel.getBoolean( PLAYER_CONTROLLED ).setSelected( droneRef.get().isPlayerControlled() );
@@ -2738,7 +2738,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower - (weaponRef.get().isArmed() ? selectedBlueprint.getPower() : 0) );
 			editorPanel.getCombo( ID ).setSelectedItem( selectedBlueprint );
-			editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getTooltip() );
+			editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getTooltip().getTextValue() );
 			editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
 			editorPanel.getBoolean( ARMED ).setSelected( (weaponRef.get().isArmed() && armable) );
 			editorPanel.getBoolean( ARMED ).setEnabled( armable );
@@ -2853,7 +2853,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						WeaponBlueprint selectedBlueprint = (WeaponBlueprint)blueprintObj;
 						boolean armable = (availablePower >= selectedBlueprint.getPower());
 
-						editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getTooltip() );
+						editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getTooltip().getTextValue() );
 						editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
 						if ( armable ) {
 							armedCheck.setEnabled( true );
@@ -3000,7 +3000,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Subsystems ignore the reserve, and power can't be directly changed.
 		final boolean isSubsystem = systemRef.get().getSystemType().isSubsystem();
 
-		String title = systemBlueprint.getTitle();
+		String title = systemBlueprint.getTitle().getTextValue();
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( RESERVE_CAPACITY, FieldEditorPanel.ContentType.SLIDER );

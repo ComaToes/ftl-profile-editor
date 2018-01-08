@@ -9,30 +9,32 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
 
-@XmlRootElement(name = "weaponBlueprint")
-@XmlAccessorType(XmlAccessType.FIELD)
+
+@XmlRootElement( name = "weaponBlueprint" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class WeaponBlueprint {
 	
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
 	private String type;
-	private String title;
+	private DefaultDeferredText title;
 
-	@XmlElement(name = "short")
-	private String shortTitle;
+	@XmlElement( name = "short" )
+	private DefaultDeferredText shortTitle;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private Integer locked;
 
-	private String desc;
-	private String tooltip;
+	private DefaultDeferredText desc;
+	private DefaultDeferredText tooltip;
 
-	@XmlElement(name = "sp")
+	@XmlElement( name = "sp" )
 	private int shieldPiercing;
 
-	@XmlElement(name = "bp")
+	@XmlElement( name = "bp" )
 	private int bp;  // TODO: Rename this.
 
 	private int damage;
@@ -44,28 +46,29 @@ public class WeaponBlueprint {
 	private int cost;
 	private int rarity;
 
-	@XmlElement(name = "image")
+	@XmlElement( name = "image" )
 	private String projectileAnimId;  // Projectile / Beam-spot anim.
 
 	@XmlElementWrapper(name = "launchSounds")
-	@XmlElement(name = "sound")
+	@XmlElement( name = "sound" )
 	private List<String> launchSounds;
 
-	@XmlElementWrapper(name = "hitShipSounds")
-	@XmlElement(name = "sound")
+	@XmlElementWrapper( name = "hitShipSounds" )
+	@XmlElement( name = "sound" )
 	private List<String> hitShipSounds;
 
-	@XmlElementWrapper(name = "hitShieldSounds")
-	@XmlElement(name = "sound")
+	@XmlElementWrapper( name = "hitShieldSounds" )
+	@XmlElement( name = "sound" )
 	private List<String> hitShieldSounds;
 
-	@XmlElementWrapper(name = "missSounds")
-	@XmlElement(name = "sound")
+	@XmlElementWrapper( name = "missSounds" )
+	@XmlElement( name = "sound" )
 	private List<String> missSounds;
 
-	@XmlElement(name = "weaponArt")
+	@XmlElement( name = "weaponArt" )
 	private String weaponAnimId;
 	
+
 	public void setId( String id ) {
 		this.id = id;
 	}
@@ -82,19 +85,19 @@ public class WeaponBlueprint {
 		return type;
 	}
 
-	public void setTitle( String title ) {
+	public void setTitle( DefaultDeferredText title ) {
 		this.title = title;
 	}
 
-	public String getTitle() {
+	public DefaultDeferredText getTitle() {
 		return title;
 	}
 
-	public void setShortTitle( String shortTitle ) {
+	public void setShortTitle( DefaultDeferredText shortTitle ) {
 		this.shortTitle = shortTitle;
 	}
 
-	public String getShortTitle() {
+	public DefaultDeferredText getShortTitle() {
 		return shortTitle;
 	}
 
@@ -106,19 +109,19 @@ public class WeaponBlueprint {
 		return locked;
 	}
 
-	public void setDescription( String desc ) {
+	public void setDescription( DefaultDeferredText desc ) {
 		this.desc = desc;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getDescription() {
 		return desc;
 	}
 
-	public void setTooltip( String tooltip ) {
+	public void setTooltip( DefaultDeferredText tooltip ) {
 		this.tooltip = tooltip;
 	}
 
-	public String getTooltip() {
+	public DefaultDeferredText getTooltip() {
 		return tooltip;
 	}
 

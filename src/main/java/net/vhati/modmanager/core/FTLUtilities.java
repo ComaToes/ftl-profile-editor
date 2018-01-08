@@ -1,6 +1,5 @@
-// Partially Copied from a snapshot of Slipstream Mod Manager after 1.9.
-// FTL 1.6.1 detection omitted.
-// https://github.com/Vhati/Slipstream-Mod-Manager/blob/8912fec70ed865d1bb58231214d85f487b4ca8f4/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
+// Copied from Slipstream Mod Manager 1.9.1.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/535c9735c0c70cb212bfd13e9b683138595f14ab/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
 
 package net.vhati.modmanager.core;
 
@@ -28,10 +27,14 @@ public class FTLUtilities {
 	/**
 	 * Confirms the FTL resources dir exists and contains the dat files.
 	 *
+	 * This checks for either "ftl.dat" or both "data.dat" and "resource.dat".
+	 *
 	 * Note: Do d.getCanonicalFile() to resolve any symlinks first!
 	 */
 	public static boolean isDatsDirValid( File d ) {
 		if ( !d.exists() || !d.isDirectory() ) return false;
+
+		if ( new File( d, "ftl.dat" ).exists() ) return true;
 
 		if ( new File( d, "data.dat" ).exists() && new File( d, "resource.dat" ).exists() ) {
 			return true;
@@ -149,35 +152,36 @@ public class FTLUtilities {
 
 		String message = ""
 			+ "You will now be prompted to locate FTL manually.\n"
+			+ "Look in {FTL dir} to select 'ftl.dat' or 'data.dat'.\n"
 			+ "\n"
-			+ "Select '(FTL dir)/resources/data.dat'.\n"
-			+ "Or 'FTL.app', if you're on OSX.";
+			+ "It may be buried under a subdirectory called 'resources/'.\n"
+			+ "Or select 'FTL.app', if you're on OSX.";
 
 		JOptionPane.showMessageDialog( parentComponent, message, "Find FTL", JOptionPane.INFORMATION_MESSAGE );
 
-		final JFileChooser fc = new JFileChooser();
-		fc.setDialogTitle( "Find data.dat or FTL.app" );
+		JFileChooser fc = new JFileChooser();
+		fc.setDialogTitle( "Find ftl.dat or data.dat or FTL.app" );
 		fc.setFileHidingEnabled( false );
 		fc.addChoosableFileFilter(new FileFilter() {
 			@Override
 			public String getDescription() {
-				return "FTL Data File - (FTL dir)/resources/data.dat";
+				return "FTL Data File - ftl.dat|data.dat";
 			}
 			@Override
-			public boolean accept(File f) {
-				return f.isDirectory() || f.getName().equals( "data.dat" ) || f.getName().equals( "FTL.app" );
+			public boolean accept( File f ) {
+				return f.isDirectory() || f.getName().equals( "ftl.dat" ) || f.getName().equals( "data.dat" ) || f.getName().equals( "FTL.app" );
 			}
 		});
 		fc.setMultiSelectionEnabled( false );
 
 		if ( fc.showOpenDialog( parentComponent ) == JFileChooser.APPROVE_OPTION ) {
 			File f = fc.getSelectedFile();
-			if ( f.getName().equals( "data.dat" ) ) {
+			if ( f.getName().equals( "ftl.dat" ) || f.getName().equals( "data.dat" ) ) {
 				result = f.getParentFile();
 			}
 			else if ( f.getName().endsWith( ".app" ) && f.isDirectory() ) {
-				File contentsPath = new File(f, "Contents");
-				if( contentsPath.exists() && contentsPath.isDirectory() && new File( contentsPath, "Resources" ).exists() ) {
+				File contentsPath = new File( f, "Contents" );
+				if ( contentsPath.exists() && contentsPath.isDirectory() && new File( contentsPath, "Resources" ).exists() ) {
 					result = new File( contentsPath, "Resources" );
 				}
 			}
@@ -261,7 +265,6 @@ public class FTLUtilities {
 
 		return result;
 	}
-
 
 	/**
 	 * Returns the executable that will launch Steam, or null.
@@ -374,7 +377,6 @@ public class FTLUtilities {
 		}
 		return result;
 	}
-
 
 	/**
 	 * Returns the directory for user profiles and saved games, or null.

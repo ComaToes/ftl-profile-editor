@@ -9,29 +9,32 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import net.blerf.ftl.xml.DefaultDeferredText;
 
-@XmlRootElement(name = "systemBlueprint")
-@XmlAccessorType(XmlAccessType.FIELD)
+
+@XmlRootElement( name = "systemBlueprint" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class SystemBlueprint {
 
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
 	private String type;
-	private String title;
-	private String desc;
+	private DefaultDeferredText title;
+	private DefaultDeferredText desc;
 	private int startPower;  // Initial system capacity.
 	private int maxPower;    // Highest possible capacity attainable by upgrading.
 	private int rarity;
 
-	@XmlElementWrapper(name = "upgradeCost")
-	@XmlElement(name = "level")
+	@XmlElementWrapper( name = "upgradeCost" )
+	@XmlElement( name = "level" )
 	private List<Integer> upgradeCosts;
 
 	private int cost;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private Integer locked;
+
 
 	public void setId( String id ) {
 		this.id = id;
@@ -49,19 +52,19 @@ public class SystemBlueprint {
 		return type;
 	}
 
-	public void setTitle( String title ) {
+	public void setTitle( DefaultDeferredText title ) {
 		this.title = title;
 	}
 
-	public String getTitle() {
+	public DefaultDeferredText getTitle() {
 		return title;
 	}
 
-	public void setDescription( String desc ) {
+	public void setDescription( DefaultDeferredText desc ) {
 		this.desc = desc;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getDescription() {
 		return desc;
 	}
 

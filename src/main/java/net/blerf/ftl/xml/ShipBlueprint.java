@@ -10,58 +10,65 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
+import net.blerf.ftl.xml.DefaultDeferredText;
 
 
-@XmlRootElement(name = "shipBlueprint")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement( name = "shipBlueprint" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class ShipBlueprint {
 	
-	@XmlAttribute(name = "name")
+	@XmlAttribute( name = "name" )
 	private String id;
 
 	@XmlAttribute
 	private String layout;
 
-	@XmlAttribute(name = "img")
+	@XmlAttribute( name = "img" )
 	private String gfxBaseName;
 	
-	@XmlElement(name = "class")
-	private String shipClass;
+	@XmlElement( name = "class" )
+	private DefaultDeferredText shipClass;
 
-	private String name;
-	private String desc;
+	@XmlElement( required = false )
+	private DefaultDeferredText name;
+
+	@XmlElement( required = false )
+	private DefaultDeferredText unlockTip;
+
+	@XmlElement( required = false )
+	private DefaultDeferredText desc;
 	
 	private SystemList systemList;
 
-	@XmlElement(required = false)  // Not present in autoBlueprints.xml.
+	@XmlElement( required = false )  // Not present in autoBlueprints.xml.
 	private Integer weaponSlots, droneSlots;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private WeaponList weaponList;
 
-	@XmlElement(name = "aug", required = false)
+	@XmlElement( name = "aug", required = false )
 	private List<AugmentId> augmentIds;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private DroneList droneList;
 
 	private Health health;
 	private MaxPower maxPower;   // Initial reserve power capacity.
 	private CrewCount crewCount;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private String boardingAI;  // Only present in autoBlueprints.xml.
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class SystemList {
 
-		@XmlAccessorType(XmlAccessType.FIELD)
+		@XmlAccessorType( XmlAccessType.FIELD )
 		public static class RoomSlot {
 
 			/**
 			 * The direction crew will face when standing at the terminal.
 			 */
-			@XmlElement(required = false)
+			@XmlElement( required = false )
 			private String direction;
 
 			private int number;  // The room square.
@@ -80,7 +87,7 @@ public class ShipBlueprint {
 			}
 		}
 		
-		@XmlAccessorType(XmlAccessType.FIELD)
+		@XmlAccessorType( XmlAccessType.FIELD )
 		public static class SystemRoom {
 
 			/**
@@ -97,10 +104,10 @@ public class ShipBlueprint {
 			 *
 			 * Not capped by SystemBlueprint's maxPower.
 			 */
-			@XmlAttribute(name = "max", required = false)
+			@XmlAttribute( name = "max", required = false )
 			private Integer maxPower;
 
-			@XmlAttribute(name = "room")
+			@XmlAttribute( name = "room" )
 			private int roomId;
 
 			/**
@@ -109,10 +116,10 @@ public class ShipBlueprint {
 			 * Treat null omissions as as true.
 			 * On randomly generated ships, false means it's sometimes present.
 			 */
-			@XmlAttribute(required = false)
+			@XmlAttribute( required = false )
 			private Boolean start;
 
-			@XmlAttribute(required = false)
+			@XmlAttribute( required = false )
 			private String img;
 
 			/**
@@ -121,7 +128,7 @@ public class ShipBlueprint {
 			 * For the medbay and clonebay, this is the blocked square.
 			 * When omitted, each system has a different hard-coded default.
 			 */
-			@XmlElement(required = false)
+			@XmlElement( required = false )
 			private RoomSlot slot;
 			
 			public void setPower( int power ) {
@@ -162,38 +169,39 @@ public class ShipBlueprint {
 			}
 		}
 		
-		@XmlElement(name = "pilot")
+		@XmlElement( name = "pilot" )
 		private SystemRoom pilotRoom;
-		@XmlElement(name = "doors")
+		@XmlElement( name = "doors" )
 		private SystemRoom doorsRoom;
-		@XmlElement(name = "sensors")
+		@XmlElement( name = "sensors" )
 		private SystemRoom sensorsRoom;
-		@XmlElement(name = "medbay")
+		@XmlElement( name = "medbay" )
 		private SystemRoom medicalRoom;
-		@XmlElement(name = "oxygen")
+		@XmlElement( name = "oxygen" )
 		private SystemRoom lifeSupportRoom;
-		@XmlElement(name = "shields")
+		@XmlElement( name = "shields" )
 		private SystemRoom shieldRoom;
-		@XmlElement(name = "engines")
+		@XmlElement( name = "engines" )
 		private SystemRoom engineRoom;
-		@XmlElement(name = "weapons")
+		@XmlElement( name = "weapons" )
 		private SystemRoom weaponRoom;
-		@XmlElement(name = "drones")
+		@XmlElement( name = "drones" )
 		private SystemRoom droneRoom;
-		@XmlElement(name = "teleporter")
+		@XmlElement( name = "teleporter" )
 		private SystemRoom teleporterRoom;
-		@XmlElement(name = "cloaking")
+		@XmlElement( name = "cloaking" )
 		private SystemRoom cloakRoom;  // lol :)
-		@XmlElement(name = "artillery", required = false)
+		@XmlElement( name = "artillery", required = false )
 		private List<SystemRoom> artilleryRooms;
-		@XmlElement(name = "clonebay")
+		@XmlElement( name = "clonebay" )
 		private SystemRoom cloneRoom;
-		@XmlElement(name = "hacking")
+		@XmlElement( name = "hacking" )
 		private SystemRoom hackRoom;
-		@XmlElement(name = "mind")
+		@XmlElement( name = "mind" )
 		private SystemRoom mindRoom;
-		@XmlElement(name = "battery")
+		@XmlElement( name = "battery" )
 		private SystemRoom batteryRoom;
+
 
 		public SystemRoom[] getSystemRooms() {
 			SystemRoom[] rooms = new SystemRoom[] {
@@ -383,7 +391,7 @@ public class ShipBlueprint {
 		}
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class WeaponList {
 
 		// 'count' isn't an independent field; a getter/setter calc's it (See below).
@@ -391,21 +399,22 @@ public class ShipBlueprint {
 		@XmlAttribute
 		public int missiles;
 
-		@XmlAttribute(name = "load", required = false)
+		@XmlAttribute( name = "load", required = false )
 		public String blueprintListId;
 
-		@XmlElement(name = "weapon")
+		@XmlElement( name = "weapon" )
 		private List<WeaponId> weaponIds;
 
-		@XmlAccessorType(XmlAccessType.FIELD)
+		@XmlAccessorType( XmlAccessType.FIELD )
 		public static class WeaponId {
 			@XmlAttribute
 			public String name;
 		}
 
+
 		public void setCount( int n ) { /* No-op */ }
 
-		@XmlAttribute(name="count")
+		@XmlAttribute( name="count" )
 		public int getCount() {
 			return (weaponIds != null ? weaponIds.size() : 0);
 		}
@@ -419,13 +428,13 @@ public class ShipBlueprint {
 		}
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class AugmentId {
 		@XmlAttribute
 		public String name;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class DroneList {
 
 		// 'count' isn't an independent field; a getter/setter calc's it (See below).
@@ -433,21 +442,22 @@ public class ShipBlueprint {
 		@XmlAttribute
 		public int drones;
 
-		@XmlAttribute(name = "load", required = false)
+		@XmlAttribute( name = "load", required = false )
 		public String blueprintListId;
 
-		@XmlElement(name = "drone")
+		@XmlElement( name = "drone" )
 		private List<DroneId> droneIds;
 
-		@XmlAccessorType(XmlAccessType.FIELD)
+		@XmlAccessorType( XmlAccessType.FIELD )
 		public static class DroneId {
 			@XmlAttribute
 			public String name;
 		}
 
+
 		public void setCount( int n ) { /* No-op */ }
 
-		@XmlAttribute(name = "count")
+		@XmlAttribute( name = "count" )
 		public int getCount() {
 			return (droneIds != null ? droneIds.size() : 0);
 		}
@@ -461,29 +471,30 @@ public class ShipBlueprint {
 		}
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class Health {
 		@XmlAttribute
 		public int amount;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class MaxPower {
 		@XmlAttribute
 		public int amount;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class CrewCount {
 		@XmlAttribute
 		public int amount;
 
-		@XmlAttribute(required = false)
+		@XmlAttribute( required = false )
 		public Integer max;  // Only present in autoBlueprints.xml.
 
-		@XmlAttribute(name = "class")
+		@XmlAttribute( name = "class" )
 		public String race;
 	}
+
 
 	public void setId( String id ) {
 		this.id = id;
@@ -509,27 +520,35 @@ public class ShipBlueprint {
 		return gfxBaseName;
 	}
 
-	public void setShipClass( String shipClass ) {
+	public void setShipClass( DefaultDeferredText shipClass ) {
 		this.shipClass = shipClass;
 	}
 
-	public String getShipClass() {
+	public DefaultDeferredText getShipClass() {
 		return shipClass;
 	}
 
-	public void setName( String name ) {
+	public void setName( DefaultDeferredText name ) {
 		this.name = name;
 	}
 
-	public String getName() {
+	public DefaultDeferredText getName() {
 		return name;
 	}
 
-	public void setDescription( String desc ) {
+	public void setUnlockTip( DefaultDeferredText unlockTip ) {
+		this.unlockTip = unlockTip;
+	}
+
+	public DefaultDeferredText getUnlockTip() {
+		return unlockTip;
+	}
+
+	public void setDescription( DefaultDeferredText desc ) {
 		this.desc = desc;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getDescription() {
 		return desc;
 	}
 
