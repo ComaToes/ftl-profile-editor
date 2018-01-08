@@ -2505,7 +2505,7 @@ public class SavedGameParser extends Parser {
 		 * Observed values: 0 (Almost always), 1 (Immediately after defeating
 		 * the flagship, but reverts if loaded and saved again!?).
 		 *
-		 * Bug in FTL 1.5.4-1.6.2: Bouncing to thhe main menu twice after
+		 * Bug in FTL 1.5.4-1.6.2: Bouncing to the main menu twice after
 		 * defeating the flagship at the base will reset hops and baseTurns to
 		 * 0, teleporting it to where it started.
 		 *
