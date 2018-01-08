@@ -16,7 +16,7 @@ public class DefaultDeferredText implements DeferredText {
 	private String ownText;
 
 	@XmlAttribute( name = "id", required = false )
-	private String textId;
+	private String textId = null;
 
 	@XmlTransient
 	private String resolvedText = null;
