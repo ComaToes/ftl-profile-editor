@@ -72,6 +72,13 @@ public class FTLProfileEditor {
 		log.debug( "OS: {} {}", System.getProperty( "os.name" ), System.getProperty( "os.version" ) );
 		log.debug( "VM: {}, {}, {}", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) );
 
+		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+			@Override
+			public void uncaughtException( Thread t, Throwable e ) {
+				log.error( String.format( "Uncaught exception in thread: %s", t ), e );
+			}
+		});
+
 		// Ensure all popups are triggered from the event dispatch thread.
 
 		SwingUtilities.invokeLater(new Runnable() {
