@@ -976,17 +976,23 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add Drones.
 		List<DroneState> droneList = shipState.getDroneList();
+		int actualDroneSlots;
 
-		// TODO: Magic number (when null: it's omitted in autoBlueprints.xml).
-		// In-game GUI shows 2 or 3.
-		int blueprintDroneSlots = 3;
-		if ( shipBlueprint.getDroneSlots() != null ) blueprintDroneSlots = shipBlueprint.getDroneSlots().intValue();
-
-		int actualDroneSlots = droneList.size();
-		if ( blueprintDroneSlots >= droneList.size() ) {
-			actualDroneSlots = blueprintDroneSlots;
-		} else {
-			log.warn( String.format("Ship state has %d drones, but its blueprint only expects %d", droneList.size(), shipBlueprint.getDroneSlots()) );
+		if ( shipBlueprint.getDroneSlots() != null ) {
+			int minDroneSlots = shipBlueprint.getDroneSlots().intValue();
+			if ( droneList.size() > minDroneSlots ) {
+				log.warn( String.format( "Ship state has %d drones, exceeding %d droneSlots on its blueprint", droneList.size(), minDroneSlots ) );
+			}
+			actualDroneSlots = Math.max( minDroneSlots, droneList.size() );
+		}
+		else {
+			// TODO: Magic number (when null: it's omitted in autoBlueprints.xml).
+			// In-game GUI shows 2 or 3.
+			int minDroneSlots = 3;
+			if ( droneList.size() > minDroneSlots && shipPlayerControlled ) {
+				log.warn( String.format( "Ship state has %d drones, exceeding the default %d droneSlots when not set by its blueprint", droneList.size(), minDroneSlots ) );
+			}
+			actualDroneSlots = Math.max( minDroneSlots, droneList.size() );
 		}
 
 		for ( int i=0; i < actualDroneSlots; i++ ) {
@@ -3600,7 +3606,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.getInt( COMBAT_KILLS ).addMouseListener( new StatusbarMouseListener( frame, "Counter for the Hall of Fame." ) );
 		editorPanel.getInt( PILOTED_EVASIONS ).addMouseListener( new StatusbarMouseListener( frame, "Counter for the Hall of Fame." ) );
 		editorPanel.getInt( JUMPS_SURVIVED ).addMouseListener( new StatusbarMouseListener( frame, "Counter for the Hall of Fame." ) );
-		editorPanel.getInt( SKILL_MASTERIES ).addMouseListener( new StatusbarMouseListener( frame, "Total skill mastery levels ever earned, for the Hall of Fame. (FTL 1.5.12+ tallies individually)." ) );
+		editorPanel.getInt( SKILL_MASTERIES ).addMouseListener( new StatusbarMouseListener( frame, "Total skill mastery levels ever earned, for the Hall of Fame (FTL 1.5.12+ tallies individually)." ) );
 		editorPanel.getBoolean( SEX ).addMouseListener( new StatusbarMouseListener( frame, "Only human females have a distinct sprite (Other races look the same either way)." ) );
 		editorPanel.getBoolean( ENEMY_DRONE ).addMouseListener( new StatusbarMouseListener( frame, "Turn into a boarding drone (clobbering other fields), hostile to this ship." ) );
 		editorPanel.getBoolean( PLAYER_CONTROLLED ).addMouseListener( new StatusbarMouseListener( frame, "Whether this crew is player controlled or an NPC." ) );
