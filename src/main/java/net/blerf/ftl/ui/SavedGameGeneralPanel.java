@@ -268,8 +268,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		encPanel.addRow( ENC_DEAD_CREW_EVENT, FieldEditorPanel.ContentType.STRING );
 		encPanel.addRow( ENC_GOT_AWAY_EVENT, FieldEditorPanel.ContentType.STRING );
 		encPanel.addRow( ENC_LAST_EVENT, FieldEditorPanel.ContentType.STRING );
-		encPanel.addRow( ENC_TEXT, FieldEditorPanel.ContentType.STRING );
-		encPanel.getString( ENC_TEXT ).setColumns( 10 );
+		encPanel.addRow( ENC_TEXT, FieldEditorPanel.ContentType.TEXT_AREA );
+		encPanel.getTextArea( ENC_TEXT ).setRows( 5 );
 		encPanel.addRow( ENC_CREW_SEED, FieldEditorPanel.ContentType.INTEGER );
 		encPanel.getInt( ENC_CREW_SEED ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		encPanel.addRow( ENC_CHOICES, FieldEditorPanel.ContentType.STRING );
@@ -278,10 +278,10 @@ public class SavedGameGeneralPanel extends JPanel {
 		encPanel.addFillRow();
 
 		encPanel.getInt( ENC_SHIP_EVENT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A seed for randomly generating a nearby ship. Copied from beacons on arrival." ) );
-		encPanel.getString( ENC_LAST_EVENT ).addMouseListener( new StatusbarMouseListener( frame, "The last dynamically triggered event. (Sector's beacon events are initially static.)" ) );
-		encPanel.getString( ENC_TEXT ).addMouseListener( new StatusbarMouseListener( frame, "Last situation-describing text shown in an event window. (From any event.)" ) );
-		encPanel.getInt( ENC_CREW_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A seed for randomly selecting crew. (-1 when not set.)" ) );
-		encPanel.getString( ENC_CHOICES ).addMouseListener( new StatusbarMouseListener( frame, "Breadcrumbs tracking already-selected choices at each prompt. (0-based) Blank for fresh events." ) );
+		encPanel.getString( ENC_LAST_EVENT ).addMouseListener( new StatusbarMouseListener( frame, "The last dynamically triggered event (Sector's beacon events are initially static)." ) );
+		encPanel.getTextArea( ENC_TEXT ).addMouseListener( new StatusbarMouseListener( frame, "Last situation-describing text shown in an event window." ) );
+		encPanel.getInt( ENC_CREW_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A seed for randomly selecting crew (-1 when not set)." ) );
+		encPanel.getString( ENC_CHOICES ).addMouseListener( new StatusbarMouseListener( frame, "Breadcrumbs tracking already-selected choices at each prompt (0-based). Blank for fresh events." ) );
 
 		GridBagConstraints thisC = new GridBagConstraints();
 		thisC.anchor = GridBagConstraints.NORTH;
@@ -455,7 +455,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			encPanel.getString( ENC_DEAD_CREW_EVENT ).setEnabled( encEnabled );
 			encPanel.getString( ENC_GOT_AWAY_EVENT ).setEnabled( encEnabled );
 			encPanel.getString( ENC_LAST_EVENT ).setEnabled( encEnabled );
-			encPanel.getString( ENC_TEXT ).setEnabled( encEnabled );
+			encPanel.getTextArea( ENC_TEXT ).setEnabled( encEnabled );
 			encPanel.getInt( ENC_CREW_SEED ).setEnabled( encEnabled );
 			encPanel.getString( ENC_CHOICES ).setEnabled( encEnabled );
 
@@ -467,7 +467,7 @@ public class SavedGameGeneralPanel extends JPanel {
 				encPanel.setStringAndReminder( ENC_DEAD_CREW_EVENT, enc.getDeadCrewEventId() );
 				encPanel.setStringAndReminder( ENC_GOT_AWAY_EVENT, enc.getGotAwayEventId() );
 				encPanel.setStringAndReminder( ENC_LAST_EVENT, enc.getLastEventId() );
-				encPanel.getString( ENC_TEXT ).setText( enc.getText() );
+				encPanel.getTextArea( ENC_TEXT ).setText( enc.getText() );
 				encPanel.setIntAndReminder( ENC_CREW_SEED, enc.getAffectedCrewSeed() );
 
 				StringBuilder choiceBuf = new StringBuilder();
@@ -611,7 +611,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			enc.setDeadCrewEventId( encPanel.getString( ENC_DEAD_CREW_EVENT ).getText() );
 			enc.setGotAwayEventId( encPanel.getString( ENC_GOT_AWAY_EVENT ).getText() );
 			enc.setLastEventId( encPanel.getString( ENC_LAST_EVENT ).getText() );
-			enc.setText( encPanel.getString( ENC_TEXT ).getText() );
+			enc.setText( encPanel.getTextArea( ENC_TEXT ).getText() );
 
 			try { enc.setAffectedCrewSeed( encPanel.parseInt( ENC_CREW_SEED ) ); }
 			catch ( NumberFormatException e ) {}
