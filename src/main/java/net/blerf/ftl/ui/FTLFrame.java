@@ -117,21 +117,21 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private Profile profile = null;
 	private SavedGameParser.SavedGameState gameState = null;
 
-	private ImageIcon openIcon = new ImageIcon( ClassLoader.getSystemResource( "open.gif" ) );
-	private ImageIcon saveIcon = new ImageIcon( ClassLoader.getSystemResource( "save.gif" ) );
-	private ImageIcon unlockIcon = new ImageIcon( ClassLoader.getSystemResource( "unlock.png" ) );
-	private ImageIcon aboutIcon = new ImageIcon( ClassLoader.getSystemResource( "about.gif" ) );
-	private final ImageIcon updateIcon = new ImageIcon( ClassLoader.getSystemResource( "update.gif" ) );
-
-	private URL aboutPageURL = ClassLoader.getSystemResource( "about.html" );
-	private URL historyTemplateMainURL = ClassLoader.getSystemResource( "history_template_main.html" );
-	private URL historyTemplateReleaseURL = ClassLoader.getSystemResource( "history_template_release.html" );
+	private URL aboutPageURL = FTLFrame.class.getResource( "about.html" );
+	private URL historyTemplateMainURL = FTLFrame.class.getResource( "history_template_main.html" );
+	private URL historyTemplateReleaseURL = FTLFrame.class.getResource( "history_template_release.html" );
 
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://subsetgames.com/forum/viewtopic.php?f=7&t=10959";
 
 	private List<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
+
+	private ImageIcon openIcon;
+	private ImageIcon saveIcon;
+	private ImageIcon unlockIcon;
+	private ImageIcon aboutIcon;
+	private final ImageIcon updateIcon;
 
 	private JButton profileSaveBtn;
 	private JButton profileDumpBtn;
@@ -161,14 +161,19 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private final int appVersion;
 
 
-	public FTLFrame( EditorConfig appConfig, String appName, int appVersion ) {
+	public FTLFrame( EditorConfig appConfig, String appName, int appVersion ) throws IOException {
 		this.appConfig = appConfig;
 		this.appName = appName;
 		this.appVersion = appVersion;
 
+		openIcon = new ImageIcon( ImageUtilities.getBundledImage( "open.gif", FTLFrame.class ) );
+		saveIcon = new ImageIcon( ImageUtilities.getBundledImage( "save.gif", FTLFrame.class ) );
+		unlockIcon = new ImageIcon( ImageUtilities.getBundledImage( "unlock.png", FTLFrame.class ) );
+		aboutIcon = new ImageIcon( ImageUtilities.getBundledImage( "about.gif", FTLFrame.class ) );
+		updateIcon = new ImageIcon( ImageUtilities.getBundledImage( "update.gif", FTLFrame.class ) );
+
 		this.setTitle( String.format( "%s v%d", appName, appVersion ) );
 		this.setDefaultCloseOperation( JFrame.DO_NOTHING_ON_CLOSE );
-
 		this.setIconImage( unlockIcon.getImage() );
 
 		linkListener = new HyperlinkListener() {

@@ -22,9 +22,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.model.AchievementRecord;
 import net.blerf.ftl.model.Score;
@@ -39,8 +36,6 @@ import net.blerf.ftl.xml.ShipBlueprint;
 
 
 public class ProfileShipStatsPanel extends JPanel implements ActionListener {
-
-	private static final Logger log = LoggerFactory.getLogger( ProfileShipStatsPanel.class );
 
 	private static final int ACH_LOCKED = 0;
 	private static final int MAX_SCORE_PANELS = 4;
@@ -68,10 +63,10 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 	private Map<String, IconCycleButton> victoryCBoxes = new HashMap<String, IconCycleButton>();
 
 
-	public ProfileShipStatsPanel( FTLFrame frame ) {
+	public ProfileShipStatsPanel( FTLFrame frame ) throws IOException {
 		this.frame = frame;
 
-		this.setLayout( new GridLayout(0, 2) );
+		this.setLayout( new GridLayout( 0, 2 ) );
 
 		JPanel leftPanel = new JPanel( new GridBagLayout() );
 		leftPanel.setBorder( BorderFactory.createTitledBorder( "Ship Best" ) );
@@ -103,10 +98,10 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 
 		this.add( leftPanel );
 
-		questImage = ImageUtilities.getBundledImage( "ach_quest.png", this.getClass().getClassLoader() );
-		victoryAImage = ImageUtilities.getBundledImage( "ach_victory_type-a.png", this.getClass().getClassLoader() );
-		victoryBImage = ImageUtilities.getBundledImage( "ach_victory_type-b.png", this.getClass().getClassLoader() );
-		victoryCImage = ImageUtilities.getBundledImage( "ach_victory_type-c.png", this.getClass().getClassLoader() );
+		questImage = ImageUtilities.getBundledImage( "ach_quest.png", ProfileShipStatsPanel.class );
+		victoryAImage = ImageUtilities.getBundledImage( "ach_victory_type-a.png", ProfileShipStatsPanel.class );
+		victoryBImage = ImageUtilities.getBundledImage( "ach_victory_type-b.png", ProfileShipStatsPanel.class );
+		victoryCImage = ImageUtilities.getBundledImage( "ach_victory_type-c.png", ProfileShipStatsPanel.class );
 
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout( new BoxLayout( rightPanel, BoxLayout.Y_AXIS ) );
@@ -120,10 +115,7 @@ public class ProfileShipStatsPanel extends JPanel implements ActionListener {
 		this.add( rightPanel );
 	}
 
-
 	private JPanel createQVAchPanel( String baseId ) {
-
-		log.trace( "Creating quest/victory achievement panel for: "+ baseId );
 
 		ShipBlueprint variantAShip = DataManager.get().getPlayerShipVariant( baseId, 0 );
 		ShipBlueprint variantBShip = DataManager.get().getPlayerShipVariant( baseId, 1 );

@@ -18,6 +18,7 @@ import java.awt.image.RescaleOp;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import javax.imageio.ImageIO;
@@ -166,22 +167,27 @@ public class ImageUtilities {
 
 
 	/**
-	 * Returns an image from a class loader's getResource(), or null.
+	 * Returns an image from Class.getResourceAsStream().
+	 *
+	 * Relative paths will be relative to the class file.
 	 */
-	public static BufferedImage getBundledImage( String name, ClassLoader classLoader ) {
+	public static BufferedImage getBundledImage( String path, Class<?> clazz ) throws IOException {
 		BufferedImage result = null;
 
-		java.net.URL imageUrl = classLoader.getResource( name );
-		if ( imageUrl != null ) {
-			try {
-				result = ImageIO.read( imageUrl );
+		URL bundledImageURL = clazz.getResource( path );
+		try {
+			if ( bundledImageURL == null ) {
+				throw new IOException( "Resource was not found" );
 			}
-			catch ( IOException e ) {
-				log.error( "Error reading bundled image: "+ name );
+
+			result = ImageIO.read( bundledImageURL );
+
+			if ( result == null ) {
+				throw new IOException( "ImageIO did not recognize the file type" );
 			}
 		}
-		else {
-			log.error( "Could not find bundled image: "+ name );
+		catch ( IOException e ) {
+			throw new IOException( String.format( "Error reading bundled image (\"%s\"): %s", path, e.getMessage() ) );
 		}
 
 		return result;
