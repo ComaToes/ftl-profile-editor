@@ -124,6 +124,9 @@ public class FTLFrame extends JFrame implements Statusbar {
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://subsetgames.com/forum/viewtopic.php?f=7&t=10959";
 
+	private boolean disposeNormally = true;
+	private boolean ranInit = false;
+
 	private List<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
 
@@ -292,6 +295,9 @@ public class FTLFrame extends JFrame implements Statusbar {
 			@Override
 			public void windowClosed( WindowEvent e ) {
 				// dispose() was called.
+
+				if ( !disposeNormally ) return;  // Something bad happened. Exit quickly.
+
 				EditorConfig appConfig = FTLFrame.this.appConfig;
 
 				try {
@@ -320,6 +326,9 @@ public class FTLFrame extends JFrame implements Statusbar {
 	 * Extra initialization that must be called after the constructor.
 	 */
 	public void init() {
+		if ( ranInit ) return;
+		ranInit = true;
+
 		EditorInitThread initThread = new EditorInitThread(
 			this,
 			new EditorConfig( appConfig ),
@@ -1398,5 +1407,14 @@ public class FTLFrame extends JFrame implements Statusbar {
 		} else {
 			statusLbl.setText( " " );
 		}
+	}
+
+	/**
+	 * Toggles whether to perform the usual actions after disposal.
+	 *
+	 * Set this to false before an abnormal exit.
+	 */
+	public void setDisposeNormally( boolean b ) {
+		disposeNormally = false;
 	}
 }

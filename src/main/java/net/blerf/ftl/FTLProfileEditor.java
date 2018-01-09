@@ -75,7 +75,7 @@ public class FTLProfileEditor {
 		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
 			@Override
 			public void uncaughtException( Thread t, Throwable e ) {
-				log.error( String.format( "Uncaught exception in thread: %s", t ), e );
+				log.error( "Uncaught exception in thread: "+ t.toString(), e );
 			}
 		});
 
@@ -277,13 +277,19 @@ public class FTLProfileEditor {
 				throw new ExitException();
 			}
 
+			FTLFrame frame = null;
 			try {
-				FTLFrame frame = new FTLFrame( appConfig, APP_NAME, APP_VERSION );
+				frame = new FTLFrame( appConfig, APP_NAME, APP_VERSION );
 				frame.init();
 				frame.setVisible( true );
 			}
 			catch ( Exception e ) {
 				log.error( "Exception while creating FTLFrame", e );
+
+				if ( frame != null && frame.isDisplayable() ) {
+					frame.setDisposeNormally( false );
+					frame.dispose();
+				}
 
 				throw new ExitException();
 			}
