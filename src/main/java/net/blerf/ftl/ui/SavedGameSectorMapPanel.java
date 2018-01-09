@@ -71,6 +71,7 @@ import net.blerf.ftl.parser.SavedGameParser.RebelFlagshipState;
 import net.blerf.ftl.parser.SavedGameParser.StoreShelf;
 import net.blerf.ftl.parser.SavedGameParser.StoreState;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
+import net.blerf.ftl.parser.random.FTL_1_6_Random;
 import net.blerf.ftl.parser.random.GNULibCRandom;
 import net.blerf.ftl.parser.random.MsRandom;
 import net.blerf.ftl.parser.random.NativeRandom;
@@ -1080,6 +1081,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getCombo( LAYOUT ).addMouseListener( new StatusbarMouseListener( frame, "The type of map to generate." ) );
 		editorPanel.getInt( LAYOUT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A per-sector constant that seeds random generation of the map, events, etc. (potentially dangerous)." ) );
 
+		if ( fileFormat == 11 ) {  // FTL 1.6.1.
+			editorPanel.getCombo( ALGORITHM ).addItem( new FTL_1_6_Random( "FTL 1.6+" ) );
+		}
 		editorPanel.getCombo( ALGORITHM ).addItem( new NativeRandom( "Native" ) );
 		editorPanel.getCombo( ALGORITHM ).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
 		editorPanel.getCombo( ALGORITHM ).addItem( new MsRandom( "Microsoft" ) );
@@ -1217,6 +1221,9 @@ public class SavedGameSectorMapPanel extends JPanel {
 			+ "\n"
 			+ "If FTL interprets the seed differently in-game, the beacon count "
 			+ "will vary, along with all other random elements.\n"
+			+ "\n"
+			+ "FTL 1.6.1+ uses a built-in RNG relardless of OS (unless the campaign was "
+			+ "migrated from an earlier edition).\n"
 			+ "\n"
 			+ "A grid layout with the original seed should always be safe.";
 

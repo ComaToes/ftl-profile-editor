@@ -115,8 +115,8 @@ public class RandomSectorMapGenerator {
 
 			return genMap;
 		}
-		else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
-			// FTL 1.5.4/1.5.10, 1.5.12, or 1.5.13.
+		else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
+			// FTL 1.5.4-1.5.10, 1.5.12, 1.5.13, 1.6.1-1.6.2.
 
 			int columns = 6;  // TODO: Magic numbers.
 			int rows = 4;

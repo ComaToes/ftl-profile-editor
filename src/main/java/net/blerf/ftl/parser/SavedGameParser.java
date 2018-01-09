@@ -75,12 +75,18 @@ public class SavedGameParser extends Parser {
 			int fileFormat = readInt( in );
 			gameState.setFileFormat( fileFormat );
 
+			if ( fileFormat == 11 ) {
+				gameState.setRandomNative( readBool( in ) );
+			} else {
+				gameState.setRandomNative( true );  // Always native before FTL 1.6.1.
+			}
+
 			if ( fileFormat == 2 ) {
 				// FTL 1.03.3 and earlier.
 				gameState.setDLCEnabled( false );  // Not present before FTL 1.5.4.
 			}
-			else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
-				// FTL 1.5.4/1.5.10, 1.5.12, or 1.5.13.
+			else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
+				// FTL 1.5.4-1.5.10, 1.5.12, 1.5.13, or 1.6.1-1.6.2.
 				gameState.setDLCEnabled( readBool( in ) );
 			}
 			else {
@@ -95,7 +101,7 @@ public class SavedGameParser extends Parser {
 			else if ( diffFlag == 1 ) {
 				diff = Difficulty.NORMAL;
 			}
-			else if ( diffFlag == 2 && ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) ) {
+			else if ( diffFlag == 2 && ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) ) {
 				diff = Difficulty.HARD;
 			}
 			else {
@@ -145,7 +151,7 @@ public class SavedGameParser extends Parser {
 
 			gameState.setRebelPursuitMod( readInt( in ) );
 
-			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				gameState.setCurrentBeaconId( readInt( in ) );
 
 				gameState.setWaiting( readBool( in ) );
@@ -210,12 +216,12 @@ public class SavedGameParser extends Parser {
 				RebelFlagshipState flagshipState = readRebelFlagship( in );
 				gameState.setRebelFlagshipState( flagshipState );
 			}
-			else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+			else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				// Current beaconId was set earlier.
 
 				gameState.setUnknownMu( readInt( in ) );
 
-				EncounterState encounter = readEncounter( in );
+				EncounterState encounter = readEncounter( in, fileFormat );
 				gameState.setEncounter( encounter );
 
 				boolean shipNearby = readBool( in );
@@ -289,14 +295,13 @@ public class SavedGameParser extends Parser {
 	public void writeSavedGame( OutputStream out, SavedGameState gameState ) throws IOException {
 
 		int fileFormat = gameState.getFileFormat();
+		writeInt( out, fileFormat );
 
-		if ( fileFormat == 2 ) {
-			// FTL 1.03.3 and earlier.
-			writeInt( out, fileFormat );
+		if ( fileFormat == 11 ) {
+			writeBool( out, gameState.isRandomNative() );
 		}
-		else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
-			// FTL 1.5.4+.
-			writeInt( out, fileFormat );
+
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeBool( out, gameState.isDLCEnabled() );
 		}
 		else {
@@ -310,7 +315,7 @@ public class SavedGameParser extends Parser {
 		else if ( gameState.getDifficulty() == Difficulty.NORMAL ) {
 			diffFlag = 1;
 		}
-		else if ( gameState.getDifficulty() == Difficulty.HARD && ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) ) {
+		else if ( gameState.getDifficulty() == Difficulty.HARD && ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) ) {
 			diffFlag = 2;
 		}
 		else {
@@ -350,7 +355,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, gameState.getRebelFleetFudge() );
 		writeInt( out, gameState.getRebelPursuitMod() );
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, gameState.getCurrentBeaconId() );
 
 			writeBool( out, gameState.isWaiting() );
@@ -405,12 +410,12 @@ public class SavedGameParser extends Parser {
 
 			writeRebelFlagship( out, gameState.getRebelFlagshipState() );
 		}
-		else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			// Current beaconId was set earlier.
 
 			writeInt( out, gameState.getUnknownMu() );
 
-			writeEncounter( out, gameState.getEncounter() );
+			writeEncounter( out, gameState.getEncounter(), fileFormat );
 
 			ShipState nearbyShip = gameState.getNearbyShip();
 			writeBool( out, (nearbyShip != null) );
@@ -486,7 +491,7 @@ public class SavedGameParser extends Parser {
 			shipState.addStartingCrewMember( readStartingCrewMember( in ) );
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			shipState.setHostile( readBool( in ) );
 			shipState.setJumpChargeTicks( readInt( in ) );
 			shipState.setJumping( readBool( in ) );
@@ -518,7 +523,7 @@ public class SavedGameParser extends Parser {
 		systemTypes.add( SystemType.TELEPORTER );
 		systemTypes.add( SystemType.CLOAKING );
 		systemTypes.add( SystemType.ARTILLERY );
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			systemTypes.add( SystemType.BATTERY );
 			systemTypes.add( SystemType.CLONEBAY );
 			systemTypes.add( SystemType.MIND );
@@ -545,7 +550,7 @@ public class SavedGameParser extends Parser {
 			}
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 
 			SystemState tmpSystem = null;
 
@@ -649,17 +654,17 @@ public class SavedGameParser extends Parser {
 			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor( in, fileFormat ) );
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			shipState.setCloakAnimTicks( readInt( in ) );
+		}
 
-			if ( fileFormat == 8 || fileFormat == 9 ) {
-				int crystalCount = readInt( in );
-				List<LockdownCrystal> crystalList = new ArrayList<LockdownCrystal>();
-				for ( int i=0; i < crystalCount; i++ ) {
-					crystalList.add( readLockdownCrystal( in ) );
-				}
-				shipState.setLockdownCrystalList( crystalList );
+		if ( fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
+			int crystalCount = readInt( in );
+			List<LockdownCrystal> crystalList = new ArrayList<LockdownCrystal>();
+			for ( int i=0; i < crystalCount; i++ ) {
+				crystalList.add( readLockdownCrystal( in ) );
 			}
+			shipState.setLockdownCrystalList( crystalList );
 		}
 
 		int weaponCount = readInt( in );
@@ -715,7 +720,7 @@ public class SavedGameParser extends Parser {
 			writeStartingCrewMember( out, startingCrew );
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeBool( out, shipState.isHostile() );
 			writeInt( out, shipState.getJumpChargeTicks() );
 			writeBool( out, shipState.isJumping() );
@@ -747,7 +752,7 @@ public class SavedGameParser extends Parser {
 		systemTypes.add( SystemType.TELEPORTER );
 		systemTypes.add( SystemType.CLOAKING );
 		systemTypes.add( SystemType.ARTILLERY );
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			systemTypes.add( SystemType.BATTERY );
 			systemTypes.add( SystemType.CLONEBAY );
 			systemTypes.add( SystemType.MIND );
@@ -768,7 +773,7 @@ public class SavedGameParser extends Parser {
 			}
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 
 			SystemState clonebayState = shipState.getSystem( SystemType.CLONEBAY );
 			if ( clonebayState != null && clonebayState.getCapacity() > 0 ) {
@@ -862,14 +867,14 @@ public class SavedGameParser extends Parser {
 			writeDoor( out, shipDoorMap.get( doorCoord ), fileFormat );
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, shipState.getCloakAnimTicks() );
+		}
 
-			if ( fileFormat == 8 || fileFormat == 9 ) {
-				writeInt( out, shipState.getLockdownCrystalList().size() );
-				for ( LockdownCrystal crystal : shipState.getLockdownCrystalList() ) {
-					writeLockdownCrystal( out, crystal );
-				}
+		if ( fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
+			writeInt( out, shipState.getLockdownCrystalList().size() );
+			for ( LockdownCrystal crystal : shipState.getLockdownCrystalList() ) {
+				writeLockdownCrystal( out, crystal );
 			}
 		}
 
@@ -918,7 +923,7 @@ public class SavedGameParser extends Parser {
 		crew.setRoomSquare( readInt( in ) );
 		crew.setPlayerControlled( readBool( in ) );
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			crew.setCloneReady( readInt( in ) );
 
 			int deathOrder = readInt( in );  // Redundant. Exactly the same as Clonebay Priority.
@@ -948,7 +953,7 @@ public class SavedGameParser extends Parser {
 		crew.setJumpsSurvived( readInt( in ) );
 		crew.setSkillMasteriesEarned( readInt( in ) );
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			crew.setStunTicks( readInt( in ) );
 			crew.setHealthBoost( readInt( in ) );
 			crew.setClonebayPriority( readInt( in ) );
@@ -956,7 +961,7 @@ public class SavedGameParser extends Parser {
 			crew.setUnknownLambda( readInt( in ) );
 			crew.setUniversalDeathCount( readInt( in ) );
 
-			if ( fileFormat == 8 || fileFormat == 9 ) {
+			if ( fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				crew.setPilotMasteryOne( readBool( in ) );
 				crew.setPilotMasteryTwo( readBool( in ) );
 				crew.setEngineMasteryOne( readBool( in ) );
@@ -998,7 +1003,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, crew.getRoomSquare() );
 		writeBool( out, crew.isPlayerControlled() );
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, crew.getCloneReady() );
 
 			int deathOrder = crew.getClonebayPriority();  // Redundant.
@@ -1027,7 +1032,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, crew.getJumpsSurvived() );
 		writeInt( out, crew.getSkillMasteriesEarned() );
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, crew.getStunTicks() );
 			writeInt( out, crew.getHealthBoost() );
 			writeInt( out, crew.getClonebayPriority() );
@@ -1035,7 +1040,7 @@ public class SavedGameParser extends Parser {
 			writeInt( out, crew.getUnknownLambda() );
 			writeInt( out, crew.getUniversalDeathCount() );
 
-			if ( fileFormat == 8 || fileFormat == 9 ) {
+			if ( fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				writeBool( out, crew.getPilotMasteryOne() );
 				writeBool( out, crew.getPilotMasteryTwo() );
 				writeBool( out, crew.getEngineMasteryOne() );
@@ -1083,7 +1088,7 @@ public class SavedGameParser extends Parser {
 			system.setRepairProgress( readInt( in ) );
 			system.setDamageProgress( readInt( in ) );
 
-			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				system.setBatteryPower( readInt( in ) );
 				system.setHackLevel( readInt( in ) );
 				system.setHacked( readBool( in ) );
@@ -1107,7 +1112,7 @@ public class SavedGameParser extends Parser {
 			writeInt( out, system.getRepairProgress() );
 			writeInt( out, system.getDamageProgress() );
 
-			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				writeInt( out, system.getBatteryPower() );
 				writeInt( out, system.getHackLevel() );
 				writeBool( out, system.isHacked() );
@@ -1140,7 +1145,7 @@ public class SavedGameParser extends Parser {
 			}
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			room.setStationSquare( readInt( in ) );
 
 			StationDirection stationDirection = null;
@@ -1192,7 +1197,7 @@ public class SavedGameParser extends Parser {
 			}
 		}
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, room.getStationSquare() );
 
 			int stationDirectionFlag = 0;
@@ -1221,7 +1226,7 @@ public class SavedGameParser extends Parser {
 	private DoorState readDoor( InputStream in, int fileFormat ) throws IOException {
 		DoorState door = new DoorState();
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			door.setCurrentMaxHealth( readInt( in ) );
 			door.setHealth( readInt( in ) );
 			door.setNominalHealth( readInt( in ) );
@@ -1230,7 +1235,7 @@ public class SavedGameParser extends Parser {
 		door.setOpen( readBool( in ) );
 		door.setWalkingThrough( readBool( in ) );
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			door.setUnknownDelta( readInt( in ) );
 			door.setUnknownEpsilon( readInt( in ) );  // TODO: Confirm: Drone lockdown.
 		}
@@ -1239,7 +1244,7 @@ public class SavedGameParser extends Parser {
 	}
 
 	public void writeDoor( OutputStream out, DoorState door, int fileFormat ) throws IOException {
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, door.getCurrentMaxHealth() );
 			writeInt( out, door.getHealth() );
 			writeInt( out, door.getNominalHealth() );
@@ -1248,7 +1253,7 @@ public class SavedGameParser extends Parser {
 		writeBool( out, door.isOpen() );
 		writeBool( out, door.isWalkingThrough() );
 
-		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+		if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, door.getUnknownDelta() );
 			writeInt( out, door.getUnknownEpsilon() );
 		}
@@ -1352,7 +1357,7 @@ public class SavedGameParser extends Parser {
 			StoreState store = new StoreState();
 
 			int shelfCount = 2;          // FTL 1.01-1.03.3 only had two shelves.
-			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
+			if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				shelfCount = readInt( in );  // FTL 1.5.4 made shelves into an N-sized list.
 			}
 			for ( int i=0; i < shelfCount; i++ ) {
@@ -1416,8 +1421,8 @@ public class SavedGameParser extends Parser {
 					writeStoreShelf( out, dummyShelf, fileFormat );
 				}
 			}
-			else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 ) {
-				// FTL 1.5.4 requires at least one shelf.
+			else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
+				// FTL 1.5.4+ requires at least one shelf.
 				int shelfReq = 1;
 
 				List<StoreShelf> pendingShelves = new ArrayList<StoreShelf>();
@@ -1462,7 +1467,7 @@ public class SavedGameParser extends Parser {
 			StoreItem item = new StoreItem( readString( in ) );
 			item.setAvailable( (available > 0) );
 
-			if ( fileFormat == 8 || fileFormat == 9 ) {
+			if ( fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 				item.setExtraData( readInt( in ) );
 			}
 
@@ -1490,7 +1495,7 @@ public class SavedGameParser extends Parser {
 				writeInt( out, available );
 				writeString( out, item.getItemId() );
 
-				if ( fileFormat == 8 || fileFormat == 9 ) {
+				if ( fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
 					writeInt( out, item.getExtraData() );
 				}
 			}
@@ -1500,10 +1505,10 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
-	public EncounterState readEncounter( InputStream in ) throws IOException {
+	public EncounterState readEncounter( InputStream in, int fileFormat ) throws IOException {
 		EncounterState encounter = new EncounterState();
 
-		encounter.setShipEventSeed( readInt( in ) );  // Matches the beacon's seed.
+		encounter.setShipEventSeed( readInt( in ) );
 		encounter.setSurrenderEventId( readString( in ) );
 		encounter.setEscapeEventId( readString( in ) );
 		encounter.setDestroyedEventId( readString( in ) );
@@ -1511,6 +1516,11 @@ public class SavedGameParser extends Parser {
 		encounter.setGotAwayEventId( readString( in ) );
 
 		encounter.setLastEventId( readString( in ) );
+
+		if ( fileFormat == 11 ) {
+			encounter.setUnknownAlpha( readInt( in ) );
+		}
+
 		encounter.setText( readString( in ) );
 		encounter.setAffectedCrewSeed( readInt( in ) );
 
@@ -1524,7 +1534,7 @@ public class SavedGameParser extends Parser {
 		return encounter;
 	}
 
-	public void writeEncounter( OutputStream out, EncounterState encounter ) throws IOException {
+	public void writeEncounter( OutputStream out, EncounterState encounter, int fileFormat ) throws IOException {
 		writeInt( out, encounter.getShipEventSeed() );
 		writeString( out, encounter.getSurrenderEventId() );
 		writeString( out, encounter.getEscapeEventId() );
@@ -1533,6 +1543,11 @@ public class SavedGameParser extends Parser {
 		writeString( out, encounter.getGotAwayEventId() );
 
 		writeString( out, encounter.getLastEventId() );
+
+		if ( fileFormat == 11 ) {
+			writeInt( out, encounter.getUnknownAlpha() );
+		}
+
 		writeString( out, encounter.getText() );
 		writeInt( out, encounter.getAffectedCrewSeed() );
 
@@ -2084,6 +2099,7 @@ public class SavedGameParser extends Parser {
 
 	public static class SavedGameState {
 		private int fileFormat = 0;
+		private boolean randomNative = true;
 		private boolean dlcEnabled = false;
 		private Difficulty difficulty = Difficulty.EASY;
 		private int totalShipsDefeated = 0;
@@ -2142,9 +2158,25 @@ public class SavedGameParser extends Parser {
 		 *   7 = Saved Game, FTL 1.5.4-1.5.10
 		 *   8 = Saved Game, FTL 1.5.12
 		 *   9 = Saved Game, FTL 1.5.13
+		 *  11 = Saved Game, FTL 1.6.1-1.6.2
 		 */
 		public void setFileFormat( int n ) { fileFormat = n; }
 		public int getFileFormat() { return fileFormat; }
+
+		/**
+		 * Sets whether the native RNG was used.
+		 *
+		 * FTL 1.6.1 introduced a hard-coded RNG to use on all platforms.
+		 * Earlier editions delegated to the OS srand()/rand() functions,
+		 * making saved games platform-dependent.
+		 *
+		 * This value is set to true if a saved game from an earlier edition
+		 * is migrated, requiring a native RNG to interpret its seeds.
+		 *
+		 * This was introduced in FTL 1.6.1.
+		 */
+		public void setRandomNative( boolean b ) { randomNative = b; }
+		public boolean isRandomNative() { return randomNative; }
 
 		/**
 		 * Sets the difficulty.
@@ -2751,6 +2783,7 @@ public class SavedGameParser extends Parser {
 
 			boolean first = true;
 			result.append( String.format( "File Format:            %5d (%s)\n", fileFormat, formatDesc ) );
+			result.append( String.format( "Native RNG:             %5b (FTL 1.6.1 uses a built-in RNG, except when migrated)\n", randomNative ) );
 			result.append( String.format( "AE Content:             %5s\n", (dlcEnabled ? "Enabled" : "Disabled" ) ) );
 			result.append( String.format( "Ship Name:              %s\n", playerShipName ) );
 			result.append( String.format( "Ship Type:              %s\n", playerShipBlueprintId ) );
@@ -5835,6 +5868,7 @@ public class SavedGameParser extends Parser {
 		private String gotAwayEventId = "";
 
 		private String lastEventId = "";
+		private int unknownAlpha = 0;
 		private String text = "";
 		private int affectedCrewSeed = -1;
 		private List<Integer> choiceList = new ArrayList<Integer>();
@@ -5884,6 +5918,14 @@ public class SavedGameParser extends Parser {
 		public String getLastEventId() { return lastEventId; }
 
 		/**
+		 * Unknown.
+		 *
+		 * This was introduced in FTL 1.6.1.
+		 */
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+
+		/**
 		 * Sets the last situation-describing text shown in an event window.
 		 *
 		 * Any event - 'static', secondary, or wait - may set this value. It may
@@ -5894,6 +5936,8 @@ public class SavedGameParser extends Parser {
 		 * separately.
 		 *
 		 * After the event popup is dismissed, this value lingers.
+		 *
+		 * This may include line breaks ("\n").
 		 *
 		 * @see SavedGameState#setWaiting(boolean)
 		 */
@@ -5946,6 +5990,7 @@ public class SavedGameParser extends Parser {
 			result.append( "\n" );
 
 			result.append( String.format( "Last Event:         %s\n", lastEventId ) );
+			result.append( String.format( "Alpha?:             %3d\n", unknownAlpha ) );
 
 			result.append( "\nText...\n" );
 			result.append( String.format( "%s\n", text ) );
@@ -10519,7 +10564,7 @@ public class SavedGameParser extends Parser {
 		weaponMod.setFiring( readBool( in ) );
 		weaponMod.setUnknownPhi( readBool( in ) );
 
-		if ( fileFormat == 9 ) {
+		if ( fileFormat == 9 || fileFormat == 11 ) {
 			weaponMod.setAnimCharge( readInt( in ) );
 
 			weaponMod.setChargeAnim( readAnim( in ) );
@@ -10564,7 +10609,7 @@ public class SavedGameParser extends Parser {
 		writeBool( out, weaponMod.isFiring() );
 		writeBool( out, weaponMod.getUnknownPhi() );
 
-		if ( fileFormat == 9 ) {
+		if ( fileFormat == 9 || fileFormat == 11 ) {
 			writeInt( out, weaponMod.getAnimCharge() );
 
 			writeAnim( out, weaponMod.getChargeAnim() );

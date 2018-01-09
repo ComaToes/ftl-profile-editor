@@ -40,6 +40,7 @@ import net.blerf.ftl.model.sectortree.SectorTreeEvent;
 import net.blerf.ftl.model.sectortree.SectorTreeException;
 import net.blerf.ftl.model.sectortree.SectorTreeListener;
 import net.blerf.ftl.parser.SavedGameParser;
+import net.blerf.ftl.parser.random.FTL_1_6_Random;
 import net.blerf.ftl.parser.random.GNULibCRandom;
 import net.blerf.ftl.parser.random.MsRandom;
 import net.blerf.ftl.parser.random.NativeRandom;
@@ -82,6 +83,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 	private Font noticeFont = new Font( "Monospaced", Font.PLAIN, 13 );
 
 	private Random javaRandom = new Random();
+	private int fileFormat = 2;
 	private boolean dlcEnabled = true;
 	private int sectorTreeSeed = 0;
 
@@ -155,6 +157,9 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 			+ "may risk creating visitation breadcrumbs inconsistent with the tree, "
 			+ "if FTL interprets the seed differently in-game. "
 			+ "In other words, charting a glitchy course through unexpected sectors.\n"
+			+ "\n"
+			+ "FTL 1.6.1+ uses a built-in RNG relardless of OS (unless the campaign was "
+			+ "migrated from an earlier edition).\n"
 			+ "\n"
 			+ "A linear preview with the original seed should always be safe.";
 
@@ -328,6 +333,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
+		fileFormat = 2;
 		dlcEnabled = true;
 		sectorTreeSeed = 0;
 		originalSectorTreeSeed = 0;
@@ -342,6 +348,15 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		tree.fireColumnsChanged();
 
 		if ( gameState != null ) {
+			fileFormat = gameState.getFileFormat();
+			dlcEnabled = gameState.isDLCEnabled();
+
+			originalSectorTreeSeed = gameState.getSectorTreeSeed();
+			originalRoute = new ArrayList<Boolean>( gameState.getSectorVisitation() );
+
+			if ( fileFormat == 11 ) {  // FTL 1.6.1.
+				genPanel.getCombo(ALGORITHM).addItem( new FTL_1_6_Random( "FTL 1.6+" ) );
+			}
 			genPanel.getCombo(ALGORITHM).addItem( new NativeRandom( "Native" ) );
 			genPanel.getCombo(ALGORITHM).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
 			genPanel.getCombo(ALGORITHM).addItem( new MsRandom( "Microsoft" ) );
@@ -349,11 +364,6 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 			genPanel.getCombo(TREE_TYPE).addItem( TREE_TYPE_LINEAR );
 			genPanel.getCombo(TREE_TYPE).addItem( TREE_TYPE_EXPANDED );
 			genPanel.getCombo(TREE_TYPE).setSelectedItem( TREE_TYPE_LINEAR );
-
-			dlcEnabled = gameState.isDLCEnabled();
-
-			originalSectorTreeSeed = gameState.getSectorTreeSeed();
-			originalRoute = new ArrayList<Boolean>( gameState.getSectorVisitation() );
 
 			genPanel.setIntAndReminder( SECTOR_TREE_SEED, gameState.getSectorTreeSeed() );
 		}

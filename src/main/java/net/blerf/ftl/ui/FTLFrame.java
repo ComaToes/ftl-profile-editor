@@ -1333,7 +1333,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 			gameState = null;
 		}
-		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9}, gs.getFileFormat() ) >= 0 ) {
+		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9, 11}, gs.getFileFormat() ) >= 0 ) {
 			savedGameDumpPanel.setText( gs.toString() );
 			savedGameGeneralPanel.setGameState( gs );
 			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShip() );
@@ -1368,7 +1368,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 		if ( gs == null ) {
 		}
-		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9}, gs.getFileFormat() ) >= 0 ) {
+		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9, 11}, gs.getFileFormat() ) >= 0 ) {
 			// savedGameDumpPanel doesn't modify anything.
 			savedGameGeneralPanel.updateGameState( gs );
 			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShip() );

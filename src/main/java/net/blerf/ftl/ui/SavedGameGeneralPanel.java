@@ -43,6 +43,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String TOTAL_BEACONS = "Total Beacons";
 	private static final String TOTAL_SCRAP = "Total Scrap";
 	private static final String TOTAL_CREW_HIRED = "Total Crew Hired";
+	private static final String RANDOM_NATIVE = "Native RNG";
 	private static final String DLC = "DLC";
 	private static final String DIFFICULTY = "Difficulty";
 	private static final String TOP_BETA = "Beta?";
@@ -93,6 +94,7 @@ public class SavedGameGeneralPanel extends JPanel {
 	private static final String ENC_DEAD_CREW_EVENT = "Dead Crew Event";
 	private static final String ENC_GOT_AWAY_EVENT = "Got Away Event";
 	private static final String ENC_LAST_EVENT = "Last Event";
+	private static final String ENC_ALPHA = "Alpha?";
 	private static final String ENC_TEXT = "Text";
 	private static final String ENC_CREW_SEED = "Affected Crew Seed";
 	private static final String ENC_CHOICES = "Last Event Choices";
@@ -122,6 +124,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		sessionPanel.addRow( TOTAL_BEACONS, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( TOTAL_SCRAP, FieldEditorPanel.ContentType.INTEGER );
 		sessionPanel.addRow( TOTAL_CREW_HIRED, FieldEditorPanel.ContentType.INTEGER );
+		sessionPanel.addRow( RANDOM_NATIVE, FieldEditorPanel.ContentType.BOOLEAN );
 		sessionPanel.addRow( DLC, FieldEditorPanel.ContentType.BOOLEAN );
 		sessionPanel.addRow( DIFFICULTY, FieldEditorPanel.ContentType.COMBO );
 		sessionPanel.addRow( TOP_BETA, FieldEditorPanel.ContentType.INTEGER );
@@ -131,7 +134,8 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		sessionPanel.getBoolean( DLC ).setEnabled( false );
 
-		sessionPanel.getBoolean( DLC ).addMouseListener( new StatusbarMouseListener( frame, "Toggle FTL:AE content (changing to false may be dangerous)." ) );
+		sessionPanel.getBoolean( RANDOM_NATIVE ).addMouseListener( new StatusbarMouseListener( frame, "Whether the RNG was native." ) );
+		sessionPanel.getBoolean( DLC ).addMouseListener( new StatusbarMouseListener( frame, "Include FTL:AE content." ) );
 		sessionPanel.getCombo( DIFFICULTY ).addMouseListener( new StatusbarMouseListener( frame, "Difficulty (FTL 1.01-1.03.3 did not have HARD)." ) );
 		sessionPanel.getInt( TOP_BETA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown session field. Always 0?" ) );
 
@@ -268,6 +272,8 @@ public class SavedGameGeneralPanel extends JPanel {
 		encPanel.addRow( ENC_DEAD_CREW_EVENT, FieldEditorPanel.ContentType.STRING );
 		encPanel.addRow( ENC_GOT_AWAY_EVENT, FieldEditorPanel.ContentType.STRING );
 		encPanel.addRow( ENC_LAST_EVENT, FieldEditorPanel.ContentType.STRING );
+		encPanel.addRow( ENC_ALPHA, FieldEditorPanel.ContentType.INTEGER );
+		encPanel.getInt( ENC_ALPHA ).setDocument( new RegexDocument( "-?[0-9]*" ) );
 		encPanel.addRow( ENC_TEXT, FieldEditorPanel.ContentType.TEXT_AREA );
 		encPanel.getTextArea( ENC_TEXT ).setRows( 5 );
 		encPanel.addRow( ENC_CREW_SEED, FieldEditorPanel.ContentType.INTEGER );
@@ -279,6 +285,7 @@ public class SavedGameGeneralPanel extends JPanel {
 
 		encPanel.getInt( ENC_SHIP_EVENT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A seed for randomly generating a nearby ship. Copied from beacons on arrival." ) );
 		encPanel.getString( ENC_LAST_EVENT ).addMouseListener( new StatusbarMouseListener( frame, "The last dynamically triggered event (Sector's beacon events are initially static)." ) );
+		encPanel.getInt( ENC_ALPHA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown." ) );
 		encPanel.getTextArea( ENC_TEXT ).addMouseListener( new StatusbarMouseListener( frame, "Last situation-describing text shown in an event window." ) );
 		encPanel.getInt( ENC_CREW_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A seed for randomly selecting crew (-1 when not set)." ) );
 		encPanel.getString( ENC_CHOICES ).addMouseListener( new StatusbarMouseListener( frame, "Breadcrumbs tracking already-selected choices at each prompt (0-based). Blank for fresh events." ) );
@@ -335,6 +342,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			sessionPanel.setIntAndReminder( TOTAL_BEACONS, gameState.getTotalBeaconsExplored() );
 			sessionPanel.setIntAndReminder( TOTAL_SCRAP, gameState.getTotalScrapCollected() );
 			sessionPanel.setIntAndReminder( TOTAL_CREW_HIRED, gameState.getTotalCrewHired() );
+			sessionPanel.setBoolAndReminder( RANDOM_NATIVE, gameState.isRandomNative() );
 			sessionPanel.setBoolAndReminder( DLC, gameState.isDLCEnabled() );
 			sessionPanel.setComboAndReminder( DIFFICULTY, gameState.getDifficulty() );
 			sessionPanel.setIntAndReminder( TOP_BETA, gameState.getUnknownBeta() );
@@ -455,6 +463,7 @@ public class SavedGameGeneralPanel extends JPanel {
 			encPanel.getString( ENC_DEAD_CREW_EVENT ).setEnabled( encEnabled );
 			encPanel.getString( ENC_GOT_AWAY_EVENT ).setEnabled( encEnabled );
 			encPanel.getString( ENC_LAST_EVENT ).setEnabled( encEnabled );
+			encPanel.getInt( ENC_ALPHA ).setEnabled( encEnabled );
 			encPanel.getTextArea( ENC_TEXT ).setEnabled( encEnabled );
 			encPanel.getInt( ENC_CREW_SEED ).setEnabled( encEnabled );
 			encPanel.getString( ENC_CHOICES ).setEnabled( encEnabled );
@@ -467,6 +476,7 @@ public class SavedGameGeneralPanel extends JPanel {
 				encPanel.setStringAndReminder( ENC_DEAD_CREW_EVENT, enc.getDeadCrewEventId() );
 				encPanel.setStringAndReminder( ENC_GOT_AWAY_EVENT, enc.getGotAwayEventId() );
 				encPanel.setStringAndReminder( ENC_LAST_EVENT, enc.getLastEventId() );
+				encPanel.setIntAndReminder( ENC_ALPHA, enc.getUnknownAlpha() );
 				encPanel.getTextArea( ENC_TEXT ).setText( enc.getText() );
 				encPanel.setIntAndReminder( ENC_CREW_SEED, enc.getAffectedCrewSeed() );
 
@@ -497,6 +507,7 @@ public class SavedGameGeneralPanel extends JPanel {
 		try { gameState.setTotalCrewHired( sessionPanel.parseInt( TOTAL_CREW_HIRED ) ); }
 		catch ( NumberFormatException e ) {}
 
+		gameState.setRandomNative( sessionPanel.getBoolean( RANDOM_NATIVE ).isSelected() );
 		gameState.setDLCEnabled( sessionPanel.getBoolean( DLC ).isSelected() );
 
 		Object diffObj = sessionPanel.getCombo( DIFFICULTY ).getSelectedItem();
@@ -611,6 +622,10 @@ public class SavedGameGeneralPanel extends JPanel {
 			enc.setDeadCrewEventId( encPanel.getString( ENC_DEAD_CREW_EVENT ).getText() );
 			enc.setGotAwayEventId( encPanel.getString( ENC_GOT_AWAY_EVENT ).getText() );
 			enc.setLastEventId( encPanel.getString( ENC_LAST_EVENT ).getText() );
+
+			try { enc.setUnknownAlpha( encPanel.parseInt( ENC_ALPHA ) ); }
+			catch ( NumberFormatException e ) {}
+
 			enc.setText( encPanel.getTextArea( ENC_TEXT ).getText() );
 
 			try { enc.setAffectedCrewSeed( encPanel.parseInt( ENC_CREW_SEED ) ); }
