@@ -94,7 +94,7 @@ import net.blerf.ftl.ui.Statusbar;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 
 
-public class FTLFrame extends JFrame implements Statusbar {
+public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger( FTLFrame.class );
 
@@ -126,6 +126,7 @@ public class FTLFrame extends JFrame implements Statusbar {
 
 	private boolean disposeNormally = true;
 	private boolean ranInit = false;
+	private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler = null;
 
 	private List<JButton> updatesButtonList = new ArrayList<JButton>();
 	private Runnable updatesCallback;
@@ -296,6 +297,9 @@ public class FTLFrame extends JFrame implements Statusbar {
 			public void windowClosed( WindowEvent e ) {
 				// dispose() was called.
 
+				// Restore the previous exception handler.
+				if ( ranInit ) Thread.setDefaultUncaughtExceptionHandler( previousUncaughtExceptionHandler );
+
 				if ( !disposeNormally ) return;  // Something bad happened. Exit quickly.
 
 				EditorConfig appConfig = FTLFrame.this.appConfig;
@@ -328,6 +332,9 @@ public class FTLFrame extends JFrame implements Statusbar {
 	public void init() {
 		if ( ranInit ) return;
 		ranInit = true;
+
+		previousUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler();
+		Thread.setDefaultUncaughtExceptionHandler( this );
 
 		EditorInitThread initThread = new EditorInitThread(
 			this,
@@ -1416,5 +1423,26 @@ public class FTLFrame extends JFrame implements Statusbar {
 	 */
 	public void setDisposeNormally( boolean b ) {
 		disposeNormally = false;
+	}
+
+	@Override
+	public void uncaughtException( Thread t, Throwable e ) {
+		log.error( "Uncaught exception in thread: "+ t.toString(), e );
+
+		final String threadString = t.toString();
+		final String errString = e.toString();
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				String message = ""
+					+ "An unexpected error has occurred.\n"
+					+ "\n"
+					+ "Error: "+ errString +"\n"
+					+ "\n"
+					+ "See the log for details.\n";
+
+				JOptionPane.showMessageDialog( FTLFrame.this, message, "Error", JOptionPane.ERROR_MESSAGE );
+			}
+		});
 	}
 }

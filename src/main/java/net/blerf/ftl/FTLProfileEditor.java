@@ -284,7 +284,13 @@ public class FTLProfileEditor {
 				frame.setVisible( true );
 			}
 			catch ( Exception e ) {
-				log.error( "Exception while creating FTLFrame", e );
+				log.error( "Failed to create and init the main window", e );
+
+				// If the frame is constructed, but an exception prevents it
+				// becoming visible, that *must* be caught. The frame registers
+				// itself as a global uncaught exception handler. It doesn't
+				// dispose() itself in the handler, so EDT will wait forever
+				// for an invisible window to close.
 
 				if ( frame != null && frame.isDisplayable() ) {
 					frame.setDisposeNormally( false );
