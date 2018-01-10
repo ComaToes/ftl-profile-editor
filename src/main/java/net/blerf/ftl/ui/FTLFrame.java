@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Insets;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -146,6 +147,11 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 	private ProfileShipStatsPanel profileShipStatsPanel;
 	private DumpPanel profileDumpPanel;
 
+	private JScrollPane profileShipUnlockScroll;
+	private JScrollPane profileGeneralAchsScroll;
+	private JScrollPane profileGeneralStatsScroll;
+	private JScrollPane profileShipStatsScroll;
+
 	private JButton gameStateSaveBtn;
 	private JButton gameStateDumpBtn;
 	private JTabbedPane savedGameTabsPane;
@@ -157,6 +163,10 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 	private SavedGameSectorMapPanel savedGameSectorMapPanel;
 	private SavedGameSectorTreePanel savedGameSectorTreePanel;
 	private SavedGameStateVarsPanel savedGameStateVarsPanel;
+
+	private JScrollPane savedGameGeneralScroll;
+	private JScrollPane savedGameSectorTreeScroll;
+
 	private JLabel statusLbl;
 	private final HyperlinkListener linkListener;
 
@@ -221,16 +231,16 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		profileShipStatsPanel = new ProfileShipStatsPanel( this );
 		profileDumpPanel = new DumpPanel();
 
-		JScrollPane profileShipUnlockScroll = new JScrollPane( profileShipUnlockPanel );
+		profileShipUnlockScroll = new JScrollPane( profileShipUnlockPanel );
 		profileShipUnlockScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane profileGeneralAchsScroll = new JScrollPane( profileGeneralAchsPanel );
+		profileGeneralAchsScroll = new JScrollPane( profileGeneralAchsPanel );
 		profileGeneralAchsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane profileGeneralStatsScroll = new JScrollPane( profileGeneralStatsPanel );
+		profileGeneralStatsScroll = new JScrollPane( profileGeneralStatsPanel );
 		profileGeneralStatsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane profileShipStatsScroll = new JScrollPane( profileShipStatsPanel );
+		profileShipStatsScroll = new JScrollPane( profileShipStatsPanel );
 		profileShipStatsScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
 		profileTabsPane.addTab( PROFILE_SHIP_UNLOCK, profileShipUnlockScroll );
@@ -259,10 +269,10 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		savedGameSectorTreePanel = new SavedGameSectorTreePanel( this );
 		savedGameStateVarsPanel = new SavedGameStateVarsPanel( this );
 
-		JScrollPane savedGameGeneralScroll = new JScrollPane( savedGameGeneralPanel );
+		savedGameGeneralScroll = new JScrollPane( savedGameGeneralPanel );
 		savedGameGeneralScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 
-		JScrollPane savedGameSectorTreeScroll = new JScrollPane( savedGameSectorTreePanel );
+		savedGameSectorTreeScroll = new JScrollPane( savedGameSectorTreePanel );
 		savedGameSectorTreeScroll.getVerticalScrollBar().setUnitIncrement( 14 );
 		savedGameSectorTreeScroll.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS );
 
@@ -1278,6 +1288,17 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 	}
 
 	public void loadProfile( Profile p ) {
+
+		Runnable scrollAll = new Runnable() {
+			@Override
+			public void run() {
+				profileShipUnlockScroll.getViewport().setViewPosition( new Point( 0,0 ) );
+				profileGeneralAchsScroll.getViewport().setViewPosition( new Point( 0,0 ) );
+				profileGeneralStatsScroll.getViewport().setViewPosition( new Point( 0,0 ) );
+				profileShipStatsScroll.getViewport().setViewPosition( new Point( 0,0 ) );
+			}
+		};
+
 		try {
 			profileShipUnlockPanel.setProfile( p );
 			profileGeneralAchsPanel.setProfile( p );
@@ -1289,13 +1310,15 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 			profileDumpBtn.setEnabled( (p != null) );
 
 			profile = p;
+			SwingUtilities.invokeLater( scrollAll );
 		}
 		catch ( IOException e ) {
 			if ( profile != null && profile != p ) {
 				log.info( "Attempting to revert GUI to the previous profile..." );
 				showErrorDialog( "Error loading profile.\nAttempting to return to the previous profile..." );
 				loadProfile( profile );
-			} else {
+			}
+			else {
 				showErrorDialog( "Error loading profile.\nThis has left the GUI in an ambiguous state.\nSaving is not recommended until another profile has successfully loaded." );
 			}
 		}
@@ -1331,6 +1354,14 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 
 	public void loadGameState( SavedGameParser.SavedGameState gs ) {
 
+		Runnable scrollAll = new Runnable() {
+			@Override
+			public void run() {
+				savedGameGeneralScroll.getViewport().setViewPosition( new Point( 0,0 ) );
+				savedGameSectorTreeScroll.getViewport().setViewPosition( new Point( 0,0 ) );
+			}
+		};
+
 		if ( gs == null ) {
 			savedGameDumpPanel.setText( "" );
 			savedGameGeneralPanel.setGameState( null );
@@ -1353,6 +1384,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 			gameStateDumpBtn.setEnabled( false );
 
 			gameState = null;
+			SwingUtilities.invokeLater( scrollAll );
 		}
 		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9, 11}, gs.getFileFormat() ) >= 0 ) {
 			savedGameDumpPanel.setText( gs.toString() );
@@ -1376,6 +1408,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 			gameStateDumpBtn.setEnabled( true );
 
 			gameState = gs;
+			SwingUtilities.invokeLater( scrollAll );
 		}
 		else {
 			log.error( "Unsupported game state fileFormat: "+ gs.getFileFormat() );

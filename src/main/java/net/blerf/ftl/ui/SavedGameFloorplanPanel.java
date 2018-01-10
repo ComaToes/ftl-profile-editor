@@ -1211,7 +1211,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				shipViewport.setViewPosition( new Point( 0,0 ) );
+				shipViewport.setViewPosition( new Point( 0, 0 ) );
 			}
 		});
 	}
