@@ -40,11 +40,17 @@ public class RandomSectorMapGenerator {
 	/**
 	 * The threshold for re-rolling a map with disconnected beacons.
 	 *
-	 * This value is a guess, but it seems to work.
+	 * This was determined empirically, checking against FTL and raising the
+	 * value until the editor stopped re-rolling excessively.
+	 *
+	 * Observed values:
+	 *   FTL 1.5.13: 163.6 ... x ... 166.98.
+	 *   FTL 1.6.2: 163.41 ... x ... 165.87.
+	 *   (Lower bound was not re-rolled. Upper bound was re-rolled.)
 	 *
 	 * @see #calculateIsolation(GeneratedSectorMap)
 	 */
-	public static final double ISOLATION_THRESHOLD = 150d;
+	public static final double ISOLATION_THRESHOLD = 165d;
 
 
 	/**
