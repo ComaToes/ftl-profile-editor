@@ -451,14 +451,16 @@ public class SavedGameSectorMapPanel extends JPanel {
 			// If the RNG is known, try to use it immediately, falling back to
 			// a grid, if necessary.
 
-			forcedRNG.srand( sectorLayoutSeed );
+			synchronized ( forcedRNG ) {
+				forcedRNG.srand( sectorLayoutSeed );
 
-			RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
-			try {
-				newGenMap = randomMapGen.generateSectorMap( forcedRNG, fileFormat );
-			}
-			catch ( IllegalStateException e ) {
-				log.error( "Map generation failed", e );
+				RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
+				try {
+					newGenMap = randomMapGen.generateSectorMap( forcedRNG, fileFormat );
+				}
+				catch ( IllegalStateException e ) {
+					log.error( "Map generation failed", e );
+				}
 			}
 		}
 		if ( newGenMap == null ) {
@@ -1132,27 +1134,33 @@ public class SavedGameSectorMapPanel extends JPanel {
 				GeneratedSectorMap newGenMap = null;
 
 				if ( LAYOUT_GRID.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+
 					GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
 					newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
+
 				}
 				else if ( LAYOUT_SEEDED.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+
 					Object selectedRNGObj = editorPanel.getCombo( ALGORITHM ).getSelectedItem();
 					if ( selectedRNGObj == null ) {
 						log.warn( "No RNG selected to generate a sector map!?" );
 						return;
 					}
 
-					@SuppressWarnings("unchecked")
+					@SuppressWarnings( "unchecked" )
 					RandRNG selectedRNG = (RandRNG)selectedRNGObj;
-					selectedRNG.srand( newSeed );
 
-					RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
-					try {
-						newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
-					}
-					catch ( IllegalStateException e ) {
-						log.error( "Map generation failed", e );
-						JOptionPane.showMessageDialog( frame, "Map generation failed:\n"+ e.toString(), "Map generation failed", JOptionPane.ERROR_MESSAGE );
+					synchronized ( selectedRNG ) {
+						selectedRNG.srand( newSeed );
+
+						RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
+						try {
+							newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
+						}
+						catch ( IllegalStateException e ) {
+							log.error( "Map generation failed", e );
+							JOptionPane.showMessageDialog( frame, "Map generation failed:\n"+ e.toString(), "Map generation failed", JOptionPane.ERROR_MESSAGE );
+						}
 					}
 				}
 
@@ -1195,32 +1203,33 @@ public class SavedGameSectorMapPanel extends JPanel {
 				GeneratedSectorMap newGenMap = null;
 
 				if ( LAYOUT_GRID.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+
 					GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
 					newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
+
 				}
 				else if ( LAYOUT_SEEDED.equals( editorPanel.getCombo( LAYOUT ).getSelectedItem() ) ) {
+
 					Object selectedRNGObj = editorPanel.getCombo( ALGORITHM ).getSelectedItem();
 					if ( selectedRNGObj == null ) {
 						log.warn( "No RNG selected to generate a sector map!?" );
 						return;
 					}
 
-					@SuppressWarnings("unchecked")
+					@SuppressWarnings( "unchecked" )
 					RandRNG selectedRNG = (RandRNG)selectedRNGObj;
-					selectedRNG.srand( newSeed );
 
-					RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
-					newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
+					synchronized ( selectedRNG ) {
+						selectedRNG.srand( newSeed );
 
-					if ( sectorLayoutSeed == newSeed && newGenMap.getGeneratedBeaconList().size() != beaconRefs.size() ) {
-						// This never seems to trigger even for bad RNGs!?
-
-						String badCountNag = ""
-							+ "The RNG-informed map has a beacon count that doesn't match the fixed beacon "
-							+ "list. FTL must have used a different RNG.";
-
-						JOptionPane.showMessageDialog( frame, badCountNag, "Bad RNG", JOptionPane.WARNING_MESSAGE );
-						newGenMap = null;
+						RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
+						try {
+							newGenMap = randomMapGen.generateSectorMap( selectedRNG, fileFormat );
+						}
+						catch ( IllegalStateException f ) {
+							log.error( "Map generation failed", f );
+							JOptionPane.showMessageDialog( frame, "Map generation failed:\n"+ f.toString(), "Map generation failed", JOptionPane.ERROR_MESSAGE );
+						}
 					}
 				}
 

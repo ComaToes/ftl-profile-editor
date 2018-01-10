@@ -263,7 +263,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 
 	private void setSeed( int newSeed ) {
-		Object selectedRNGObj = genPanel.getCombo(ALGORITHM).getSelectedItem();
+		Object selectedRNGObj = genPanel.getCombo( ALGORITHM ).getSelectedItem();
 		if ( selectedRNGObj == null ) {
 			log.warn( "No RNG selected to generate a sector tree!?" );
 			return;
@@ -282,13 +282,20 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 			treeEditPanel.setPeekEnabled( false );
 
 			if ( !seedChanged ) {
+				// Seed hasn't changed. Try not to interpret any more than necessary.
+				// Just make a simple line.
 				List<Boolean> route = originalRoute;
 
 				List<List<SectorDot>> linearColumns = linearTreeGen.generateSectorTree( route, 8 );
 				tree.setSectorDots( linearColumns );
 			}
 			else {
-				List<List<SectorDot>> expandedColumns = expandedTreeGen.generateSectorTree( newSeed, dlcEnabled );
+				// User has decided to scramble the tree.
+				// Might as well generate the whole thing and flatten it.
+				List<List<SectorDot>> expandedColumns;
+				synchronized ( selectedRNG ) {
+					expandedColumns = expandedTreeGen.generateSectorTree( newSeed, dlcEnabled );
+				}
 
 				SectorTree tmpTree = new SectorTree();
 				tmpTree.setSectorDots( expandedColumns );
@@ -301,9 +308,14 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		}
 		else if ( TREE_TYPE_EXPANDED.equals( genPanel.getCombo( TREE_TYPE ).getSelectedItem() ) ) {
 
-			List<List<SectorDot>> dotColumns = expandedTreeGen.generateSectorTree( newSeed, dlcEnabled );
+			List<List<SectorDot>> dotColumns;
+			synchronized ( selectedRNG ) {
+				dotColumns = expandedTreeGen.generateSectorTree( newSeed, dlcEnabled );
+			}
 
 			if ( !seedChanged ) {
+				// Not scrambling the tree, so the original visitation route applies.
+
 				try {
 					List<Boolean> route = originalRoute;
 
