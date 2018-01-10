@@ -132,10 +132,11 @@ public class SavedGameGeneralPanel extends JPanel {
 		sessionPanel.addBlankRow();
 		sessionPanel.addFillRow();
 
+		sessionPanel.getBoolean( RANDOM_NATIVE ).setEnabled( false );
 		sessionPanel.getBoolean( DLC ).setEnabled( false );
 
 		sessionPanel.getBoolean( RANDOM_NATIVE ).addMouseListener( new StatusbarMouseListener( frame, "Whether the RNG was native." ) );
-		sessionPanel.getBoolean( DLC ).addMouseListener( new StatusbarMouseListener( frame, "Include FTL:AE content." ) );
+		sessionPanel.getBoolean( DLC ).addMouseListener( new StatusbarMouseListener( frame, "Whether FTL:AE content should appear." ) );
 		sessionPanel.getCombo( DIFFICULTY ).addMouseListener( new StatusbarMouseListener( frame, "Difficulty (FTL 1.01-1.03.3 did not have HARD)." ) );
 		sessionPanel.getInt( TOP_BETA ).addMouseListener( new StatusbarMouseListener( frame, "Unknown session field. Always 0?" ) );
 
