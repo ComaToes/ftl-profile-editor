@@ -2647,6 +2647,8 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Unknown
 		 *
+		 * Observed values: 1.
+		 *
 		 * This was introduced in FTL 1.5.4.
 		 */
 		public void setUnknownMu( int n ) { unknownMu = n; }
@@ -2778,12 +2780,13 @@ public class SavedGameParser extends Parser {
 				case( 7 ): formatDesc = "Saved Game, FTL 1.5.4-1.5.10"; break;
 				case( 8 ): formatDesc = "Saved Game, FTL 1.5.12"; break;
 				case( 9 ): formatDesc = "Saved Game, FTL 1.5.13"; break;
+				case( 11 ): formatDesc = "Saved Game, FTL 1.6.1-1.6.2"; break;
 				default: formatDesc = "???"; break;
 			}
 
 			boolean first = true;
 			result.append( String.format( "File Format:            %5d (%s)\n", fileFormat, formatDesc ) );
-			result.append( String.format( "Native RNG:             %5b (FTL 1.6.1 uses a built-in RNG, except when migrated)\n", randomNative ) );
+			result.append( String.format( "Native RNG:             %5b (Tells FTL 1.6.1+ not to use its built-in RNG, for migrated games.)\n", randomNative ) );
 			result.append( String.format( "AE Content:             %5s\n", (dlcEnabled ? "Enabled" : "Disabled" ) ) );
 			result.append( String.format( "Ship Name:              %s\n", playerShipName ) );
 			result.append( String.format( "Ship Type:              %s\n", playerShipBlueprintId ) );
@@ -5928,12 +5931,16 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Sets the last situation-describing text shown in an event window.
 		 *
-		 * Any event - 'static', secondary, or wait - may set this value. It may
-		 * have no relation to the last event id.
+		 * Any event - 'static', secondary, or wait - may set this value. It
+		 * may have no relation to the last event id.
 		 *
 		 * Note: Wait events triggered in-game set this value. Toggling waiting
 		 * programmatically does NOT set this value. That must be done
-		 * separately.
+		 * manually.
+		 *
+		 * FTL 1.6.1 introduced XML "id" attributes on elements, which
+		 * referenced text elsewhere. This value may be one of those references
+		 * instead of the actual text.
 		 *
 		 * After the event popup is dismissed, this value lingers.
 		 *
@@ -8504,7 +8511,7 @@ public class SavedGameParser extends Parser {
 		private int orbitAngle = 0;
 		private int turretAngle = 0;
 		private int unknownXi = 0;
-		private int unknownOmicron = Integer.MAX_VALUE;
+		private int hopsToLive = Integer.MAX_VALUE;
 		private int unknownPi = 0;
 		private int unknownRho = 0;
 		private int overloadTicks = 0;
@@ -8550,7 +8557,7 @@ public class SavedGameParser extends Parser {
 			orbitAngle = srcPod.getOrbitAngle();
 			turretAngle = srcPod.getTurretAngle();
 			unknownXi = srcPod.getUnknownXi();
-			unknownOmicron = srcPod.getUnknownOmicron();
+			hopsToLive = srcPod.getHopsToLive();
 			unknownPi = srcPod.getUnknownPi();
 			unknownRho = srcPod.getUnknownRho();
 			overloadTicks = srcPod.getOverloadTicks();
@@ -8582,6 +8589,7 @@ public class SavedGameParser extends Parser {
 			setBuildupTicks( -1000 );
 			setStationaryTicks( 0 );
 
+			setHopsToLive( Integer.MAX_VALUE );
 			setOverloadTicks( 0 );
 
 			// TODO: Unknowns.
@@ -8691,7 +8699,7 @@ public class SavedGameParser extends Parser {
 		 *
 		 * When not set, this is MIN_INT.
 		 *
-		 * Observed values: Defense (erratic +/- 0-20000).
+		 * Observed values: Defense (erratic +/- 0-20000); 962, 144, -988.
 		 */
 		public void setUnknownIota( int n ) { unknownIota = n; }
 		public int getUnknownIota() { return unknownIota; }
@@ -8701,7 +8709,7 @@ public class SavedGameParser extends Parser {
 		 *
 		 * When not set, this is MIN_INT.
 		 *
-		 * Observed values: Defense (erratic +/- 0-20000).
+		 * Observed values: Defense (erratic +/- 0-20000); -2384, 26, 2373.
 		 */
 		public void setUnknownKappa( int n ) { unknownKappa = n; }
 		public int getUnknownKappa() { return unknownKappa; }
@@ -8804,16 +8812,28 @@ public class SavedGameParser extends Parser {
 		public int getUnknownXi() { return unknownXi; }
 
 		/**
-		 * Unknown.
+		 * Sets the number of waypoints this drone should arrive at before
+		 * disappearing.
 		 *
-		 * Observed values: Always MAX_INT?
+		 * This value decrements the moment this drone finishes idling at one
+		 * waypoint and begins moving toward the next. After reaching 0, the
+		 * drone vanishes. Then this value lingers.
+		 *
+		 * When not set, this is MAX_INT.
+		 *
+		 * Observed values: 4, 3, 2, 1, 0 (Ship_Repair).
 		 */
-		public void setUnknownOmicron( int n ) { unknownOmicron = n; }
-		public int getUnknownOmicron() { return unknownOmicron; }
+		public void setHopsToLive( int n ) { hopsToLive = n; }
+		public int getHopsToLive() { return hopsToLive; }
 
 		public void setUnknownPi( int n ) { unknownPi = n; }
 		public int getUnknownPi() { return unknownPi; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 1, 0.
+		 */
 		public void setUnknownRho( int n ) { unknownRho = n; }
 		public int getUnknownRho() { return unknownRho; }
 
@@ -8830,7 +8850,8 @@ public class SavedGameParser extends Parser {
 		 * explode at a random moment prior to reaching 0 - at which point,
 		 * this value will be set to 0.
 		 *
-		 * When not set, this is 0.
+		 * When not set, this is 0. This value lingers and may even end up a
+		 * little negative.
 		 *
 		 * Observed values: 4378 (Combat drone shot by Anti-Combat Drone)
 		 *
@@ -8842,11 +8863,18 @@ public class SavedGameParser extends Parser {
 		/**
 		 * Unknown.
 		 *
+		 * Observed values: -5704; -173834; 110067, 230637.
+		 *
 		 * When not set, this is -1000.
 		 */
 		public void setUnknownTau( int n ) { unknownTau = n; }
 		public int getUnknownTau() { return unknownTau; }
 
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 1.
+		 */
 		public void setUnknownUpsilon( int n ) { unknownUpsilon = n; }
 		public int getUnknownUpsilon() { return unknownUpsilon; }
 
@@ -8912,7 +8940,7 @@ public class SavedGameParser extends Parser {
 			result.append( String.format( "Orbit Angle:       %7d\n", orbitAngle ) );
 			result.append( String.format( "Turret Angle:      %7d\n", turretAngle ) );
 			result.append( String.format( "Xi?:               %7d\n", unknownXi ) );
-			result.append( String.format( "Omicron?:          %7s\n", prettyInt( unknownOmicron ) ) );
+			result.append( String.format( "Hops to Live:      %7s (Waypoints to idle at before undeploying)\n", prettyInt( hopsToLive ) ) );
 			result.append( String.format( "Pi?:               %7d\n", unknownPi ) );
 			result.append( String.format( "Rho?:              %7d\n", unknownRho ) );
 			result.append( String.format( "Overload Ticks:    %7d (Decrements to 0 while shocked by ion weapons)\n", overloadTicks ) );
@@ -9138,7 +9166,8 @@ public class SavedGameParser extends Parser {
 		 * visible. Then they vanish. The moment the drone pauses at the
 		 * destination, this is set to 1000.
 		 *
-		 * When not set, this is MIN_INT. This happens when stationary while stunned.
+		 * When not set, this is MIN_INT. This happens when stationary while
+		 * stunned.
 		 *
 		 * Observed values: 153 (stunned drift begins), 153000 (mid drift),
 		 * 153000000 (near end of drift).
@@ -9179,9 +9208,9 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 
 			result.append( String.format( "Last Waypoint:      %7d,%7d\n", lastWaypointX, lastWaypointY ) );
-			result.append( String.format( "TransitTicks:       %7d\n", transitTicks ) );
-			result.append( String.format( "Exhaust Angle:      %7d\n", exhaustAngle ) );
-			result.append( String.format( "Epsilon?:           %7d\n", unknownEpsilon ) );
+			result.append( String.format( "TransitTicks:       %7s\n", (transitTicks == Integer.MIN_VALUE ? "N/A" : transitTicks) ) );
+			result.append( String.format( "Exhaust Angle:      %7s\n", (exhaustAngle == Integer.MIN_VALUE ? "N/A" : exhaustAngle) ) );
+			result.append( String.format( "Epsilon?:           %7s\n", (unknownEpsilon == Integer.MIN_VALUE ? "N/A" : unknownEpsilon) ) );
 
 			return result.toString();
 		}
@@ -10374,7 +10403,7 @@ public class SavedGameParser extends Parser {
 		dronePod.setOrbitAngle( readInt( in ) );
 		dronePod.setTurretAngle( readInt( in ) );
 		dronePod.setUnknownXi( readInt( in ) );
-		dronePod.setUnknownOmicron( readMinMaxedInt( in ) );
+		dronePod.setHopsToLive( readMinMaxedInt( in ) );
 		dronePod.setUnknownPi( readInt( in ) );
 		dronePod.setUnknownRho( readInt( in ) );
 		dronePod.setOverloadTicks( readInt( in ) );
@@ -10471,7 +10500,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, dronePod.getOrbitAngle() );
 		writeInt( out, dronePod.getTurretAngle() );
 		writeInt( out, dronePod.getUnknownXi() );
-		writeMinMaxedInt( out, dronePod.getUnknownOmicron() );
+		writeMinMaxedInt( out, dronePod.getHopsToLive() );
 		writeInt( out, dronePod.getUnknownPi() );
 		writeInt( out, dronePod.getUnknownRho() );
 		writeInt( out, dronePod.getOverloadTicks() );

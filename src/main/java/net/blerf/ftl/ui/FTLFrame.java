@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -498,7 +499,13 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 						// Reload the original unmodified profile.
 						FTLFrame.this.loadProfile( p );
 					}
-					catch( Exception f ) {
+					catch ( FileNotFoundException f ) {
+						// Don't log a whole stack trace.
+						log.error( String.format( "Reading profile (\"%s\") failed: %s", chosenFile.getName(), f.getMessage() ) );
+						showErrorDialog( String.format( "Reading profile (\"%s\") failed:\n%s", chosenFile.getName(), f.getMessage() ) );
+						// Nothing more to do.
+					}
+					catch ( Exception f ) {
 						log.error( String.format( "Error reading profile (\"%s\").", chosenFile.getName() ), f );
 						showErrorDialog( String.format( "Error reading profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 						exception = f;
@@ -633,7 +640,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 						FTLFrame.this.updateProfile( profile );
 						parser.writeProfile( out, profile );
 					}
-					catch( IOException f ) {
+					catch ( IOException f ) {
 						log.error( String.format( "Error saving profile (\"%s\")", chosenFile.getName() ), f );
 						showErrorDialog( String.format( "Error saving profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
@@ -696,7 +703,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 						out.write( profile.toString() );
 						out.close();
 					}
-					catch( IOException f ) {
+					catch ( IOException f ) {
 						log.error( String.format( "Error dumping profile (\"%s\")", chosenFile.getName() ), f );
 						showErrorDialog( String.format( "Error dumping profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
@@ -759,7 +766,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 
 						JOptionPane.showMessageDialog( FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE );
 					}
-					catch( IOException f ) {
+					catch ( IOException f ) {
 						log.error( "Extracting dats failed", f );
 						showErrorDialog( String.format( "Error extracting dats:\n%s: %s", f.getClass().getSimpleName(), f.getMessage() ) );
 					}
@@ -869,7 +876,13 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 							log.warn( musteryBuf.toString() );
 						}
 					}
-					catch( Exception f ) {
+					catch ( FileNotFoundException f ) {
+						// Don't log a whole stack trace.
+						log.error( String.format( "Reading game state (\"%s\") failed: %s", chosenFile.getName(), f.getMessage() ) );
+						showErrorDialog( String.format( "Reading game state (\"%s\") failed:\n%s", chosenFile.getName(), f.getMessage() ) );
+						// Nothing more to do.
+					}
+					catch ( Exception f ) {
 						log.error( String.format( "Reading game state (\"%s\") failed", chosenFile.getName() ), f );
 						showErrorDialog( String.format( "Error reading game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 						exception = f;
@@ -977,7 +990,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 						FTLFrame.this.updateGameState(gameState);
 						parser.writeSavedGame( out, gameState );
 					}
-					catch( IOException f ) {
+					catch ( IOException f ) {
 						log.error( String.format( "Error saving game state (\"%s\").", chosenFile.getName() ), f );
 						showErrorDialog( String.format( "Error saving game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
@@ -1035,7 +1048,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 						out.write( gameState.toString() );
 						out.close();
 					}
-					catch( IOException f ) {
+					catch ( IOException f ) {
 						log.error( String.format( "Error dumping game state (\"%s\").", chosenFile.getName() ), f );
 						showErrorDialog( String.format( "Error dumping game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
 					}
@@ -1103,7 +1116,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		}
 		finally {
 			try {if ( in != null ) in.close();}
-			catch( IOException e ) {}
+			catch ( IOException e ) {}
 		}
 	}
 
@@ -1282,7 +1295,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 			aboutDlg.setLocationRelativeTo( FTLFrame.this );
 			aboutDlg.setVisible( true );
 		}
-		catch( IOException f ) {
+		catch ( IOException f ) {
 			log.error( "Failed to show the about dialog", f );
 		}
 	}
