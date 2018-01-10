@@ -28,6 +28,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.io.IOException;
@@ -2135,6 +2136,178 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 
 
+	/**
+	 * Reticle-bordered text, with an arrow in the south-west corner.
+	 *
+	 * FTL's image for map boxes has changed significantly across editions.
+	 * This component just draws everything from scratch for consistency. The
+	 * border will stretch to fit the text. Colors default to white on green.
+	 * To change that, call setForeground() / setBackground().
+	 *
+	 * FTL 1.01-1.5.13 had dedicated images for: distress, quest, repair,
+	 * store, and exit. FTL 1.6.1 switched to a stretchy NinePatch approach: a
+	 * left border, a right border, and a single-pixel middle.
+	 *
+	 * FTL 1.03.3: "img/map/map_box_[...].png" (128x64, extra black
+	 * bottom/right margins).
+	 * 
+	 * FTL 1.5.13: "img/map/map_box_[...].png" (80x40, as before but without
+	 * those margins).
+	 *
+	 * FTL 1.6.1: "img/map/map_box_white_[123].png" (19x32, 1x32, 15x32, for
+	 * roughly 8pt text 9px tall).
+	 */
+	public static class MapBoxComponent extends JComponent {
+
+		private Font titleFont = new Font( Font.SANS_SERIF, Font.BOLD, 8 );
+		private Insets boxMargin = new Insets( 6, 12, 12, 8 );
+		private Insets boxPadding = new Insets( 2, 3, 2, 3 );
+		private int boxThickness = 2;
+		private int reticleInner = 0;  // Stroke extends inward already.
+		private int reticleOuter = 2;
+		private BasicStroke boxStroke = new BasicStroke( boxThickness );
+
+		private String title;
+
+
+		public MapBoxComponent( String title ) {
+			this.title = title;
+			this.setForeground( new Color( 234, 245, 229 ) );
+			this.setBackground( new Color( 40, 81, 84 ) );
+
+			BufferedImage dummyImage = new BufferedImage( 1, 1, BufferedImage.TYPE_INT_RGB );
+			Graphics2D g2d = dummyImage.createGraphics();
+			try {
+				g2d.setRenderingHint( RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON );
+				g2d.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
+				g2d.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP );
+
+				g2d.setFont( titleFont );
+				FontMetrics fm = g2d.getFontMetrics();
+				Rectangle2D titleBounds = fm.getStringBounds( title, g2d );
+				int titleWidth = (int)titleBounds.getWidth();
+				int titleHeight = fm.getAscent();
+				int boxWidth = boxPadding.left + titleWidth + boxPadding.right + boxThickness*2;
+				int boxHeight = boxPadding.top + titleHeight + boxPadding.bottom + boxThickness*2;
+
+				int preferredWidth = boxMargin.left + boxWidth + boxMargin.right + reticleOuter;
+				int preferredHeight = boxMargin.top + boxHeight + boxMargin.bottom + reticleOuter;
+				this.setPreferredSize( new Dimension( preferredWidth, preferredHeight ) );
+			}
+			finally {
+				g2d.dispose();
+			}
+
+			// Converting text to a shape is more accurate than FontMetrics estimates.
+			//   https://stackoverflow.com/a/26955266
+		}
+
+		@Override
+		public void paintComponent( Graphics g ) {
+			super.paintComponent( g );
+
+			// Painting on a copy means no need to undo changes afterward.
+			Graphics2D g2d = (Graphics2D)g.create();
+			try {
+				g2d.setRenderingHint( RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON );
+				g2d.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
+				g2d.setRenderingHint( RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP );
+				g2d.setColor( this.getForeground() );
+
+				g2d.setFont( titleFont );
+				FontMetrics fm = g2d.getFontMetrics();
+				Rectangle2D titleBounds = fm.getStringBounds( title, g2d );
+				int titleWidth = (int)titleBounds.getWidth();
+				int titleHeight = fm.getAscent();
+				int titleX = boxMargin.left + boxThickness + boxPadding.left;
+				int titleY = this.getHeight() - boxMargin.bottom - boxThickness - boxPadding.bottom;
+				// drawString()'s y it at the baseline.
+
+				int boxWidth = boxPadding.left + titleWidth + boxPadding.right + boxThickness*2;
+				int boxHeight = boxPadding.top + titleHeight + boxPadding.bottom + boxThickness*2;
+				int boxX = boxMargin.left;
+				int boxY = this.getHeight() - boxHeight - boxMargin.bottom;
+
+				g2d.setColor( this.getBackground() );
+				g2d.fillRect( boxX, boxY, boxWidth, boxHeight );
+
+				g2d.setColor( this.getForeground() );
+				g2d.drawString( title, titleX, titleY );
+
+				g2d.setStroke( boxStroke );
+				g2d.drawRect( boxX, boxY, boxWidth, boxHeight );
+
+				int reticleLength = reticleInner + boxThickness + reticleOuter;
+				int reticleWestFromX = boxX - reticleOuter;
+				int reticleWestToX = reticleWestFromX + reticleLength;
+				int reticleEastFromX = boxX + boxWidth + reticleOuter;
+				int reticleEastToX = reticleEastFromX - reticleLength;
+				int reticleNorthFromY = boxY - reticleOuter;
+				int reticleNorthToY = reticleNorthFromY + reticleLength;
+				int reticleSouthFromY = boxY + boxHeight + reticleOuter;
+				int reticleSouthToY = reticleSouthFromY - reticleLength;
+				g2d.drawLine( reticleWestFromX, boxY + boxHeight/2, reticleWestToX, boxY + boxHeight/2 );
+				g2d.drawLine( reticleEastFromX, boxY + boxHeight/2, reticleEastToX, boxY + boxHeight/2 );
+				g2d.drawLine( boxX + boxWidth/2, reticleNorthFromY, boxX + boxWidth/2, reticleNorthToY );
+				g2d.drawLine( boxX + boxWidth/2, reticleSouthFromY, boxX + boxWidth/2, reticleSouthToY );
+
+				int triangleSide = 7;
+				int triangleNorthX = boxX - triangleSide;
+				int triangleNorthY = boxY + boxHeight;
+				int triangleSouthX = triangleNorthX;
+				int triangleSouthY = triangleNorthY + triangleSide;
+				int triangleEastX = triangleSouthX + triangleSide;
+				int triangleEastY = triangleSouthY;
+				g2d.fillPolygon( new int[] {triangleNorthX, triangleSouthX, triangleEastX}, new int[] {triangleNorthY, triangleSouthY, triangleEastY}, 3 );
+			}
+			finally {
+				g2d.dispose();
+			}
+		}
+	}
+
+	public class StoreSprite extends MapBoxComponent implements ReferenceSprite<BeaconState> {
+
+		private SpriteReference<BeaconState> beaconRef;
+
+
+		public StoreSprite( SpriteReference<BeaconState> beaconRef ) {
+			super( "STORE" );
+			this.beaconRef = beaconRef;
+
+			beaconRef.addSprite( this );
+			referenceChanged();
+		}
+
+		@Override
+		public SpriteReference<BeaconState> getReference() {
+			return beaconRef;
+		}
+
+		@Override
+		public void referenceChanged() {
+		}
+	}
+
+
+
+	public class QuestSprite extends MapBoxComponent {
+
+		private String questId = null;
+		private BufferedImage currentImage = null;
+
+
+		public QuestSprite( String questId ) {
+			super( "QUEST" );
+			this.questId = questId;
+		}
+
+		public void setQuestId( String s ) { questId = s; }
+		public String getQuestId() { return questId; }
+	}
+
+
+
 	public class BeaconSprite extends JComponent implements ReferenceSprite<BeaconState> {
 		private BufferedImage currentImage = null;
 
@@ -2180,127 +2353,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 				g2d.fill( new Ellipse2D.Double(this.getWidth()/2-diameter/2, this.getHeight()/2-diameter/2, diameter, diameter) );
 			}
 			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this);
-		}
-	}
-
-
-
-	public class StoreSprite extends JComponent implements ReferenceSprite<BeaconState> {
-		private BufferedImage currentImage = null;
-
-		private SpriteReference<BeaconState> beaconRef;
-
-
-		public StoreSprite( SpriteReference<BeaconState> beaconRef ) {
-			this.beaconRef = beaconRef;
-
-			// FTL 1.03.3: "img/map/map_box_store.png" (128x64, extra black padding down and right).
-			// FTL 1.5.13: "img/map/map_box_store.png" (80x40, as before but trimmed bottom and right padding).
-			// FTL 1.6.1: "img/map/map_box_white_[123].png" (19x32, 1x32, 15x32, side-stretch-side, for ~8pt text 9px tall).
-
-			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-			GraphicsDevice gs = ge.getDefaultScreenDevice();
-			GraphicsConfiguration gc = gs.getDefaultConfiguration();
-
-			if ( DataManager.get().hasResourceInputStream( "img/map/map_box_store.png" ) ) {
-				currentImage = ImageUtilities.getScaledImage( "img/map/map_box_store.png", -1*80, -1*40, cachedImages );
-			}
-			if ( DataManager.get().hasResourceInputStream( "img/map/map_box_white_1.png" )
-				&& DataManager.get().hasResourceInputStream( "img/map/map_box_white_2.png" )
-				&& DataManager.get().hasResourceInputStream( "img/map/map_box_white_3.png" )) {
-
-				BufferedImage leftImage = ImageUtilities.getScaledImage( "img/map/map_box_white_1.png", -1*19, -1*32, cachedImages );
-				BufferedImage middleImage = ImageUtilities.getScaledImage( "img/map/map_box_white_2.png", -1*1, -1*32, cachedImages );
-				BufferedImage rightImage = ImageUtilities.getScaledImage( "img/map/map_box_white_3.png", -1*15, -1*32, cachedImages );
-
-				int stretchWidth = 24;
-				int boxCenterX = leftImage.getWidth() + stretchWidth/2;
-				int boxCenterY = 12;
-				Insets boxPadding = new Insets( 2, 4, 2, 4 );
-				String text = "STORE";
-
-				currentImage = gc.createCompatibleImage( leftImage.getWidth() + stretchWidth + rightImage.getWidth(), 32, Transparency.OPAQUE );
-				Graphics2D g2d = currentImage.createGraphics();
-				g2d.setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
-				g2d.drawImage( leftImage, 0, 0, null );
-				g2d.drawImage( middleImage, leftImage.getWidth(), 0, stretchWidth, currentImage.getHeight(), null );
-				g2d.drawImage( rightImage, leftImage.getWidth() + stretchWidth, 0, null );
-
-				g2d.setRenderingHint( RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON );
-				g2d.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
-				g2d.setColor( new Color( 234, 245, 229 ) );
-				g2d.setFont( new Font( Font.SANS_SERIF, Font.BOLD, 8 ) );
-				FontMetrics fm = g2d.getFontMetrics();
-				int textWidth = fm.stringWidth( text );
-				int textHeight = fm.getAscent();
-				g2d.drawString( text, boxCenterX - textWidth/2, boxCenterY - textHeight/2 + fm.getAscent() );  // drawString()'s y it at the baseline.
-
-				g2d.dispose();
-
-				// Converting text to a shape is more accurate than FontMetrics estimates.
-				//   https://stackoverflow.com/a/26955266
-			}
-			else {
-				log.warn( "Resources do not contain any known map box image for stores" );
-
-				// Create a dummy image instead.
-				currentImage = gc.createCompatibleImage( 80, 40, Transparency.OPAQUE );
-				Graphics2D g2d = currentImage.createGraphics();
-				g2d.setColor( new Color( 150, 150, 200 ) );
-				g2d.fillRect( 0, 0, currentImage.getWidth()-1, currentImage.getHeight()-1 );
-				g2d.dispose();
-			}
-
-			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
-
-			beaconRef.addSprite( this );
-			referenceChanged();
-		}
-
-		@Override
-		public SpriteReference<BeaconState> getReference() {
-			return beaconRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent(g);
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this);
-		}
-	}
-
-
-
-	public class QuestSprite extends JComponent {
-		private String questId = null;
-		private BufferedImage currentImage = null;
-
-		public QuestSprite( String questId ) {
-			this.questId = questId;
-
-			// FTL 1.03.3: "img/map/map_box_quest.png" (128x64, extra black padding down and right)
-			// FTL 1.5.13: "img/map/map_box_quest.png" (80x40, as before but trimmed bottom and right padding)
-			// FTL 1.6.1: "img/map/map_box_white_[123].png" (19x32, 1x32, 15x32, side-stretch-side)
-
-			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_quest.png", -1*80, -1*40, cachedImages );
-			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
-		}
-
-		public void setQuestId( String s ) { questId = s; }
-		public String getQuestId() { return questId; }
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this );
 		}
 	}
 
