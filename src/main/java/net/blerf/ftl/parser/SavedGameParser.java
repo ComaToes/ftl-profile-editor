@@ -8589,7 +8589,6 @@ public class SavedGameParser extends Parser {
 			setBuildupTicks( -1000 );
 			setStationaryTicks( 0 );
 
-			setHopsToLive( Integer.MAX_VALUE );
 			setOverloadTicks( 0 );
 
 			// TODO: Unknowns.
