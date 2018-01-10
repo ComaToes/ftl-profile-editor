@@ -296,7 +296,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 				List<List<SectorDot>> linearColumns = linearTreeGen.generateSectorTree( tmpRoute, 8 );
 				tree.setSectorDots( linearColumns );
-				tree.setNextVisitedRow( 0 );
+				tree.getDot( 0, 0 ).setVisited( true );
 			}
 		}
 		else if ( TREE_TYPE_EXPANDED.equals( genPanel.getCombo( TREE_TYPE ).getSelectedItem() ) ) {
@@ -318,13 +318,16 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 					JOptionPane.showMessageDialog( this, "An error occurred while attempting to reconstruct the sector tree with existing visitation breadcrumbs.\n\nThis saved game probably used a different algorithm. See log for details.", "Sector Tree", JOptionPane.ERROR_MESSAGE );
 					return;
 				}
-			}
 
-			tree.setSectorDots( dotColumns );
+				tree.setSectorDots( dotColumns );
+			}
+			else {
+				tree.setSectorDots( dotColumns );
+				tree.getDot( 0, 0 ).setVisited( true );
+			}
 
 			treePreviewPanel.setTreeExpanded( true );
 			treeEditPanel.setPeekEnabled( true );
-			tree.setNextVisitedRow( 0 );
 		}
 
 		sectorTreeSeed = newSeed;
