@@ -1,17 +1,25 @@
 package net.blerf.ftl.ui;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -2186,11 +2194,63 @@ public class SavedGameSectorMapPanel extends JPanel {
 		public StoreSprite( SpriteReference<BeaconState> beaconRef ) {
 			this.beaconRef = beaconRef;
 
-			// FTL 1.03.3: "img/map/map_box_store.png" (128x64, extra black padding down and right)
-			// FTL 1.5.13: "img/map/map_box_store.png" (80x40, as before but trimmed bottom and right padding)
-			// FTL 1.6.1: "img/map/map_box_white_[123].png" (19x32, 1x32, 15x32, side-stretch-side)
+			// FTL 1.03.3: "img/map/map_box_store.png" (128x64, extra black padding down and right).
+			// FTL 1.5.13: "img/map/map_box_store.png" (80x40, as before but trimmed bottom and right padding).
+			// FTL 1.6.1: "img/map/map_box_white_[123].png" (19x32, 1x32, 15x32, side-stretch-side, for ~8pt text 9px tall).
 
-			currentImage = ImageUtilities.getScaledImage( "img/map/map_box_store.png", -1*80, -1*40, cachedImages );
+			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			GraphicsDevice gs = ge.getDefaultScreenDevice();
+			GraphicsConfiguration gc = gs.getDefaultConfiguration();
+
+			if ( DataManager.get().hasResourceInputStream( "img/map/map_box_store.png" ) ) {
+				currentImage = ImageUtilities.getScaledImage( "img/map/map_box_store.png", -1*80, -1*40, cachedImages );
+			}
+			if ( DataManager.get().hasResourceInputStream( "img/map/map_box_white_1.png" )
+				&& DataManager.get().hasResourceInputStream( "img/map/map_box_white_2.png" )
+				&& DataManager.get().hasResourceInputStream( "img/map/map_box_white_3.png" )) {
+
+				BufferedImage leftImage = ImageUtilities.getScaledImage( "img/map/map_box_white_1.png", -1*19, -1*32, cachedImages );
+				BufferedImage middleImage = ImageUtilities.getScaledImage( "img/map/map_box_white_2.png", -1*1, -1*32, cachedImages );
+				BufferedImage rightImage = ImageUtilities.getScaledImage( "img/map/map_box_white_3.png", -1*15, -1*32, cachedImages );
+
+				int stretchWidth = 24;
+				int boxCenterX = leftImage.getWidth() + stretchWidth/2;
+				int boxCenterY = 12;
+				Insets boxPadding = new Insets( 2, 4, 2, 4 );
+				String text = "STORE";
+
+				currentImage = gc.createCompatibleImage( leftImage.getWidth() + stretchWidth + rightImage.getWidth(), 32, Transparency.OPAQUE );
+				Graphics2D g2d = currentImage.createGraphics();
+				g2d.setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
+				g2d.drawImage( leftImage, 0, 0, null );
+				g2d.drawImage( middleImage, leftImage.getWidth(), 0, stretchWidth, currentImage.getHeight(), null );
+				g2d.drawImage( rightImage, leftImage.getWidth() + stretchWidth, 0, null );
+
+				g2d.setRenderingHint( RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON );
+				g2d.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
+				g2d.setColor( new Color( 234, 245, 229 ) );
+				g2d.setFont( new Font( Font.SANS_SERIF, Font.BOLD, 8 ) );
+				FontMetrics fm = g2d.getFontMetrics();
+				int textWidth = fm.stringWidth( text );
+				int textHeight = fm.getAscent();
+				g2d.drawString( text, boxCenterX - textWidth/2, boxCenterY - textHeight/2 + fm.getAscent() );  // drawString()'s y it at the baseline.
+
+				g2d.dispose();
+
+				// Converting text to a shape is more accurate than FontMetrics estimates.
+				//   https://stackoverflow.com/a/26955266
+			}
+			else {
+				log.warn( "Resources do not contain any known map box image for stores" );
+
+				// Create a dummy image instead.
+				currentImage = gc.createCompatibleImage( 80, 40, Transparency.OPAQUE );
+				Graphics2D g2d = currentImage.createGraphics();
+				g2d.setColor( new Color( 150, 150, 200 ) );
+				g2d.fillRect( 0, 0, currentImage.getWidth()-1, currentImage.getHeight()-1 );
+				g2d.dispose();
+			}
+
 			this.setPreferredSize( new Dimension( currentImage.getWidth(), currentImage.getHeight() ) );
 
 			beaconRef.addSprite( this );
@@ -2260,20 +2320,6 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.drawImage( currentImage, 0, 0, this.getWidth(), this.getHeight(), this );
-		}
-	}
-
-
-
-	public class IncrementBox extends JPanel {
-		public BasicArrowButton decBtn = new BasicArrowButton( BasicArrowButton.SOUTH );
-		public BasicArrowButton incBtn = new BasicArrowButton( BasicArrowButton.NORTH );
-
-		public IncrementBox() {
-			super( new FlowLayout( FlowLayout.CENTER, 4, 2 ) );
-			this.setBorder( BorderFactory.createEtchedBorder() );
-			this.add( decBtn );
-			this.add( incBtn );
 		}
 	}
 }

@@ -228,7 +228,8 @@ public class ImageUtilities {
 
 			if ( w <= 0 || h <= 0 || (origImage.getWidth() == w && origImage.getHeight() == h) ) {
 				result = origImage;
-			} else {
+			}
+			else {
 				BufferedImage scaledImage = gc.createCompatibleImage( w, h, Transparency.TRANSLUCENT );
 				Graphics2D g2d = scaledImage.createGraphics();
 				g2d.setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
