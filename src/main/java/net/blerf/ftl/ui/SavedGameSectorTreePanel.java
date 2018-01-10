@@ -84,6 +84,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 	private Random javaRandom = new Random();
 	private int fileFormat = 2;
+	private RandRNG forcedRNG = null;
 	private boolean dlcEnabled = true;
 	private int sectorTreeSeed = 0;
 
@@ -120,16 +121,16 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		genPanel.addRow( TREE_TYPE, FieldEditorPanel.ContentType.COMBO );
 		genPanel.addBlankRow();
 		genPanel.addRow( SECTOR_TREE_SEED, FieldEditorPanel.ContentType.INTEGER );
-		genPanel.getInt(SECTOR_TREE_SEED).setDocument( new RegexDocument("-?[0-9]*") );
+		genPanel.getInt( SECTOR_TREE_SEED ).setDocument( new RegexDocument("-?[0-9]*") );
 		genPanel.addBlankRow();
 		genApplyBtn = new JButton( "Apply" );
 		genPanel.addComponent( genApplyBtn );
 		genPanel.addBlankRow();
 		genPanel.addFillRow();
 
-		genPanel.getCombo(ALGORITHM).addMouseListener( new StatusbarMouseListener( frame, "Algorithm of the OS the saved game was created under, or native for the current OS." ) );
-		genPanel.getCombo(TREE_TYPE).addMouseListener( new StatusbarMouseListener( frame, "The type of tree to generate." ) );
-		genPanel.getInt(SECTOR_TREE_SEED).addMouseListener( new StatusbarMouseListener( frame, "A per-game constant that seeds the random generation of the sector tree." ) );
+		genPanel.getCombo( ALGORITHM ).addMouseListener( new StatusbarMouseListener( frame, "Algorithm of the OS the saved game was created under, or native for the current OS." ) );
+		genPanel.getCombo( TREE_TYPE ).addMouseListener( new StatusbarMouseListener( frame, "The type of tree to generate." ) );
+		genPanel.getInt( SECTOR_TREE_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A per-game constant that seeds the random generation of the sector tree." ) );
 		genApplyBtn.addMouseListener( new StatusbarMouseListener( frame, "Generate a sector tree with the given algorithm, type, and seed." ) );
 
 		miscPanel =  new FieldEditorPanel( true );
@@ -158,7 +159,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 			+ "if FTL interprets the seed differently in-game. "
 			+ "In other words, charting a glitchy course through unexpected sectors.\n"
 			+ "\n"
-			+ "FTL 1.6.1+ uses a built-in RNG relardless of OS (unless the campaign was "
+			+ "FTL 1.6.1+ uses a built-in RNG regardless of OS (unless the campaign was "
 			+ "migrated from an earlier edition).\n"
 			+ "\n"
 			+ "A linear preview with the original seed should always be safe.";
@@ -242,14 +243,14 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		else if ( source == miscRandomSeedBtn ) {
 			int newSeed = javaRandom.nextInt( Integer.MAX_VALUE );
 
-			genPanel.getInt(SECTOR_TREE_SEED).setText( ""+ newSeed );
+			genPanel.getInt( SECTOR_TREE_SEED ).setText( ""+ newSeed );
 			seedChanged = true;
 			setSeed( newSeed );
 		}
 		else if ( source == miscRestoreBtn ) {
-			genPanel.getCombo(TREE_TYPE).setSelectedItem( TREE_TYPE_LINEAR );
+			genPanel.getCombo( TREE_TYPE ).setSelectedItem( TREE_TYPE_LINEAR );
 
-			genPanel.getInt(SECTOR_TREE_SEED).setText( ""+ originalSectorTreeSeed );
+			genPanel.getInt( SECTOR_TREE_SEED ).setText( ""+ originalSectorTreeSeed );
 			sectorTreeSeed = 0;
 			seedChanged = false;
 
@@ -268,7 +269,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 			return;
 		}
 
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings( "unchecked" )
 		RandRNG selectedRNG = (RandRNG)selectedRNGObj;
 
 		if ( selectedRNG != expandedTreeGen.getRNG() ) {
@@ -276,7 +277,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 		}
 
 
-		if ( TREE_TYPE_LINEAR.equals( genPanel.getCombo(TREE_TYPE).getSelectedItem() ) ) {
+		if ( TREE_TYPE_LINEAR.equals( genPanel.getCombo( TREE_TYPE ).getSelectedItem() ) ) {
 			treePreviewPanel.setTreeExpanded( false );
 			treeEditPanel.setPeekEnabled( false );
 
@@ -298,7 +299,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 				tree.setNextVisitedRow( 0 );
 			}
 		}
-		else if ( TREE_TYPE_EXPANDED.equals( genPanel.getCombo(TREE_TYPE).getSelectedItem() ) ) {
+		else if ( TREE_TYPE_EXPANDED.equals( genPanel.getCombo( TREE_TYPE ).getSelectedItem() ) ) {
 
 			List<List<SectorDot>> dotColumns = expandedTreeGen.generateSectorTree( newSeed, dlcEnabled );
 
@@ -334,6 +335,7 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 	public void setGameState( SavedGameParser.SavedGameState gameState ) {
 		fileFormat = 2;
+		forcedRNG = null;
 		dlcEnabled = true;
 		sectorTreeSeed = 0;
 		originalSectorTreeSeed = 0;
@@ -349,28 +351,43 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 
 		if ( gameState != null ) {
 			fileFormat = gameState.getFileFormat();
+
+			if ( fileFormat == 11 && !gameState.isRandomNative() ) {
+				forcedRNG = new FTL_1_6_Random( "FTL 1.6+" );
+			}
+
 			dlcEnabled = gameState.isDLCEnabled();
 
 			originalSectorTreeSeed = gameState.getSectorTreeSeed();
 			originalRoute = new ArrayList<Boolean>( gameState.getSectorVisitation() );
 
-			if ( fileFormat == 11 ) {  // FTL 1.6.1.
-				genPanel.getCombo(ALGORITHM).addItem( new FTL_1_6_Random( "FTL 1.6+" ) );
+			if ( forcedRNG != null ) {
+				// Since FTL 1.6.1, non-migrated game states have a known RNG.
+				genPanel.getCombo( ALGORITHM ).addItem( forcedRNG );
 			}
-			genPanel.getCombo(ALGORITHM).addItem( new NativeRandom( "Native" ) );
-			genPanel.getCombo(ALGORITHM).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
-			genPanel.getCombo(ALGORITHM).addItem( new MsRandom( "Microsoft" ) );
+			else {
+				if ( fileFormat == 11 ) {  // FTL 1.6.1.
+					genPanel.getCombo(ALGORITHM).addItem( new FTL_1_6_Random( "FTL 1.6+" ) );
+				}
+				genPanel.getCombo( ALGORITHM ).addItem( new NativeRandom( "Native" ) );
+				genPanel.getCombo( ALGORITHM ).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
+				genPanel.getCombo( ALGORITHM ).addItem( new MsRandom( "Microsoft" ) );
+			}
 
-			genPanel.getCombo(TREE_TYPE).addItem( TREE_TYPE_LINEAR );
-			genPanel.getCombo(TREE_TYPE).addItem( TREE_TYPE_EXPANDED );
-			genPanel.getCombo(TREE_TYPE).setSelectedItem( TREE_TYPE_LINEAR );
+			genPanel.getCombo( TREE_TYPE ).addItem( TREE_TYPE_LINEAR );
+			genPanel.getCombo( TREE_TYPE ).addItem( TREE_TYPE_EXPANDED );
+			genPanel.getCombo( TREE_TYPE ).setSelectedItem( TREE_TYPE_LINEAR );
 
 			genPanel.setIntAndReminder( SECTOR_TREE_SEED, gameState.getSectorTreeSeed() );
+
+			if ( forcedRNG != null ) {
+				// If the RNG is known, try to use it immediately.
+
+				genPanel.getCombo( TREE_TYPE ).setSelectedItem( TREE_TYPE_EXPANDED );
+
+				setSeed( originalSectorTreeSeed );
+			}
 		}
-
-		// Scroll back to the top. (The notice area's wrap pulls the viewport down?)
-
-		SavedGameSectorTreePanel.this.scrollRectToVisible( new Rectangle( 0,0,0,0 ) );
 	}
 
 	public void updateGameState( SavedGameParser.SavedGameState gameState ) {

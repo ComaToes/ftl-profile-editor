@@ -138,6 +138,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 	private int fileFormat = 2;
 	private FTLConstants ftlConstants = new AdvancedFTLConstants();
 
+	private RandRNG forcedRNG = null;
 	private int sectorLayoutSeed = 1;
 
 	private int rebelFleetOffset = -750;  // Arbitrary default.
@@ -422,6 +423,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		beaconRefs.clear();
 
+		forcedRNG = null;
+
 		if ( gameState == null ) {
 			mapPanel.revalidate();
 			fitViewToViewport();
@@ -437,10 +440,31 @@ public class SavedGameSectorMapPanel extends JPanel {
 			ftlConstants = new AdvancedFTLConstants();
 		}
 
+		if ( fileFormat == 11 && !gameState.isRandomNative() ) {
+			forcedRNG = new FTL_1_6_Random( "FTL 1.6+" );
+		}
+
 		sectorLayoutSeed = gameState.getSectorLayoutSeed();
 
-		GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
-		GeneratedSectorMap newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
+		GeneratedSectorMap newGenMap = null;
+		if ( forcedRNG != null ) {
+			// If the RNG is known, try to use it immediately, falling back to
+			// a grid, if necessary.
+
+			forcedRNG.srand( sectorLayoutSeed );
+
+			RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
+			try {
+				newGenMap = randomMapGen.generateSectorMap( forcedRNG, fileFormat );
+			}
+			catch ( IllegalStateException e ) {
+				log.error( "Map generation failed", e );
+			}
+		}
+		if ( newGenMap == null ) {
+			GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
+			newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
+		}
 
 		List<GeneratedBeacon> genBeacons = newGenMap.getGeneratedBeaconList();
 		List<Point> newLocations = new ArrayList<Point>( genBeacons.size() );
@@ -1081,12 +1105,18 @@ public class SavedGameSectorMapPanel extends JPanel {
 		editorPanel.getCombo( LAYOUT ).addMouseListener( new StatusbarMouseListener( frame, "The type of map to generate." ) );
 		editorPanel.getInt( LAYOUT_SEED ).addMouseListener( new StatusbarMouseListener( frame, "A per-sector constant that seeds random generation of the map, events, etc. (potentially dangerous)." ) );
 
-		if ( fileFormat == 11 ) {  // FTL 1.6.1.
-			editorPanel.getCombo( ALGORITHM ).addItem( new FTL_1_6_Random( "FTL 1.6+" ) );
+		if ( forcedRNG != null ) {
+			// Since FTL 1.6.1, non-migrated game states have a known RNG.
+			editorPanel.getCombo( ALGORITHM ).addItem( forcedRNG );
 		}
-		editorPanel.getCombo( ALGORITHM ).addItem( new NativeRandom( "Native" ) );
-		editorPanel.getCombo( ALGORITHM ).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
-		editorPanel.getCombo( ALGORITHM ).addItem( new MsRandom( "Microsoft" ) );
+		else {
+			if ( fileFormat == 11 ) {  // FTL 1.6.1.
+				editorPanel.getCombo( ALGORITHM ).addItem( new FTL_1_6_Random( "FTL 1.6+" ) );
+			}
+			editorPanel.getCombo( ALGORITHM ).addItem( new NativeRandom( "Native" ) );
+			editorPanel.getCombo( ALGORITHM ).addItem( new GNULibCRandom( "GLibC (Linux/OSX)" ) );
+			editorPanel.getCombo( ALGORITHM ).addItem( new MsRandom( "Microsoft" ) );
+		}
 
 		editorPanel.getCombo( LAYOUT ).addItem( LAYOUT_GRID );
 		editorPanel.getCombo( LAYOUT ).addItem( LAYOUT_SEEDED );
@@ -1222,7 +1252,7 @@ public class SavedGameSectorMapPanel extends JPanel {
 			+ "If FTL interprets the seed differently in-game, the beacon count "
 			+ "will vary, along with all other random elements.\n"
 			+ "\n"
-			+ "FTL 1.6.1+ uses a built-in RNG relardless of OS (unless the campaign was "
+			+ "FTL 1.6.1+ uses a built-in RNG regardless of OS (unless the campaign was "
 			+ "migrated from an earlier edition).\n"
 			+ "\n"
 			+ "A grid layout with the original seed should always be safe.";
