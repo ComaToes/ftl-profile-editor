@@ -1,14 +1,10 @@
 package net.blerf.ftl.parser;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -16,8 +12,6 @@ import java.util.regex.Pattern;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.stream.StreamSource;
-import org.xml.sax.SAXParseException;
 
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
@@ -49,6 +43,8 @@ public class DatParser {
 	private Pattern xmlDeclPtn = Pattern.compile( "<[?]xml [^>]*?[?]>\n*" );
 	private Pattern rootTagPtn = Pattern.compile( "</?FTL>\n*" );
 
+	private Pattern scrubPtn = Pattern.compile( xmlDeclPtn.pattern() +"|"+ rootTagPtn.pattern() );
+
 
 	public DatParser() {
 	}
@@ -57,14 +53,22 @@ public class DatParser {
 	public List<NamedText> readNamedTextList( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<namedTexts>"+ streamText +"</nameTexts>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<namedTexts>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</nameTexts>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		JAXBContext jc = JAXBContext.newInstance( NamedTexts.class );
 		Unmarshaller u = jc.createUnmarshaller();
+
 		NamedTexts nts = (NamedTexts)u.unmarshal( domOutputter.output( doc ) );
 
 		return nts.getNamedTexts();
@@ -74,10 +78,17 @@ public class DatParser {
 	public List<Achievement> readAchievements( InputStream stream, String fileName, Map<String, String> textLookupMap ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<achievements>"+ streamText +"</achievements>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<achievements>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</achievements>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		TextLookupUnmarshalListener textLookupListener = new TextLookupUnmarshalListener();
@@ -86,6 +97,7 @@ public class DatParser {
 		JAXBContext jc = JAXBContext.newInstance( Achievements.class );
 		Unmarshaller u = jc.createUnmarshaller();
 		u.setListener( textLookupListener );
+
 		Achievements ach = (Achievements)u.unmarshal( domOutputter.output( doc ) );
 
 		return ach.getAchievements();
@@ -95,33 +107,41 @@ public class DatParser {
 	public Blueprints readBlueprints( InputStream stream, String fileName, Map<String, String> textLookupMap ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<blueprints>"+ streamText +"</blueprints>";
-		StringBuilder sb = new StringBuilder( streamText );
-		String ptn; Pattern p; Matcher m;
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<blueprints>" );
+		streamBuf.append( streamText );
+		streamBuf.append( "</blueprints>" );
+
+		// Edit the buffer in place.
+		// Note: The replacement will be inserted as-is, with no backreference substitution.
+
+		Map<Pattern, String> fixMap = new LinkedHashMap<Pattern, String>();
+		fixMap.put( xmlDeclPtn, "" );
+		fixMap.put( rootTagPtn, "" );
 
 		if ( "blueprints.xml".equals( fileName ) ) {
 			// blueprints.xml: LONG_ELITE_MED shipBlueprint (FTL 1.03.1)
 			// blueprints.xml: LONG_ELITE_HARD shipBlueprint (FTL 1.03.1)
-			streamText = streamText.replaceAll( " img=\"rebel_long_hard\"", " img=\"rebel_long_elite\"" );
+			fixMap.put( Pattern.compile( " img=\"rebel_long_hard\"" ), " img=\"rebel_long_elite\"" );
+
+			// blueprints.xml: SYSTEM_CASING augBlueprint (FTL 1.02.6)
+			String casingRegex = ""
+				+ "\\s*<title>Reinforced System Casing</title>"   // Two titles, scrub the first.
+				+ "(?=\\s*<title>Titanium System Casing</title>)";
+			fixMap.put( Pattern.compile( casingRegex ), "" );     // Used lookahead instead of group.
 		}
 
-		if ( "blueprints.xml".equals( fileName ) ) {
-			// blueprints.xml: SYSTEM_CASING augBlueprint (FTL 1.02.6)
-			ptn = "";
-			ptn += "\\s*<title>Reinforced System Casing</title>"; // Extra title.
-			ptn += "(\\s*<title>Titanium System Casing</title>)";
-
-			p = Pattern.compile(ptn);
-			m = p.matcher( sb );
-			if ( m.find() ) {
-				sb.replace( m.start(), m.end(), m.group( 1 ) );
-				m.reset();
+		for ( Map.Entry<Pattern, String> entry : fixMap.entrySet() ) {
+			Matcher m = entry.getKey().matcher( streamBuf );
+			int start = 0;
+			while ( m.find( start ) ) {
+				streamBuf.replace( m.start(), m.end(), entry.getValue() );
+				start = m.start() + entry.getValue().length();  // Continue searching after the replacement.
 			}
 		}
 
-		Document doc = TextUtilities.parseStrictOrSloppyXML( sb.toString(), fileName );
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		TextLookupUnmarshalListener textLookupListener = new TextLookupUnmarshalListener();
@@ -130,6 +150,7 @@ public class DatParser {
 		JAXBContext jc = JAXBContext.newInstance( Blueprints.class );
 		Unmarshaller u = jc.createUnmarshaller();
 		u.setListener( textLookupListener );
+
 		Blueprints bps = (Blueprints)u.unmarshal( domOutputter.output( doc ) );
 
 		return bps;
@@ -139,7 +160,7 @@ public class DatParser {
 	public ShipLayout readLayout( InputStream stream, String fileName ) throws IOException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		BufferedReader in = new BufferedReader( new StringReader(streamText) );
+		BufferedReader in = new BufferedReader( new StringReader( streamText ) );
 
 		ShipLayout shipLayout = new ShipLayout();
 
@@ -193,14 +214,22 @@ public class DatParser {
 	public ShipChassis readChassis( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<shipChassis>"+ streamText +"</shipChassis>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<shipChassis>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</shipChassis>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		JAXBContext jc = JAXBContext.newInstance( ShipChassis.class );
 		Unmarshaller u = jc.createUnmarshaller();
+
 		ShipChassis sch = (ShipChassis)u.unmarshal( domOutputter.output( doc ) );
 
 		return sch;
@@ -209,14 +238,22 @@ public class DatParser {
 	public List<CrewNameList> readCrewNames( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<nameLists>"+ streamText +"</nameLists>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<nameLists>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</nameLists>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		JAXBContext jc = JAXBContext.newInstance( CrewNameLists.class );
 		Unmarshaller u = jc.createUnmarshaller();
+
 		CrewNameLists cnl = (CrewNameLists)u.unmarshal( domOutputter.output( doc ) );
 
 		return cnl.getCrewNameLists();
@@ -226,10 +263,17 @@ public class DatParser {
 	public SectorData readSectorData( InputStream stream, String fileName, Map<String, String> textLookupMap ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<sectorData>"+ streamText +"</sectorData>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<sectorData>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</sectorData>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		TextLookupUnmarshalListener textLookupListener = new TextLookupUnmarshalListener();
@@ -238,6 +282,7 @@ public class DatParser {
 		JAXBContext jc = JAXBContext.newInstance( SectorData.class );
 		Unmarshaller u = jc.createUnmarshaller();
 		u.setListener( textLookupListener );
+
 		SectorData sectorData = (SectorData)u.unmarshal( domOutputter.output( doc ) );
 
 		return sectorData;
@@ -247,10 +292,17 @@ public class DatParser {
 	public Encounters readEvents( InputStream stream, String fileName, Map<String, String> textLookupMap ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<events>"+ streamText +"</events>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<events>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</events>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		TextLookupUnmarshalListener textLookupListener = new TextLookupUnmarshalListener();
@@ -259,6 +311,7 @@ public class DatParser {
 		JAXBContext jc = JAXBContext.newInstance( Encounters.class );
 		Unmarshaller u = jc.createUnmarshaller();
 		u.setListener( textLookupListener );
+
 		Encounters evts = (Encounters)u.unmarshal( domOutputter.output( doc ) );
 
 		return evts;
@@ -268,10 +321,17 @@ public class DatParser {
 	public List<ShipEvent> readShipEvents( InputStream stream, String fileName, Map<String, String> textLookupMap ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<shipEvents>"+ streamText +"</shipEvents>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<shipEvents>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</shipEvents>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		TextLookupUnmarshalListener textLookupListener = new TextLookupUnmarshalListener();
@@ -280,6 +340,7 @@ public class DatParser {
 		JAXBContext jc = JAXBContext.newInstance( ShipEvents.class );
 		Unmarshaller u = jc.createUnmarshaller();
 		u.setListener( textLookupListener );
+
 		ShipEvents shvts = (ShipEvents)u.unmarshal( domOutputter.output( doc ) );
 
 		return shvts.getShipEvents();
@@ -289,14 +350,22 @@ public class DatParser {
 	public List<BackgroundImageList> readImageLists( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<imageLists>"+ streamText +"</imageLists>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<imageLists>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</imageLists>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		JAXBContext jc = JAXBContext.newInstance( BackgroundImageLists.class );
 		Unmarshaller u = jc.createUnmarshaller();
+
 		BackgroundImageLists imgs = (BackgroundImageLists)u.unmarshal( domOutputter.output( doc ) );
 
 		return imgs.getImageLists();
@@ -306,14 +375,22 @@ public class DatParser {
 	public Animations readAnimations( InputStream stream, String fileName ) throws IOException, JAXBException, JDOMException {
 
 		String streamText = TextUtilities.decodeText( stream, fileName ).text;
-		streamText = xmlDeclPtn.matcher( streamText ).replaceFirst( "" );
-		streamText = rootTagPtn.matcher( streamText ).replaceAll( "" );
-		streamText = "<animations>"+ streamText +"</animations>";
-		Document doc = TextUtilities.parseStrictOrSloppyXML( streamText, fileName );
+
+		StringBuffer streamBuf = new StringBuffer( streamText.length() + 50 );
+		streamBuf.append( "<animations>" );
+		Matcher m = scrubPtn.matcher( streamText );
+		while ( m.find() ) {
+			m.appendReplacement( streamBuf, "" );
+		}
+		m.appendTail( streamBuf );
+		streamBuf.append( "</animations>" );
+
+		Document doc = TextUtilities.parseStrictOrSloppyXML( streamBuf, fileName );
 		DOMOutputter domOutputter = new DOMOutputter();
 
 		JAXBContext jc = JAXBContext.newInstance( Animations.class );
 		Unmarshaller u = jc.createUnmarshaller();
+
 		Animations animations = (Animations)u.unmarshal( domOutputter.output( doc ) );
 
 		return animations;
