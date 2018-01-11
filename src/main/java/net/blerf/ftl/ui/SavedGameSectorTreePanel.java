@@ -396,11 +396,9 @@ public class SavedGameSectorTreePanel extends JPanel implements ActionListener {
 			genPanel.setIntAndReminder( SECTOR_TREE_SEED, gameState.getSectorTreeSeed() );
 
 			if ( forcedRNG != null ) {
-				// If the RNG is known, try to use it immediately.
+				// If the RNG is known, it should be safe to use the expanded preview.
 
 				genPanel.getCombo( TREE_TYPE ).setSelectedItem( TREE_TYPE_EXPANDED );
-
-				setSeed( originalSectorTreeSeed );
 			}
 		}
 	}

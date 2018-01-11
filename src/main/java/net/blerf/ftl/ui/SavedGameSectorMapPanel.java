@@ -455,27 +455,8 @@ public class SavedGameSectorMapPanel extends JPanel {
 
 		sectorLayoutSeed = gameState.getSectorLayoutSeed();
 
-		GeneratedSectorMap newGenMap = null;
-		if ( forcedRNG != null ) {
-			// If the RNG is known, try to use it immediately, falling back to
-			// a grid, if necessary.
-
-			synchronized ( forcedRNG ) {
-				forcedRNG.srand( sectorLayoutSeed );
-
-				RandomSectorMapGenerator randomMapGen = new RandomSectorMapGenerator();
-				try {
-					newGenMap = randomMapGen.generateSectorMap( forcedRNG, fileFormat );
-				}
-				catch ( IllegalStateException e ) {
-					log.error( "Map generation failed", e );
-				}
-			}
-		}
-		if ( newGenMap == null ) {
-			GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
-			newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
-		}
+		GridSectorMapGenerator gridMapGen = new GridSectorMapGenerator();
+		GeneratedSectorMap newGenMap = gridMapGen.generateSectorMap( GRID_GEN_COLS, GRID_GEN_ROWS, GRID_GEN_COL_W, GRID_GEN_ROW_H );
 
 		List<GeneratedBeacon> genBeacons = newGenMap.getGeneratedBeaconList();
 		List<Point> newLocations = new ArrayList<Point>( genBeacons.size() );
