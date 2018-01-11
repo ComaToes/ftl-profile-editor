@@ -2786,7 +2786,7 @@ public class SavedGameParser extends Parser {
 
 			boolean first = true;
 			result.append( String.format( "File Format:            %5d (%s)\n", fileFormat, formatDesc ) );
-			result.append( String.format( "Native RNG:             %5b (Tells FTL 1.6.1+ not to use its built-in RNG, for migrated games.)\n", randomNative ) );
+			result.append( String.format( "Native RNG:             %5b (True for games migrated into FTL 1.6.1+)\n", randomNative ) );
 			result.append( String.format( "AE Content:             %5s\n", (dlcEnabled ? "Enabled" : "Disabled" ) ) );
 			result.append( String.format( "Ship Name:              %s\n", playerShipName ) );
 			result.append( String.format( "Ship Type:              %s\n", playerShipBlueprintId ) );
@@ -7729,7 +7729,7 @@ public class SavedGameParser extends Parser {
 
 			result.append( String.format( "Current Position:  %8d,%8d (%9.03f,%9.03f)\n", currentPosX, currentPosY, currentPosX/1000f, currentPosY/1000f ) );
 			result.append( String.format( "Previous Position: %8d,%8d (%9.03f,%9.03f)\n", prevPosX, prevPosY, prevPosX/1000f, prevPosY/1000f ) );
-			result.append( String.format( "Speed:             %8d (%9.03f)\n", speed, speed/1000f ) );
+			result.append( String.format( "Speed:             %8d (%7.03f)\n", speed, speed/1000f ) );
 			result.append( String.format( "Goal Position:     %8d,%8d (%9.03f,%9.03f)\n", goalPosX, goalPosY, goalPosX/1000f, goalPosY/1000f ) );
 			result.append( String.format( "Heading:           %8d\n", heading ) );
 			result.append( String.format( "Owner Id?:         %8d\n", ownerId ) );
@@ -7762,7 +7762,7 @@ public class SavedGameParser extends Parser {
 
 			result.append( "\n" );
 
-			result.append( String.format( "Velocity (x,y):    %8d,%8d (%9.03f,%9.03f)\n", velocityX, velocityY, velocityX/1000f, velocityY/1000f));
+			result.append( String.format( "Velocity (x,y):    %8d,%6d (%7.03f,%7.03f)\n", velocityX, velocityY, velocityX/1000f, velocityY/1000f));
 			result.append( String.format( "Missed:            %8b\n", missed ) );
 			result.append( String.format( "Hit Target:        %8b\n", hitTarget ) );
 			result.append( String.format( "Hit Solid Sound:   %s\n", hitSolidSound ) );

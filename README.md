@@ -8,12 +8,10 @@ With this, you can unlock any or all ships and achievements in your profile, or 
 
 Status
 -----
-* FTL 1.6.1+ profiles are not supported at all.
-* FTL 1.5.4-1.5.13 profiles are fully editable. (ae_prof.sav)
+* FTL 1.5.4-1.6.2 profiles are fully editable. (ae_prof.sav)
 * FTL 1.01-1.03.3 profiles are fully editable. (prof.sav)
 <br /><br />
-* FTL 1.6.1+ saved games are not supported at all.
-* FTL 1.5.4-1.5.13 saved games are partially editable.
+* FTL 1.5.4-1.6.2 saved games are partially editable.
 * FTL 1.01-1.03.3 saved games are fully editable.
 
 <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot05_thumb.jpg" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot04_thumb.jpg" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot02_thumb.jpg" width="145px" height="auto" /></a> &nbsp; <a href="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot06.png"><img src="https://raw.github.com/Vhati/ftl-profile-editor/master/img/screenshot06_thumb.jpg" width="145px" height="auto" /></a>
@@ -46,7 +44,7 @@ Requirements
 ------------
 * Java (1.6 or higher).
     * http://www.java.com/en/download/
-* FTL (1.01-1.03.3 or 1.5.4-1.5.13, Windows/OSX/Linux, Steam/GOG/Standalone).
+* FTL (1.01-1.03.3 or 1.5.4-1.6.2, Windows/OSX/Linux, Steam/GOG/Standalone).
     * https://subsetgames.com/
 * WinXP SP1 can't run Java 1.7.
     * (1.7 was built with VisualStudio 2010, causing a DecodePointer error.)
