@@ -24,7 +24,7 @@ public class DroneBlueprint {
 	private DefaultDeferredText title;
 
 	@XmlElement( name = "short" )
-	private String shortTitle;
+	private DefaultDeferredText shortTitle;
 
 	private DefaultDeferredText desc;
 
@@ -84,11 +84,11 @@ public class DroneBlueprint {
 		return title;
 	}
 
-	public void setShortTitle( String shortTitle ) {
+	public void setShortTitle( DefaultDeferredText shortTitle ) {
 		this.shortTitle = shortTitle;
 	}
 
-	public String getShortTitle() {
+	public DefaultDeferredText getShortTitle() {
 		return shortTitle;
 	}
 
