@@ -241,7 +241,7 @@ public class DefaultDataManager extends DataManager {
 			stdEventsFileNames.add( "events_nebula.xml" );
 			stdEventsFileNames.add( "events_pirate.xml" );
 			stdEventsFileNames.add( "events_rebel.xml" );
-			stdEventsFileNames.add( "nameEvents.xml" );
+			//stdEventsFileNames.add( "nameEvents.xml" );  // Unused ancient experiments.
 			stdEventsFileNames.add( "events_fuel.xml" );
 			stdEventsFileNames.add( "events_boss.xml" );
 			stdEventsFileNames.add( "events_ships.xml" );
