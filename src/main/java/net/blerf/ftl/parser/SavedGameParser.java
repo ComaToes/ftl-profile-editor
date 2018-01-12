@@ -8499,8 +8499,8 @@ public class SavedGameParser extends Parser {
 		// This block was formerly a length 6 array named beta.
 		private int unknownEpsilon = Integer.MIN_VALUE;
 		private int unknownZeta = Integer.MIN_VALUE;
-		private int unknownEta = Integer.MIN_VALUE;
-		private int unknownTheta = Integer.MIN_VALUE;
+		private int nextTargetX = Integer.MIN_VALUE;
+		private int nextTargetY = Integer.MIN_VALUE;
 		private int unknownIota = Integer.MIN_VALUE;
 		private int unknownKappa = Integer.MIN_VALUE;
 
@@ -8546,8 +8546,8 @@ public class SavedGameParser extends Parser {
 
 			unknownEpsilon = srcPod.getUnknownEpsilon();
 			unknownZeta = srcPod.getUnknownZeta();
-			unknownEta = srcPod.getUnknownEta();
-			unknownTheta = srcPod.getUnknownTheta();
+			nextTargetX = srcPod.getNextTargetX();
+			nextTargetY = srcPod.getNextTargetY();
 			unknownIota = srcPod.getUnknownIota();
 			unknownKappa = srcPod.getUnknownKappa();
 
@@ -8585,6 +8585,9 @@ public class SavedGameParser extends Parser {
 			setMourningTicks( 0 );
 			setCurrentSpace( 0 );
 			setDestinationSpace( -1 );
+
+			//setNextTargetX( Integer.MIN_VALUE )?
+			//setNextTargetY( Integer.MIN_VALUE )?
 
 			setBuildupTicks( -1000 );
 			setStationaryTicks( 0 );
@@ -8672,26 +8675,24 @@ public class SavedGameParser extends Parser {
 		public int getUnknownZeta() { return unknownZeta; }
 
 		/**
-		 * Unknown.
+		 * Sets the position where this drone's next projectile will end up.
+		 *
+		 * This is analogous to weapon targeting reticles deciding the next
+		 * target. The drone may spin or maneuver in transit, but it will
+		 * ultimately turn to face this point before firing.
+		 *
+		 * Combat/Repair drones set a new value after each shot. Defense drones
+		 * intermittently set it (e.g., directly at an opposing drone) and
+		 * unset it.
 		 *
 		 * When not set, this is MIN_INT.
 		 *
-		 * Observed values: Combat/repair (Resembles position). Related to
-		 * ZigZag waypoints?
+		 * @param n a pseudo-float
 		 */
-		public void setUnknownEta( int n ) { unknownEta = n; }
-		public int getUnknownEta() { return unknownEta; }
-
-		/**
-		 * Unknown.
-		 *
-		 * When not set, this is MIN_INT.
-		 *
-		 * Observed values: Combat/repair (Resembles position). Related to
-		 * ZigZag waypoints?
-		 */
-		public void setUnknownTheta( int n ) { unknownTheta = n; }
-		public int getUnknownTheta() { return unknownTheta; }
+		public void setNextTargetX( int n ) { nextTargetX = n; }
+		public void setNextTargetY( int n ) { nextTargetY = n; }
+		public int getNextTargetX() { return nextTargetX; }
+		public int getNextTargetY() { return nextTargetY; }
 
 		/**
 		 * Unknown.
@@ -8929,7 +8930,7 @@ public class SavedGameParser extends Parser {
 
 			result.append( String.format( "\n" ));
 			result.append( String.format( "Epsilon?, Zeta?:   %7s,%7s\n", prettyInt( unknownEpsilon ), prettyInt( unknownZeta ) ) );
-			result.append( String.format( "Eta?, Theta?:      %7s,%7s\n", prettyInt( unknownEta ), prettyInt( unknownTheta ) ) );
+			result.append( String.format( "Next Target:       %7s,%7s\n", prettyInt( nextTargetX ), prettyInt( nextTargetY ) ) );
 			result.append( String.format( "Iota?, Kappa?:     %7s,%7s\n", prettyInt( unknownIota ), prettyInt( unknownKappa ) ) );
 
 			result.append( String.format( "\n" ));
@@ -10391,8 +10392,8 @@ public class SavedGameParser extends Parser {
 
 		dronePod.setUnknownEpsilon( readMinMaxedInt( in ) );
 		dronePod.setUnknownZeta( readMinMaxedInt( in ) );
-		dronePod.setUnknownEta( readMinMaxedInt( in ) );
-		dronePod.setUnknownTheta( readMinMaxedInt( in ) );
+		dronePod.setNextTargetX( readMinMaxedInt( in ) );
+		dronePod.setNextTargetY( readMinMaxedInt( in ) );
 		dronePod.setUnknownIota( readMinMaxedInt( in ) );
 		dronePod.setUnknownKappa( readMinMaxedInt( in ) );
 
@@ -10488,8 +10489,8 @@ public class SavedGameParser extends Parser {
 
 		writeMinMaxedInt( out, dronePod.getUnknownEpsilon() );
 		writeMinMaxedInt( out, dronePod.getUnknownZeta() );
-		writeMinMaxedInt( out, dronePod.getUnknownEta() );
-		writeMinMaxedInt( out, dronePod.getUnknownTheta() );
+		writeMinMaxedInt( out, dronePod.getNextTargetX() );
+		writeMinMaxedInt( out, dronePod.getNextTargetY() );
 		writeMinMaxedInt( out, dronePod.getUnknownIota() );
 		writeMinMaxedInt( out, dronePod.getUnknownKappa() );
 
