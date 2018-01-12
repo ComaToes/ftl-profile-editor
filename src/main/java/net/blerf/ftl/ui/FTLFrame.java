@@ -758,7 +758,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 						boolean backupRestored = bakFile.renameTo( chosenFile );
 						if ( backupRestored ) {
 							log.info( "The backup was restored" );
-							JOptionPane.showMessageDialog( FTLFrame.this, "The backup was restored.", "Disaster Averted", JOptionPane.INFORMATION_MESSAGE );
+							JOptionPane.showMessageDialog( FTLFrame.this, "A backup, created beforehand, was restored.", "Disaster Averted", JOptionPane.INFORMATION_MESSAGE );
 						}
 						else {
 							log.warn( "A backup was created, but it could not be renamed: "+ bakName );
@@ -1021,7 +1021,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 						boolean backupRestored = bakFile.renameTo( chosenFile );
 						if ( backupRestored ) {
 							log.info( "The backup was restored" );
-							JOptionPane.showMessageDialog( FTLFrame.this, "The backup was restored.", "Disaster Averted", JOptionPane.INFORMATION_MESSAGE );
+							JOptionPane.showMessageDialog( FTLFrame.this, "A backup, created beforehand, was restored.", "Disaster Averted", JOptionPane.INFORMATION_MESSAGE );
 						}
 						else {
 							log.warn( "A backup was created, but it could not be renamed: "+ bakName );
