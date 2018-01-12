@@ -970,6 +970,8 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 					SavedGameParser parser = new SavedGameParser();
 					FTLFrame.this.updateGameState( gameState );
 					parser.writeSavedGame( out, gameState );
+
+					saveSucceeded = true;
 				}
 				catch ( IOException f ) {
 					log.error( String.format( "Error saving game state (\"%s\").", chosenFile.getName() ), f );
