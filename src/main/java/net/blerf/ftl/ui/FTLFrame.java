@@ -703,26 +703,27 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 			}
 
 			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				boolean backupCreated = false;
+				boolean saveSucceeded = false;
+
+				String bakName = chosenFile.getName() +".bak";
+				File bakFile = new File( chosenFile.getParentFile(), bakName );
+
 				FileOutputStream out = null;
 				try {
 					log.info( "Saving profile: "+ chosenFile.getAbsolutePath() );
 
 					if ( chosenFile.exists() ) {
-						String bakName = chosenFile.getName() +".bak";
-						File bakFile = new File( chosenFile.getParentFile(), bakName );
-						boolean bakValid = true;
 
-						if ( bakFile.exists() ) {
-							bakValid = bakFile.delete();
-							if ( !bakValid ) log.warn( "Profile will be overwritten. Could not delete existing backup: "+ bakName );
-						}
-						if ( bakValid ) {
-							bakValid = chosenFile.renameTo( bakFile );
-							if ( !bakValid ) log.warn( "Profile will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
+						if ( bakFile.exists() && !bakFile.delete() ) {
+							log.warn( "Could not delete the previous backup: "+ bakName );
 						}
 
-						if ( bakValid ) {
-							log.info( "Profile was backed up: "+ bakName );
+						backupCreated = chosenFile.renameTo( bakFile );
+						if ( backupCreated ) {
+							log.info( "Existing file was backed up: "+ bakName );
+						} else {
+							log.warn( "Could not rename the existing file: "+ chosenFile.getName() );
 						}
 					}
 
@@ -731,6 +732,8 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 					ProfileParser parser = new ProfileParser();
 					FTLFrame.this.updateProfile( profile );
 					parser.writeProfile( out, profile );
+
+					saveSucceeded = true;
 				}
 				catch ( IOException f ) {
 					log.error( String.format( "Error saving profile (\"%s\")", chosenFile.getName() ), f );
@@ -739,6 +742,24 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 				finally {
 					try {if ( out != null ) out.close();}
 					catch ( IOException f ) {}
+				}
+
+				if ( !saveSucceeded ) {
+					if ( backupCreated ) {
+						if ( chosenFile.exists() && !chosenFile.delete() ) {
+							log.warn( "Could not delete the corrupt file: "+ chosenFile.getName() );
+						}
+
+						boolean backupRestored = bakFile.renameTo( chosenFile );
+						if ( backupRestored ) {
+							log.info( "The backup was restored" );
+							JOptionPane.showMessageDialog( FTLFrame.this, "The backup was restored.", "Disaster Averted", JOptionPane.INFORMATION_MESSAGE );
+						}
+						else {
+							log.warn( "A backup was created, but it could not be renamed: "+ bakName );
+							JOptionPane.showMessageDialog( FTLFrame.this, "A backup was created, but it could not be renamed.", "Error", JOptionPane.ERROR_MESSAGE );
+						}
+					}
 				}
 			}
 		}
@@ -920,26 +941,27 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 			}
 
 			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				boolean backupCreated = false;
+				boolean saveSucceeded = false;
+
+				String bakName = chosenFile.getName() +".bak";
+				File bakFile = new File( chosenFile.getParentFile(), bakName );
+
 				FileOutputStream out = null;
 				try {
 					log.info( "Saving game state: "+ chosenFile.getAbsolutePath() );
 
 					if ( chosenFile.exists() ) {
-						String bakName = chosenFile.getName() +".bak";
-						File bakFile = new File( chosenFile.getParentFile(), bakName );
-						boolean bakValid = true;
 
-						if ( bakFile.exists() ) {
-							bakValid = bakFile.delete();
-							if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not delete existing backup: "+ bakName );
-						}
-						if ( bakValid ) {
-							bakValid = chosenFile.renameTo( bakFile );
-							if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
+						if ( bakFile.exists() && !bakFile.delete() ) {
+							log.warn( "Could not delete the previous backup: "+ bakName );
 						}
 
-						if ( bakValid ) {
-							log.info( "Saved game was backed up: "+ bakName );
+						backupCreated = chosenFile.renameTo( bakFile );
+						if ( backupCreated ) {
+							log.info( "Existing file was backed up: "+ bakName );
+						} else {
+							log.warn( "Could not rename the existing file: "+ chosenFile.getName() );
 						}
 					}
 
@@ -956,6 +978,24 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 				finally {
 					try {if ( out != null ) out.close();}
 					catch ( IOException f ) {}
+				}
+
+				if ( !saveSucceeded ) {
+					if ( backupCreated ) {
+						if ( chosenFile.exists() && !chosenFile.delete() ) {
+							log.warn( "Could not delete the corrupt file: "+ chosenFile.getName() );
+						}
+
+						boolean backupRestored = bakFile.renameTo( chosenFile );
+						if ( backupRestored ) {
+							log.info( "The backup was restored" );
+							JOptionPane.showMessageDialog( FTLFrame.this, "The backup was restored.", "Disaster Averted", JOptionPane.INFORMATION_MESSAGE );
+						}
+						else {
+							log.warn( "A backup was created, but it could not be renamed: "+ bakName );
+							JOptionPane.showMessageDialog( FTLFrame.this, "A backup was created, but it could not be renamed.", "Error", JOptionPane.ERROR_MESSAGE );
+						}
+					}
 				}
 			}
 		}
