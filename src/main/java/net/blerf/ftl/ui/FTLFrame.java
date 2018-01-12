@@ -146,9 +146,6 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 	private JButton profileOpenBtn;
 	private JButton profileSaveBtn;
 	private JButton profileDumpBtn;
-	private JButton profileUnlockShipsBtn;
-	private JButton profileUnlockShipAchsBtn;
-	private JButton profileExtractBtn;
 
 	private JTabbedPane profileTabsPane;
 	private ProfileShipUnlockPanel profileShipUnlockPanel;
@@ -455,25 +452,6 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 		toolbar.add( Box.createHorizontalGlue() );
 
-		profileUnlockShipsBtn = new JButton( "Unlock All Ships", unlockIcon );
-		profileUnlockShipsBtn.addActionListener( this );
-		profileUnlockShipsBtn.addMouseListener( new StatusbarMouseListener( this, "Unlock All Ships (except Type-B)." ) );
-		toolbar.add( profileUnlockShipsBtn );
-
-		profileUnlockShipAchsBtn = new JButton( "Unlock All Ship Achievements", unlockIcon );
-		profileUnlockShipAchsBtn.addActionListener( this );
-		profileUnlockShipAchsBtn.addMouseListener( new StatusbarMouseListener( this, "Unlock All Ship Achievements (and Type-B ships)." ) );
-		toolbar.add( profileUnlockShipAchsBtn );
-
-		toolbar.add( Box.createHorizontalGlue() );
-
-		profileExtractBtn = new JButton( "Extract Dats", saveIcon );
-		profileExtractBtn.addActionListener( this );
-		profileExtractBtn.addMouseListener( new StatusbarMouseListener( this, "Extract dat content to a directory." ) );
-		toolbar.add( profileExtractBtn );
-
-		toolbar.add( Box.createHorizontalGlue() );
-
 		JButton profileAboutBtn = createAboutButton();
 		toolbar.add( profileAboutBtn );
 
@@ -602,9 +580,9 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 					byte[] buf = new byte[4096];
 					int len = 0;
 					while ( (len = in.read( buf )) >= 0 ) {
-						for ( int j=0; j < len; j++ ) {
-							hexBuf.append( String.format( "%02x", buf[j] ) );
-							if ( (j+1) % 32 == 0 ) {
+						for ( int i=0; i < len; i++ ) {
+							hexBuf.append( String.format( "%02x", buf[i] ) );
+							if ( (i+1) % 32 == 0 ) {
 								hexBuf.append( "\n" );
 							}
 						}
@@ -821,40 +799,6 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 				}
 			}
 		}
-		else if ( source == profileUnlockShipsBtn ) {
-
-			log.debug( "Unlock all ships button clicked" );
-			profileShipUnlockPanel.unlockAllShips();
-		}
-		else if ( source == profileUnlockShipAchsBtn ) {
-
-			log.debug( "Unlock all ship achievements button clicked" );
-			profileShipUnlockPanel.unlockAllShipAchievements();
-		}
-		else if ( source == profileExtractBtn ) {
-
-			JFileChooser extractChooser = new JFileChooser();
-			extractChooser.setDialogTitle( "Choose a dir to extract into" );
-			extractChooser.setFileHidingEnabled( false );
-			extractChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
-			extractChooser.setMultiSelectionEnabled( false );
-
-			if ( extractChooser.showSaveDialog( FTLFrame.this ) == JFileChooser.APPROVE_OPTION ) {
-				try {
-					File extractDir = extractChooser.getSelectedFile();
-
-					JOptionPane.showMessageDialog( FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE );
-
-					DataManager.get().extractResources( extractDir );
-
-					JOptionPane.showMessageDialog( FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE );
-				}
-				catch ( IOException f ) {
-					log.error( "Extracting dats failed", f );
-					showErrorDialog( String.format( "Error extracting dats:\n%s: %s", f.getClass().getSimpleName(), f.getMessage() ) );
-				}
-			}
-		}
 		else if ( source == gameStateOpenBtn ) {
 
 			gameStateChooser.setDialogTitle( "Open Saved Game" );
@@ -889,9 +833,9 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 					byte[] buf = new byte[4096];
 					int len = 0;
 					while ( (len = in.read( buf )) >= 0 ) {
-						for ( int j=0; j < len; j++ ) {
-							hexBuf.append( String.format( "%02x", buf[j] ) );
-							if ( (j+1) % 32 == 0 ) {
+						for ( int i=0; i < len; i++ ) {
+							hexBuf.append( String.format( "%02x", buf[i] ) );
+							if ( (i+1) % 32 == 0 ) {
 								hexBuf.append( "\n" );
 							}
 						}
@@ -906,7 +850,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 					if ( gameState.getMysteryList().size() > 0 ) {
 						StringBuilder musteryBuf = new StringBuilder();
-						musteryBuf.append( "This saved game file contains mystery bytes the developers hadn't anticipated!\n" );
+						musteryBuf.append( "This saved game file contains unexpected mystery bytes!\n" );
 						boolean first = true;
 						for ( MysteryBytes m : gameState.getMysteryList() ) {
 							if ( first ) { first = false; }

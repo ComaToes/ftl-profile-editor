@@ -1,6 +1,10 @@
 package net.blerf.ftl.ui;
 
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -11,6 +15,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 
 import org.slf4j.Logger;
@@ -29,7 +34,7 @@ import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.ShipBlueprint;
 
 
-public class ProfileShipUnlockPanel extends JPanel {
+public class ProfileShipUnlockPanel extends JPanel implements ActionListener {
 
 	private static final Logger log = LoggerFactory.getLogger( ProfileShipUnlockPanel.class );
 
@@ -37,16 +42,21 @@ public class ProfileShipUnlockPanel extends JPanel {
 	private static final int SHIP_LOCKED = 0;
 	private static final int SHIP_UNLOCKED = 1;
 
-	private FTLFrame frame;
-
 	private Map<String, IconCycleButton> shipABoxes = new HashMap<String, IconCycleButton>();
 	private Map<String, IconCycleButton> shipCBoxes = new HashMap<String, IconCycleButton>();
 	private Map<Achievement, IconCycleButton> shipAchBoxes = new HashMap<Achievement, IconCycleButton>();
 
+	private FTLFrame frame;
 
-	public ProfileShipUnlockPanel( FTLFrame frame ) {
+	private JButton allShipsBtn;
+	private JButton allShipAchsBtn;
+
+
+	public ProfileShipUnlockPanel( FTLFrame frame ) throws IOException {
 		this.setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
 		this.frame = frame;
+
+		ImageIcon unlockIcon = new ImageIcon( ImageUtilities.getBundledImage( "unlock.png", FTLFrame.class ) );
 
 		// Unlocks.
 		JPanel shipsPanel = new JPanel();
@@ -59,6 +69,14 @@ public class ProfileShipUnlockPanel extends JPanel {
 			if ( panel != null ) shipsPanel.add( panel );
 		}
 
+		JPanel allShipsPanel = new JPanel( new GridBagLayout() );
+		allShipsPanel.setBorder( BorderFactory.createTitledBorder( " " ) );
+		allShipsBtn = new JButton( "Unlock All", unlockIcon );
+		allShipsBtn.addMouseListener( new StatusbarMouseListener( frame, "Unlock All Ships (except Type-B)." ) );
+		allShipsBtn.addActionListener( this );
+		allShipsPanel.add( allShipsBtn );
+		shipsPanel.add( allShipsPanel );
+
 		// Layout achievements.
 		JPanel shipAchsPanel = new JPanel();
 		shipAchsPanel.setLayout( new GridLayout( 0, 3 ) );
@@ -69,6 +87,14 @@ public class ProfileShipUnlockPanel extends JPanel {
 			JPanel panel = createShipAchPanel( baseId );
 			if ( panel != null ) shipAchsPanel.add( panel );
 		}
+
+		JPanel allShipAchsPanel = new JPanel( new GridBagLayout() );
+		allShipAchsPanel.setBorder( BorderFactory.createTitledBorder( " " ) );
+		allShipAchsBtn = new JButton( "Unlock All", unlockIcon );
+		allShipAchsBtn.addMouseListener( new StatusbarMouseListener( frame, "Unlock All Ship Achievements (and Type-B ships)." ) );
+		allShipAchsBtn.addActionListener( this );
+		allShipAchsPanel.add( allShipAchsBtn );
+		shipAchsPanel.add( allShipAchsPanel );
 	}
 
 	private JPanel createShipUnlockPanel( String baseId ) {
@@ -279,5 +305,17 @@ public class ProfileShipUnlockPanel extends JPanel {
 		p.setShipUnlockMap( shipUnlockMap );
 
 		p.setAchievements( newAchRecs );
+	}
+
+	@Override
+	public void actionPerformed( ActionEvent e ) {
+		Object source = e.getSource();
+
+		if ( source == allShipsBtn ) {
+			unlockAllShips();
+		}
+		else if ( source == allShipAchsBtn ) {
+			unlockAllShipAchievements();
+		}
 	}
 }

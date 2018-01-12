@@ -20,7 +20,7 @@ public class IconCycleButton extends JButton implements ActionListener {
 	public IconCycleButton( Icon[] icons ) {
 		this.icons = icons;
 		this.setBorder( BorderFactory.createEmptyBorder( 2, 4, 2, 4 ) );
-		this.setFocusPainted( false );
+		this.setFocusPainted( true );
 		this.setContentAreaFilled( false );
 		this.setHorizontalAlignment( SwingConstants.LEADING );
 		setSelectedState( 0 );
