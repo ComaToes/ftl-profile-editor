@@ -116,6 +116,8 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 	private Profile profile = null;
 	private SavedGameParser.SavedGameState gameState = null;
+	private StringBuilder profileHex = null;
+	private StringBuilder gameStateHex = null;
 
 	private URL aboutPageURL = FTLFrame.class.getResource( "about.html" );
 	private URL historyTemplateMainURL = FTLFrame.class.getResource( "history_template_main.html" );
@@ -617,6 +619,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 					// Reload the original unmodified profile.
 					FTLFrame.this.loadProfile( p );
+					profileHex = hexBuf;
 				}
 				catch ( FileNotFoundException f ) {
 					// Don't log a whole stack trace.
@@ -651,7 +654,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 					reportDlg.setHtmlMessage( message );
 					reportDlg.setHtmlInstructions( bugReportInstructions );
-					reportDlg.setReportTitle( "Profile Parser Error" );
+					reportDlg.setReportTitle( "Profile Read Error" );
 					reportDlg.setAppDescription( "Editor", ""+ appVersion );
 
 					if ( exception != null ) {
@@ -705,13 +708,14 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
 				boolean backupCreated = false;
 				boolean saveSucceeded = false;
+				Exception exception = null;
 
 				String bakName = chosenFile.getName() +".bak";
 				File bakFile = new File( chosenFile.getParentFile(), bakName );
 
 				FileOutputStream out = null;
 				try {
-					log.info( "Saving profile: "+ chosenFile.getAbsolutePath() );
+					log.info( "Writing profile: "+ chosenFile.getAbsolutePath() );
 
 					if ( chosenFile.exists() ) {
 
@@ -736,8 +740,9 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 					saveSucceeded = true;
 				}
 				catch ( IOException f ) {
-					log.error( String.format( "Error saving profile (\"%s\")", chosenFile.getName() ), f );
-					showErrorDialog( String.format( "Error saving profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+					log.error( String.format( "Error writing profile (\"%s\")", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error writing profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+					exception = f;
 				}
 				finally {
 					try {if ( out != null ) out.close();}
@@ -760,6 +765,27 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 							JOptionPane.showMessageDialog( FTLFrame.this, "A backup was created, but it could not be renamed.", "Error", JOptionPane.ERROR_MESSAGE );
 						}
 					}
+				}
+
+				if ( exception != null ) {
+
+					BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
+					reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
+					reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
+
+					reportDlg.setHtmlMessage( "Your profile could not written correctly.<br/>" );
+					reportDlg.setHtmlInstructions( bugReportInstructions );
+					reportDlg.setReportTitle( "Profile Write Error" );
+					reportDlg.setAppDescription( "Editor", ""+ appVersion );
+
+					reportDlg.setException( exception );
+
+					if ( profileHex != null ) {
+						reportDlg.setAttachment( profileHex, chosenFile.getName() );
+					}
+
+					reportDlg.build();
+					reportDlg.setVisible( true );
 				}
 			}
 		}
@@ -822,7 +848,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 		}
 		else if ( source == gameStateOpenBtn ) {
 
-			gameStateChooser.setDialogTitle( "Open Saved Game" );
+			gameStateChooser.setDialogTitle( "Open Game State" );
 			int chooserResponse = gameStateChooser.showOpenDialog( FTLFrame.this );
 			File chosenFile = gameStateChooser.getSelectedFile();
 			boolean sillyMistake = false;
@@ -846,7 +872,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 				Exception exception = null;
 
 				try {
-					log.info( "Opening game state: "+ chosenFile.getAbsolutePath() );
+					log.info( "Reading game state: "+ chosenFile.getAbsolutePath() );
 
 					in = new FileInputStream( chosenFile );
 
@@ -866,12 +892,13 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 					SavedGameParser parser = new SavedGameParser();
 					SavedGameParser.SavedGameState gs = parser.readSavedGame( in );
 					loadGameState( gs );
+					gameStateHex = hexBuf;
 
 					log.debug( "Game state read successfully" );
 
 					if ( gameState.getMysteryList().size() > 0 ) {
 						StringBuilder musteryBuf = new StringBuilder();
-						musteryBuf.append( "This saved game file contains unexpected mystery bytes!\n" );
+						musteryBuf.append( "This file contains unexpected mystery bytes!\n" );
 						boolean first = true;
 						for ( MysteryBytes m : gameState.getMysteryList() ) {
 							if ( first ) { first = false; }
@@ -905,7 +932,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 					reportDlg.setHtmlMessage( "Your saved game could not be interpreted correctly.<br/>" );
 					reportDlg.setHtmlInstructions( bugReportInstructions );
-					reportDlg.setReportTitle( "SavedGame Parser Error" );
+					reportDlg.setReportTitle( "Game State Read Error" );
 					reportDlg.setAppDescription( "Editor", ""+ appVersion );
 
 					reportDlg.setException( exception );
@@ -923,8 +950,9 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 			if ( gameState == null ) return;
 
-			if ( gameState.getMysteryList().size() > 0 )
-				log.warn( "The original saved game file contained mystery bytes, which will be omitted in the new file." );
+			if ( gameState.getMysteryList().size() > 0 ) {
+				log.warn( "The original game state file contained mystery bytes, which will be omitted in the new file." );
+			}
 
 			gameStateChooser.setDialogTitle( "Save Game State" );
 			int chooserResponse = gameStateChooser.showSaveDialog( FTLFrame.this );
@@ -943,13 +971,14 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
 				boolean backupCreated = false;
 				boolean saveSucceeded = false;
+				Exception exception = null;
 
 				String bakName = chosenFile.getName() +".bak";
 				File bakFile = new File( chosenFile.getParentFile(), bakName );
 
 				FileOutputStream out = null;
 				try {
-					log.info( "Saving game state: "+ chosenFile.getAbsolutePath() );
+					log.info( "Writing game state: "+ chosenFile.getAbsolutePath() );
 
 					if ( chosenFile.exists() ) {
 
@@ -974,8 +1003,9 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 					saveSucceeded = true;
 				}
 				catch ( IOException f ) {
-					log.error( String.format( "Error saving game state (\"%s\").", chosenFile.getName() ), f );
-					showErrorDialog( String.format( "Error saving game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+					log.error( String.format( "Error writing game state (\"%s\").", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error writing game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+					exception = f;
 				}
 				finally {
 					try {if ( out != null ) out.close();}
@@ -998,6 +1028,27 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 							JOptionPane.showMessageDialog( FTLFrame.this, "A backup was created, but it could not be renamed.", "Error", JOptionPane.ERROR_MESSAGE );
 						}
 					}
+				}
+
+				if ( exception != null ) {
+
+					BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
+					reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
+					reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
+
+					reportDlg.setHtmlMessage( "Your saved game could not written correctly.<br/>" );
+					reportDlg.setHtmlInstructions( bugReportInstructions );
+					reportDlg.setReportTitle( "Game State Write Error" );
+					reportDlg.setAppDescription( "Editor", ""+ appVersion );
+
+					reportDlg.setException( exception );
+
+					if ( gameStateHex != null ) {
+						reportDlg.setAttachment( gameStateHex, chosenFile.getName() );
+					}
+
+					reportDlg.build();
+					reportDlg.setVisible( true );
 				}
 			}
 		}
@@ -1197,7 +1248,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 		}
 	}
 
-	public void loadProfile( Profile p ) {
+	public void loadProfile( Profile p ) throws IOException {
 
 		Runnable scrollAll = new Runnable() {
 			@Override
@@ -1209,34 +1260,22 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 			}
 		};
 
-		try {
-			profileShipUnlockPanel.setProfile( p );
-			profileGeneralAchsPanel.setProfile( p );
-			profileGeneralStatsPanel.setProfile( p );
-			profileShipStatsPanel.setProfile( p );
-			profileDumpPanel.setText( (p != null ? p.toString() : "") );
+		profileShipUnlockPanel.setProfile( p );
+		profileGeneralAchsPanel.setProfile( p );
+		profileGeneralStatsPanel.setProfile( p );
+		profileShipStatsPanel.setProfile( p );
+		profileDumpPanel.setText( (p != null ? p.toString() : "") );
 
-			profileSaveBtn.setEnabled( (p != null) );
-			profileDumpBtn.setEnabled( (p != null) );
+		profileSaveBtn.setEnabled( (p != null) );
+		profileDumpBtn.setEnabled( (p != null) );
 
-			profile = p;
-			SwingUtilities.invokeLater( scrollAll );
-		}
-		catch ( IOException e ) {
-			if ( profile != null && profile != p ) {
-				log.info( "Attempting to revert GUI to the previous profile..." );
-				showErrorDialog( "Error loading profile.\nAttempting to return to the previous profile..." );
-				loadProfile( profile );
-			}
-			else {
-				showErrorDialog( "Error loading profile.\nThis has left the GUI in an ambiguous state.\nSaving is not recommended until another profile has successfully loaded." );
-			}
-		}
+		profile = p;
+		SwingUtilities.invokeLater( scrollAll );
 
 		this.repaint();
 	}
 
-	public void updateProfile( Profile p ) {
+	public void updateProfile( Profile p ) throws IOException {
 
 		if ( p == null ) {
 		}
