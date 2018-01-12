@@ -8688,6 +8688,7 @@ public class SavedGameParser extends Parser {
 		 * When not set, this is MIN_INT.
 		 *
 		 * @param n a pseudo-float
+		 * @see WeaponModuleState#setCurrentTargets(List)
 		 */
 		public void setNextTargetX( int n ) { nextTargetX = n; }
 		public void setNextTargetY( int n ) { nextTargetY = n; }
@@ -9684,8 +9685,8 @@ public class SavedGameParser extends Parser {
 		private int boost = 0;
 		private int charge = 0;
 
-		private List<ReticleCoordinate> currentTargets = new ArrayList<ReticleCoordinate>();
-		private List<ReticleCoordinate> prevTargets = new ArrayList<ReticleCoordinate>();
+		private List<XYPair> currentTargets = new ArrayList<XYPair>();
+		private List<XYPair> prevTargets = new ArrayList<XYPair>();
 
 		private boolean autofire = false;
 		private boolean fireWhenReady = false;
@@ -9720,11 +9721,11 @@ public class SavedGameParser extends Parser {
 			boost = srcMod.getBoost();
 			charge = srcMod.getCharge();
 
-			for ( ReticleCoordinate target : srcMod.getCurrentTargets() ) {
-				currentTargets.add( new ReticleCoordinate( target ) );
+			for ( XYPair target : srcMod.getCurrentTargets() ) {
+				currentTargets.add( new XYPair( target ) );
 			}
-			for ( ReticleCoordinate target : srcMod.getPreviousTargets() ) {
-				prevTargets.add( new ReticleCoordinate( target ) );
+			for ( XYPair target : srcMod.getPreviousTargets() ) {
+				prevTargets.add( new XYPair( target ) );
 			}
 
 			autofire = srcMod.getAutofire();
@@ -9862,22 +9863,26 @@ public class SavedGameParser extends Parser {
 		 * Immediately before firing, these coordinates are copied to become the
 		 * previous targets, and if autofire is off this list is cleared.
 		 *
+		 * Note: These are NOT pseudo-floats.
+		 *
 		 * TODO: Confirm autofire behavior.
 		 *
 		 * @see #setPreviousTargets(List)
 		 */
-		public void setCurrentTargets( List<ReticleCoordinate> targetList ) { currentTargets = targetList; }
-		public List<ReticleCoordinate> getCurrentTargets() { return currentTargets; }
+		public void setCurrentTargets( List<XYPair> targetList ) { currentTargets = targetList; }
+		public List<XYPair> getCurrentTargets() { return currentTargets; }
 
 		/**
 		 * Sets previously targeted locations.
 		 *
 		 * The moment the player places a target reticle, this is populated.
 		 *
+		 * Note: These are NOT pseudo-floats.
+		 *
 		 * @see #setCurrentTargets(List)
 		 */
-		public void setPreviousTargets( List<ReticleCoordinate> targetList ) { prevTargets = targetList; }
-		public List<ReticleCoordinate> getPreviousTargets() { return prevTargets; }
+		public void setPreviousTargets( List<XYPair> targetList ) { prevTargets = targetList; }
+		public List<XYPair> getPreviousTargets() { return prevTargets; }
 
 		/**
 		 * Toggles whether fireWhenReady will be disabled after any volley.
@@ -10018,18 +10023,18 @@ public class SavedGameParser extends Parser {
 
 			result.append( "\nCurrent Targets?... (Reticle Coords)\n" );
 			first = true;
-			for ( ReticleCoordinate target : currentTargets ) {
+			for ( XYPair target : currentTargets ) {
 				if ( first ) { first = false; }
 				else { result.append( ",\n" ); }
-				result.append( target.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
+				result.append( String.format( "  X,Y: %3d,%3d\n", target.x, target.y ) );
 			}
 
 			result.append( "\nPrevious Targets?... (Reticle Coords)\n" );
 			first = true;
-			for ( ReticleCoordinate target : prevTargets ) {
+			for ( XYPair target : prevTargets ) {
 				if ( first ) { first = false; }
 				else { result.append( ",\n" ); }
-				result.append( target.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
+				result.append( String.format( "  X,Y: %3d,%3d\n", target.x, target.y ) );
 			}
 
 			result.append( "\n" );
@@ -10068,45 +10073,6 @@ public class SavedGameParser extends Parser {
 				result.append( String.format( "Projectile # %2d:\n", projectileIndex++ ) );
 				result.append( projectile.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
 			}
-
-			return result.toString();
-		}
-	}
-
-	/**
-	 * An X,Y pair, relative to the top-left of a ship's floor layout.
-	 * It's used for placing targeting reticles over the middle of rooms.
-	 */
-	public static class ReticleCoordinate {
-		private int x = 0;
-		private int y = 0;
-
-
-		/**
-		 * Constructor.
-		 */
-		public ReticleCoordinate() {
-		}
-
-		/**
-		 * Copy constructor.
-		 */
-		public ReticleCoordinate( ReticleCoordinate srcCoord ) {
-			x = srcCoord.getX();
-			y = srcCoord.getY();
-		}
-
-		public void setX( int n ) { x = n; }
-		public void setY( int n ) { y = n; }
-
-		public int getX() { return x; }
-		public int getY() { return y; }
-
-		@Override
-		public String toString() {
-			StringBuilder result = new StringBuilder();
-
-			result.append( String.format( "X,Y: %3d,%3d\n", x, y ) );
 
 			return result.toString();
 		}
@@ -10570,14 +10536,14 @@ public class SavedGameParser extends Parser {
 		weaponMod.setCharge( readInt( in ) );
 
 		int currentTargetsCount = readInt( in );
-		List<ReticleCoordinate> currentTargetsList = new ArrayList<ReticleCoordinate>();
+		List<XYPair> currentTargetsList = new ArrayList<XYPair>();
 		for ( int i=0; i < currentTargetsCount; i++ ) {
 			currentTargetsList.add( readReticleCoordinate( in ) );
 		}
 		weaponMod.setCurrentTargets( currentTargetsList );
 
 		int prevTargetsCount = readInt( in );
-		List<ReticleCoordinate> prevTargetsList = new ArrayList<ReticleCoordinate>();
+		List<XYPair> prevTargetsList = new ArrayList<XYPair>();
 		for ( int i=0; i < prevTargetsCount; i++ ) {
 			prevTargetsList.add( readReticleCoordinate( in ) );
 		}
@@ -10619,12 +10585,12 @@ public class SavedGameParser extends Parser {
 		writeInt( out, weaponMod.getCharge() );
 
 		writeInt( out, weaponMod.getCurrentTargets().size() );
-		for ( ReticleCoordinate target : weaponMod.getCurrentTargets() ) {
+		for ( XYPair target : weaponMod.getCurrentTargets() ) {
 			writeReticleCoordinate( out, target );
 		}
 
 		writeInt( out, weaponMod.getPreviousTargets().size() );
-		for ( ReticleCoordinate target : weaponMod.getPreviousTargets() ) {
+		for ( XYPair target : weaponMod.getPreviousTargets() ) {
 			writeReticleCoordinate( out, target );
 		}
 
@@ -10652,17 +10618,17 @@ public class SavedGameParser extends Parser {
 		}
 	}
 
-	private ReticleCoordinate readReticleCoordinate( FileInputStream in ) throws IOException {
-		ReticleCoordinate reticle = new ReticleCoordinate();
+	private XYPair readReticleCoordinate( FileInputStream in ) throws IOException {
+		int reticleX = readInt( in );
+		int reticleY = readInt( in );
 
-		reticle.setX( readInt( in ) );
-		reticle.setY( readInt( in ) );
+		XYPair reticle = new XYPair( reticleX, reticleY );
 
 		return reticle;
 	}
 
-	public void writeReticleCoordinate( OutputStream out, ReticleCoordinate reticle ) throws IOException {
-		writeInt( out, reticle.getX() );
-		writeInt( out, reticle.getY() );
+	public void writeReticleCoordinate( OutputStream out, XYPair reticle ) throws IOException {
+		writeInt( out, reticle.x );
+		writeInt( out, reticle.y );
 	}
 }
