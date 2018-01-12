@@ -1,5 +1,15 @@
 Changelog
 
+27:
+- Added support for FTL 1.6.1+ resources
+- Added partial editing for FTL 1.6.1+ saved games / full editing of profiles
+- Fixed "Sector Tree" tab's expanded preview advancing on its own
+- Fixed "Sector Map" preview's excessive re-rolls (isolation threshold raised)
+- Moved "Unlock All" buttons out of the toolbar, into the "Ship Unlocks" tab
+- Removed the "Extract Dats" button
+- Backups are restored automatically when saving fails
+- Added bug report dialogs when saving fails
+
 26:
 - Fixed a crash when editing shops
 - Fixed a crash when saving a saved game with missiles/asteroids/explosions

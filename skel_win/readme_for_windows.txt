@@ -89,9 +89,3 @@ Troubleshooting
     with the following line.
 
     use_default_ui=true
-
-* Error reading profile. [...] Initial int not expected value: 2...
-    You likely tried to open a saved game while in the "Profile" tab.
-
-* Error reading saved game. [...] Unexpected first byte...
-    You likely tried to open a profile while in the "Saved Game" tab.

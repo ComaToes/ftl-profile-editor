@@ -84,9 +84,3 @@ Troubleshooting
     The launcher straddles Java releases by telling older ones to ignore it.
 
     java -XX:+IgnoreUnrecognizedVMOptions ...
-
-* Error reading profile. [...] Initial int not expected value: 2...
-    You likely tried to open a saved game while in the "Profile" tab.
-
-* Error reading saved game. [...] Unexpected first byte...
-    You likely tried to open a profile while in the "Saved Game" tab.
