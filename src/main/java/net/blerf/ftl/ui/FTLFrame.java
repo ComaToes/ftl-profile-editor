@@ -95,7 +95,7 @@ import net.blerf.ftl.ui.Statusbar;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 
 
-public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExceptionHandler {
+public class FTLFrame extends JFrame implements ActionListener, Statusbar, Thread.UncaughtExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger( FTLFrame.class );
 
@@ -114,7 +114,6 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 	private static final String SAVE_SECTOR_TREE = "Sector Tree";
 	private static final String SAVE_STATE_VARS = "State Vars";
 
-	private Profile stockProfile = null;
 	private Profile profile = null;
 	private SavedGameParser.SavedGameState gameState = null;
 
@@ -124,7 +123,6 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://subsetgames.com/forum/viewtopic.php?f=7&t=10959";
-
 
 	private boolean disposeNormally = true;
 	private boolean ranInit = false;
@@ -141,8 +139,17 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 
 	private String bugReportInstructions;
 
+	private File stockProfileFile;
+	private Profile stockProfile;
+
+	private JFileChooser profileChooser;
+	private JButton profileOpenBtn;
 	private JButton profileSaveBtn;
 	private JButton profileDumpBtn;
+	private JButton profileUnlockShipsBtn;
+	private JButton profileUnlockShipAchsBtn;
+	private JButton profileExtractBtn;
+
 	private JTabbedPane profileTabsPane;
 	private ProfileShipUnlockPanel profileShipUnlockPanel;
 	private ProfileGeneralAchievementsPanel profileGeneralAchsPanel;
@@ -155,8 +162,11 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 	private JScrollPane profileGeneralStatsScroll;
 	private JScrollPane profileShipStatsScroll;
 
+	private JFileChooser gameStateChooser;
+	private JButton gameStateOpenBtn;
 	private JButton gameStateSaveBtn;
 	private JButton gameStateDumpBtn;
+
 	private JTabbedPane savedGameTabsPane;
 	private DumpPanel savedGameDumpPanel;
 	private SavedGameGeneralPanel savedGameGeneralPanel;
@@ -337,6 +347,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		this.setLocationRelativeTo( null );
 
 		// Load blank profile (sets Kestrel unlock).
+		stockProfileFile = new File( FTLUtilities.findUserDataDir(), "prof.sav" );
 		stockProfile = Profile.createEmptyProfile();
 		loadProfile( stockProfile );
 
@@ -383,7 +394,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 			ImageUtilities.setLockImage( ImageIO.read( stream ) );
 		}
 		catch ( IOException e ) {
-			log.error( "Eeading lock image failed", e );
+			log.error( "Reading lock image failed", e );
 		}
 		finally {
 			try {if ( stream != null ) stream.close();}
@@ -395,9 +406,11 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		toolbar.setMargin( new Insets( 5, 5, 5, 5 ) );
 		toolbar.setFloatable( false );
 
-		final JFileChooser fc = new JFileChooser();
-		fc.setFileHidingEnabled( false );
-		fc.addChoosableFileFilter( new FileFilter() {
+		profileChooser = new JFileChooser();
+		profileChooser.setFileHidingEnabled( false );
+		profileChooser.setMultiSelectionEnabled( false );
+
+		profileChooser.addChoosableFileFilter( new FileFilter() {
 			@Override
 			public String getDescription() {
 				return "FTL Profile (ae_prof.sav; prof.sav)";
@@ -414,351 +427,48 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		final File candidateAEProfileFile = new File( FTLUtilities.findUserDataDir(), "ae_prof.sav" );
 		final File candidateClassicProfileFile = new File( FTLUtilities.findUserDataDir(), "prof.sav" );
 		final File userDataDir = FTLUtilities.findUserDataDir();
+
 		if ( candidateAEProfileFile.exists() ) {
-			fc.setSelectedFile( candidateAEProfileFile );
+			profileChooser.setSelectedFile( candidateAEProfileFile );
 		}
 		else if ( candidateClassicProfileFile.exists() ) {
-			fc.setSelectedFile( candidateClassicProfileFile );
+			profileChooser.setSelectedFile( candidateClassicProfileFile );
 		}
 		else {
-			fc.setCurrentDirectory( userDataDir );
+			profileChooser.setCurrentDirectory( userDataDir );
 		}
 
-		fc.setMultiSelectionEnabled( false );
-
-		JButton profileOpenBtn = new JButton( "Open", openIcon );
-		profileOpenBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-
-				fc.setDialogTitle( "Open Profile" );
-				int chooserResponse = fc.showOpenDialog( FTLFrame.this );
-				File chosenFile = fc.getSelectedFile();
-				boolean sillyMistake = false;
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					List<String> sillyNames = new ArrayList<String>();
-					sillyNames.add( "continue.sav" );
-					sillyNames.add( "data.dat" );
-					sillyNames.add( "resource.dat" );
-
-					if ( sillyNames.contains( chosenFile.getName() ) ) {
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Profile tab, and you're opening \""+ chosenFile.getName() +"\" instead of \"ae_prof.sav\" or \"prof.sav\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
-					FileInputStream in = null;
-					StringBuilder hexBuf = new StringBuilder();
-					boolean hashFailed = false;
-					Exception exception = null;
-
-					try {
-						log.info( "Opening profile: "+ chosenFile.getAbsolutePath() );
-
-						in = new FileInputStream( chosenFile );
-
-						// Hash whole file, then go back to the beginning.
-						String readHash = PackUtilities.calcStreamMD5( in );
-						in.getChannel().position( 0 );
-
-						// Read the content in advance, in case an error occurs.
-						byte[] buf = new byte[4096];
-						int len = 0;
-						while ( (len = in.read( buf )) >= 0 ) {
-							for ( int j=0; j < len; j++ ) {
-								hexBuf.append( String.format( "%02x", buf[j] ) );
-								if ( (j+1) % 32 == 0 ) {
-									hexBuf.append( "\n" );
-								}
-							}
-						}
-						in.getChannel().position( 0 );
-
-						// Parse file data.
-						ProfileParser parser = new ProfileParser();
-						Profile p = parser.readProfile( in );
-						log.debug( "Profile read successfully." );
-
-						Profile mockProfile = new Profile( p );
-						FTLFrame.this.loadProfile( mockProfile );
-
-						// Perform mock write.
-						// The update() incidentally triggers load() of the modified profile.
-						ByteArrayOutputStream mockOut = new ByteArrayOutputStream();
-						FTLFrame.this.updateProfile( mockProfile );
-						parser.writeProfile( mockOut, mockProfile );
-						mockOut.close();
-
-						// Hash result.
-						ByteArrayInputStream mockIn = new ByteArrayInputStream( mockOut.toByteArray() );
-						String writeHash = PackUtilities.calcStreamMD5( mockIn );
-						mockIn.close();
-
-						// Compare hashes.
-						if ( !writeHash.equals( readHash ) ) {
-							log.error( "Hashes did not match after a mock write; editing may not be safe" );
-							hashFailed = true;
-						}
-
-						// Reload the original unmodified profile.
-						FTLFrame.this.loadProfile( p );
-					}
-					catch ( FileNotFoundException f ) {
-						// Don't log a whole stack trace.
-						log.error( String.format( "Reading profile (\"%s\") failed: %s", chosenFile.getName(), f.getMessage() ) );
-						showErrorDialog( String.format( "Reading profile (\"%s\") failed:\n%s", chosenFile.getName(), f.getMessage() ) );
-						// Nothing more to do.
-					}
-					catch ( Exception f ) {
-						log.error( String.format( "Error reading profile (\"%s\").", chosenFile.getName() ), f );
-						showErrorDialog( String.format( "Error reading profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
-						exception = f;
-					}
-					finally {
-						try {if ( in != null ) in.close();}
-						catch ( IOException f ) {}
-					}
-
-					if ( hashFailed || exception != null ) {
-						String message;
-						if ( hashFailed && exception == null ) {
-							message = ""
-								+ "Your profile loaded, but re-saving will not create an identical file.<br/>"
-								+ "You CAN technically proceed anyway, but there is risk of corruption.<br/>";
-						}
-						else {
-							message = "Your profile could not be interpreted correctly.<br/>";
-						}
-
-						BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
-						reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
-						reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
-
-						reportDlg.setHtmlMessage( message );
-						reportDlg.setHtmlInstructions( bugReportInstructions );
-						reportDlg.setReportTitle( "Profile Parser Error" );
-						reportDlg.setAppDescription( "Editor", ""+ appVersion );
-
-						if ( exception != null ) {
-							reportDlg.setException( exception );
-						}
-
-						if ( hexBuf.length() > 0 ) {
-							reportDlg.setAttachment( hexBuf, chosenFile.getName() );
-						}
-
-						reportDlg.build();
-						reportDlg.setVisible( true );
-					}
-				}
-			}
-		});
+		profileOpenBtn = new JButton( "Open", openIcon );
+		profileOpenBtn.addActionListener( this );
 		profileOpenBtn.addMouseListener( new StatusbarMouseListener( this, "Open an existing profile." ) );
 		toolbar.add( profileOpenBtn );
 
 		profileSaveBtn = new JButton( "Save", saveIcon );
-		profileSaveBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-
-				if ( profile == stockProfile ) {
-					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting might be a mistake.\n\nThis is the blank default profile, which the editor uses for eye candy.\nNormally one would OPEN an existing profile first.\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-					if ( sillyResponse != JOptionPane.YES_OPTION ) return;
-
-					fc.setSelectedFile( candidateClassicProfileFile );  // The stock profile is a "prof.sav".
-				}
-
-				fc.setDialogTitle( "Save Profile" );
-				int chooserResponse = fc.showSaveDialog( FTLFrame.this );
-				File chosenFile = fc.getSelectedFile();
-				boolean sillyMistake = false;
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( "continue.sav".equals( chosenFile.getName() ) ) {
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Profile tab, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-
-					if ( !sillyMistake && profile.getFileFormat() == 4 &&
-					     "ae_prof.sav".equals( chosenFile.getName() ) ) {
-
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is NOT an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-
-					if ( !sillyMistake && profile.getFileFormat() == 9 &&
-					     "prof.sav".equals( chosenFile.getName() ) ) {
-
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
-					FileOutputStream out = null;
-					try {
-						log.info( "Saving profile: "+ chosenFile.getAbsolutePath() );
-
-						if ( chosenFile.exists() ) {
-							String bakName = chosenFile.getName() +".bak";
-							File bakFile = new File( chosenFile.getParentFile(), bakName );
-							boolean bakValid = true;
-
-							if ( bakFile.exists() ) {
-								bakValid = bakFile.delete();
-								if ( !bakValid ) log.warn( "Profile will be overwritten. Could not delete existing backup: "+ bakName );
-							}
-							if ( bakValid ) {
-								bakValid = chosenFile.renameTo( bakFile );
-								if ( !bakValid ) log.warn( "Profile will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
-							}
-
-							if ( bakValid ) {
-								log.info( "Profile was backed up: "+ bakName );
-							}
-						}
-
-						out = new FileOutputStream( chosenFile );
-
-						ProfileParser parser = new ProfileParser();
-						FTLFrame.this.updateProfile( profile );
-						parser.writeProfile( out, profile );
-					}
-					catch ( IOException f ) {
-						log.error( String.format( "Error saving profile (\"%s\")", chosenFile.getName() ), f );
-						showErrorDialog( String.format( "Error saving profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
-					}
-					finally {
-						try {if ( out != null ) out.close();}
-						catch ( IOException f ) {}
-					}
-				}
-			}
-		});
+		profileSaveBtn.addActionListener( this );
 		profileSaveBtn.addMouseListener( new StatusbarMouseListener( this, "Save the current profile." ) );
 		toolbar.add( profileSaveBtn );
 
 		profileDumpBtn = new JButton( "Dump", saveIcon );
-		profileDumpBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-
-				if ( profile == stockProfile ) {
-					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting might be a mistake.\n\nThis is the blank default profile, which the editor uses for eye candy.\nNormally one would OPEN an existing profile first.\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-					if ( sillyResponse != JOptionPane.YES_OPTION ) return;
-
-					fc.setSelectedFile( candidateClassicProfileFile );  // The stock profile is a "prof.sav".
-				}
-
-				JFileChooser dumpChooser = new JFileChooser();
-				dumpChooser.setDialogTitle( "Dump Profile" );
-				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
-				dumpChooser.setFileHidingEnabled( false );
-
-				ExtensionFileFilter txtFilter = new ExtensionFileFilter( "Text Files (*.txt)", new String[] {".txt"} );
-				dumpChooser.addChoosableFileFilter( txtFilter );
-
-				int chooserResponse = dumpChooser.showSaveDialog( FTLFrame.this );
-				File chosenFile = dumpChooser.getSelectedFile();
-				boolean sillyMistake = false;
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( !chosenFile.exists() && dumpChooser.getFileFilter() == txtFilter && !txtFilter.accept( chosenFile ) ) {
-						chosenFile = new File( chosenFile.getAbsolutePath() + txtFilter.getPrimarySuffix() );
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( "ae_prof.sav".equals( chosenFile.getName() ) ||
-					     "prof.sav".equals( chosenFile.getName() ) ||
-					     "continue.sav".equals( chosenFile.getName() ) ) {
-
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nYou're dumping a text summary called \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
-					BufferedWriter out = null;
-					try {
-						log.info( "Dumping profile: "+ chosenFile.getAbsolutePath() );
-
-						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( chosenFile ) ) );
-						out.write( profile.toString() );
-						out.close();
-					}
-					catch ( IOException f ) {
-						log.error( String.format( "Error dumping profile (\"%s\")", chosenFile.getName() ), f );
-						showErrorDialog( String.format( "Error dumping profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
-					}
-					finally {
-						try {if ( out != null ) out.close();}
-						catch ( IOException f ) {}
-					}
-				}
-			}
-		});
+		profileDumpBtn.addActionListener( this );
 		profileDumpBtn.addMouseListener( new StatusbarMouseListener( this, "Dump unmodified profile info to a text file." ) );
 		toolbar.add( profileDumpBtn );
 
 		toolbar.add( Box.createHorizontalGlue() );
 
-		JButton profileUnlockShipsBtn = new JButton( "Unlock All Ships", unlockIcon );
-		profileUnlockShipsBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-				log.debug( "Unlock all ships button clicked" );
-				profileShipUnlockPanel.unlockAllShips();
-			}
-		});
+		profileUnlockShipsBtn = new JButton( "Unlock All Ships", unlockIcon );
+		profileUnlockShipsBtn.addActionListener( this );
 		profileUnlockShipsBtn.addMouseListener( new StatusbarMouseListener( this, "Unlock All Ships (except Type-B)." ) );
 		toolbar.add( profileUnlockShipsBtn );
 
-
-		JButton profileUnlockShipAchsBtn = new JButton( "Unlock All Ship Achievements", unlockIcon );
-		profileUnlockShipAchsBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-				log.debug( "Unlock all ship achievements button clicked" );
-				profileShipUnlockPanel.unlockAllShipAchievements();
-			}
-		});
+		profileUnlockShipAchsBtn = new JButton( "Unlock All Ship Achievements", unlockIcon );
+		profileUnlockShipAchsBtn.addActionListener( this );
 		profileUnlockShipAchsBtn.addMouseListener( new StatusbarMouseListener( this, "Unlock All Ship Achievements (and Type-B ships)." ) );
 		toolbar.add( profileUnlockShipAchsBtn );
 
 		toolbar.add( Box.createHorizontalGlue() );
 
-		JButton profileExtractBtn = new JButton( "Extract Dats", saveIcon );
-		profileExtractBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-				log.debug( "Extract button clicked" );
-
-				JFileChooser extractChooser = new JFileChooser();
-				extractChooser.setDialogTitle( "Choose a dir to extract into" );
-				extractChooser.setFileHidingEnabled( false );
-				extractChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
-				extractChooser.setMultiSelectionEnabled( false );
-
-				if ( extractChooser.showSaveDialog( FTLFrame.this ) == JFileChooser.APPROVE_OPTION ) {
-					try {
-						File extractDir = extractChooser.getSelectedFile();
-
-						JOptionPane.showMessageDialog( FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE );
-
-						DataManager.get().extractResources( extractDir );
-
-						JOptionPane.showMessageDialog( FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE );
-					}
-					catch ( IOException f ) {
-						log.error( "Extracting dats failed", f );
-						showErrorDialog( String.format( "Error extracting dats:\n%s: %s", f.getClass().getSimpleName(), f.getMessage() ) );
-					}
-				}
-			}
-		});
+		profileExtractBtn = new JButton( "Extract Dats", saveIcon );
+		profileExtractBtn.addActionListener( this );
 		profileExtractBtn.addMouseListener( new StatusbarMouseListener( this, "Extract dat content to a directory." ) );
 		toolbar.add( profileExtractBtn );
 
@@ -776,9 +486,11 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		toolbar.setMargin( new Insets( 5, 5, 5, 5 ) );
 		toolbar.setFloatable( false );
 
-		final JFileChooser fc = new JFileChooser();
-		fc.setFileHidingEnabled( false );
-		fc.addChoosableFileFilter( new FileFilter() {
+		gameStateChooser = new JFileChooser();
+		gameStateChooser.setFileHidingEnabled( false );
+		gameStateChooser.setMultiSelectionEnabled( false );
+
+		gameStateChooser.addChoosableFileFilter( new FileFilter() {
 			@Override
 			public String getDescription() {
 				return "FTL Saved Game (continue.sav)";
@@ -791,242 +503,23 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 
 		File candidateSaveFile = new File( FTLUtilities.findUserDataDir(), "continue.sav" );
 		if ( candidateSaveFile.exists() ) {
-			fc.setSelectedFile( candidateSaveFile );
+			gameStateChooser.setSelectedFile( candidateSaveFile );
 		} else {
-			fc.setCurrentDirectory( FTLUtilities.findUserDataDir() );
+			gameStateChooser.setCurrentDirectory( FTLUtilities.findUserDataDir() );
 		}
 
-		fc.setMultiSelectionEnabled( false );
-
-		JButton gameStateOpenBtn = new JButton( "Open", openIcon );
-		gameStateOpenBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-
-				fc.setDialogTitle( "Open Saved Game" );
-				int chooserResponse = fc.showOpenDialog( FTLFrame.this );
-				File chosenFile = fc.getSelectedFile();
-				boolean sillyMistake = false;
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					List<String> sillyNames = new ArrayList<String>();
-					sillyNames.add( "ae_prof.sav" );
-					sillyNames.add( "prof.sav" );
-					sillyNames.add( "data.dat" );
-					sillyNames.add( "resource.dat" );
-
-					if ( sillyNames.contains( chosenFile.getName() ) ) {
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Saved Game tab, and you're opening \""+ chosenFile.getName() +"\" instead of \"continue.sav\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
-					FileInputStream in = null;
-					StringBuilder hexBuf = new StringBuilder();
-					Exception exception = null;
-
-					try {
-						log.info( "Opening game state: "+ chosenFile.getAbsolutePath() );
-
-						in = new FileInputStream( chosenFile );
-
-						// Read the content in advance, in case an error occurs.
-						byte[] buf = new byte[4096];
-						int len = 0;
-						while ( (len = in.read( buf )) >= 0 ) {
-							for ( int j=0; j < len; j++ ) {
-								hexBuf.append( String.format( "%02x", buf[j] ) );
-								if ( (j+1) % 32 == 0 ) {
-									hexBuf.append( "\n" );
-								}
-							}
-						}
-						in.getChannel().position( 0 );
-
-						SavedGameParser parser = new SavedGameParser();
-						SavedGameParser.SavedGameState gs = parser.readSavedGame( in );
-						loadGameState( gs );
-
-						log.debug( "Game state read successfully" );
-
-						if ( gameState.getMysteryList().size() > 0 ) {
-							StringBuilder musteryBuf = new StringBuilder();
-							musteryBuf.append( "This saved game file contains mystery bytes the developers hadn't anticipated!\n" );
-							boolean first = true;
-							for ( MysteryBytes m : gameState.getMysteryList() ) {
-								if ( first ) { first = false; }
-								else { musteryBuf.append( ",\n" ); }
-								musteryBuf.append( m.toString().replaceAll( "(^|\n)(.+)", "$1  $2") );
-							}
-							log.warn( musteryBuf.toString() );
-						}
-					}
-					catch ( FileNotFoundException f ) {
-						// Don't log a whole stack trace.
-						log.error( String.format( "Reading game state (\"%s\") failed: %s", chosenFile.getName(), f.getMessage() ) );
-						showErrorDialog( String.format( "Reading game state (\"%s\") failed:\n%s", chosenFile.getName(), f.getMessage() ) );
-						// Nothing more to do.
-					}
-					catch ( Exception f ) {
-						log.error( String.format( "Reading game state (\"%s\") failed", chosenFile.getName() ), f );
-						showErrorDialog( String.format( "Error reading game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
-						exception = f;
-					}
-					finally {
-						try {if ( in != null ) in.close();}
-						catch ( IOException f ) {}
-					}
-
-					if ( exception != null ) {
-
-						BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
-						reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
-						reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
-
-						reportDlg.setHtmlMessage( "Your saved game could not be interpreted correctly.<br/>" );
-						reportDlg.setHtmlInstructions( bugReportInstructions );
-						reportDlg.setReportTitle( "SavedGame Parser Error" );
-						reportDlg.setAppDescription( "Editor", ""+ appVersion );
-
-						reportDlg.setException( exception );
-
-						if ( hexBuf.length() > 0 ) {
-							reportDlg.setAttachment( hexBuf, chosenFile.getName() );
-						}
-
-						reportDlg.build();
-						reportDlg.setVisible( true );
-					}
-				}
-			}
-		});
+		gameStateOpenBtn = new JButton( "Open", openIcon );
+		gameStateOpenBtn.addActionListener( this );
 		gameStateOpenBtn.addMouseListener( new StatusbarMouseListener( this, "Open an existing saved game." ) );
 		toolbar.add( gameStateOpenBtn );
 
 		gameStateSaveBtn = new JButton( "Save", saveIcon );
-		gameStateSaveBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-
-				if ( gameState == null ) return;
-
-				if ( gameState.getMysteryList().size() > 0 )
-					log.warn( "The original saved game file contained mystery bytes, which will be omitted in the new file." );
-
-				fc.setDialogTitle( "Save Game State" );
-				int chooserResponse = fc.showSaveDialog( FTLFrame.this );
-				File chosenFile = fc.getSelectedFile();
-				boolean sillyMistake = false;
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( "ae_prof.sav".equals( chosenFile.getName() ) ||
-					     "prof.sav".equals( chosenFile.getName() ) ) {
-
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Saved Game tab, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
-					FileOutputStream out = null;
-					try {
-						log.info( "Saving game state: "+ chosenFile.getAbsolutePath() );
-
-						if ( chosenFile.exists() ) {
-							String bakName = chosenFile.getName() +".bak";
-							File bakFile = new File( chosenFile.getParentFile(), bakName );
-							boolean bakValid = true;
-
-							if ( bakFile.exists() ) {
-								bakValid = bakFile.delete();
-								if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not delete existing backup: "+ bakName );
-							}
-							if ( bakValid ) {
-								bakValid = chosenFile.renameTo( bakFile );
-								if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
-							}
-
-							if ( bakValid ) {
-								log.info( "Saved game was backed up: "+ bakName );
-							}
-						}
-
-						out = new FileOutputStream( chosenFile );
-
-						SavedGameParser parser = new SavedGameParser();
-						FTLFrame.this.updateGameState( gameState );
-						parser.writeSavedGame( out, gameState );
-					}
-					catch ( IOException f ) {
-						log.error( String.format( "Error saving game state (\"%s\").", chosenFile.getName() ), f );
-						showErrorDialog( String.format( "Error saving game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
-					}
-					finally {
-						try {if ( out != null ) out.close();}
-						catch ( IOException f ) {}
-					}
-				}
-			}
-		});
+		gameStateSaveBtn.addActionListener( this );
 		gameStateSaveBtn.addMouseListener( new StatusbarMouseListener( this, "Save the current game state." ) );
 		toolbar.add( gameStateSaveBtn );
 
 		gameStateDumpBtn = new JButton( "Dump", saveIcon );
-		gameStateDumpBtn.addActionListener( new ActionListener() {
-			@Override
-			public void actionPerformed( ActionEvent e ) {
-
-				if ( gameState == null ) return;
-
-				JFileChooser dumpChooser = new JFileChooser();
-				dumpChooser.setDialogTitle( "Dump Game State" );
-				dumpChooser.setCurrentDirectory( fc.getCurrentDirectory() );
-				dumpChooser.setFileHidingEnabled( false );
-
-				ExtensionFileFilter txtFilter = new ExtensionFileFilter( "Text Files (*.txt)", new String[] {".txt"} );
-				dumpChooser.addChoosableFileFilter( txtFilter );
-
-				int chooserResponse = dumpChooser.showSaveDialog( FTLFrame.this );
-				File chosenFile = dumpChooser.getSelectedFile();
-				boolean sillyMistake = false;
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( !chosenFile.exists() && dumpChooser.getFileFilter() == txtFilter && !txtFilter.accept( chosenFile ) ) {
-						chosenFile = new File( chosenFile.getAbsolutePath() + txtFilter.getPrimarySuffix() );
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
-					if ( "ae_prof.sav".equals( chosenFile.getName() ) ||
-					     "prof.sav".equals( chosenFile.getName() ) ||
-					     "continue.sav".equals( chosenFile.getName() ) ) {
-
-						int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nYou're dumping a text summary called \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
-						if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
-					}
-				}
-
-				if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
-					BufferedWriter out = null;
-					try {
-						log.info( "Dumping game state: "+ chosenFile.getAbsolutePath() );
-
-						out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( chosenFile ) ) );
-						out.write( gameState.toString() );
-						out.close();
-					}
-					catch ( IOException f ) {
-						log.error( String.format( "Error dumping game state (\"%s\").", chosenFile.getName() ), f );
-						showErrorDialog( String.format( "Error dumping game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
-					}
-					finally {
-						try {if ( out != null ) out.close();}
-						catch ( IOException f ) {}
-					}
-				}
-			}
-		});
+		gameStateDumpBtn.addActionListener( this );
 		gameStateDumpBtn.addMouseListener( new StatusbarMouseListener( this, "Dump unmodified game state info to a text file." ) );
 		toolbar.add( gameStateDumpBtn );
 
@@ -1058,12 +551,522 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		updatesButton.addActionListener( new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				if ( updatesCallback != null )
+				if ( updatesCallback != null ) {
 					updatesCallback.run();
+				}
 			}
 		});
 		updatesButton.addMouseListener( new StatusbarMouseListener( this, "Show info about the latest version." ) );
 		return updatesButton;
+	}
+
+	@Override
+	public void actionPerformed( ActionEvent e ) {
+		Object source = e.getSource();
+
+		if ( source == profileOpenBtn ) {
+
+			profileChooser.setDialogTitle( "Open Profile" );
+			int chooserResponse = profileChooser.showOpenDialog( FTLFrame.this );
+			File chosenFile = profileChooser.getSelectedFile();
+			boolean sillyMistake = false;
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				List<String> sillyNames = new ArrayList<String>();
+				sillyNames.add( "continue.sav" );
+				sillyNames.add( "data.dat" );
+				sillyNames.add( "resource.dat" );
+
+				if ( sillyNames.contains( chosenFile.getName() ) ) {
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Profile tab, and you're opening \""+ chosenFile.getName() +"\" instead of \"ae_prof.sav\" or \"prof.sav\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				FileInputStream in = null;
+				StringBuilder hexBuf = new StringBuilder();
+				boolean hashFailed = false;
+				Exception exception = null;
+
+				try {
+					log.info( "Opening profile: "+ chosenFile.getAbsolutePath() );
+
+					in = new FileInputStream( chosenFile );
+
+					// Hash whole file, then go back to the beginning.
+					String readHash = PackUtilities.calcStreamMD5( in );
+					in.getChannel().position( 0 );
+
+					// Read the content in advance, in case an error occurs.
+					byte[] buf = new byte[4096];
+					int len = 0;
+					while ( (len = in.read( buf )) >= 0 ) {
+						for ( int j=0; j < len; j++ ) {
+							hexBuf.append( String.format( "%02x", buf[j] ) );
+							if ( (j+1) % 32 == 0 ) {
+								hexBuf.append( "\n" );
+							}
+						}
+					}
+					in.getChannel().position( 0 );
+
+					// Parse file data.
+					ProfileParser parser = new ProfileParser();
+					Profile p = parser.readProfile( in );
+					log.debug( "Profile read successfully." );
+
+					Profile mockProfile = new Profile( p );
+					FTLFrame.this.loadProfile( mockProfile );
+
+					// Perform mock write.
+					// The update() incidentally triggers load() of the modified profile.
+					ByteArrayOutputStream mockOut = new ByteArrayOutputStream();
+					FTLFrame.this.updateProfile( mockProfile );
+					parser.writeProfile( mockOut, mockProfile );
+					mockOut.close();
+
+					// Hash result.
+					ByteArrayInputStream mockIn = new ByteArrayInputStream( mockOut.toByteArray() );
+					String writeHash = PackUtilities.calcStreamMD5( mockIn );
+					mockIn.close();
+
+					// Compare hashes.
+					if ( !writeHash.equals( readHash ) ) {
+						log.error( "Hashes did not match after a mock write; editing may not be safe" );
+						hashFailed = true;
+					}
+
+					// Reload the original unmodified profile.
+					FTLFrame.this.loadProfile( p );
+				}
+				catch ( FileNotFoundException f ) {
+					// Don't log a whole stack trace.
+					log.error( String.format( "Reading profile (\"%s\") failed: %s", chosenFile.getName(), f.getMessage() ) );
+					showErrorDialog( String.format( "Reading profile (\"%s\") failed:\n%s", chosenFile.getName(), f.getMessage() ) );
+					// Nothing more to do.
+				}
+				catch ( Exception f ) {
+					log.error( String.format( "Error reading profile (\"%s\").", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error reading profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+					exception = f;
+				}
+				finally {
+					try {if ( in != null ) in.close();}
+					catch ( IOException f ) {}
+				}
+
+				if ( hashFailed || exception != null ) {
+					String message;
+					if ( hashFailed && exception == null ) {
+						message = ""
+							+ "Your profile loaded, but re-saving will not create an identical file.<br/>"
+							+ "You CAN technically proceed anyway, but there is risk of corruption.<br/>";
+					}
+					else {
+						message = "Your profile could not be interpreted correctly.<br/>";
+					}
+
+					BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
+					reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
+					reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
+
+					reportDlg.setHtmlMessage( message );
+					reportDlg.setHtmlInstructions( bugReportInstructions );
+					reportDlg.setReportTitle( "Profile Parser Error" );
+					reportDlg.setAppDescription( "Editor", ""+ appVersion );
+
+					if ( exception != null ) {
+						reportDlg.setException( exception );
+					}
+
+					if ( hexBuf.length() > 0 ) {
+						reportDlg.setAttachment( hexBuf, chosenFile.getName() );
+					}
+
+					reportDlg.build();
+					reportDlg.setVisible( true );
+				}
+			}
+		}
+		else if ( source == profileSaveBtn ) {
+
+			if ( profile == stockProfile ) {
+				int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting might be a mistake.\n\nThis is the blank default profile, which the editor uses for eye candy.\nNormally one would OPEN an existing profile first.\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+				if ( sillyResponse != JOptionPane.YES_OPTION ) return;
+
+				profileChooser.setSelectedFile( stockProfileFile );
+			}
+
+			profileChooser.setDialogTitle( "Save Profile" );
+			int chooserResponse = profileChooser.showSaveDialog( FTLFrame.this );
+			File chosenFile = profileChooser.getSelectedFile();
+			boolean sillyMistake = false;
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				if ( "continue.sav".equals( chosenFile.getName() ) ) {
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Profile tab, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+
+				if ( !sillyMistake && profile.getFileFormat() == 4 &&
+					 "ae_prof.sav".equals( chosenFile.getName() ) ) {
+
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is NOT an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+
+				if ( !sillyMistake && profile.getFileFormat() == 9 &&
+					 "prof.sav".equals( chosenFile.getName() ) ) {
+
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is an AE profile, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				FileOutputStream out = null;
+				try {
+					log.info( "Saving profile: "+ chosenFile.getAbsolutePath() );
+
+					if ( chosenFile.exists() ) {
+						String bakName = chosenFile.getName() +".bak";
+						File bakFile = new File( chosenFile.getParentFile(), bakName );
+						boolean bakValid = true;
+
+						if ( bakFile.exists() ) {
+							bakValid = bakFile.delete();
+							if ( !bakValid ) log.warn( "Profile will be overwritten. Could not delete existing backup: "+ bakName );
+						}
+						if ( bakValid ) {
+							bakValid = chosenFile.renameTo( bakFile );
+							if ( !bakValid ) log.warn( "Profile will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
+						}
+
+						if ( bakValid ) {
+							log.info( "Profile was backed up: "+ bakName );
+						}
+					}
+
+					out = new FileOutputStream( chosenFile );
+
+					ProfileParser parser = new ProfileParser();
+					FTLFrame.this.updateProfile( profile );
+					parser.writeProfile( out, profile );
+				}
+				catch ( IOException f ) {
+					log.error( String.format( "Error saving profile (\"%s\")", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error saving profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+				}
+				finally {
+					try {if ( out != null ) out.close();}
+					catch ( IOException f ) {}
+				}
+			}
+		}
+		else if ( source == profileDumpBtn ) {
+
+			if ( profile == stockProfile ) {
+				int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting might be a mistake.\n\nThis is the blank default profile, which the editor uses for eye candy.\nNormally one would OPEN an existing profile first.\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+				if ( sillyResponse != JOptionPane.YES_OPTION ) return;
+
+				profileChooser.setSelectedFile( stockProfileFile );
+			}
+
+			JFileChooser dumpChooser = new JFileChooser();
+			dumpChooser.setDialogTitle( "Dump Profile" );
+			dumpChooser.setCurrentDirectory( profileChooser.getCurrentDirectory() );
+			dumpChooser.setFileHidingEnabled( false );
+			dumpChooser.setMultiSelectionEnabled( false );
+
+			ExtensionFileFilter txtFilter = new ExtensionFileFilter( "Text Files (*.txt)", new String[] {".txt"} );
+			dumpChooser.addChoosableFileFilter( txtFilter );
+
+			int chooserResponse = dumpChooser.showSaveDialog( FTLFrame.this );
+			File chosenFile = dumpChooser.getSelectedFile();
+			boolean sillyMistake = false;
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				if ( !chosenFile.exists() && dumpChooser.getFileFilter() == txtFilter && !txtFilter.accept( chosenFile ) ) {
+					chosenFile = new File( chosenFile.getAbsolutePath() + txtFilter.getPrimarySuffix() );
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				if ( "ae_prof.sav".equals( chosenFile.getName() ) ||
+					 "prof.sav".equals( chosenFile.getName() ) ||
+					 "continue.sav".equals( chosenFile.getName() ) ) {
+
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nYou're dumping a text summary called \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				BufferedWriter out = null;
+				try {
+					log.info( "Dumping profile: "+ chosenFile.getAbsolutePath() );
+
+					out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( chosenFile ) ) );
+					out.write( profile.toString() );
+					out.close();
+				}
+				catch ( IOException f ) {
+					log.error( String.format( "Error dumping profile (\"%s\")", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error dumping profile (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+				}
+				finally {
+					try {if ( out != null ) out.close();}
+					catch ( IOException f ) {}
+				}
+			}
+		}
+		else if ( source == profileUnlockShipsBtn ) {
+
+			log.debug( "Unlock all ships button clicked" );
+			profileShipUnlockPanel.unlockAllShips();
+		}
+		else if ( source == profileUnlockShipAchsBtn ) {
+
+			log.debug( "Unlock all ship achievements button clicked" );
+			profileShipUnlockPanel.unlockAllShipAchievements();
+		}
+		else if ( source == profileExtractBtn ) {
+
+			JFileChooser extractChooser = new JFileChooser();
+			extractChooser.setDialogTitle( "Choose a dir to extract into" );
+			extractChooser.setFileHidingEnabled( false );
+			extractChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
+			extractChooser.setMultiSelectionEnabled( false );
+
+			if ( extractChooser.showSaveDialog( FTLFrame.this ) == JFileChooser.APPROVE_OPTION ) {
+				try {
+					File extractDir = extractChooser.getSelectedFile();
+
+					JOptionPane.showMessageDialog( FTLFrame.this, "This may take a few seconds.\nClick OK to proceed.", "About to Extract", JOptionPane.PLAIN_MESSAGE );
+
+					DataManager.get().extractResources( extractDir );
+
+					JOptionPane.showMessageDialog( FTLFrame.this, "All dat content extracted successfully.", "Extraction Complete", JOptionPane.PLAIN_MESSAGE );
+				}
+				catch ( IOException f ) {
+					log.error( "Extracting dats failed", f );
+					showErrorDialog( String.format( "Error extracting dats:\n%s: %s", f.getClass().getSimpleName(), f.getMessage() ) );
+				}
+			}
+		}
+		else if ( source == gameStateOpenBtn ) {
+
+			gameStateChooser.setDialogTitle( "Open Saved Game" );
+			int chooserResponse = gameStateChooser.showOpenDialog( FTLFrame.this );
+			File chosenFile = gameStateChooser.getSelectedFile();
+			boolean sillyMistake = false;
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				List<String> sillyNames = new ArrayList<String>();
+				sillyNames.add( "ae_prof.sav" );
+				sillyNames.add( "prof.sav" );
+				sillyNames.add( "data.dat" );
+				sillyNames.add( "resource.dat" );
+
+				if ( sillyNames.contains( chosenFile.getName() ) ) {
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Saved Game tab, and you're opening \""+ chosenFile.getName() +"\" instead of \"continue.sav\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				FileInputStream in = null;
+				StringBuilder hexBuf = new StringBuilder();
+				Exception exception = null;
+
+				try {
+					log.info( "Opening game state: "+ chosenFile.getAbsolutePath() );
+
+					in = new FileInputStream( chosenFile );
+
+					// Read the content in advance, in case an error occurs.
+					byte[] buf = new byte[4096];
+					int len = 0;
+					while ( (len = in.read( buf )) >= 0 ) {
+						for ( int j=0; j < len; j++ ) {
+							hexBuf.append( String.format( "%02x", buf[j] ) );
+							if ( (j+1) % 32 == 0 ) {
+								hexBuf.append( "\n" );
+							}
+						}
+					}
+					in.getChannel().position( 0 );
+
+					SavedGameParser parser = new SavedGameParser();
+					SavedGameParser.SavedGameState gs = parser.readSavedGame( in );
+					loadGameState( gs );
+
+					log.debug( "Game state read successfully" );
+
+					if ( gameState.getMysteryList().size() > 0 ) {
+						StringBuilder musteryBuf = new StringBuilder();
+						musteryBuf.append( "This saved game file contains mystery bytes the developers hadn't anticipated!\n" );
+						boolean first = true;
+						for ( MysteryBytes m : gameState.getMysteryList() ) {
+							if ( first ) { first = false; }
+							else { musteryBuf.append( ",\n" ); }
+							musteryBuf.append( m.toString().replaceAll( "(^|\n)(.+)", "$1  $2") );
+						}
+						log.warn( musteryBuf.toString() );
+					}
+				}
+				catch ( FileNotFoundException f ) {
+					// Don't log a whole stack trace.
+					log.error( String.format( "Reading game state (\"%s\") failed: %s", chosenFile.getName(), f.getMessage() ) );
+					showErrorDialog( String.format( "Reading game state (\"%s\") failed:\n%s", chosenFile.getName(), f.getMessage() ) );
+					// Nothing more to do.
+				}
+				catch ( Exception f ) {
+					log.error( String.format( "Reading game state (\"%s\") failed", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error reading game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+					exception = f;
+				}
+				finally {
+					try {if ( in != null ) in.close();}
+					catch ( IOException f ) {}
+				}
+
+				if ( exception != null ) {
+
+					BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
+					reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
+					reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
+
+					reportDlg.setHtmlMessage( "Your saved game could not be interpreted correctly.<br/>" );
+					reportDlg.setHtmlInstructions( bugReportInstructions );
+					reportDlg.setReportTitle( "SavedGame Parser Error" );
+					reportDlg.setAppDescription( "Editor", ""+ appVersion );
+
+					reportDlg.setException( exception );
+
+					if ( hexBuf.length() > 0 ) {
+						reportDlg.setAttachment( hexBuf, chosenFile.getName() );
+					}
+
+					reportDlg.build();
+					reportDlg.setVisible( true );
+				}
+			}
+		}
+		else if ( source == gameStateSaveBtn ) {
+
+			if ( gameState == null ) return;
+
+			if ( gameState.getMysteryList().size() > 0 )
+				log.warn( "The original saved game file contained mystery bytes, which will be omitted in the new file." );
+
+			gameStateChooser.setDialogTitle( "Save Game State" );
+			int chooserResponse = gameStateChooser.showSaveDialog( FTLFrame.this );
+			File chosenFile = gameStateChooser.getSelectedFile();
+			boolean sillyMistake = false;
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				if ( "ae_prof.sav".equals( chosenFile.getName() ) ||
+					 "prof.sav".equals( chosenFile.getName() ) ) {
+
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nThis is the Saved Game tab, and you're saving \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				FileOutputStream out = null;
+				try {
+					log.info( "Saving game state: "+ chosenFile.getAbsolutePath() );
+
+					if ( chosenFile.exists() ) {
+						String bakName = chosenFile.getName() +".bak";
+						File bakFile = new File( chosenFile.getParentFile(), bakName );
+						boolean bakValid = true;
+
+						if ( bakFile.exists() ) {
+							bakValid = bakFile.delete();
+							if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not delete existing backup: "+ bakName );
+						}
+						if ( bakValid ) {
+							bakValid = chosenFile.renameTo( bakFile );
+							if ( !bakValid ) log.warn( "Saved game will be overwritten. Could not rename existing file: "+ chosenFile.getName() );
+						}
+
+						if ( bakValid ) {
+							log.info( "Saved game was backed up: "+ bakName );
+						}
+					}
+
+					out = new FileOutputStream( chosenFile );
+
+					SavedGameParser parser = new SavedGameParser();
+					FTLFrame.this.updateGameState( gameState );
+					parser.writeSavedGame( out, gameState );
+				}
+				catch ( IOException f ) {
+					log.error( String.format( "Error saving game state (\"%s\").", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error saving game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+				}
+				finally {
+					try {if ( out != null ) out.close();}
+					catch ( IOException f ) {}
+				}
+			}
+		}
+		else if ( source == gameStateDumpBtn ) {
+
+			if ( gameState == null ) return;
+
+			JFileChooser dumpChooser = new JFileChooser();
+			dumpChooser.setDialogTitle( "Dump Game State" );
+			dumpChooser.setCurrentDirectory( gameStateChooser.getCurrentDirectory() );
+			dumpChooser.setFileHidingEnabled( false );
+			dumpChooser.setMultiSelectionEnabled( false );
+
+			ExtensionFileFilter txtFilter = new ExtensionFileFilter( "Text Files (*.txt)", new String[] {".txt"} );
+			dumpChooser.addChoosableFileFilter( txtFilter );
+
+			int chooserResponse = dumpChooser.showSaveDialog( FTLFrame.this );
+			File chosenFile = dumpChooser.getSelectedFile();
+			boolean sillyMistake = false;
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				if ( !chosenFile.exists() && dumpChooser.getFileFilter() == txtFilter && !txtFilter.accept( chosenFile ) ) {
+					chosenFile = new File( chosenFile.getAbsolutePath() + txtFilter.getPrimarySuffix() );
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION ) {
+				if ( "ae_prof.sav".equals( chosenFile.getName() ) ||
+					 "prof.sav".equals( chosenFile.getName() ) ||
+					 "continue.sav".equals( chosenFile.getName() ) ) {
+
+					int sillyResponse = JOptionPane.showConfirmDialog( FTLFrame.this, "Warning: What you are attempting makes no sense.\n\nYou're dumping a text summary called \""+ chosenFile.getName() +"\".\n\nAre you sure you know what you're doing?", "Really!?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE );
+					if ( sillyResponse != JOptionPane.YES_OPTION ) sillyMistake = true;
+				}
+			}
+
+			if ( chooserResponse == JFileChooser.APPROVE_OPTION && !sillyMistake ) {
+				BufferedWriter out = null;
+				try {
+					log.info( "Dumping game state: "+ chosenFile.getAbsolutePath() );
+
+					out = new BufferedWriter( new OutputStreamWriter( new FileOutputStream( chosenFile ) ) );
+					out.write( gameState.toString() );
+					out.close();
+				}
+				catch ( IOException f ) {
+					log.error( String.format( "Error dumping game state (\"%s\").", chosenFile.getName() ), f );
+					showErrorDialog( String.format( "Error dumping game state (\"%s\"):\n%s: %s", chosenFile.getName(), f.getClass().getSimpleName(), f.getMessage() ) );
+				}
+				finally {
+					try {if ( out != null ) out.close();}
+					catch ( IOException f ) {}
+				}
+			}
+		}
 	}
 
 	/**
