@@ -1,5 +1,5 @@
-// Copied from Slipstream Mod Manager 1.9.1.
-// https://github.com/Vhati/Slipstream-Mod-Manager/blob/535c9735c0c70cb212bfd13e9b683138595f14ab/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
+// Copied from a snapshot of Slipstream Mod Manager after 1.9.1.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/4cfd7dd7efa2f50102627c2535b4144bd52ca109/src/main/java/net/vhati/modmanager/core/FTLUtilities.java
 
 package net.vhati.modmanager.core;
 
@@ -165,7 +165,7 @@ public class FTLUtilities {
 		fc.addChoosableFileFilter(new FileFilter() {
 			@Override
 			public String getDescription() {
-				return "FTL Data File - ftl.dat|data.dat";
+				return "FTL Resources (ftl.dat; data.dat; FTL.app)";
 			}
 			@Override
 			public boolean accept( File f ) {
