@@ -50,7 +50,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingUtilities;
@@ -126,6 +125,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 	private String bugReportUrl = "https://github.com/Vhati/ftl-profile-editor/issues/new";
 	private String forumThreadUrl = "http://subsetgames.com/forum/viewtopic.php?f=7&t=10959";
 
+
 	private boolean disposeNormally = true;
 	private boolean ranInit = false;
 	private Thread.UncaughtExceptionHandler previousUncaughtExceptionHandler = null;
@@ -138,6 +138,8 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 	private ImageIcon unlockIcon;
 	private ImageIcon aboutIcon;
 	private final ImageIcon updateIcon;
+
+	private String bugReportInstructions;
 
 	private JButton profileSaveBtn;
 	private JButton profileDumpBtn;
@@ -186,6 +188,10 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		unlockIcon = new ImageIcon( ImageUtilities.getBundledImage( "unlock.png", FTLFrame.class ) );
 		aboutIcon = new ImageIcon( ImageUtilities.getBundledImage( "about.gif", FTLFrame.class ) );
 		updateIcon = new ImageIcon( ImageUtilities.getBundledImage( "update.gif", FTLFrame.class ) );
+
+		bugReportInstructions = ""
+			+ "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a>.<br/>"
+			+ "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a>.<br/>";
 
 		this.setTitle( String.format( "%s v%d", appName, appVersion ) );
 		this.setDefaultCloseOperation( JFrame.DO_NOTHING_ON_CLOSE );
@@ -377,7 +383,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 			ImageUtilities.setLockImage( ImageIO.read( stream ) );
 		}
 		catch ( IOException e ) {
-			log.error( "Eeading lock image failed" , e );
+			log.error( "Eeading lock image failed", e );
 		}
 		finally {
 			try {if ( stream != null ) stream.close();}
@@ -457,10 +463,10 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 						String readHash = PackUtilities.calcStreamMD5( in );
 						in.getChannel().position( 0 );
 
-						// Read the content in advance, in case an error ocurs.
+						// Read the content in advance, in case an error occurs.
 						byte[] buf = new byte[4096];
 						int len = 0;
-						while ( (len = in.read(buf)) >= 0 ) {
+						while ( (len = in.read( buf )) >= 0 ) {
 							for ( int j=0; j < len; j++ ) {
 								hexBuf.append( String.format( "%02x", buf[j] ) );
 								if ( (j+1) % 32 == 0 ) {
@@ -516,55 +522,35 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 					}
 
 					if ( hashFailed || exception != null ) {
-						if ( hexBuf.length() > 0 ) {
-							StringBuilder errBuf = new StringBuilder();
-
-							if ( hashFailed && exception == null ) {
-								errBuf.append( "Your profile loaded, but re-saving will not create an identical file.<br/>");
-								errBuf.append( "You CAN technically proceed anyway, but there is risk of corruption.<br/>" );
-							}
-							else {
-								errBuf.append( "Your profile could not be interpreted correctly.<br/>" );
-							}
-
-							errBuf.append( "<br/>" );
-							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a>.<br/>" );
-							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a>.<br/>" );
-							errBuf.append( "<br/>" );
-							errBuf.append( "On GitHub, set the issue title as \"Profile Parser Error\".<br/>" );
-							errBuf.append( "<br/>" );
-							errBuf.append( "I will fix the problem and release a new version as soon as I can.<br/>" );
-							errBuf.append( "<br/><br/>" );
-							errBuf.append( "Copy (Ctrl-A, Ctrl-C) the following text, including \"[ code ] tags\"." );
-							errBuf.append( "<br/><br/>" );
-
-							StringBuilder reportBuf = new StringBuilder();
-							reportBuf.append( "[code]\n" );
-							reportBuf.append( "Profile Parser Error\n" );
-							reportBuf.append( "\n" );
-
-							if ( hashFailed ) {
-								reportBuf.append( "Hashes did not match after a mock write.\n" );
-								reportBuf.append( "\n" );
-							}
-
-							if ( exception != null ) {
-								appendStackTrace( reportBuf, exception );
-							}
-
-							reportBuf.append( String.format( "Editor Version: %s\n", appVersion ) );
-							reportBuf.append( String.format( "OS: %s %s\n", System.getProperty( "os.name" ), System.getProperty( "os.version" ) ) );
-							reportBuf.append( String.format( "VM: %s, %s, %s\n", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) ) );
-							reportBuf.append( "[/code]\n" );
-							reportBuf.append( "\n" );
-							reportBuf.append( String.format( "File (\"%s\")...\n", chosenFile.getName() ) );
-							reportBuf.append( "[code]\n" );
-							reportBuf.append( hexBuf );
-							reportBuf.append( "\n[/code]\n" );
-
-							JDialog failDialog = createBugReportDialog( "Profile Parser Error", errBuf.toString(), reportBuf.toString() );
-							failDialog.setVisible( true );
+						String message;
+						if ( hashFailed && exception == null ) {
+							message = ""
+								+ "Your profile loaded, but re-saving will not create an identical file.<br/>"
+								+ "You CAN technically proceed anyway, but there is risk of corruption.<br/>";
 						}
+						else {
+							message = "Your profile could not be interpreted correctly.<br/>";
+						}
+
+						BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
+						reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
+						reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
+
+						reportDlg.setHtmlMessage( message );
+						reportDlg.setHtmlInstructions( bugReportInstructions );
+						reportDlg.setReportTitle( "Profile Parser Error" );
+						reportDlg.setAppDescription( "Editor", ""+ appVersion );
+
+						if ( exception != null ) {
+							reportDlg.setException( exception );
+						}
+
+						if ( hexBuf.length() > 0 ) {
+							reportDlg.setAttachment( hexBuf, chosenFile.getName() );
+						}
+
+						reportDlg.build();
+						reportDlg.setVisible( true );
 					}
 				}
 			}
@@ -845,10 +831,10 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 
 						in = new FileInputStream( chosenFile );
 
-						// Read the content in advance, in case an error ocurs.
+						// Read the content in advance, in case an error occurs.
 						byte[] buf = new byte[4096];
 						int len = 0;
-						while ( (len = in.read(buf)) >= 0 ) {
+						while ( (len = in.read( buf )) >= 0 ) {
 							for ( int j=0; j < len; j++ ) {
 								hexBuf.append( String.format( "%02x", buf[j] ) );
 								if ( (j+1) % 32 == 0 ) {
@@ -893,42 +879,24 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 					}
 
 					if ( exception != null ) {
+
+						BugReportDialog reportDlg = new BugReportDialog( FTLFrame.this );
+						reportDlg.getMessageEditor().addHyperlinkListener( linkListener );
+						reportDlg.getMessageEditor().setTransferHandler( new HTMLEditorTransferHandler() );
+
+						reportDlg.setHtmlMessage( "Your saved game could not be interpreted correctly.<br/>" );
+						reportDlg.setHtmlInstructions( bugReportInstructions );
+						reportDlg.setReportTitle( "SavedGame Parser Error" );
+						reportDlg.setAppDescription( "Editor", ""+ appVersion );
+
+						reportDlg.setException( exception );
+
 						if ( hexBuf.length() > 0 ) {
-							StringBuilder errBuf = new StringBuilder();
-							errBuf.append( "Your saved game could not be interpreted correctly.<br/>" );
-							errBuf.append( "<br/>" );
-							errBuf.append( "To submit a bug report, you can use <a href='"+ bugReportUrl +"'>GitHub</a>.<br/>");
-							errBuf.append( "Or post to the FTL forums <a href='"+ forumThreadUrl +"'>here</a>.<br/>" );
-							errBuf.append( "<br/>" );
-							errBuf.append( "On GitHub, set the issue title as \"SavedGame Parser Error\".<br/>" );
-							errBuf.append( "<br/>" );
-							errBuf.append( "I will fix the problem and release a new version as soon as I can.<br/>" );
-							errBuf.append( "<br/><br/>" );
-							errBuf.append( "Copy (Ctrl-A, Ctrl-C) the following text, including \"[ code ] tags\"." );
-							errBuf.append( "<br/><br/>" );
-
-							StringBuilder reportBuf = new StringBuilder();
-							reportBuf.append( "[code]\n" );
-							reportBuf.append( "SavedGame Parser Error\n" );
-							reportBuf.append( "\n" );
-
-							if ( exception != null ) {
-								appendStackTrace( reportBuf, exception );
-							}
-
-							reportBuf.append( String.format( "Editor Version: %s\n", appVersion ) );
-							reportBuf.append( String.format( "OS: %s %s\n", System.getProperty( "os.name" ), System.getProperty( "os.version" ) ) );
-							reportBuf.append( String.format( "VM: %s, %s, %s\n", System.getProperty( "java.vm.name" ), System.getProperty( "java.version" ), System.getProperty( "os.arch" ) ) );
-							reportBuf.append( "[/code]\n" );
-							reportBuf.append( "\n" );
-							reportBuf.append( String.format( "File (\"%s\")...\n", chosenFile.getName() ) );
-							reportBuf.append( "[code]\n" );
-							reportBuf.append( hexBuf );
-							reportBuf.append( "\n[/code]\n" );
-
-							JDialog failDialog = createBugReportDialog( "SavedGame Parser Error", errBuf.toString(), reportBuf.toString() );
-							failDialog.setVisible( true );
+							reportDlg.setAttachment( hexBuf, chosenFile.getName() );
 						}
+
+						reportDlg.build();
+						reportDlg.setVisible( true );
 					}
 				}
 			}
@@ -987,7 +955,7 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 						out = new FileOutputStream( chosenFile );
 
 						SavedGameParser parser = new SavedGameParser();
-						FTLFrame.this.updateGameState(gameState);
+						FTLFrame.this.updateGameState( gameState );
 						parser.writeSavedGame( out, gameState );
 					}
 					catch ( IOException f ) {
@@ -1218,66 +1186,6 @@ public class FTLFrame extends JFrame implements Statusbar, Thread.UncaughtExcept
 		mainDesc = mainDesc.replaceFirst( Pattern.quote( "{releases}" ), historyBuf.toString() );
 
 		return mainDesc;
-	}
-
-	/**
-	 * Formats an exception, appending lines to a bug report buffer.
-	 */
-	private void appendStackTrace( StringBuilder reportBuf, Throwable exception ) {
-		reportBuf.append( String.format( "Exception: %s\n", exception.toString() ) );
-		reportBuf.append( "\n" );
-
-		reportBuf.append( "Stack Trace...\n" );
-		StackTraceElement[] traceElements = exception.getStackTrace();
-		int traceDepth = 5;
-		for ( int i=0; i < traceDepth && i < traceElements.length; i++ ) {
-			reportBuf.append( String.format( "  %s\n", traceElements[i].toString() ) );
-		}
-/*
-		Throwable currentCause = exception;
-
-		// Traditional loggers truncate each cause's trace when a line is
-		// already mentioned in the next downstream exception, i.e.,
-		// remaining lines are redundant.
-
-		while ( currentCause.getCause() != currentCause && null != (currentCause=currentCause.getCause()) ) {
-			reportBuf.append( String.format( "Caused by: %s\n", currentCause.toString() ) );
-			StackTraceElement[] causeElements = currentCause.getStackTrace();
-			int causeDepth = 3;
-			for ( int i=0; i < causeDepth && i < causeElements.length; i++ ) {
-				reportBuf.append( String.format( "  %s\n", causeElements[i].toString() ) );
-			}
-		}
-*/
-		reportBuf.append( "\n" );
-	}
-
-	private JDialog createBugReportDialog( String title, String message, String report ) {
-
-		JDialog dlg = new JDialog( this, title, true );
-		JPanel panel = new JPanel( new BorderLayout() );
-
-		Font reportFont = new Font( Font.MONOSPACED, Font.PLAIN, 13 );
-
-		JEditorPane messageEditor = new JEditorPane( "text/html", message );
-		messageEditor.setEditable( false );
-		messageEditor.setCaretPosition( 0 );
-		messageEditor.addHyperlinkListener( linkListener );
-		messageEditor.setTransferHandler( new HTMLEditorTransferHandler() );
-		panel.add( new JScrollPane( messageEditor ), BorderLayout.NORTH );
-
-		JTextArea reportArea = new JTextArea( report );
-		reportArea.setTabSize( 4 );
-		reportArea.setFont( reportFont );
-		reportArea.setEditable( false );
-		reportArea.setCaretPosition( 0 );
-		panel.add( new JScrollPane( reportArea ), BorderLayout.CENTER );
-
-		dlg.setContentPane( panel );
-		dlg.setSize( 600, 450 );
-		dlg.setLocationRelativeTo( this );
-
-		return dlg;
 	}
 
 	private void showAboutDialog() {
