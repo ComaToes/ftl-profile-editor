@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.BackgroundImageList;

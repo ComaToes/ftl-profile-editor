@@ -27,7 +27,7 @@ import javax.swing.SwingConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;

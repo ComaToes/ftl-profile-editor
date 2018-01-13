@@ -25,7 +25,7 @@ import net.vhati.ftldat.FTLPack;
 import net.vhati.ftldat.PackContainer;
 import net.vhati.ftldat.PkgPack;
 
-import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.parser.DatParser;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.AugBlueprint;

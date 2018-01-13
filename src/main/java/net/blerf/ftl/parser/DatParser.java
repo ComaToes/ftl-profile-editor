@@ -17,7 +17,7 @@ import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.output.DOMOutputter;
 
-import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.model.shiplayout.ShipLayoutDoor;
 import net.blerf.ftl.model.shiplayout.ShipLayoutRoom;
 import net.blerf.ftl.parser.TextUtilities;

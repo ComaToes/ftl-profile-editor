@@ -1,4 +1,4 @@
-package net.blerf.ftl.model;
+package net.blerf.ftl.model.shiplayout;
 
 import java.awt.Rectangle;
 import java.util.EnumMap;
