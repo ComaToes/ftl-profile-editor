@@ -78,6 +78,9 @@ import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.DoorCoordinate;
+import net.blerf.ftl.model.shiplayout.ShipLayoutDoor;
+import net.blerf.ftl.model.shiplayout.ShipLayoutRoom;
 import net.blerf.ftl.model.XYPair;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
@@ -804,18 +807,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			squareRegionRoomIdMap.clear();
 			squareRegionSquareIdMap.clear();
 			for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
-				int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-				int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-				int roomX = layoutX + roomCoordX*squareSize;
-				int roomY = layoutY + roomCoordY*squareSize;
+				ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
+				int squaresH = layoutRoom.squaresH;
+				int squaresV = layoutRoom.squaresV;
+				int roomX = layoutX + layoutRoom.locationX*squareSize;
+				int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 				Rectangle roomRect = new Rectangle( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
 				roomRegionRoomIdMap.put( roomRect, i );
 
-				for ( int s=0; s < squaresH*squaresV; s++ ) {
+				for ( int s=0; s < squaresH * squaresV; s++ ) {
 					int squareX = roomX + (s%squaresH)*squareSize;
 					int squareY = roomY + (s/squaresH)*squareSize;
 					Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
@@ -841,12 +842,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 				if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
 					log.trace( String.format( "Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId ) );
 
-					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( badRoomId );
-					int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-					int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-					int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-					int roomX = layoutX + roomCoordX*squareSize;
-					int roomY = layoutY + roomCoordY*squareSize;
+					ShipLayoutRoom layoutRoom = shipLayout.getRoom( badRoomId );
+					int squaresH = layoutRoom.squaresH;
+					int roomX = layoutX + layoutRoom.locationX*squareSize;
+					int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 					int squareX = roomX + (badSquareId%squaresH)*squareSize;
 					int squareY = roomY + (badSquareId/squaresH)*squareSize;
@@ -926,13 +925,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 				String roomImgPath = systemRoom.getImg();
 
 				int roomId = systemRoom.getRoomId();
-				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomId );
-				int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-				int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-				int roomX = layoutX + roomCoordX*squareSize;
-				int roomY = layoutY + roomCoordY*squareSize;
+				ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
+				int squaresH = layoutRoom.squaresH;
+				int squaresV = layoutRoom.squaresV;
+				int roomX = layoutX + layoutRoom.locationX*squareSize;
+				int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 				// TODO: Looks like when medbay omits img, it's "room_medbay.png".
 
@@ -949,7 +946,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 
 				if ( systemRoom == blueprintSystems.getTeleporterRoom() ) {
-					for ( int s=0; s < squaresH*squaresV; s++ ) {
+					for ( int s=0; s < squaresH * squaresV; s++ ) {
 						int decorX = roomX + (s%squaresH)*squareSize + squareSize/2;
 						int decorY = roomY + (s/squaresH)*squareSize + squareSize/2;
 
@@ -1053,13 +1050,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add rooms.
 		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
-			int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-			int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-			int roomX = layoutX + roomCoordX*squareSize;
-			int roomY = layoutY + roomCoordY*squareSize;
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
+			int squaresH = layoutRoom.squaresH;
+			int squaresV = layoutRoom.squaresV;
+			int roomX = layoutX + layoutRoom.locationX*squareSize;
+			int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 			int oxygen = shipState.getRoom( i ).getOxygen();
 
@@ -1077,13 +1072,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int[] roomIds = shipBlueprint.getSystemList().getRoomIdBySystemType( systemType );
 			if ( roomIds != null ) {
 				for ( int roomId : roomIds ) {
-					EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomId );
-					int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-					int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-					int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-					int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-					int roomX = layoutX + roomCoordX*squareSize;
-					int roomY = layoutY + roomCoordY*squareSize;
+					ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
+					int squaresH = layoutRoom.squaresH;
+					int squaresV = layoutRoom.squaresV;
+					int roomX = layoutX + layoutRoom.locationX*squareSize;
+					int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 					int systemX = roomX + squaresH*squareSize/2;
 					int systemY = roomY + squaresV*squareSize/2;
@@ -1133,16 +1126,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		// Add fires.
 		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
-			int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-			int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-			int roomX = layoutX + roomCoordX*squareSize;
-			int roomY = layoutY + roomCoordY*squareSize;
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
+			int squaresH = layoutRoom.squaresH;
+			int squaresV = layoutRoom.squaresV;
+			int roomX = layoutX + layoutRoom.locationX*squareSize;
+			int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 			RoomState roomState = shipState.getRoom( i );
-			for ( int s=0; s < squaresH*squaresV; s++ ) {
+			for ( int s=0; s < squaresH * squaresV; s++ ) {
 				int fireHealth = roomState.getSquare( s ).getFireHealth();
 				if ( fireHealth > 0 ) {
 					int fireX = roomX + (s%squaresH)*squareSize + squareSize/2;
@@ -1155,8 +1146,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Add doors.
 		int doorLevel = shipState.getSystem(SystemType.DOORS).getCapacity()-1;  // Convert to 0-based.
 		if ( doorLevel < 0 ) doorLevel = 0;  // Door subsystem was absent, 0-Capacity.
-		for ( Map.Entry<ShipLayout.DoorCoordinate, DoorState> entry : shipState.getDoorMap().entrySet() ) {
-			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+		for ( Map.Entry<DoorCoordinate, DoorState> entry : shipState.getDoorMap().entrySet() ) {
+			DoorCoordinate doorCoord = entry.getKey();
 			DoorState doorState = entry.getValue();
 			int doorX = layoutX + doorCoord.x*squareSize + (doorCoord.v==1 ? 0 : squareSize/2);
 			int doorY = layoutY + doorCoord.y*squareSize + (doorCoord.v==1 ? squareSize/2 : 0);
@@ -1184,12 +1175,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 				crewY = originY + crewState.getSpriteY();
 
 				// TODO: Draw lines to goal dots for walking crew?
-				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( crewState.getRoomId() );
-				int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-				int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-				int roomX = layoutX + roomCoordX*squareSize;
-				int roomY = layoutY + roomCoordY*squareSize;
-				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+				ShipLayoutRoom layoutRoom = shipLayout.getRoom( crewState.getRoomId() );
+				int squaresH = layoutRoom.squaresH;
+				int roomX = layoutX + layoutRoom.locationX*squareSize;
+				int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 				goalX = roomX + (crewState.getRoomSquare()%squaresH)*squareSize + squareSize/2;
 				goalY = roomY + (crewState.getRoomSquare()/squaresH)*squareSize + squareSize/2;
@@ -1299,13 +1288,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 			int roomId = breachSprite.getRoomId();
 			int squareId = breachSprite.getSquareId();
 
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( roomId );
-			int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-			int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
+			int squaresH = layoutRoom.squaresH;
 
-			int breachCoordX = roomCoordX + squareId%squaresH;
-			int breachCoordY = roomCoordY + squareId/squaresH;
+			int breachCoordX = layoutRoom.locationX + squareId%squaresH;
+			int breachCoordY = layoutRoom.locationY + squareId/squaresH;
 			XYPair goofyCoord = new XYPair( shipLayout.getOffsetX() + breachCoordX, shipLayout.getOffsetY() + breachCoordY );
 			breachMap.put( goofyCoord, breachSprite.getHealth() );
 		}
@@ -1324,7 +1311,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		// Doors.
-		Map<ShipLayout.DoorCoordinate, DoorState> shipDoorMap = shipState.getDoorMap();
+		Map<DoorCoordinate, DoorState> shipDoorMap = shipState.getDoorMap();
 		shipDoorMap.clear();
 		for ( SpriteReference<DoorState> doorRef : doorRefs ) {
 			DoorSprite doorSprite = doorRef.getSprite( DoorSprite.class );
@@ -1810,7 +1797,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipPanel.add( weaponSprite, WEAPON_LAYER );
 	}
 
-	private void addDoorSprite( int centerX, int centerY, int level, ShipLayout.DoorCoordinate doorCoord, SpriteReference<DoorState> doorRef ) {
+	private void addDoorSprite( int centerX, int centerY, int level, DoorCoordinate doorCoord, SpriteReference<DoorState> doorRef ) {
 		int w = 35, h = 35;
 		int chop = 10;       // Chop 10 pixels off the sides for skinny doors.
 		int levelCount = 5;  // FTL 1.01-1.03.3 only had 3 Doors system levels. FTL 1.5.4+ had 5.
@@ -1881,18 +1868,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 		Stroke roomBorderStroke = new BasicStroke( 4 );
 		int fromX, fromY, toX, toY;
 
-		Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		ShipLayout.DoorCoordinate doorCoord = null;
-		EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = null;
+		Map<DoorCoordinate, ShipLayoutDoor> layoutDoorMap = shipLayout.getDoorMap();
+		DoorCoordinate doorCoord = null;
+		ShipLayoutDoor layoutDoor = null;
 
 		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( i );
-			int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-			int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-			int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-			int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-			int roomX = layoutX + roomCoordX*squareSize;
-			int roomY = layoutY + roomCoordY*squareSize;
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
+			int squaresH = layoutRoom.squaresH;
+			int squaresV = layoutRoom.squaresV;
+			int roomCoordX = layoutRoom.locationX;
+			int roomCoordY = layoutRoom.locationY;
+			int roomX = layoutX + layoutRoom.locationX*squareSize;
+			int roomY = layoutY + layoutRoom.locationY*squareSize;
 
 			// Draw floor lines within rooms.
 			wallG.setColor( floorCrackColor );
@@ -1909,10 +1896,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 				fromY = roomY+(n-1)*squareSize;
 				toX = roomX;
 				toY = roomY+n*squareSize;
-				doorCoord = new ShipLayout.DoorCoordinate( roomCoordX, roomCoordY+n-1, 1 );
-				doorInfo = layoutDoorMap.get( doorCoord );
+				doorCoord = new DoorCoordinate( roomCoordX, roomCoordY+n-1, 1 );
+				layoutDoor = layoutDoorMap.get( doorCoord );
 
-				if ( doorInfo != null ) {  // Must be a door there.
+				if ( layoutDoor != null ) {  // Must be a door there.
 					// Draw stubs around door.
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1930,10 +1917,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 				fromY = roomY+(n-1)*squareSize;
 				toX = roomX+squaresH*squareSize;
 				toY = roomY+n*squareSize;
-				doorCoord = new ShipLayout.DoorCoordinate( roomCoordX+squaresH, roomCoordY+n-1, 1 );
-				doorInfo = layoutDoorMap.get( doorCoord );
+				doorCoord = new DoorCoordinate( roomCoordX+squaresH, roomCoordY+n-1, 1 );
+				layoutDoor = layoutDoorMap.get( doorCoord );
 
-				if ( doorInfo != null ) {  // Must be a door there.
+				if ( layoutDoor != null ) {  // Must be a door there.
 					// Draw stubs around door.
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1955,10 +1942,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 				fromY = roomY;
 				toX = roomX+n*squareSize;
 				toY = roomY;
-				doorCoord = new ShipLayout.DoorCoordinate( roomCoordX+n-1, roomCoordY, 0 );
-				doorInfo = layoutDoorMap.get( doorCoord );
+				doorCoord = new DoorCoordinate( roomCoordX+n-1, roomCoordY, 0 );
+				layoutDoor = layoutDoorMap.get( doorCoord );
 
-				if ( doorInfo != null ) {  // Must be a door there.
+				if ( layoutDoor != null ) {  // Must be a door there.
 					// Draw stubs around door.
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -1976,10 +1963,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 				fromY = roomY+squaresV*squareSize;
 				toX = roomX+n*squareSize;
 				toY = roomY+squaresV*squareSize;
-				doorCoord = new ShipLayout.DoorCoordinate( roomCoordX+n-1, roomCoordY+squaresV, 0 );
-				doorInfo = layoutDoorMap.get( doorCoord );
+				doorCoord = new DoorCoordinate( roomCoordX+n-1, roomCoordY+squaresV, 0 );
+				layoutDoor = layoutDoorMap.get( doorCoord );
 
-				if ( doorInfo != null ) {  // Must be a door there.
+				if ( layoutDoor != null ) {  // Must be a door there.
 					// Draw stubs around door.
 					wallG.setStroke( roomBorderStroke );
 					wallG.setColor( roomBorderColor );
@@ -3406,7 +3393,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		DoorSprite doorSprite = doorRef.getSprite( DoorSprite.class );
 
-		ShipLayout.DoorCoordinate doorCoord = doorSprite.getCoordinate();
+		DoorCoordinate doorCoord = doorSprite.getCoordinate();
 		String title = String.format( "Door (%2d,%2d, %s)", doorCoord.x, doorCoord.y, (doorCoord.v==1 ? "V" : "H") );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
@@ -3990,15 +3977,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 					int[] droneSystemRoomId = shipBlueprint.getSystemList().getRoomIdBySystemType( SystemType.DRONE_CTRL );
 					if ( droneSystemRoomId != null ) {
-						EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo( droneSystemRoomId[0] );
-						int roomCoordX = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_X ).intValue();
-						int roomCoordY = roomInfoMap.get( ShipLayout.RoomInfo.LOCATION_Y ).intValue();
-						int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-						int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
-						int roomX = layoutX + roomCoordX*squareSize;
-						int roomY = layoutY + roomCoordY*squareSize;
+						ShipLayoutRoom layoutRoom = shipLayout.getRoom( droneSystemRoomId[0] );
+						int squaresH = layoutRoom.squaresH;
+						int squaresV = layoutRoom.squaresV;
+						int roomCoordX = layoutRoom.locationX;
+						int roomCoordY = layoutRoom.locationY;
+						int roomX = layoutX + layoutRoom.locationX*squareSize;
+						int roomY = layoutY + layoutRoom.locationY*squareSize;
 
-						for ( int s=0; s < squaresH*squaresV; s++ ) {
+						for ( int s=0; s < squaresH * squaresV; s++ ) {
 							int squareX = roomX + (s%squaresH)*squareSize;
 							int squareY = roomY + (s/squaresH)*squareSize;
 							Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
@@ -4356,10 +4343,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		private Map<Integer, BufferedImage> closedImages;
 		private Map<Integer, BufferedImage> openImages;
 		private Integer level;
-		private ShipLayout.DoorCoordinate doorCoord;
+		private DoorCoordinate doorCoord;
 
 
-		public DoorSprite( SpriteReference<DoorState> doorRef, Map<Integer, BufferedImage> closedImages, Map<Integer, BufferedImage> openImages, Integer level, ShipLayout.DoorCoordinate doorCoord ) {
+		public DoorSprite( SpriteReference<DoorState> doorRef, Map<Integer, BufferedImage> closedImages, Map<Integer, BufferedImage> openImages, Integer level, DoorCoordinate doorCoord ) {
 			this.doorRef = doorRef;
 			this.closedImages = closedImages;
 			this.openImages = openImages;
@@ -4383,8 +4370,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 		public void setLevel( int n ) { level = n; }
 		public int getLevel() { return level; }
 
-		public void setCoordinate( ShipLayout.DoorCoordinate c ) { doorCoord = c; }
-		public ShipLayout.DoorCoordinate getCoordinate() { return doorCoord; }
+		public void setCoordinate( DoorCoordinate c ) { doorCoord = c; }
+		public DoorCoordinate getCoordinate() { return doorCoord; }
 
 		@Override
 		public SpriteReference<DoorState> getReference() {

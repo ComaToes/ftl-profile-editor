@@ -33,6 +33,9 @@ import net.blerf.ftl.constants.Difficulty;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.DoorCoordinate;
+import net.blerf.ftl.model.shiplayout.ShipLayoutDoor;
+import net.blerf.ftl.model.shiplayout.ShipLayoutRoom;
 import net.blerf.ftl.model.XYPair;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.MysteryBytes;
@@ -615,14 +618,12 @@ public class SavedGameParser extends Parser {
 			// Other ExtendedSystemInfo may be added to the ship later (FTL 1.5.4+).
 		}
 
+		// Room states are stored in roomId order.
 		int roomCount = shipLayout.getRoomCount();
 		for ( int r=0; r < roomCount; r++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfo = shipLayout.getRoomInfo( r );
-			int squaresH = roomInfo.get(ShipLayout.RoomInfo.SQUARES_H).intValue();
-			int squaresV = roomInfo.get(ShipLayout.RoomInfo.SQUARES_V).intValue();
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( r );
 
-			// Room states are stored in roomId order.
-			shipState.addRoom( readRoom( in, squaresH, squaresV, fileFormat ) );
+			shipState.addRoom( readRoom( in, layoutRoom.squaresH, layoutRoom.squaresV, fileFormat ) );
 		}
 
 		int breachCount = readInt( in );
@@ -630,26 +631,23 @@ public class SavedGameParser extends Parser {
 			shipState.setBreach( readInt( in ), readInt( in ), readInt( in ) );
 		}
 
-		// Doors are defined in the layout text file, but their
-		// order is different at runtime. Vacuum-adjacent doors
-		// are plucked out and moved to the end... for some
-		// reason.
-		Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> vacuumDoorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>>();
-		Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet() ) {
-			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
-			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+		// Doors are defined in the layout text file, but their order is
+		// different at runtime. Vacuum-adjacent doors are plucked out and
+		// moved to the end... for some reason.
+		Map<DoorCoordinate, ShipLayoutDoor> vacuumDoorMap = new LinkedHashMap<DoorCoordinate, ShipLayoutDoor>();
+		Map<DoorCoordinate, ShipLayoutDoor> layoutDoorMap = shipLayout.getDoorMap();
+		for ( Map.Entry<DoorCoordinate, ShipLayoutDoor> entry : layoutDoorMap.entrySet() ) {
+			DoorCoordinate doorCoord = entry.getKey();
+			ShipLayoutDoor layoutDoor = entry.getValue();
 
-			if ( doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_A).intValue() == -1 ||
-			     doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_B).intValue() == -1 ) {
-				vacuumDoorMap.put( doorCoord, doorInfo );
+			if ( layoutDoor.roomIdA == -1 || layoutDoor.roomIdB == -1 ) {
+				vacuumDoorMap.put( doorCoord, layoutDoor );
 				continue;
 			}
 			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor( in, fileFormat ) );
 		}
-		for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet() ) {
-			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
-			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+		for ( Map.Entry<DoorCoordinate, ShipLayoutDoor> entry : vacuumDoorMap.entrySet() ) {
+			DoorCoordinate doorCoord = entry.getKey();
 
 			shipState.setDoor( doorCoord.x, doorCoord.y, doorCoord.v, readDoor( in, fileFormat ) );
 		}
@@ -828,12 +826,10 @@ public class SavedGameParser extends Parser {
 
 		int roomCount = shipLayout.getRoomCount();
 		for ( int r=0; r < roomCount; r++ ) {
-			EnumMap<ShipLayout.RoomInfo, Integer> roomInfo = shipLayout.getRoomInfo( r );
-			int squaresH = roomInfo.get(ShipLayout.RoomInfo.SQUARES_H).intValue();
-			int squaresV = roomInfo.get(ShipLayout.RoomInfo.SQUARES_V).intValue();
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( r );
 
 			RoomState room = shipState.getRoom( r );
-			writeRoom( out, room, squaresH, squaresV, fileFormat );
+			writeRoom( out, room, layoutRoom.squaresH, layoutRoom.squaresV, fileFormat );
 		}
 
 		writeInt( out, shipState.getBreachMap().size() );
@@ -847,22 +843,21 @@ public class SavedGameParser extends Parser {
 		// order is different at runtime. Vacuum-adjacent doors
 		// are plucked out and moved to the end... for some
 		// reason.
-		Map<ShipLayout.DoorCoordinate, DoorState> shipDoorMap = shipState.getDoorMap();
-		Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> vacuumDoorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>>();
-		Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-		for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet() ) {
-			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
-			EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+		Map<DoorCoordinate, DoorState> shipDoorMap = shipState.getDoorMap();
+		Map<DoorCoordinate, ShipLayoutDoor> vacuumDoorMap = new LinkedHashMap<DoorCoordinate, ShipLayoutDoor>();
+		Map<DoorCoordinate, ShipLayoutDoor> layoutDoorMap = shipLayout.getDoorMap();
+		for ( Map.Entry<DoorCoordinate, ShipLayoutDoor> entry : layoutDoorMap.entrySet() ) {
+			DoorCoordinate doorCoord = entry.getKey();
+			ShipLayoutDoor layoutDoor = entry.getValue();
 
-			if ( doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_A).intValue() == -1 ||
-			     doorInfo.get(ShipLayout.DoorInfo.ROOM_ID_B).intValue() == -1 ) {
-				vacuumDoorMap.put( doorCoord, doorInfo );
+			if ( layoutDoor.roomIdA == -1 || layoutDoor.roomIdB == -1 ) {
+				vacuumDoorMap.put( doorCoord, layoutDoor );
 				continue;
 			}
 			writeDoor( out, shipDoorMap.get( doorCoord ), fileFormat );
 		}
-		for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : vacuumDoorMap.entrySet() ) {
-			ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+		for ( Map.Entry<DoorCoordinate, ShipLayoutDoor> entry : vacuumDoorMap.entrySet() ) {
+			DoorCoordinate doorCoord = entry.getKey();
 
 			writeDoor( out, shipDoorMap.get( doorCoord ), fileFormat );
 		}
@@ -2938,7 +2933,7 @@ public class SavedGameParser extends Parser {
 		private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
 		private List<RoomState> roomList = new ArrayList<RoomState>();
 		private Map<XYPair, Integer> breachMap = new LinkedHashMap<XYPair, Integer>();
-		private Map<ShipLayout.DoorCoordinate, DoorState> doorMap = new LinkedHashMap<ShipLayout.DoorCoordinate, DoorState>();
+		private Map<DoorCoordinate, DoorState> doorMap = new LinkedHashMap<DoorCoordinate, DoorState>();
 		private int cloakAnimTicks = 0;
 		private List<LockdownCrystal> lockdownCrystalList = new ArrayList<LockdownCrystal>();
 		private List<WeaponState> weaponList = new ArrayList<WeaponState>();
@@ -3021,12 +3016,12 @@ public class SavedGameParser extends Parser {
 			// Rooms.
 			getRoomList().clear();
 			for ( int r=0; r < shipLayout.getRoomCount(); r++ ) {
-				EnumMap<ShipLayout.RoomInfo, Integer> roomInfoMap = shipLayout.getRoomInfo(r);
-				int squaresH = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_H ).intValue();
-				int squaresV = roomInfoMap.get( ShipLayout.RoomInfo.SQUARES_V ).intValue();
+				ShipLayoutRoom layoutRoom = shipLayout.getRoom( r );
+				int squaresH = layoutRoom.squaresH;
+				int squaresV = layoutRoom.squaresV;
 
 				RoomState roomState = new RoomState();
-				for ( int s=0; s < squaresH*squaresV; s++ ) {
+				for ( int s=0; s < squaresH * squaresV; s++ ) {
 					roomState.addSquare( new SquareState( 0, 0, -1 ) );
 				}
 				addRoom( roomState );
@@ -3034,10 +3029,9 @@ public class SavedGameParser extends Parser {
 
 			// Doors.
 			getDoorMap().clear();
-			Map<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> layoutDoorMap = shipLayout.getDoorMap();
-			for ( Map.Entry<ShipLayout.DoorCoordinate, EnumMap<ShipLayout.DoorInfo,Integer>> entry : layoutDoorMap.entrySet() ) {
-				ShipLayout.DoorCoordinate doorCoord = entry.getKey();
-				EnumMap<ShipLayout.DoorInfo,Integer> doorInfo = entry.getValue();
+			Map<DoorCoordinate, ShipLayoutDoor> layoutDoorMap = shipLayout.getDoorMap();
+			for ( Map.Entry<DoorCoordinate, ShipLayoutDoor> entry : layoutDoorMap.entrySet() ) {
+				DoorCoordinate doorCoord = entry.getKey();
 
 				setDoor( doorCoord.x, doorCoord.y, doorCoord.v, new DoorState() );
 			}
@@ -3045,8 +3039,9 @@ public class SavedGameParser extends Parser {
 			// Augments.
 			getAugmentIdList().clear();
 			if ( shipBlueprint.getAugments() != null ) {
-				for ( ShipBlueprint.AugmentId augId : shipBlueprint.getAugments() )
+				for ( ShipBlueprint.AugmentId augId : shipBlueprint.getAugments() ) {
 					addAugmentId( augId.name );
+				}
 			}
 
 			// Supplies.
@@ -3054,10 +3049,12 @@ public class SavedGameParser extends Parser {
 			setFuelAmt( 20 );
 			setDronePartsAmt( 0 );
 			setMissilesAmt( 0 );
-			if ( shipBlueprint.getDroneList() != null )
+			if ( shipBlueprint.getDroneList() != null ) {
 				setDronePartsAmt( shipBlueprint.getDroneList().drones );
-			if ( shipBlueprint.getWeaponList() != null )
+			}
+			if ( shipBlueprint.getWeaponList() != null ) {
 				setMissilesAmt( shipBlueprint.getWeaponList().missiles );
+			}
 		}
 
 
@@ -3357,24 +3354,23 @@ public class SavedGameParser extends Parser {
 		 * @see net.blerf.ftl.model.ShipLayout
 		 */
 		public void setDoor( int wallX, int wallY, int vertical, DoorState d ) {
-			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
+			DoorCoordinate doorCoord = new DoorCoordinate( wallX, wallY, vertical );
 			doorMap.put( doorCoord, d );
 		}
 		public DoorState getDoor( int wallX, int wallY, int vertical ) {
-			ShipLayout.DoorCoordinate doorCoord = new ShipLayout.DoorCoordinate( wallX, wallY, vertical );
+			DoorCoordinate doorCoord = new DoorCoordinate( wallX, wallY, vertical );
 			return doorMap.get( doorCoord );
 		}
 
 		/**
 		 * Returns the map containing this ship's door states.
 		 *
-		 * Do not rely on the keys' order. ShipLayout config
-		 * files have a different order than saved game files.
-		 * Entries will be in whatever order setDoor was
-		 * called, which generally will be in the saved game
+		 * Do not rely on the keys' order. ShipLayout config files have a
+		 * different order than saved game files.Entries will be in whatever
+		 * order setDoor was called, which generally will be in the saved game
 		 * file's order.
 		 */
-		public Map<ShipLayout.DoorCoordinate, DoorState> getDoorMap() { return doorMap; }
+		public Map<DoorCoordinate, DoorState> getDoorMap() { return doorMap; }
 
 
 		/**
@@ -3533,11 +3529,11 @@ public class SavedGameParser extends Parser {
 			result.append( "\nDoors...\n" );
 			int doorId = -1;
 			first = true;
-			for ( Map.Entry<ShipLayout.DoorCoordinate, DoorState> entry : doorMap.entrySet() ) {
+			for ( Map.Entry<DoorCoordinate, DoorState> entry : doorMap.entrySet() ) {
 				if ( first ) { first = false; }
 				else { result.append( ",\n" ); }
 
-				ShipLayout.DoorCoordinate doorCoord = entry.getKey();
+				DoorCoordinate doorCoord = entry.getKey();
 				DoorState d = entry.getValue();
 				String orientation = ( doorCoord.v == 1 ) ? "V" : "H";
 
@@ -6025,7 +6021,7 @@ public class SavedGameParser extends Parser {
 		private boolean escaping = false;
 		private boolean destroyed = false;
 		private int surrenderThreshold = 0;
-		private int escapeThreshold = 0;
+		private int escapeThreshold = -1;
 		private int escapeTicks = 15000;
 		private boolean stalemateTriggered = false;  // TODO: Does this start sudden death, or mark its completion?
 		private int stalemateTicks = 0;
@@ -6074,6 +6070,8 @@ public class SavedGameParser extends Parser {
 		 * Sets the hull amount that will cause the ship to flee.
 		 *
 		 * For the rebel flagship, this is -101.
+		 *
+		 * When not set, this is -1.
 		 */
 		public void setEscapeThreshold( int n ) { escapeThreshold = n; }
 		public int getEscapeThreshold() { return escapeThreshold; }

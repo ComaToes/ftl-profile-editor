@@ -7,17 +7,18 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
 
+import net.blerf.ftl.model.shiplayout.DoorCoordinate;
+import net.blerf.ftl.model.shiplayout.ShipLayoutDoor;
+import net.blerf.ftl.model.shiplayout.ShipLayoutRoom;
+
 
 public class ShipLayout {
-
-	public enum RoomInfo { LOCATION_X, LOCATION_Y, SQUARES_H, SQUARES_V }
-	public enum DoorInfo { ROOM_ID_A, ROOM_ID_B }
 
 	private int offsetX = 0, offsetY = 0;
 	private int horizontal = 0, vertical = 0;
 	private Rectangle shieldEllipse = new Rectangle();
-	private TreeMap<Integer, EnumMap<RoomInfo, Integer>> roomMap = new TreeMap<Integer, EnumMap<RoomInfo, Integer>>();
-	private Map<DoorCoordinate, EnumMap<DoorInfo, Integer>> doorMap = new LinkedHashMap<DoorCoordinate, EnumMap<DoorInfo, Integer>>();
+	private TreeMap<Integer, ShipLayoutRoom> roomMap = new TreeMap<Integer, ShipLayoutRoom>();
+	private Map<DoorCoordinate, ShipLayoutDoor> doorMap = new LinkedHashMap<DoorCoordinate, ShipLayoutDoor>();
 
 
 	/**
@@ -67,23 +68,13 @@ public class ShipLayout {
 	 * Sets a room's info.
 	 *
 	 * @param roomId a roomId
-	 * @param locationX 0-based Nth square from the left (without layout offset)
-	 * @param locationY 0-based Nth square from the top (without layout offset)
-	 * @param squaresH horizontal count of tiles
-	 * @param squaresV certical count of tiles
+	 * @param layoutRoom room info
 	 */
-	public void setRoom( int roomId, int locationX, int locationY, int squaresH, int squaresV ) {
-		Integer roomIdObj = new Integer( roomId );
-
-		EnumMap<RoomInfo,Integer> infoMap = new EnumMap<RoomInfo,Integer>( RoomInfo.class );
-		infoMap.put( RoomInfo.LOCATION_X, locationX );
-		infoMap.put( RoomInfo.LOCATION_Y, locationY );
-		infoMap.put( RoomInfo.SQUARES_H, squaresH );
-		infoMap.put( RoomInfo.SQUARES_V, squaresV );
-		roomMap.put( roomIdObj, infoMap );
+	public void setRoom( int roomId, ShipLayoutRoom layoutRoom ) {
+		roomMap.put( roomId, layoutRoom );
 	}
 
-	public EnumMap<RoomInfo, Integer> getRoomInfo( int roomId ) {
+	public ShipLayoutRoom getRoom( int roomId ) {
 		return roomMap.get( roomId );
 	}
 
@@ -92,8 +83,8 @@ public class ShipLayout {
 	 */
 	public int getRoomCount() {
 		try {
-			Integer lastKey = roomMap.lastKey();
-			return lastKey.intValue()+1;
+			int lastKey = roomMap.lastKey();
+			return (lastKey + 1);
 		}
 		catch ( NoSuchElementException e ) {
 			return 0;
@@ -106,19 +97,16 @@ public class ShipLayout {
 	 * @param wallX the 0-based Nth wall from the left
 	 * @param wallY the 0-based Nth wall from the top
 	 * @param vertical 1 for vertical wall coords, 0 for horizontal
-	 * @param roomIdA an adjacent roomId, or -1 for vacuum
-	 * @param roomIdB an adjacent roomId, or -1 for vacuum
+	 * @param layoutDoor dooor info
+	 * @see ShipLayoutDoor
 	 */
-	public void setDoor( int wallX, int wallY, int vertical, int roomIdA, int roomIdB ) {
+	public void setDoor( int wallX, int wallY, int vertical, ShipLayoutDoor layoutDoor ) {
 		DoorCoordinate doorCoord = new DoorCoordinate( wallX, wallY, vertical );
 
-		EnumMap<DoorInfo, Integer> infoMap = new EnumMap<DoorInfo, Integer>( DoorInfo.class );
-		infoMap.put( DoorInfo.ROOM_ID_A, roomIdA );
-		infoMap.put( DoorInfo.ROOM_ID_B, roomIdB );
-		doorMap.put( doorCoord, infoMap );
+		doorMap.put( doorCoord, layoutDoor );
 	}
 
-	public EnumMap<DoorInfo, Integer> getDoorInfo( int wallX, int wallY, int vertical ) {
+	public ShipLayoutDoor getDoor( int wallX, int wallY, int vertical ) {
 		return doorMap.get( new DoorCoordinate( wallX, wallY, vertical ) );
 	}
 
@@ -132,47 +120,7 @@ public class ShipLayout {
 	 * Keys are in the order of the original layout config file.
 	 * That is NOT the same order as doors in saved games.
 	 */
-	public Map<DoorCoordinate, EnumMap<DoorInfo,Integer>> getDoorMap() {
+	public Map<DoorCoordinate, ShipLayoutDoor> getDoorMap() {
 		return doorMap;
-	}
-
-
-
-	// Regular int arrays don't override the methods needed for
-	// use as Map keys, testing for identity instead of equality.
-	public static class DoorCoordinate {
-		public int x = 0;
-		public int y = 0;
-		public int v = 0;
-
-		public DoorCoordinate( int x, int y, int v ) {
-			this.x = x;
-			this.y = y;
-			this.v = v;
-		}
-
-		@Override
-		public boolean equals( Object o ) {
-			if ( !(o instanceof DoorCoordinate) ) return false;
-			DoorCoordinate d = (DoorCoordinate)o;
-			return ( x==d.x && y==d.y && v==d.v );
-		}
-
-		@Override
-		public int hashCode() {
-			return mangle( x ) | (mangle( y ) << 1) | (mangle( v ) << 2);
-		}
-
-		// Use Z-Order Curve to interleve coords' bits for uniqueness.
-		// http://stackoverflow.com/questions/9858376/hashcode-for-3d-integer-coordinates-with-high-spatial-coherence
-		// http://www.opensourcescripts.com/info/interleave-bits--aka-morton-ize-aka-z-order-curve-.html
-		private int mangle( int n ) {
-			n &= 0x000003ff;
-			n = (n ^ (n << 16)) & 0xff0000ff;
-			n = (n ^ (n <<  8)) & 0x0300f00f;
-			n = (n ^ (n <<  4)) & 0x030c30c3;
-			n = (n ^ (n <<  2)) & 0x09249249;
-			return n;
-		}
 	}
 }

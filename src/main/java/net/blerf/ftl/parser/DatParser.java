@@ -18,6 +18,8 @@ import org.jdom2.JDOMException;
 import org.jdom2.output.DOMOutputter;
 
 import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.ShipLayoutDoor;
+import net.blerf.ftl.model.shiplayout.ShipLayoutRoom;
 import net.blerf.ftl.parser.TextUtilities;
 import net.blerf.ftl.xml.Achievement;
 import net.blerf.ftl.xml.Achievements;
@@ -192,11 +194,13 @@ public class DatParser {
 			}
 			else if ( line.equals( "ROOM" ) ) {
 				int roomId = Integer.parseInt( in.readLine() );
-				int alpha = Integer.parseInt( in.readLine() );
-				int beta = Integer.parseInt( in.readLine() );
+				int locationX = Integer.parseInt( in.readLine() );
+				int locationY = Integer.parseInt( in.readLine() );
 				int hSquares = Integer.parseInt( in.readLine() );
 				int vSquares = Integer.parseInt( in.readLine() );
-				shipLayout.setRoom( roomId, alpha, beta, hSquares, vSquares );
+				ShipLayoutRoom layoutRoom = new ShipLayoutRoom( locationX, locationY, hSquares, vSquares );
+
+				shipLayout.setRoom( roomId, layoutRoom );
 			}
 			else if ( line.equals( "DOOR" ) ) {
 				int wallX = Integer.parseInt( in.readLine() );
@@ -204,7 +208,9 @@ public class DatParser {
 				int roomIdA = Integer.parseInt( in.readLine() );
 				int roomIdB = Integer.parseInt( in.readLine() );
 				int vertical = Integer.parseInt( in.readLine() );
-				shipLayout.setDoor( wallX, wallY, vertical, roomIdA, roomIdB );
+				ShipLayoutDoor layoutDoor = new ShipLayoutDoor( roomIdA, roomIdB );
+
+				shipLayout.setDoor( wallX, wallY, vertical, layoutDoor );
 			}
 		}
 		return shipLayout;

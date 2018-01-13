@@ -5,6 +5,7 @@ package net.blerf.ftl.model;
  * An immutable int pair, suitable for use as a Map key, unlike Point.
  */
 public class XYPair {
+
 	public final int x;
 	public final int y;
 	private final int hash;
@@ -17,6 +18,10 @@ public class XYPair {
 		// Pre-calculate the hashCode, since this is immutable.
 		int sum = x + y;
 		hash = sum * (sum+1)/2 + x;
+	}
+
+	public XYPair( XYPair srcXYPair ) {
+		this( srcXYPair.x, srcXYPair.y );
 	}
 
 	@Override
