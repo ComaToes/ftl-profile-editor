@@ -1,6 +1,5 @@
 package net.blerf.ftl.ui;
 
-import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -14,7 +13,6 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -33,16 +31,11 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.font.LineMetrics;
 import java.awt.image.BufferedImage;
-import java.awt.image.RasterFormatException;
-import java.awt.image.RescaleOp;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -108,6 +101,13 @@ import net.blerf.ftl.ui.ReferenceSprite;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.SpriteReference;
 import net.blerf.ftl.ui.StatusbarMouseListener;
+import net.blerf.ftl.ui.floorplan.BreachSprite;
+import net.blerf.ftl.ui.floorplan.DoorSprite;
+import net.blerf.ftl.ui.floorplan.DroneBoxSprite;
+import net.blerf.ftl.ui.floorplan.FireSprite;
+import net.blerf.ftl.ui.floorplan.RoomSprite;
+import net.blerf.ftl.ui.floorplan.SystemRoomSprite;
+import net.blerf.ftl.ui.floorplan.WeaponSprite;
 import net.blerf.ftl.ui.hud.SpriteSelector;
 import net.blerf.ftl.ui.hud.SpriteSelector.SpriteCriteria;
 import net.blerf.ftl.ui.hud.SpriteSelector.SpriteSelectionCallback;
@@ -1084,11 +1084,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					SpriteReference<SystemState> systemRef = new SpriteReference<SystemState>( new SystemState( systemState ) );
 					systemRefs.add( systemRef );
 
-					SystemRoomSprite systemRoomSprite = new SystemRoomSprite( systemRef );
-					systemRoomSprite.setSize( systemRoomSprite.getPreferredSize() );
-					systemRoomSprite.setLocation( systemX - systemRoomSprite.getPreferredSize().width/2, systemY - systemRoomSprite.getPreferredSize().height/2);
-					systemRoomSprites.add( systemRoomSprite );
-					shipPanel.add( systemRoomSprite, SYSTEM_LAYER );
+					addSystemRoomSprite( systemX, systemY, systemRef );
 				}
 			}
 		}
@@ -1869,6 +1865,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 		doorSprite.setLocation( centerX - doorSprite.getPreferredSize().width/2, centerY - doorSprite.getPreferredSize().height/2 );
 		doorSprites.add( doorSprite );
 		shipPanel.add( doorSprite, DOOR_LAYER );
+	}
+
+	private void addSystemRoomSprite( int centerX, int centerY, SpriteReference<SystemState> systemRef ) {
+		int w = 32, h = 32;
+
+		String overlayPath = "img/icons/s_"+ systemRef.get().getSystemType().getId() +"_overlay.png";
+		BufferedImage overlayImage = ImageUtilities.getScaledImage( overlayPath, w, h, cachedImages );
+
+		SystemRoomSprite systemRoomSprite = new SystemRoomSprite( systemRef, overlayImage );
+		systemRoomSprite.setSize( systemRoomSprite.getPreferredSize() );
+		systemRoomSprite.setLocation( centerX - systemRoomSprite.getPreferredSize().width/2, centerY - systemRoomSprite.getPreferredSize().height/2 );
+		systemRoomSprites.add( systemRoomSprite );
+		shipPanel.add( systemRoomSprite, SYSTEM_LAYER );
 	}
 
 	private void addBreachSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
@@ -3922,59 +3931,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 
 
-	public class DroneBoxSprite extends JComponent implements ReferenceSprite<DroneState> {
-		private int preferredW = 45, preferredH = 45;
-
-		private SpriteReference<DroneState> droneRef;
-		private int slot;
-		private String slotString;
-
-
-		public DroneBoxSprite( SpriteReference<DroneState> droneRef, int slot ) {
-			this.droneRef = droneRef;
-			this.slot = slot;
-			this.slotString = Integer.toString( slot+1 );
-
-			this.setPreferredSize( new Dimension( preferredW, preferredH ) );
-			this.setOpaque( false );
-
-			droneRef.addSprite( this );
-			referenceChanged();
-		}
-
-		public void setSlot( int n ) { slot = n; }
-		public int getSlot() { return slot; }
-
-		@Override
-		public SpriteReference<DroneState> getReference() {
-			return droneRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-			//this.repaint();
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			int w = this.getWidth(), h = this.getHeight();
-			g2d.drawRect( 0, 0, w-1, h-1 );
-
-			LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics( slotString, g2d );
-			int slotStringWidth = g2d.getFontMetrics().stringWidth( slotString );
-			int slotStringHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
-			int margin = 4;
-			int slotStringX = (w-1)/2 - slotStringWidth/2;
-			int slotStringY = (h-1)/2 + slotStringHeight/2;  // drawString draws text above Y.
-			g2d.drawString( slotString, slotStringX, slotStringY );
-		}
-	}
-
-
-
 	public class DroneBodySprite extends JComponent implements ReferenceSprite<DroneState> {
 		private BufferedImage bodyImage = null;
 
@@ -4111,366 +4067,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			Graphics2D g2d = (Graphics2D)g;
 
 			if ( bodyImage != null ) {
-				g2d.drawImage( bodyImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
+				g2d.drawImage( bodyImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this );
 			}
-		}
-	}
-
-
-
-	public class WeaponSprite extends JComponent implements ReferenceSprite<WeaponState> {
-		private int longSide = 64, shortSide = 25;
-
-		private SpriteReference<WeaponState> weaponRef;
-		private int slot;
-		private boolean rotated;
-		private String slotString;
-
-
-		public WeaponSprite( SpriteReference<WeaponState> weaponRef, int slot, boolean rotated ) {
-			this.weaponRef = weaponRef;
-			this.slot = slot;
-			this.slotString = Integer.toString( slot+1 );
-			this.rotated = rotated;
-
-			if ( rotated ) {
-				this.setPreferredSize( new Dimension( longSide, shortSide ) );
-			} else {
-				this.setPreferredSize( new Dimension( shortSide, longSide ) );
-			}
-
-			this.setOpaque( false );
-
-			weaponRef.addSprite( this );
-			referenceChanged();
-		}
-
-		public void setSlot( int n ) { slot = n; }
-		public int getSlot() { return slot; }
-
-		@Override
-		public SpriteReference<WeaponState> getReference() {
-			return weaponRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-			//this.repaint();
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			int w = this.getWidth(), h = this.getHeight();
-			g2d.drawRect( 0, 0, w-1, h-1 );
-
-			LineMetrics lineMetrics = g2d.getFontMetrics().getLineMetrics( slotString, g2d );
-			int slotStringWidth = g2d.getFontMetrics().stringWidth( slotString );
-			int slotStringHeight = (int)lineMetrics.getAscent() + (int)lineMetrics.getDescent();
-			int margin = 6;
-			if ( rotated ) {
-				int slotStringX = (w-1) - slotStringWidth;
-				int slotStringY = (h-1)/2 + slotStringHeight/2;  // drawString draws text above Y.
-				g2d.drawString( slotString, slotStringX - margin, slotStringY );
-			} else {
-				int slotStringX = (w-1)/2 - slotStringWidth/2;
-				int slotStringY = 0 + slotStringHeight;  // drawString draws text above Y.
-				g2d.drawString( slotString, slotStringX, slotStringY + margin );
-			}
-		}
-	}
-
-
-
-	public class RoomSprite extends JComponent implements ReferenceSprite<RoomState> {
-		private final Color maxColor = new Color( 230, 226, 219 );
-		private final Color minColor = new Color( 255, 176, 169 );
-		private final Color vacuumBorderColor = new Color( 255, 180, 0 );
-		private Color bgColor = maxColor;
-
-		private SpriteReference<RoomState> roomRef;
-		private int roomId;
-
-
-		public RoomSprite( SpriteReference<RoomState> roomRef, int roomId ) {
-			this.roomRef = roomRef;
-			this.roomId = roomId;
-
-			// No preferred size.
-			this.setOpaque( true );
-
-			roomRef.addSprite( this );
-			referenceChanged();
-		}
-
-		public void setRoomId( int n ) { roomId = n; }
-		public int getRoomId() { return roomId; }
-
-		@Override
-		public SpriteReference<RoomState> getReference() {
-			return roomRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-			if ( roomRef.get().getOxygen() == 100 ) {
-				bgColor = maxColor;
-			}
-			else if ( roomRef.get().getOxygen() == 0 ) {
-				bgColor = minColor;
-			}
-			else {
-				double p = roomRef.get().getOxygen() / 100.0;
-				int maxRed = maxColor.getRed();
-				int maxGreen = maxColor.getGreen();
-				int maxBlue = maxColor.getBlue();
-				int minRed = minColor.getRed();
-				int minGreen = minColor.getGreen();
-				int minBlue = minColor.getBlue();
-				bgColor = new Color( (int)(minRed+p*(maxRed-minRed)), (int)(minGreen+p*(maxGreen-minGreen)), (int)(minBlue+p*(maxBlue-minBlue)) );
-			}
-
-			this.repaint();
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			Color prevColor = g2d.getColor();
-
-			g2d.setColor( bgColor );
-			g2d.fillRect( 0, 0, this.getWidth()-1, this.getHeight()-1);
-
-			if ( roomRef.get().getOxygen() == 0 ) {  // Draw the yellow border.
-				g2d.setColor( vacuumBorderColor );
-				g2d.drawRect( 2, 2, (this.getWidth()-1)-4, (this.getHeight()-1)-4 );
-				g2d.drawRect( 3, 3, (this.getWidth()-1)-6, (this.getHeight()-1)-6 );
-			}
-
-			g2d.setColor(prevColor);
-		}
-	}
-
-
-
-	public class SystemRoomSprite extends JComponent implements ReferenceSprite<SystemState> {
-		private int scaleW = 32, scaleH = 32;
-		private BufferedImage overlayImage = null;
-		private BufferedImage currentImage = null;
-
-		private SpriteReference<SystemState> systemRef;
-
-
-		public SystemRoomSprite( SpriteReference<SystemState> systemRef ) {
-			this.systemRef = systemRef;
-
-			// Assuming these are interchangeable.
-			String iconBaseName = systemRef.get().getSystemType().getId();
-			overlayImage = ImageUtilities.getScaledImage( "img/icons/s_"+ iconBaseName +"_overlay.png", scaleW, scaleH, cachedImages );
-
-			this.setPreferredSize( new Dimension( scaleW, scaleH ) );
-			this.setOpaque( false );
-
-			systemRef.addSprite( this );
-			referenceChanged();
-		}
-
-		@Override
-		public SpriteReference<SystemState> getReference() {
-			return systemRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-			// The original overlayImage is white with a black border.
-			Tint tint = null;
-
-			if ( systemRef.get().getCapacity() == 0 ) {
-				// Absent, selectively darken to brown.
-				tint = new Tint( new float[] { 0.792f, 0.467f, 0.275f, 1f }, new float[] { 0, 0, 0, 0 } );
-			}
-			else if ( systemRef.get().getIonizedBars() > 0 ) {
-				// Ionized, selectively darken to blue.
-				tint = new Tint( new float[] { 0.51f, 0.898f, 0.937f, 1f }, new float[] { 0, 0, 0, 0 } );
-			}
-			else if ( systemRef.get().getDamagedBars() == systemRef.get().getCapacity() ) {
-				// Crippled, selectively darken to red (softer shade than in-game).
-				tint = new Tint( new float[] { 0.85f, 0.24f, 0.24f, 1f }, new float[] { 0, 0, 0, 0 } );
-			}
-			else if ( systemRef.get().getDamagedBars() > 0 ) {
-				// Damaged, selectively darken to orange.
-				tint = new Tint( new float[] { 0.99f, 0.6f, 0.3f, 1f }, new float[] { 0, 0, 0, 0 } );
-			}
-			else {
-				// Darken to gray...
-				tint = new Tint( new float[] { 0.49f, 0.49f, 0.49f, 1f }, new float[] { 0, 0, 0, 0 } );
-			}
-
-			currentImage = overlayImage;
-			if ( tint != null ) {
-				currentImage = ImageUtilities.getTintedImage( currentImage, tint, cachedTintedImages );
-			}
-			this.repaint();
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( currentImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
-		}
-	}
-
-
-
-	public class BreachSprite extends JComponent {
-		private BufferedImage breachImage;
-		private int roomId;
-		private int squareId;
-		private int health;
-
-		public BreachSprite( BufferedImage breachImage, int roomId, int squareId, int health ) {
-			this.breachImage = breachImage;
-			this.roomId = roomId;
-			this.squareId = squareId;
-			this.health = health;
-			this.setOpaque( false );
-		}
-
-		public void setRoomId( int n ) { roomId = n; }
-		public void setSquareId( int n ) { squareId = n; }
-		public void setHealth( int n ) { health = n; }
-
-		public int getRoomId() { return roomId; }
-		public int getSquareId() { return squareId; }
-		public int getHealth() { return health; }
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( breachImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
-		}
-	}
-
-
-
-	public class FireSprite extends JComponent {
-		private BufferedImage fireImage;
-		private int roomId;
-		private int squareId;
-		private int health;
-
-		public FireSprite( BufferedImage fireImage, int roomId, int squareId, int health ) {
-			this.fireImage = fireImage;
-			this.roomId = roomId;
-			this.squareId = squareId;
-			this.health = health;
-			this.setOpaque( false );
-		}
-
-		public void setRoomId( int n ) { roomId = n; }
-		public void setSquareId( int n ) { squareId = n; }
-		public void setHealth( int n ) { health = n; }
-
-		public int getRoomId() { return roomId; }
-		public int getSquareId() { return squareId; }
-		public int getHealth() { return health; }
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( fireImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
-		}
-	}
-
-
-
-	public class DoorSprite extends JComponent implements ReferenceSprite<DoorState> {
-		private BufferedImage currentImage;
-
-		private SpriteReference<DoorState> doorRef;
-		private Map<Integer, BufferedImage> closedImages;
-		private Map<Integer, BufferedImage> openImages;
-		private Integer level;
-		private DoorCoordinate doorCoord;
-
-
-		public DoorSprite( SpriteReference<DoorState> doorRef, Map<Integer, BufferedImage> closedImages, Map<Integer, BufferedImage> openImages, Integer level, DoorCoordinate doorCoord ) {
-			this.doorRef = doorRef;
-			this.closedImages = closedImages;
-			this.openImages = openImages;
-			this.level = level;
-			this.doorCoord = doorCoord;
-
-			int chop = 10;
-			int longSide = 35, shortSide = 35-(chop*2);
-			if ( doorCoord.v == 1 ) {
-				this.setPreferredSize( new Dimension( shortSide, longSide ) );
-			} else {
-				this.setPreferredSize( new Dimension( longSide, shortSide ) );
-			}
-
-			this.setOpaque( false );
-
-			doorRef.addSprite( this );
-			referenceChanged();
-		}
-
-		public void setLevel( int n ) { level = n; }
-		public int getLevel() { return level; }
-
-		public void setCoordinate( DoorCoordinate c ) { doorCoord = c; }
-		public DoorCoordinate getCoordinate() { return doorCoord; }
-
-		@Override
-		public SpriteReference<DoorState> getReference() {
-			return doorRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-			// TODO: Do away with the sprite's "level" field.
-			// Test if doorState's health fields are unreliable and check the
-			// Doors system capacity.
-
-			if ( doorRef.get().isOpen() ) {
-				currentImage = openImages.get( level );
-			} else {
-				currentImage = closedImages.get( level );
-			}
-
-			this.repaint();
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			Color prevColor = g2d.getColor();
-			int w = this.getWidth(), h = this.getHeight();
-
-			if ( doorCoord.v == 0 ) {  // Use rotated coordinates to draw AS IF vertical.
-				g2d.rotate( Math.toRadians( 90 ) );   // Clockwise.
-				w = this.getHeight(); h = this.getWidth();
-				g2d.translate( 0, -h );
-			}
-
-			// The big image may not have had enough rows to populate all potential Door levels.
-			if ( currentImage != null ) {
-				g2d.drawImage( currentImage, 0, 0, this);
-			}
-
-			g2d.setColor( prevColor );
 		}
 	}
 
@@ -4510,7 +4108,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			super.paintComponent( g );
 
 			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( crewImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this);
+			g2d.drawImage( crewImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this );
 		}
 
 		@Override

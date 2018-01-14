@@ -1,8 +1,10 @@
 package net.blerf.ftl.model.shiplayout;
 
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
@@ -122,5 +124,27 @@ public class ShipLayout {
 	 */
 	public Map<DoorCoordinate, ShipLayoutDoor> getDoorMap() {
 		return doorMap;
+	}
+
+	/**
+	 * Returns a list of roomIds connected via doors to a given room.
+	 *
+	 * This is not based on any algorithm in FTL.
+	 *
+	 * Note: Doors onmodded ships may connect spacially disperate rooms.
+	 */
+	public List<Integer> getAdjacentRoomIds( int roomId ) {
+		List<Integer> result = new ArrayList<Integer>();
+
+		for ( ShipLayoutDoor layoutDoor : doorMap.values() ) {
+			if ( layoutDoor.roomIdA == roomId && layoutDoor.roomIdB != -1 ) {
+				result.add( layoutDoor.roomIdB );
+			}
+			else if ( layoutDoor.roomIdB == roomId && layoutDoor.roomIdA != -1 ) {
+				result.add( layoutDoor.roomIdA );
+			}
+		}
+
+		return result;
 	}
 }
