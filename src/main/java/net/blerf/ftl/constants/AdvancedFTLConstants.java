@@ -77,38 +77,38 @@ public class AdvancedFTLConstants implements FTLConstants {
 
 
 	@Override
-	public int getMasteryIntervalPilot( String race ) {
-		if ( CrewType.HUMAN.getId().equals( race ) ) return 13;
+	public int getMasteryIntervalPilot( CrewType race ) {
+		if ( CrewType.HUMAN.equals( race ) ) return 13;
 		return 15;
 	}
 
 	@Override
-	public int getMasteryIntervalEngine( String race ) {
-		if ( CrewType.HUMAN.getId().equals( race ) ) return 13;
+	public int getMasteryIntervalEngine( CrewType race ) {
+		if ( CrewType.HUMAN.equals( race ) ) return 13;
 		return 15;
 	}
 
 	@Override
-	public int getMasteryIntervalShield( String race ) {
-		if ( CrewType.HUMAN.getId().equals( race ) ) return 50;
+	public int getMasteryIntervalShield( CrewType race ) {
+		if ( CrewType.HUMAN.equals( race ) ) return 50;
 		return 55;
 	}
 
 	@Override
-	public int getMasteryIntervalWeapon( String race ) {
-		if ( CrewType.HUMAN.getId().equals( race ) ) return 58;
+	public int getMasteryIntervalWeapon( CrewType race ) {
+		if ( CrewType.HUMAN.equals( race ) ) return 58;
 		return 65;
 	}
 
 	@Override
-	public int getMasteryIntervalRepair( String race ) {
-		if ( CrewType.HUMAN.getId().equals( race ) ) return 16;
+	public int getMasteryIntervalRepair( CrewType race ) {
+		if ( CrewType.HUMAN.equals( race ) ) return 16;
 		return 18;
 	}
 
 	@Override
-	public int getMasteryIntervalCombat( String race ) {
-		if ( CrewType.HUMAN.getId().equals( race ) ) return 7;
+	public int getMasteryIntervalCombat( CrewType race ) {
+		if ( CrewType.HUMAN.equals( race ) ) return 7;
 		return 8;
 	}
 

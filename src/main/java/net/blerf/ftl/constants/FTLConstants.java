@@ -30,12 +30,12 @@ public interface FTLConstants {
 
 	List<CrewType> getCrewTypes();
 
-	int getMasteryIntervalPilot( String race );
-	int getMasteryIntervalEngine( String race );
-	int getMasteryIntervalShield( String race );
-	int getMasteryIntervalWeapon( String race );
-	int getMasteryIntervalRepair( String race );
-	int getMasteryIntervalCombat( String race );
+	int getMasteryIntervalPilot( CrewType race );
+	int getMasteryIntervalEngine( CrewType race );
+	int getMasteryIntervalShield( CrewType race );
+	int getMasteryIntervalWeapon( CrewType race );
+	int getMasteryIntervalRepair( CrewType race );
+	int getMasteryIntervalCombat( CrewType race );
 
 
 	// System-related constants.

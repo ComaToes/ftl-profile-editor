@@ -895,21 +895,38 @@ public class SavedGameParser extends Parser {
 	}
 
 	private StartingCrewState readStartingCrewMember( InputStream in ) throws IOException {
-		String crewRace = readString( in );
-		String crewName = readString( in );
-		StartingCrewState startingCrew = new StartingCrewState( crewName, crewRace );
+		StartingCrewState startingCrew = new StartingCrewState();
+
+		String raceString = readString( in );
+		CrewType race = CrewType.findById( raceString );
+		if ( race != null ) {
+			startingCrew.setRace( race );
+		} else {
+			throw new IOException( "Unsupported starting crew race: "+ raceString );
+		}
+
+		startingCrew.setName( readString( in ) );
+
 		return startingCrew;
 	}
 
 	public void writeStartingCrewMember( OutputStream out, StartingCrewState startingCrew ) throws IOException {
-		writeString( out, startingCrew.getRace() );
+		writeString( out, startingCrew.getRace().getId() );
 		writeString( out, startingCrew.getName() );
 	}
 
 	private CrewState readCrewMember( InputStream in, int fileFormat ) throws IOException {
 		CrewState crew = new CrewState();
 		crew.setName( readString( in ) );
-		crew.setRace( readString( in ) );
+
+		String raceString = readString( in );
+		CrewType race = CrewType.findById( raceString );
+		if ( race != null ) {
+			crew.setRace( race );
+		} else {
+			throw new IOException( "Unsupported crew race: "+ raceString );
+		}
+
 		crew.setEnemyBoardingDrone( readBool( in ) );
 		crew.setHealth( readInt( in ) );
 		crew.setSpriteX( readInt( in ) );
@@ -989,7 +1006,7 @@ public class SavedGameParser extends Parser {
 
 	public void writeCrewMember( OutputStream out, CrewState crew, int fileFormat ) throws IOException {
 		writeString( out, crew.getName() );
-		writeString( out, crew.getRace() );
+		writeString( out, crew.getRace().getId() );
 		writeBool( out, crew.isEnemyBoardingDrone() );
 		writeInt( out, crew.getHealth() );
 		writeInt( out, crew.getSpriteX() );
@@ -1056,7 +1073,7 @@ public class SavedGameParser extends Parser {
 
 			writeBool( out, crew.getUnknownPhi() );
 
-			if ( "crystal".equals( crew.getRace() ) ) {
+			if ( CrewType.CRYSTAL.equals( crew.getRace() ) ) {
 				writeInt( out, crew.getLockdownRechargeTicks() );
 				writeInt( out, crew.getLockdownRechargeTicksGoal() );
 				writeInt( out, crew.getUnknownOmega() );
@@ -3590,26 +3607,25 @@ public class SavedGameParser extends Parser {
 
 
 	public static class StartingCrewState {
-		private String name, race;
 
-		public StartingCrewState( String name, String race ) {
-			this.name = name;
-			this.race = race;
+		private String name = "Frank";
+		private CrewType race = CrewType.HUMAN;
+
+
+		public StartingCrewState() {
 		}
 
-		public String getName() {
-			return name;
-		}
+		public void setName( String s ) { name = s; }
+		public String getName() { return name; }
 
-		public String getRace() {
-			return race;
-		}
+		public void setRace( CrewType race ) { this.race = race; }
+		public CrewType getRace() { return race; }
 
 		@Override
 		public String toString() {
 			StringBuilder result = new StringBuilder();
 			result.append( String.format( "Name: %s\n", name ) );
-			result.append( String.format( "Race: %s\n", race ) );
+			result.append( String.format( "Race: %s\n", race.getId() ) );
 			return result.toString();
 		}
 	}
@@ -3648,12 +3664,6 @@ public class SavedGameParser extends Parser {
 			}
 			return null;
 		}
-
-		public static int getMaxHealth( String id ) {
-			CrewType race = CrewType.findById( id );
-			if ( race != null ) return race.getMaxHealth();
-			throw new RuntimeException( "No max health known for crew race: "+ id );
-		}
 	}
 
 	/**
@@ -3661,12 +3671,13 @@ public class SavedGameParser extends Parser {
 	 *
 	 * Zoltan-produced power is not stored in SystemState.
 	 *
-	 * TODO: Disrupting Mind stuns and turns enemy crew against each other,
-	 * yet doesn't seem to modify CrewStates!?
+	 * TODO: Disrupting Mind system stuns and turns enemy crew against each
+	 * other, yet doesn't seem to modify CrewStates!?
 	 */
 	public static class CrewState {
+
 		private String name = "Frank";
-		private String race = CrewType.HUMAN.getId();
+		private CrewType race = CrewType.HUMAN;
 		private boolean enemyBoardingDrone = false;
 		private int health = 0;
 		private int spriteX = 0, spriteY = 0;
@@ -3826,8 +3837,8 @@ public class SavedGameParser extends Parser {
 		public void setName( String s ) { name = s; }
 		public String getName() { return name; }
 
-		public void setRace( String s ) { race = s; }
-		public String getRace() { return race; }
+		public void setRace( CrewType race ) { this.race = race; }
+		public CrewType getRace() { return race; }
 
 		/**
 		 * Sets whether this crew member is a hostile boarding drone.
@@ -3991,6 +4002,7 @@ public class SavedGameParser extends Parser {
 
 		/**
 		 * Toggles sex.
+		 *
 		 * Humans with this set to false have a female image. Other races
 		 * accept the flag but use the same image as male.
 		 *
@@ -4230,7 +4242,7 @@ public class SavedGameParser extends Parser {
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
 
-			CrewBlueprint crewBlueprint = DataManager.get().getCrew( race );
+			CrewBlueprint crewBlueprint = DataManager.get().getCrew( race.getId() );
 
 			List<CrewBlueprint.SpriteTintLayer> tintLayerList = null;
 			if ( crewBlueprint != null ) {
@@ -4238,7 +4250,7 @@ public class SavedGameParser extends Parser {
 			}
 
 			result.append( String.format( "Name:                   %s\n", name ) );
-			result.append( String.format( "Race:                   %s\n", race ) );
+			result.append( String.format( "Race:                   %s\n", race.getId() ) );
 			result.append( String.format( "Enemy Drone:            %5b\n", enemyBoardingDrone ) );
 			result.append( String.format( "Sex:                    %s\n", (male ? "Male" : "Female") ) );
 			result.append( String.format( "Health:                 %5d\n", health));
@@ -5271,12 +5283,6 @@ public class SavedGameParser extends Parser {
 				if ( d.getId().equals( id ) ) return d;
 			}
 			return null;
-		}
-
-		public static int getMaxHealth( String id ) {
-			DroneType d = DroneType.findById( id );
-			if ( d != null ) return d.getMaxHealth();
-			throw new IllegalArgumentException( "No max health known for drone type: "+ id );
 		}
 	}
 
@@ -8679,9 +8685,9 @@ public class SavedGameParser extends Parser {
 		 * target. The drone may spin or maneuver in transit, but it will
 		 * ultimately turn to face this point before firing.
 		 *
-		 * Combat/Repair drones set a new value after each shot. Defense drones
-		 * intermittently set it (e.g., directly at an opposing drone) and
-		 * unset it.
+		 * Combat/Ship_Repair drones set a new value after each shot. Defense
+		 * drones intermittently set it (e.g., directly at an opposing drone)
+		 * and unset it.
 		 *
 		 * When not set, this is MIN_INT.
 		 *
@@ -8765,7 +8771,7 @@ public class SavedGameParser extends Parser {
 		 *
 		 * When not set, this is 0.
 		 *
-		 * TODO: Check Hacking and Ship Repair drones.
+		 * TODO: Check Hacking and Ship_Repair drones.
 		 */
 		public void setCooldownTicks( int n ) { cooldownTicks = n; }
 		public int getCooldownTicks() { return cooldownTicks; }
@@ -9097,7 +9103,7 @@ public class SavedGameParser extends Parser {
 	}
 
 	/**
-	 * Extended Combat/Beam/Repair drone info.
+	 * Extended Combat/Beam/Ship_Repair drone info.
 	 *
 	 * These drones flit to a random (?) point, stop, then move to another,
 	 * and so on.

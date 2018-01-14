@@ -551,7 +551,8 @@ public class DefaultDataManager extends DataManager {
 					variantId = String.format( "%s_%d", baseId, 3 );
 					dlcPlayerShipIds.add( variantId );
 					variantList.add( dlcShipIdMap.get( variantId ) );
-				} else {
+				}
+				else {
 					variantList.add( null );
 				}
 			}
@@ -586,17 +587,21 @@ public class DefaultDataManager extends DataManager {
 			stdShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>();
 			for ( Map.Entry<String, ShipBlueprint> entry : stdPlayerShipIdMap.entrySet() ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
-				for ( Achievement ach : achievementIdMap.values() )
-					if ( entry.getKey().equals( ach.getShipId() ) )
-						shipAchs.add(ach);
+				for ( Achievement ach : achievementIdMap.values() ) {
+					if ( entry.getKey().equals( ach.getShipId() ) ) {
+						shipAchs.add( ach );
+					}
+				}
 				stdShipAchievementIdMap.put( entry.getValue(), shipAchs );
 			}
 			dlcShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>();
 			for ( Map.Entry<String, ShipBlueprint> entry : dlcPlayerShipIdMap.entrySet() ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
-				for ( Achievement ach : achievementIdMap.values() )
-					if ( entry.getKey().equals( ach.getShipId() ) )
-						shipAchs.add(ach);
+				for ( Achievement ach : achievementIdMap.values() ) {
+					if ( entry.getKey().equals( ach.getShipId() ) ) {
+						shipAchs.add( ach );
+					}
+				}
 				dlcShipAchievementIdMap.put( entry.getValue(), shipAchs );
 			}
 
@@ -607,15 +612,17 @@ public class DefaultDataManager extends DataManager {
 			crewNamesMale = new ArrayList<CrewNameList.CrewName>();
 			crewNamesFemale = new ArrayList<CrewNameList.CrewName>();
 			for ( CrewNameList crewNameList : crewNameLists ) {
-				if ( "male".equals( crewNameList.getSex() ) )
+				if ( "male".equals( crewNameList.getSex() ) ) {
 					crewNamesMale.addAll( crewNameList.getNames() );
-				else
+				} else {
 					crewNamesFemale.addAll( crewNameList.getNames() );
+				}
 			}
 
 			backgroundImageLists = new LinkedHashMap<String, BackgroundImageList>();
-			for ( BackgroundImageList imageList : imageLists )
+			for ( BackgroundImageList imageList : imageLists ) {
 				backgroundImageLists.put( imageList.getId(), imageList );
+			}
 
 			stdEvents = new LinkedHashMap<String, Encounters>( stdEventsFileNames.size() );
 			dlcEvents = new LinkedHashMap<String, Encounters>( dlcEventsFileNames.size() + stdEventsFileNames.size() );

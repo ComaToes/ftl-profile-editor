@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -201,8 +200,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
 	private Map<BufferedImage, Map<Tint, BufferedImage>> cachedTintedImages = new HashMap<BufferedImage, Map<Tint, BufferedImage>>();
-	private Map<String, BufferedImage> cachedPlayerBodyImages = new HashMap<String, BufferedImage>();
-	private Map<String, BufferedImage> cachedEnemyBodyImages = new HashMap<String, BufferedImage>();
 
 	private JLayeredPane shipPanel = null;
 	private StatusViewport shipViewport = null;
@@ -1547,7 +1544,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
 				Point center = squareSelector.getSquareCenter();
 				CrewState crewState = new CrewState();
-				crewState.setHealth( CrewType.getMaxHealth( crewState.getRace() ) );
+				crewState.setHealth( crewState.getRace().getMaxHealth() );
 				crewState.setPlayerControlled( true );
 				crewState.setRoomId( roomId );
 				crewState.setRoomSquare( squareId );
@@ -1680,88 +1677,141 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible( true );
 	}
 
-	private BufferedImage getBodyImage( String imgRace, boolean playerControlled ) {
-		int offsetX = 0, offsetY = 0, w = 35, h = 35;
-		String suffix = "";
-		String innerPath;
+	/**
+	 * Returns a default image of a drone body, possibly with a colored outline.
+	 *
+	 * @see #getCrewBodyImage( CrewType, boolean, boolean)
+	 */
+	public BufferedImage getDroneBodyImage( DroneType droneType, boolean playerControlled ) {
 		BufferedImage result = null;
+		String imgRace = "";
+		String originalSuffix = "";
 
-		if ( playerControlled ) {
-			result = cachedPlayerBodyImages.get( imgRace );
-		} else {
-			result = cachedEnemyBodyImages.get( imgRace );
+		// Drone bodies are unselectble in-game, hence no alternate color variants.
+
+		if ( DroneType.BATTLE.equals( droneType ) ) {  // Anti-personnel, always local to the ship.
+			imgRace = "battle";
+			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
 		}
-		if ( result != null ) return result;
-
-		// As of 1.01, drone images were "X_sheet" and "X_enemy_sheet".
-		// As of 1.01, crew images were "X_player_[green|yellow]" and "X_enemy_red".
-		// As of 1.03.1, drone images could also be "X_player[no color]" vs "X_enemy_red".
-		// As of 1.5.4, crew images were "X_base" overlaid on a tinted "X_color".
-		// As of 1.5.4, drone images were "X_base" with no color possibility.
-
-		if ( CrewType.BATTLE.getId().equals( imgRace ) ) {
-			suffix = "_sheet";
-
-			// All "battle" bodies on a ship are foreign, and unselectable in-game.
-			// Hence, no color?
-		}
-		else if ( DroneType.REPAIR.getId().equals( imgRace ) ) {
-			suffix = "_sheet";
-
-			// All "repair" bodies on a ship are local, and unselectable in-game.
-			// Hence, no color?
+		else if ( DroneType.REPAIR.equals( droneType ) ) {  // Always local to the ship.
+			imgRace = "repair";
+			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
 		}
 		else {
-			if ( playerControlled ) {
-				suffix = "_player_yellow";
-			} else {
-				suffix = "_enemy_red";
-			}
+			throw new IllegalArgumentException( "Requested a body for a DroneType that doesn't need one: "+ droneType.getId() );
 		}
 
-		innerPath = "img/people/"+ imgRace + suffix +".png";
-		if ( DataManager.get().hasResourceInputStream( innerPath ) ) {
-			// FTL 1.01-1.03.3
-			result = ImageUtilities.getCroppedImage( innerPath, offsetX, offsetY, w, h, cachedImages );
-		}
-		else {
+		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		String basePath = "img/people/"+ imgRace +"_base.png";
+		String originalPath = "img/people/"+ imgRace + originalSuffix +".png";
+
+		if ( DataManager.get().hasResourceInputStream( basePath ) ) {
 			// FTL 1.5.4+
-			BufferedImage colorImage = null;
-			BufferedImage baseImage = null;
+			result = ImageUtilities.getCroppedImage( basePath, offsetX, offsetY, w, h, cachedImages );
+		}
+		else if ( DataManager.get().hasResourceInputStream( originalPath ) ) {
+			// FTL 1.01-1.03.3
+			result = ImageUtilities.getCroppedImage( originalPath, offsetX, offsetY, w, h, cachedImages );
+		}
+		else {
+			log.error( String.format( "No body image found for drone: %s, %s", droneType.getId(), (playerControlled ? "playerControlled" : "NPC") ) );
 
-			String colorPath = "img/people/"+ imgRace +"_color.png";
+			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
+			Graphics2D g2d = result.createGraphics();
+			g2d.setColor( new Color( 150, 150, 200 ) );
+			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
+			g2d.dispose();
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns a default image of crew, with a friend-or-foe colored outline.
+	 *
+	 * Generally the image name is related to the raceId, with two exceptions.
+	 * Humans have a separate female image. Ghost crew have human images (with
+	 * programmatically reduced opacity).
+	 *
+	 * Image names have varied:
+	 *   FTL 1.01: Drones had "X_sheet" / "X_enemy_sheet".
+	 *   FTL 1.01: Crew had "X_player_[green|yellow]" / "X_enemy_red".
+	 *   FTL 1.03.1: Drones could also be "X_player[no color]" / "X_enemy_red".
+	 *   FTL 1.5.4: Crew had "X_base" overlaid on a tinted mask "X_color".
+	 *   FTL 1.5.4: Drone had "X_base" with no color possibility.
+	 */
+	public BufferedImage getCrewBodyImage( CrewType crewType, boolean male, boolean playerControlled ) {
+		BufferedImage result = null;
+		String imgRace = "";
+		String originalSuffix = "";
+
+		if ( CrewType.HUMAN.equals( crewType ) ) {
+			imgRace = (( male ) ? CrewType.HUMAN.getId() : "female");
+
+			originalSuffix = (( playerControlled ) ? "_player_yellow" : "_enemy_red");
+		}
+		else if ( CrewType.GHOST.equals( crewType ) ) {
+			imgRace = (( male ) ? CrewType.HUMAN.getId() : "female");
+
+			originalSuffix = (( playerControlled ) ? "_player_yellow" : "_enemy_red");
+		}
+		else if ( CrewType.BATTLE.equals( crewType ) ) {  // Boarder, always foreign to the ship.
+			imgRace = "battle";
+			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
+		}
+		else {
+			imgRace = crewType.getId();
+			originalSuffix = (( playerControlled ) ? "_player_yellow" : "_enemy_red");
+		}
+
+		int offsetX = 0, offsetY = 0, w = 35, h = 35;
+		String basePath = "img/people/"+ imgRace +"_base.png";
+		String colorPath = "img/people/"+ imgRace +"_color.png";
+		String originalPath = "img/people/"+ imgRace + originalSuffix +".png";
+
+		if ( DataManager.get().hasResourceInputStream( basePath ) ) {
+			// FTL 1.5.4+
+			BufferedImage baseImage = ImageUtilities.getCroppedImage( basePath, offsetX, offsetY, w, h, cachedImages );
+
+			// Ghosts have reduced opacity.
+			if ( CrewType.GHOST.equals( crewType ) ) {
+				// Not an exact color match, but close enough.
+				Tint ghostTint = new Tint( new float[] { 1f, 1f, 1f, 0.6f }, new float[] { 0, 0, 0, 0 } );
+
+				// TODO: This may need to be moved when crew tint layers are
+				// implemented.
+				ImageUtilities.getTintedImage( baseImage, ghostTint, cachedTintedImages );
+			}
+
 			if ( DataManager.get().hasResourceInputStream( colorPath ) ) {
-				colorImage = ImageUtilities.getCroppedImage( colorPath, offsetX, offsetY, w, h, cachedImages );
+				BufferedImage colorImage = ImageUtilities.getCroppedImage( colorPath, offsetX, offsetY, w, h, cachedImages );
 				float[] yellow = new float[] { 0.957f, 0.859f, 0.184f, 1f };
 				float[] red = new float[] { 1.0f, 0.286f, 0.145f, 1f };
 				Tint colorTint = new Tint( (playerControlled ? yellow: red), new float[] { 0, 0, 0, 0 } );
 				colorImage = ImageUtilities.getTintedImage( colorImage, colorTint, cachedTintedImages );
-			}
 
-			String basePath = "img/people/"+ imgRace +"_base.png";
-			if ( DataManager.get().hasResourceInputStream( basePath ) ) {
-				baseImage = ImageUtilities.getCroppedImage( basePath, offsetX, offsetY, w, h, cachedImages );
-			}
-
-			if ( colorImage != null && baseImage != null ) {
 				result = gc.createCompatibleImage( w, h, Transparency.TRANSLUCENT );
 				Graphics2D g2d = result.createGraphics();
 				g2d.drawImage( colorImage, 0, 0, null );
 				g2d.drawImage( baseImage, 0, 0, null );
 				g2d.dispose();
 			}
-			else if ( baseImage != null ) {
-				// No colorImage to tint and outline the sprite, probably a drone.
-				result = baseImage;
+			else {
+				result = baseImage;  // No colorImage to tint & outline the sprite, probably a drone.
 			}
 		}
+		else if ( DataManager.get().hasResourceInputStream( originalPath ) ) {
+			// FTL 1.01-1.03.3
+			result = ImageUtilities.getCroppedImage( originalPath, offsetX, offsetY, w, h, cachedImages );
+		}
+		else {
+			log.error( String.format( "No body image found for crew: %s, %s, %s", crewType.getId(), (male ? "male" : "female"), (playerControlled ? "playerControlled" : "NPC") ) );
 
-		if ( result != null ) {
-			if ( playerControlled ) {
-				cachedPlayerBodyImages.put( imgRace, result );
-			} else {
-				cachedEnemyBodyImages.put( imgRace, result );
-			}
+			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
+			Graphics2D g2d = result.createGraphics();
+			g2d.setColor( new Color( 150, 150, 200 ) );
+			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
+			g2d.dispose();
 		}
 
 		return result;
@@ -2164,7 +2214,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		if ( roomRect != null ) {
 			for ( SpriteReference<CrewState> crewRef : crewRefs ) {
-				if ( CrewType.ENERGY.getId().equals( crewRef.get().getRace() ) ) {
+				if ( CrewType.ENERGY.equals( crewRef.get().getRace() ) ) {
 					if ( crewRef.get().isPlayerControlled() == shipPlayerControlled ) {
 						CrewSprite crewSprite = crewRef.getSprite( CrewSprite.class );
 						int centerX = crewSprite.getX() + crewSprite.getWidth()/2;
@@ -2508,13 +2558,18 @@ public class SavedGameFloorplanPanel extends JPanel {
 			DroneBlueprint selectedBlueprint = allDronesMap.get( droneRef.get().getDroneId() );
 			boolean armable = (availablePower >= selectedBlueprint.getPower());
 
+			DroneType selectedType = DroneType.findById( selectedBlueprint.getType() );
+			if ( selectedType == null ) {
+				throw new IllegalArgumentException( "Selected blueprint has an unsupported DroneType: "+ selectedBlueprint.getType() );
+			}
+
 			editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower - (armable && droneRef.get().isArmed() ? selectedBlueprint.getPower() : 0) );
 			editorPanel.getCombo( ID ).setSelectedItem( selectedBlueprint );
 			editorPanel.getWrappedLabel( DESC ).setText( selectedBlueprint.getDescription().getTextValue() );
 			editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
 			editorPanel.getBoolean( ARMED ).setEnabled( armable );
 			editorPanel.getBoolean( PLAYER_CONTROLLED ).setSelected( droneRef.get().isPlayerControlled() );
-			editorPanel.getSlider( HEALTH ).setMaximum( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
+			editorPanel.getSlider( HEALTH ).setMaximum( selectedType.getMaxHealth() );
 			editorPanel.getSlider( HEALTH ).setValue( droneRef.get().getHealth() );
 
 			if ( armable && droneRef.get().isArmed() ) {
@@ -2630,10 +2685,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 						DroneBlueprint selectedBlueprint = (DroneBlueprint)blueprintObj;
 						boolean armable = (availablePower >= selectedBlueprint.getPower());
 
+						DroneType selectedType = DroneType.findById( selectedBlueprint.getType() );
+						if ( selectedType == null ) {
+							throw new IllegalArgumentException( "Selected blueprint has an unsupported DroneType: "+ selectedBlueprint.getType() );
+						}
+
 						editorPanel.getWrappedLabel( DESC ).setText( ""+selectedBlueprint.getDescription() );
 						editorPanel.getLabel( POWER_REQ ).setText( ""+selectedBlueprint.getPower() );
-						healthSlider.setMaximum( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
-						healthSlider.setValue( DroneType.getMaxHealth( selectedBlueprint.getType() ) );
+						healthSlider.setMaximum( selectedType.getMaxHealth() );
+						healthSlider.setValue( selectedType.getMaxHealth() );
 
 						if ( armable ) {
 							armedCheck.setEnabled( true );
@@ -3634,12 +3694,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 				if ( source == raceCombo ) {
 					CrewType crewType = (CrewType)raceCombo.getSelectedItem();
 
-					int pilotInterval = ftlConstants.getMasteryIntervalPilot( crewType.getId() );
-					int engineInterval = ftlConstants.getMasteryIntervalEngine( crewType.getId() );
-					int shieldInterval = ftlConstants.getMasteryIntervalShield( crewType.getId() );
-					int weaponInterval = ftlConstants.getMasteryIntervalWeapon( crewType.getId() );
-					int repairInterval = ftlConstants.getMasteryIntervalRepair( crewType.getId() );
-					int combatInterval = ftlConstants.getMasteryIntervalCombat( crewType.getId() );
+					int pilotInterval = ftlConstants.getMasteryIntervalPilot( crewType );
+					int engineInterval = ftlConstants.getMasteryIntervalEngine( crewType );
+					int shieldInterval = ftlConstants.getMasteryIntervalShield( crewType );
+					int weaponInterval = ftlConstants.getMasteryIntervalWeapon( crewType );
+					int repairInterval = ftlConstants.getMasteryIntervalRepair( crewType );
+					int combatInterval = ftlConstants.getMasteryIntervalCombat( crewType );
 
 					healthField.setText( ""+crewType.getMaxHealth() );
 
@@ -3657,7 +3717,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		for ( CrewType crewType : ftlConstants.getCrewTypes() ) {
 			editorPanel.getCombo( RACE ).addItem( crewType );
 		}
-		editorPanel.getCombo( RACE ).setSelectedItem( CrewType.findById( crewRef.get().getRace() ) );
+		editorPanel.getCombo( RACE ).setSelectedItem( crewRef.get().getRace() );
 
 		SwingUtilities.invokeLater(new Runnable() {  // Set health after the race combo listener triggers.
 			@Override
@@ -3715,10 +3775,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				String prevRace = crewRef.get().getRace();
+				CrewType prevRace = crewRef.get().getRace();
 
 				crewRef.get().setName( editorPanel.getString( NAME ).getText() );
-				crewRef.get().setRace( ((CrewType)editorPanel.getCombo( RACE ).getSelectedItem()).getId() );
+				crewRef.get().setRace( (CrewType)editorPanel.getCombo( RACE ).getSelectedItem() );
 
 				try { crewRef.get().setHealth( editorPanel.parseInt( HEALTH ) ); }
 				catch ( NumberFormatException e ) {}
@@ -3799,14 +3859,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 				catch ( NumberFormatException e ) {}
 
 				// FTL would do the following as it loaded.
-				if ( crewRef.get().isEnemyBoardingDrone() && !CrewType.BATTLE.getId().equals( crewRef.get().getRace() ) ) {
-					crewRef.get().setRace( CrewType.BATTLE.getId() );
+				if ( crewRef.get().isEnemyBoardingDrone() && !CrewType.BATTLE.equals( crewRef.get().getRace() ) ) {
+					crewRef.get().setRace( CrewType.BATTLE );
 				}
 				if ( crewRef.get().isEnemyBoardingDrone() && !crewRef.get().getName().equals( "Anti-Personnel Drone" ) ) {
 					crewRef.get().setName( "Anti-Personnel Drone" );
 				}
-				if ( CrewType.BATTLE.getId().equals( crewRef.get().getRace() ) && !crewRef.get().isEnemyBoardingDrone() ) {
-					crewRef.get().setRace( CrewType.HUMAN.getId() );
+				if ( !crewRef.get().isEnemyBoardingDrone() && CrewType.BATTLE.equals( crewRef.get().getRace() ) ) {
+					crewRef.get().setRace( CrewType.HUMAN );
 				}
 
 				crewRef.fireReferenceChange();
@@ -3939,19 +3999,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		@Override
 		public void referenceChanged() {
 			BufferedImage newBodyImage = null;
-			String imgRace = null;
 			boolean needsBody = false;
 			int bodyX = -1, bodyY = -1;
 
 			if ( droneRef.get() != null ) {
 				DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
+				DroneType droneType = DroneType.findById( droneBlueprint.getType() );
 
-				if ( DroneType.BATTLE.getId().equals( droneBlueprint.getType() ) ) {
-					imgRace = "battle";
+				if ( DroneType.BATTLE.equals( droneType ) ) {
 					needsBody = true;
 				}
-				else if ( DroneType.REPAIR.getId().equals( droneBlueprint.getType() ) ) {
-					imgRace = "repair";
+				else if ( DroneType.REPAIR.equals( droneType ) ) {
 					needsBody = true;
 				}
 				else {
@@ -4015,14 +4073,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 					log.warn( "Failed to place an armed drone's body in a room: "+ droneRef.get().getDroneId() );
 				}
 
-				if ( needsBody && imgRace != null ) {
-					newBodyImage = getBodyImage( imgRace, droneRef.get().isPlayerControlled() );
+				if ( needsBody ) {
+					newBodyImage = getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
 				}
 			}
 
 			if ( newBodyImage != bodyImage ) {
-				int newW = newBodyImage != null ? newBodyImage.getWidth() : 0;
-				int newH = newBodyImage != null ? newBodyImage.getHeight() : 0;
+				int newW = newBodyImage.getWidth();
+				int newH = newBodyImage.getHeight();
 
 				this.setPreferredSize( new Dimension( newW, newH ) );
 
@@ -4420,7 +4478,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	public class CrewSprite extends JComponent implements ReferenceSprite<CrewState> {
 		private int w=35, h=35;
-		private Tint ghostTint;
 		private BufferedImage crewImage;
 
 		private SpriteReference<CrewState> crewRef;
@@ -4428,9 +4485,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		public CrewSprite( SpriteReference<CrewState> crewRef ) {
 			this.crewRef = crewRef;
-
-			// Not an exact color match, but close enough.
-			ghostTint = new Tint( new float[] { 1f, 1f, 1f, 0.6f }, new float[] { 0, 0, 0, 0 } );
 
 			this.setPreferredSize( new Dimension( w, h ) );
 			this.setOpaque( false );
@@ -4446,30 +4500,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public void referenceChanged() {
-			String imgRace = crewRef.get().getRace();
-			Tint tint = null;
-
-			if ( CrewType.HUMAN.getId().equals( crewRef.get().getRace() ) ) {
-				// Human females have a distinct sprite (Other races look the same either way).
-				if ( !crewRef.get().isMale() ) {
-					imgRace = "female";  // Not an actual race.
-				}
-			}
-			else if ( CrewType.GHOST.getId().equals( crewRef.get().getRace() ) ) {
-				// Ghosts look like translucent humans.
-				if ( crewRef.get().isMale() ) {
-					imgRace = "human";
-				} else {
-					imgRace = "female";
-				}
-
-				tint = ghostTint;
-			}
-
-			crewImage = getBodyImage( imgRace, crewRef.get().isPlayerControlled() );
-			if ( tint != null ) {
-				crewImage = ImageUtilities.getTintedImage( crewImage, tint, cachedTintedImages );
-			}
+			crewImage = getCrewBodyImage( crewRef.get().getRace(), crewRef.get().isMale(), crewRef.get().isPlayerControlled() );
 
 			this.repaint();
 		}
@@ -4484,7 +4515,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		@Override
 		public String toString() {
-			return String.format("%s (%s, %d HP)", crewRef.get().getName(), crewRef.get().getRace(), crewRef.get().getHealth());
+			return String.format( "%s (%s, %d HP)", crewRef.get().getName(), crewRef.get().getRace().getId(), crewRef.get().getHealth() );
 		}
 	}
 

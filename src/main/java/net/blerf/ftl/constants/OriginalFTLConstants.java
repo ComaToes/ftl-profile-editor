@@ -69,22 +69,22 @@ public class OriginalFTLConstants implements FTLConstants {
 
 
 	@Override
-	public int getMasteryIntervalPilot( String race ) { return 15; }
+	public int getMasteryIntervalPilot( CrewType race ) { return 15; }
 
 	@Override
-	public int getMasteryIntervalEngine( String race ) { return 15; }
+	public int getMasteryIntervalEngine( CrewType race ) { return 15; }
 
 	@Override
-	public int getMasteryIntervalShield( String race ) { return 55; }
+	public int getMasteryIntervalShield( CrewType race ) { return 55; }
 
 	@Override
-	public int getMasteryIntervalWeapon( String race ) { return 65; }
+	public int getMasteryIntervalWeapon( CrewType race ) { return 65; }
 
 	@Override
-	public int getMasteryIntervalRepair( String race ) { return 18; }
+	public int getMasteryIntervalRepair( CrewType race ) { return 18; }
 
 	@Override
-	public int getMasteryIntervalCombat( String race ) { return 8; }
+	public int getMasteryIntervalCombat( CrewType race ) { return 8; }
 
 
 	/**
