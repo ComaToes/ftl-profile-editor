@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 import net.blerf.ftl.parser.SavedGameParser.CrewType;
 import net.blerf.ftl.parser.SavedGameParser.DroneType;
 import net.blerf.ftl.parser.SavedGameParser.SystemType;
+import net.blerf.ftl.ui.floorplan.AnimAtlas;
 import net.blerf.ftl.ui.floorplan.DoorAtlas;
 
 
@@ -18,7 +19,7 @@ public interface SpriteImageProvider {
 
 	BufferedImage getSystemRoomImage( SystemType systemType );
 
-	BufferedImage getBreachImage();
+	AnimAtlas getBreachAtlas();
 
-	BufferedImage getFireImage();
+	AnimAtlas getFireAtlas();
 }
