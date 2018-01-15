@@ -11,6 +11,8 @@ import java.util.Map;
 
 import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
+import net.blerf.ftl.xml.Anim;
+import net.blerf.ftl.xml.AnimSheet;
 import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.BackgroundImageList;
 import net.blerf.ftl.xml.Blueprints;
@@ -345,6 +347,18 @@ public abstract class DataManager implements Closeable {
 	}
 
 	public Map<String, BackgroundImageList> getBackgroundImageLists() {
+		throw new UnsupportedOperationException();
+	}
+
+	public List<Anim> getAnimsBySheetId( String id ) {
+		throw new UnsupportedOperationException();
+	}
+
+	public Anim getAnim( String id ) {
+		throw new UnsupportedOperationException();
+	}
+
+	public AnimSheet getAnimSheet( String id ) {
 		throw new UnsupportedOperationException();
 	}
 }

@@ -28,6 +28,9 @@ import net.vhati.ftldat.PkgPack;
 import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.parser.DatParser;
 import net.blerf.ftl.xml.Achievement;
+import net.blerf.ftl.xml.Anim;
+import net.blerf.ftl.xml.Animations;
+import net.blerf.ftl.xml.AnimSheet;
 import net.blerf.ftl.xml.AugBlueprint;
 import net.blerf.ftl.xml.BackgroundImageList;
 import net.blerf.ftl.xml.Blueprints;
@@ -68,6 +71,7 @@ public class DefaultDataManager extends DataManager {
 	private Map<String, String> textLookupMap;
 
 	private Map<String, BackgroundImageList> backgroundImageLists;
+	private Animations animations;
 
 	private Map<String, Blueprints> allBlueprints;
 	private Map<String, Blueprints> stdBlueprints;
@@ -305,6 +309,12 @@ public class DefaultDataManager extends DataManager {
 			InputStream imageListsStream = getResourceInputStream( "data/events_imageList.xml" );
 			streams.add( imageListsStream );
 			List<BackgroundImageList> imageLists = datParser.readImageLists( imageListsStream, "events_imageList.xml" );
+
+			log.info( "Reading Animations..." );
+			log.debug( "Reading \"data/animations.xml\"..." );
+			InputStream animationsStream = getResourceInputStream( "data/animations.xml" );
+			streams.add( animationsStream );
+			animations = datParser.readAnimations( animationsStream, "animations.xml" );
 
 			log.info( "Finished reading FTL resources." );
 
@@ -1208,5 +1218,41 @@ public class DefaultDataManager extends DataManager {
 	@Override
 	public Map<String, BackgroundImageList> getBackgroundImageLists() {
 		return backgroundImageLists;
+	}
+
+	/**
+	 * Returns all Anims that appear in a given AnimSheet.
+	 */
+	@Override
+	public List<Anim> getAnimsBySheetId( String id ) {
+		List<Anim> results = animations.getAnimsBySheetId( id );
+		if ( results == null ) {
+			log.error( "No Anims found for sheetId: "+ id );
+		}
+		return results;
+	}
+
+	/**
+	 * Returns an Anim with a given id.
+	 */
+	@Override
+	public Anim getAnim( String id ) {
+		Anim result = animations.getAnimById( id );
+		if ( result == null ) {
+			log.error( "No Anim found for id: "+ id );
+		}
+		return result;
+	}
+
+	/**
+	 * Returns an AnimSheet with a given id.
+	 */
+	@Override
+	public AnimSheet getAnimSheet( String id ) {
+		AnimSheet result = animations.getSheetById( id );
+		if ( result == null ) {
+			log.error( "No AnimSheet found for id: "+ id );
+		}
+		return result;
 	}
 }

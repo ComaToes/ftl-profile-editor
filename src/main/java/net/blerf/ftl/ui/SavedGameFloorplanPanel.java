@@ -101,7 +101,10 @@ import net.blerf.ftl.ui.ReferenceSprite;
 import net.blerf.ftl.ui.RegexDocument;
 import net.blerf.ftl.ui.SpriteReference;
 import net.blerf.ftl.ui.StatusbarMouseListener;
+import net.blerf.ftl.ui.floorplan.AnimAtlas;
 import net.blerf.ftl.ui.floorplan.BreachSprite;
+import net.blerf.ftl.ui.floorplan.DefaultSpriteImageProvider;
+import net.blerf.ftl.ui.floorplan.DoorAtlas;
 import net.blerf.ftl.ui.floorplan.DoorSprite;
 import net.blerf.ftl.ui.floorplan.DroneBoxSprite;
 import net.blerf.ftl.ui.floorplan.FireSprite;
@@ -198,6 +201,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private List<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
 	private List<CrewSprite> crewSprites = new ArrayList<CrewSprite>();
 
+	private DefaultSpriteImageProvider spriteImageProvider = new DefaultSpriteImageProvider();
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
 	private Map<BufferedImage, Map<Tint, BufferedImage>> cachedTintedImages = new HashMap<BufferedImage, Map<Tint, BufferedImage>>();
 
@@ -1844,23 +1848,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void addDoorSprite( int centerX, int centerY, int level, DoorCoordinate doorCoord, SpriteReference<DoorState> doorRef ) {
-		int w = 35, h = 35;
-		int chop = 10;       // Chop 10 pixels off the sides for skinny doors.
-		int levelCount = 5;  // FTL 1.01-1.03.3 only had 3 Doors system levels. FTL 1.5.4+ had 5.
+		DoorAtlas doorAtlas = spriteImageProvider.getDoorAtlas();
 
-		// Don't scale the image, but pass negative size to define the fallback dummy image.
-		BufferedImage bigImage = ImageUtilities.getScaledImage( "img/effects/door_sheet.png", -1*(5*w), -1*(levelCount*h), cachedImages );
-
-		Map<Integer, BufferedImage> closedImages = new TreeMap<Integer, BufferedImage>();
-		Map<Integer, BufferedImage>  openImages = new TreeMap<Integer, BufferedImage>();
-		// If the image doesn't have enough rows for all levels, let the rest be null.
-
-		for ( int i=0; i < levelCount && (i+1)*h <= bigImage.getHeight(); i++ ) {
-			closedImages.put( i, bigImage.getSubimage( chop, i*h, w-chop*2, h ) );
-			openImages.put( i, bigImage.getSubimage( 4*w+chop, i*h, w-chop*2, h ) );
-		}
-
-		DoorSprite doorSprite = new DoorSprite( doorRef, closedImages, openImages, level, doorCoord );
+		DoorSprite doorSprite = new DoorSprite( doorRef, doorAtlas, level, doorCoord );
 		doorSprite.setSize( doorSprite.getPreferredSize() );
 		doorSprite.setLocation( centerX - doorSprite.getPreferredSize().width/2, centerY - doorSprite.getPreferredSize().height/2 );
 		doorSprites.add( doorSprite );
@@ -1868,10 +1858,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void addSystemRoomSprite( int centerX, int centerY, SpriteReference<SystemState> systemRef ) {
-		int w = 32, h = 32;
 
-		String overlayPath = "img/icons/s_"+ systemRef.get().getSystemType().getId() +"_overlay.png";
-		BufferedImage overlayImage = ImageUtilities.getScaledImage( overlayPath, w, h, cachedImages );
+		BufferedImage overlayImage = spriteImageProvider.getSystemRoomImage( systemRef.get().getSystemType() );
 
 		SystemRoomSprite systemRoomSprite = new SystemRoomSprite( systemRef, overlayImage );
 		systemRoomSprite.setSize( systemRoomSprite.getPreferredSize() );
@@ -1881,23 +1869,21 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void addBreachSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
-		int offsetX = 0, offsetY = 0, w = 19, h = 19;
+		AnimAtlas breachAtlas = spriteImageProvider.getBreachAtlas();
 
-		BufferedImage breachImage = ImageUtilities.getCroppedImage( "img/effects/breach.png", offsetX+6*w, offsetY, w, h, cachedImages );
-
-		BreachSprite breachSprite = new BreachSprite( breachImage, roomId, squareId, health );
-		breachSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
+		BreachSprite breachSprite = new BreachSprite( breachAtlas, roomId, squareId, health );
+		breachSprite.setSize( breachSprite.getPreferredSize() );
+		breachSprite.setLocation( centerX - breachSprite.getPreferredSize().width/2, centerY - breachSprite.getPreferredSize().height/2 );
 		breachSprites.add( breachSprite );
 		shipPanel.add( breachSprite, BREACH_LAYER );
 	}
 
 	private void addFireSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
-		int offsetX = 0, offsetY = 0, w = 32, h = 32;
+		AnimAtlas fireAtlas = spriteImageProvider.getFireAtlas();
 
-		BufferedImage fireImage = ImageUtilities.getCroppedImage( "img/effects/fire_L1_strip8.png", offsetX, offsetY, w, h, cachedImages );
-
-		FireSprite fireSprite = new FireSprite( fireImage, roomId, squareId, health );
-		fireSprite.setBounds( centerX-w/2, centerY-h/2, w, h );
+		FireSprite fireSprite = new FireSprite( fireAtlas, roomId, squareId, health );
+		fireSprite.setSize( fireSprite.getPreferredSize() );
+		fireSprite.setLocation( centerX - fireSprite.getPreferredSize().width/2, centerY - fireSprite.getPreferredSize().height/2 );
 		fireSprites.add( fireSprite );
 		shipPanel.add( fireSprite, FIRE_LAYER );
 	}

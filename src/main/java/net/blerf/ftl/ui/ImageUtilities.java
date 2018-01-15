@@ -224,7 +224,7 @@ public class ImageUtilities {
 		InputStream in = null;
 		try {
 			in = DataManager.get().getResourceInputStream( innerPath );
-			BufferedImage origImage = ImageIO.read(in);
+			BufferedImage origImage = ImageIO.read( in );
 
 			if ( w <= 0 || h <= 0 || (origImage.getWidth() == w && origImage.getHeight() == h) ) {
 				result = origImage;
