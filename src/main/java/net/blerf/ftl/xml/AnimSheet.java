@@ -25,11 +25,12 @@ public class AnimSheet {
 	@XmlAttribute(name = "fw")
 	private int frameWidth;
 
-	@XmlAttribute(name = "fw")
+	@XmlAttribute(name = "fh")
 	private int frameHeight;
 
 	@XmlValue
-	private String innerPath;
+	private String innerPath;  // Relative to "img/" (the top-level dir is omitted).
+
 
 	public void setId( String id ) {
 		this.id = id;

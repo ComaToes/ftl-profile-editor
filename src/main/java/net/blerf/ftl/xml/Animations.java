@@ -1,5 +1,6 @@
 package net.blerf.ftl.xml;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -64,6 +65,20 @@ public class Animations {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Returns all Anims that appear in a given AnimSheet.
+	 */
+	public List<Anim> getAnimsBySheetId( String id ) {
+		if ( id == null || anims == null ) return null;
+
+		List<Anim> results = new ArrayList<Anim>();
+		for ( Anim tmpAnim : anims ) {
+			if ( id.equals( tmpAnim.getSheetId() ) ) results.add( tmpAnim );
+		}
+
+		return results;
 	}
 
 	/**

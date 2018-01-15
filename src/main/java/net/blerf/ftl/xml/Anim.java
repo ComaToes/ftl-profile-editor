@@ -25,6 +25,7 @@ public class Anim {
 
 	private float time;
 
+
 	public void setId( String id ) {
 		this.id = id;
 	}
@@ -45,7 +46,7 @@ public class Anim {
 		this.spec = spec;
 	}
 
-	public AnimSpec getSpec() {
+	public AnimSpec getAnimSpec() {
 		return spec;
 	}
 

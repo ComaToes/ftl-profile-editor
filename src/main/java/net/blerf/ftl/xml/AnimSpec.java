@@ -8,26 +8,32 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 
 /**
- * A simple (length,x,y) object for animations.
+ * A description of an Anim's location within an AnimSheet.
+ *
+ * An anim appears in an AnimSheet starting at a certain row/column. Columns
+ * are 0-based, left-to-right. Rows are 0-based, bottom-to-top.
+ *
+ * TODO: Determine whether Anim frames can wrap around the sheet onto the next
+ * row.
  *
  * @see net.blerf.ftl.xml.Anim
  * @see net.blerf.ftl.xml.WeaponAnim
  */
-@XmlRootElement(name = "desc")
+@XmlRootElement( name = "desc" )
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AnimSpec {
 
-	@XmlAttribute(name = "length")
+	@XmlAttribute( name = "length" )
 	public int frameCount;
 
-	@XmlAttribute
-	public int x;
+	@XmlAttribute( name = "x" )
+	public int row;
 
-	@XmlAttribute
-	public int y;
+	@XmlAttribute( name = "y" )
+	public int column;
 
 	@Override
 	public String toString() {
-		return String.format( "frames:%s, x:%d, y:%d", frameCount, x, y );
+		return String.format( "frames:%s, row:%d, col:%d", frameCount, row, column );
 	}
 }
