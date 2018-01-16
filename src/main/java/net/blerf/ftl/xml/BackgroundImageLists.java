@@ -12,17 +12,19 @@ import javax.xml.bind.annotation.XmlRootElement;
 import net.blerf.ftl.xml.BackgroundImageList;
 
 
-@XmlRootElement(name = "imageLists")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement( name = "imageLists" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class BackgroundImageLists {
-	@XmlElement(name = "imageList")
-	private List<BackgroundImageList> imageLists;
 
-	public List<BackgroundImageList> getImageLists() {
-		return imageLists;
-	}
+	@XmlElement( name = "imageList", required = false )
+	private List<BackgroundImageList> imageLists = new ArrayList<BackgroundImageList>();
+
 
 	public void setImageLists( List<BackgroundImageList> imageLists ) {
 		this.imageLists = imageLists;
+	}
+
+	public List<BackgroundImageList> getImageLists() {
+		return imageLists;
 	}
 }

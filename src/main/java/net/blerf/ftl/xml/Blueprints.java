@@ -1,64 +1,93 @@
 package net.blerf.ftl.xml;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name = "blueprints")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement( name = "blueprints" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class Blueprints {
 
-	private List<BlueprintList> blueprintList;
-	private List<CrewBlueprint> crewBlueprint;
-	private List<SystemBlueprint> systemBlueprint;
-	private List<WeaponBlueprint> weaponBlueprint;
-	private List<DroneBlueprint> droneBlueprint;
-	private List<AugBlueprint> augBlueprint;
-	private List<ShipBlueprint> shipBlueprint;
+	@XmlElement( name = "blueprintList", required = false )
+	private List<BlueprintList> blueprintLists = new ArrayList<BlueprintList>();
 
-	public List<BlueprintList> getBlueprintList() {
-		return blueprintList;
+	@XmlElement( name = "crewBlueprint", required = false )
+	private List<CrewBlueprint> crewBlueprints = new ArrayList<CrewBlueprint>();
+
+	@XmlElement( name = "systemBlueprint", required = false )
+	private List<SystemBlueprint> systemBlueprints = new ArrayList<SystemBlueprint>();
+
+	@XmlElement( name = "weaponBlueprint", required = false )
+	private List<WeaponBlueprint> weaponBlueprints = new ArrayList<WeaponBlueprint>();
+
+	@XmlElement( name = "droneBlueprint", required = false )
+	private List<DroneBlueprint> droneBlueprints = new ArrayList<DroneBlueprint>();
+
+	@XmlElement( name = "augBlueprint", required = false )
+	private List<AugBlueprint> augBlueprints = new ArrayList<AugBlueprint>();
+
+	@XmlElement( name = "shipBlueprint", required = false )
+	private List<ShipBlueprint> shipBlueprints = new ArrayList<ShipBlueprint>();
+
+
+	public void setBlueprintLists( List<BlueprintList> blueprintLists ) {
+		this.blueprintLists = blueprintLists;
 	}
-	public void setBlueprintList(List<BlueprintList> blueprintList) {
-		this.blueprintList = blueprintList;
+
+	public List<BlueprintList> getBlueprintLists() {
+		return blueprintLists;
 	}
-	public List<CrewBlueprint> getCrewBlueprint() {
-		return crewBlueprint;
+
+	public void setCrewBlueprints( List<CrewBlueprint> crewBlueprints ) {
+		this.crewBlueprints = crewBlueprints;
 	}
-	public void setCrewBlueprint(List<CrewBlueprint> crewBlueprint) {
-		this.crewBlueprint = crewBlueprint;
+
+	public List<CrewBlueprint> getCrewBlueprints() {
+		return crewBlueprints;
 	}
-	public List<SystemBlueprint> getSystemBlueprint() {
-		return systemBlueprint;
+
+	public void setSystemBlueprints( List<SystemBlueprint> systemBlueprints ) {
+		this.systemBlueprints = systemBlueprints;
 	}
-	public void setSystemBlueprint(List<SystemBlueprint> systemBlueprint) {
-		this.systemBlueprint = systemBlueprint;
+
+	public List<SystemBlueprint> getSystemBlueprints() {
+		return systemBlueprints;
 	}
-	public List<WeaponBlueprint> getWeaponBlueprint() {
-		return weaponBlueprint;
+
+	public void setWeaponBlueprints( List<WeaponBlueprint> weaponBlueprints ) {
+		this.weaponBlueprints = weaponBlueprints;
 	}
-	public void setWeaponBlueprint(List<WeaponBlueprint> weaponBlueprint) {
-		this.weaponBlueprint = weaponBlueprint;
+
+	public List<WeaponBlueprint> getWeaponBlueprints() {
+		return weaponBlueprints;
 	}
-	public List<DroneBlueprint> getDroneBlueprint() {
-		return droneBlueprint;
+
+	public void setDroneBlueprints( List<DroneBlueprint> droneBlueprints ) {
+		this.droneBlueprints = droneBlueprints;
 	}
-	public void setDroneBlueprint(List<DroneBlueprint> droneBlueprint) {
-		this.droneBlueprint = droneBlueprint;
+
+	public List<DroneBlueprint> getDroneBlueprints() {
+		return droneBlueprints;
 	}
-	public List<AugBlueprint> getAugBlueprint() {
-		return augBlueprint;
+
+	public void setAugBlueprints( List<AugBlueprint> augBlueprints ) {
+		this.augBlueprints = augBlueprints;
 	}
-	public void setAugBlueprint(List<AugBlueprint> augBlueprint) {
-		this.augBlueprint = augBlueprint;
+
+	public List<AugBlueprint> getAugBlueprints() {
+		return augBlueprints;
 	}
-	public List<ShipBlueprint> getShipBlueprint() {
-		return shipBlueprint;
+
+	public void setShipBlueprint( List<ShipBlueprint> shipBlueprints ) {
+		this.shipBlueprints = shipBlueprints;
 	}
-	public void setShipBlueprint(List<ShipBlueprint> shipBlueprint) {
-		this.shipBlueprint = shipBlueprint;
+
+	public List<ShipBlueprint> getShipBlueprints() {
+		return shipBlueprints;
 	}
 }

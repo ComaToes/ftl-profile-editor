@@ -15,38 +15,40 @@ import net.blerf.ftl.xml.ExplosionAdapter;
 import net.blerf.ftl.xml.Offset;
 
 
-@XmlRootElement(name = "shipChassis")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement( name = "shipChassis" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class ShipChassis {
 
-	@XmlElement(name = "img")
+	@XmlElement( name = "img" )
 	private ChassisImageBounds imageBounds;
 
+	@XmlElement( required = false )
 	private Offsets offsets;  // FTL 1.5.4 introduced floor/cloak offsets.
 
-	@XmlElementWrapper(name = "weaponMounts")
-	@XmlElement(name = "mount")
+	@XmlElementWrapper( name = "weaponMounts" )
+	@XmlElement( name = "mount" )
 	private List<WeaponMount> weaponMountList;
 
 	private Explosion explosion;
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class ChassisImageBounds {
 		@XmlAttribute
 		public int x, y, w, h;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class Offsets {
 
-		@XmlElement(name = "floor")
+		@XmlElement( name = "floor" )
 		public Offset floorOffset;
 
-		@XmlElement(name = "cloak")
+		@XmlElement( name = "cloak" )
 		public Offset cloakOffset;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class WeaponMount {
 
 		@XmlAttribute
@@ -59,12 +61,12 @@ public class ShipChassis {
 		public String slide;
 	}
 
-	@XmlJavaTypeAdapter(ExplosionAdapter.class)
+	@XmlJavaTypeAdapter( ExplosionAdapter.class )
 	public static class Explosion {
 		public List<Gib> gibs = new ArrayList<Gib>();
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class Gib {
 		public FloatRange velocity;
 		public FloatRange direction;
@@ -72,11 +74,12 @@ public class ShipChassis {
 		public int x, y;
 	}
 
-	@XmlAccessorType(XmlAccessType.FIELD)
+	@XmlAccessorType( XmlAccessType.FIELD )
 	public static class FloatRange {
 		@XmlAttribute
 		public float min, max;
 	}
+
 
 	public void setImageBounds( ChassisImageBounds imageBounds ) {
 		this.imageBounds = imageBounds;

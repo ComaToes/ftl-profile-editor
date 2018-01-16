@@ -1,5 +1,6 @@
 package net.blerf.ftl.xml;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -11,17 +12,19 @@ import net.blerf.ftl.xml.FTLEvent;
 import net.blerf.ftl.xml.FTLEventList;
 
 
-@XmlRootElement(name = "events")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement( name = "events" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class Encounters {
-	@XmlElement(name = "event",required=false)
-	private List<FTLEvent> events;
 
-	@XmlElement(name = "eventList",required=false)
-	private List<FTLEventList> eventLists;
+	@XmlElement( name = "event", required = false )
+	private List<FTLEvent> events = new ArrayList<FTLEvent>();
 
-	@XmlElement(name = "ship")
-	private List<ShipEvent> shipEvents;
+	@XmlElement( name = "eventList", required = false )
+	private List<FTLEventList> eventLists = new ArrayList<FTLEventList>();
+
+	@XmlElement( name = "ship", required = false )
+	private List<ShipEvent> shipEvents = new ArrayList<ShipEvent>();
+
 
 	public void setEvents( List<FTLEvent> events ) {
 		this.events = events;
@@ -75,7 +78,7 @@ public class Encounters {
 
 		FTLEventList result = null;
 		for ( FTLEventList tmpEventList : eventLists ) {
-			if ( id.equals(tmpEventList.getId()) ) result = tmpEventList;
+			if ( id.equals( tmpEventList.getId() ) ) result = tmpEventList;
 		}
 
 		return result;
@@ -92,7 +95,7 @@ public class Encounters {
 
 		ShipEvent result = null;
 		for ( ShipEvent tmpEvent : shipEvents ) {
-			if ( id.equals(tmpEvent.getId()) ) result = tmpEvent;
+			if ( id.equals( tmpEvent.getId() ) ) result = tmpEvent;
 		}
 
 		return result;

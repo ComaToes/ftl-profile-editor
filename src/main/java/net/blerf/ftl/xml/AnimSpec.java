@@ -20,7 +20,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @see net.blerf.ftl.xml.WeaponAnim
  */
 @XmlRootElement( name = "desc" )
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlAccessorType( XmlAccessType.FIELD )
 public class AnimSpec {
 
 	@XmlAttribute( name = "length" )
@@ -31,6 +31,7 @@ public class AnimSpec {
 
 	@XmlAttribute( name = "y" )
 	public int column;
+
 
 	@Override
 	public String toString() {

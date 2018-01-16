@@ -13,18 +13,18 @@ import net.blerf.ftl.xml.AnimSheet;
 import net.blerf.ftl.xml.WeaponAnim;
 
 
-@XmlRootElement(name = "animations")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement( name = "animations" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class Animations {
 
-	@XmlElement(name = "animSheet", required = false)
-	private List<AnimSheet> sheets;
+	@XmlElement( name = "animSheet", required = false )
+	private List<AnimSheet> sheets = new ArrayList<AnimSheet>();
 
-	@XmlElement(name = "anim", required = false)
-	private List<Anim> anims;
+	@XmlElement( name = "anim", required = false )
+	private List<Anim> anims = new ArrayList<Anim>();
 
-	@XmlElement(name = "weaponAnim", required = false)
-	private List<WeaponAnim> weaponAnims;
+	@XmlElement( name = "weaponAnim", required = false )
+	private List<WeaponAnim> weaponAnims = new ArrayList<WeaponAnim>();
 
 
 	public void setSheets( List<AnimSheet> sheets ) {
@@ -61,7 +61,7 @@ public class Animations {
 
 		AnimSheet result = null;
 		for ( AnimSheet tmpSheet : sheets ) {
-			if ( id.equals(tmpSheet.getId()) ) result = tmpSheet;
+			if ( id.equals( tmpSheet.getId() ) ) result = tmpSheet;
 		}
 
 		return result;
@@ -91,7 +91,7 @@ public class Animations {
 
 		Anim result = null;
 		for ( Anim tmpAnim : anims ) {
-			if ( id.equals(tmpAnim.getId()) ) result = tmpAnim;
+			if ( id.equals( tmpAnim.getId() ) ) result = tmpAnim;
 		}
 
 		return result;
@@ -107,7 +107,7 @@ public class Animations {
 
 		WeaponAnim result = null;
 		for ( WeaponAnim tmpWeaponAnim : weaponAnims ) {
-			if ( id.equals(tmpWeaponAnim.getId()) ) result = tmpWeaponAnim;
+			if ( id.equals( tmpWeaponAnim.getId() ) ) result = tmpWeaponAnim;
 		}
 
 		return result;

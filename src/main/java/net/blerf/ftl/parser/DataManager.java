@@ -350,15 +350,36 @@ public abstract class DataManager implements Closeable {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * A frontend using the global DLC default.
+	 */
 	public List<Anim> getAnimsBySheetId( String id ) {
+		return getAnimsBySheetId( id, dlcEnabledByDefault );
+	}
+
+	public List<Anim> getAnimsBySheetId( String id, boolean dlcEnabled ) {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * A frontend using the global DLC default.
+	 */
 	public Anim getAnim( String id ) {
+		return getAnim( id, dlcEnabledByDefault );
+	}
+
+	public Anim getAnim( String id, boolean dlcEnabled ) {
 		throw new UnsupportedOperationException();
 	}
 
+	/**
+	 * A frontend using the global DLC default.
+	 */
 	public AnimSheet getAnimSheet( String id ) {
+		return getAnimSheet( id, dlcEnabledByDefault );
+	}
+
+	public AnimSheet getAnimSheet( String id, boolean dlcEnabled ) {
 		throw new UnsupportedOperationException();
 	}
 }

@@ -50,6 +50,7 @@ import net.blerf.ftl.xml.ShipEvent;
 import net.blerf.ftl.xml.ShipEvents;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
+import net.blerf.ftl.xml.WeaponAnim;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
 
@@ -70,16 +71,11 @@ public class DefaultDataManager extends DataManager {
 
 	private Map<String, String> textLookupMap;
 
-	private Map<String, BackgroundImageList> backgroundImageLists;
-	private Animations animations;
+	private Map<String, Blueprints> stdBlueprintsFileMap;
+	private Map<String, Blueprints> dlcBlueprintsFileMap;
 
-	private Map<String, Blueprints> allBlueprints;
-	private Map<String, Blueprints> stdBlueprints;
-	private Map<String, Blueprints> dlcBlueprints;
-
-	private Map<String, Encounters> allEvents;
-	private Map<String, Encounters> stdEvents;
-	private Map<String, Encounters> dlcEvents;
+	private Map<String, Encounters> stdEventsFileMap;
+	private Map<String, Encounters> dlcEventsFileMap;
 
 	private Map<String, AugBlueprint> stdAugmentIdMap;
 	private Map<String, AugBlueprint> dlcAugmentIdMap;
@@ -122,6 +118,15 @@ public class DefaultDataManager extends DataManager {
 	private Map<String, SectorDescription> sectorDescriptionIdMap;
 	private Map<String, SectorType> stdSectorTypeIdMap;
 	private Map<String, SectorType> dlcSectorTypeIdMap;
+
+	private Map<String, BackgroundImageList> backgroundImageListIdMap;
+
+	private Map<String, AnimSheet> stdAnimSheetIdMap;
+	private Map<String, AnimSheet> dlcAnimSheetIdMap;
+	private Map<String, Anim> stdAnimIdMap;
+	private Map<String, Anim> dlcAnimIdMap;
+	private Map<String, WeaponAnim> stdWeaponAnimIdMap;
+	private Map<String, WeaponAnim> dlcWeaponAnimIdMap;
 
 	private PackContainer packContainer = null;
 	private	DatParser datParser = null;
@@ -181,6 +186,7 @@ public class DefaultDataManager extends DataManager {
 			textLookupFileNames.add( "text_tutorial.xml" );
 
 			log.info( "Reading text..." );
+
 			textLookupMap = new HashMap<String, String>();
 			for ( String textLookupFileName : textLookupFileNames ) {
 				if ( !hasResourceInputStream( "data/"+ textLookupFileName ) ) continue;
@@ -195,12 +201,15 @@ public class DefaultDataManager extends DataManager {
 			}
 
 			log.info( "Reading Achievements..." );
+
+			List<Achievement> achievements;
 			log.debug( "Reading \"data/achievements.xml\"..." );
 			InputStream achStream = getResourceInputStream( "data/achievements.xml" );
 			streams.add( achStream );
-			List<Achievement> achievements = datParser.readAchievements( achStream, "achievements.xml", textLookupMap );
+			achievements = datParser.readAchievements( achStream, "achievements.xml", textLookupMap );
 
 			log.info( "Reading Blueprints..." );
+
 			stdBlueprintsFileNames = new ArrayList<String>();
 			stdBlueprintsFileNames.add( "blueprints.xml" );
 			stdBlueprintsFileNames.add( "autoBlueprints.xml" );
@@ -211,7 +220,8 @@ public class DefaultDataManager extends DataManager {
 			dlcBlueprintsFileNames.add( "dlcBlueprintsOverwrite.xml" );
 			dlcBlueprintsFileNames.add( "dlcPirateBlueprints.xml" );
 
-			allBlueprints = new LinkedHashMap<String, Blueprints>();
+			stdBlueprintsFileMap = new LinkedHashMap<String, Blueprints>( stdBlueprintsFileNames.size() );
+			dlcBlueprintsFileMap = new LinkedHashMap<String, Blueprints>( dlcBlueprintsFileNames.size() + stdBlueprintsFileNames.size() );
 			for ( String blueprintsFileName : stdBlueprintsFileNames ) {
 				if ( !hasResourceInputStream( "data/"+ blueprintsFileName ) ) continue;
 
@@ -219,7 +229,8 @@ public class DefaultDataManager extends DataManager {
 				InputStream tmpStream = getResourceInputStream( "data/"+ blueprintsFileName );
 				streams.add( tmpStream );
 				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName, textLookupMap );
-				allBlueprints.put( blueprintsFileName, tmpBlueprints );
+				stdBlueprintsFileMap.put( blueprintsFileName, tmpBlueprints );
+				dlcBlueprintsFileMap.put( blueprintsFileName, tmpBlueprints );
 			}
 
 			for ( String blueprintsFileName : dlcBlueprintsFileNames ) {
@@ -229,10 +240,11 @@ public class DefaultDataManager extends DataManager {
 				InputStream tmpStream = getResourceInputStream( "data/"+ blueprintsFileName );
 				streams.add( tmpStream );
 				Blueprints tmpBlueprints = datParser.readBlueprints( tmpStream, blueprintsFileName, textLookupMap );
-				allBlueprints.put( blueprintsFileName, tmpBlueprints );
+				dlcBlueprintsFileMap.put( blueprintsFileName, tmpBlueprints );
 			}
 
 			log.info( "Reading Events..." );
+
 			stdEventsFileNames = new ArrayList<String>();
 			stdEventsFileNames.add( "events.xml" );
 			stdEventsFileNames.add( "newEvents.xml" );
@@ -252,15 +264,18 @@ public class DefaultDataManager extends DataManager {
 
 			dlcEventsFileNames = new ArrayList<String>();
 			dlcEventsFileNames.add( "dlcEvents.xml" );
+			dlcEventsFileNames.add( "dlcEventsOverwrite.xml" );
 			dlcEventsFileNames.add( "dlcEvents_anaerobic.xml" );
 
-			allEvents = new LinkedHashMap<String, Encounters>();
+			stdEventsFileMap = new LinkedHashMap<String, Encounters>( stdEventsFileNames.size() );
+			dlcEventsFileMap = new LinkedHashMap<String, Encounters>( dlcEventsFileNames.size() + stdEventsFileNames.size() );
 			for ( String eventsFileName : stdEventsFileNames ) {
 				log.debug( String.format( "Reading \"data/%s\"...", eventsFileName ) );
 				InputStream tmpStream = getResourceInputStream( "data/"+ eventsFileName );
 				streams.add( tmpStream );
 				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName, textLookupMap );
-				allEvents.put( eventsFileName, tmpEncounters );
+				stdEventsFileMap.put( eventsFileName, tmpEncounters );
+				dlcEventsFileMap.put( eventsFileName, tmpEncounters );
 			}
 
 			for ( String eventsFileName : dlcEventsFileNames ) {
@@ -270,51 +285,70 @@ public class DefaultDataManager extends DataManager {
 				InputStream tmpStream = getResourceInputStream( "data/"+ eventsFileName );
 				streams.add( tmpStream );
 				Encounters tmpEncounters = datParser.readEvents( tmpStream, eventsFileName, textLookupMap );
-				allEvents.put( eventsFileName, tmpEncounters );
+				dlcEventsFileMap.put( eventsFileName, tmpEncounters );
 			}
 
 			log.info( "Reading Crew Names..." );
+
+			List<CrewNameList> crewNameLists;
 			log.debug( "Reading \"data/names.xml\"..." );
 			InputStream crewNamesStream = getResourceInputStream( "data/names.xml" );
 			streams.add( crewNamesStream );
-			List<CrewNameList> crewNameLists = datParser.readCrewNames( crewNamesStream, "names.xml" );
+			crewNameLists = datParser.readCrewNames( crewNamesStream, "names.xml" );
 
 			log.info( "Reading Sector Data..." );
+
+			SectorData tmpSectorData;
 			log.debug( "Reading \"data/sector_data.xml\"..." );
 			InputStream sectorDataStream = getResourceInputStream( "data/sector_data.xml" );
 			streams.add( sectorDataStream );
-			SectorData tmpSectorData = datParser.readSectorData( sectorDataStream, "sector_data.xml", textLookupMap );
+			tmpSectorData = datParser.readSectorData( sectorDataStream, "sector_data.xml", textLookupMap );
+
 			sectorDescriptionIdMap = new LinkedHashMap<String, SectorDescription>();
 			for ( SectorDescription tmpDesc : tmpSectorData.getSectorDescriptions() ) {
 				sectorDescriptionIdMap.put( tmpDesc.getId(), tmpDesc );
 			}
-			stdSectorTypeIdMap = new LinkedHashMap<String, SectorType>();
-			dlcSectorTypeIdMap = new LinkedHashMap<String, SectorType>();
-			Pattern sectorOverridePtn = Pattern.compile( "^OVERRIDE_(.*)" );
 
+			Pattern sectorOverridePtn = Pattern.compile( "^OVERRIDE_(.*)" );
+			stdSectorTypeIdMap = new LinkedHashMap<String, SectorType>();
 			for ( SectorType tmpType : tmpSectorData.getSectorTypes() ) {
 				if ( sectorOverridePtn.matcher( tmpType.getId() ).matches() ) continue;
+
 				stdSectorTypeIdMap.put( tmpType.getId(), tmpType );
-				dlcSectorTypeIdMap.put( tmpType.getId(), tmpType );
 			}
+
+			dlcSectorTypeIdMap = new LinkedHashMap<String, SectorType>( stdSectorTypeIdMap );
 			for ( SectorType tmpType : tmpSectorData.getSectorTypes() ) {
 				Matcher m = sectorOverridePtn.matcher( tmpType.getId() );
-				if ( !m.matches() ) continue;
-				String baseId = m.group( 1 );
-				dlcSectorTypeIdMap.put( baseId, tmpType );
+				if ( m.matches() ) {
+					String baseId = m.group( 1 );
+					dlcSectorTypeIdMap.put( baseId, tmpType );
+				}
 			}
 
 			log.info( "Reading Background Image Lists..." );
+
+			List<BackgroundImageList> tmpBgImageLists;
 			log.debug( "Reading \"data/events_imageList.xml\"..." );
 			InputStream imageListsStream = getResourceInputStream( "data/events_imageList.xml" );
 			streams.add( imageListsStream );
-			List<BackgroundImageList> imageLists = datParser.readImageLists( imageListsStream, "events_imageList.xml" );
+			tmpBgImageLists = datParser.readImageLists( imageListsStream, "events_imageList.xml" );
 
 			log.info( "Reading Animations..." );
+
+			Animations stdAnimations;
 			log.debug( "Reading \"data/animations.xml\"..." );
-			InputStream animationsStream = getResourceInputStream( "data/animations.xml" );
-			streams.add( animationsStream );
-			animations = datParser.readAnimations( animationsStream, "animations.xml" );
+			InputStream stdAnimationsStream = getResourceInputStream( "data/animations.xml" );
+			streams.add( stdAnimationsStream );
+			stdAnimations = datParser.readAnimations( stdAnimationsStream, "animations.xml" );
+
+			Animations dlcAnimations = null;
+			if ( hasResourceInputStream( "data/dlcAnimations.xml" ) ) {
+				log.debug( "Reading \"data/dlcAnimations.xml\"..." );
+				InputStream dlcAnimationsStream = getResourceInputStream( "data/dlcAnimations.xml" );
+				streams.add( dlcAnimationsStream );
+				dlcAnimations = datParser.readAnimations( dlcAnimationsStream, "dlcAnimations.xml" );
+			}
 
 			log.info( "Finished reading FTL resources." );
 
@@ -385,130 +419,104 @@ public class DefaultDataManager extends DataManager {
 				}
 			}
 
-			stdBlueprints = new LinkedHashMap<String, Blueprints>( stdBlueprintsFileNames.size() );
-			dlcBlueprints = new LinkedHashMap<String, Blueprints>( dlcBlueprintsFileNames.size() + stdBlueprintsFileNames.size() );
-			for ( String blueprintsFileName : stdBlueprintsFileNames ) {
-				Blueprints blueprints = allBlueprints.get( blueprintsFileName );
-				if ( blueprints == null ) continue;
-				stdBlueprints.put( blueprintsFileName, blueprints );
-				dlcBlueprints.put( blueprintsFileName, blueprints );
-			}
-			for ( String blueprintsFileName : dlcBlueprintsFileNames ) {
-				Blueprints blueprints = allBlueprints.get( blueprintsFileName );
-				if ( blueprints == null ) continue;
-				dlcBlueprints.put( blueprintsFileName, blueprints );
-			}
-
 			stdAugmentIdMap = new LinkedHashMap<String, AugBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : stdBlueprints.entrySet() ) {
+			for ( Map.Entry<String, Blueprints> entry : stdBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<AugBlueprint> augBlueprintList = blueprints.getAugBlueprint();
-				if ( augBlueprintList == null ) continue;
-				for ( AugBlueprint augment : augBlueprintList ) {
+
+				for ( AugBlueprint augment : blueprints.getAugBlueprints() ) {
 					stdAugmentIdMap.put( augment.getId(), augment );
 				}
 			}
-			dlcAugmentIdMap = new LinkedHashMap<String, AugBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : dlcBlueprints.entrySet() ) {
+			dlcAugmentIdMap = new LinkedHashMap<String, AugBlueprint>( stdAugmentIdMap );
+			for ( Map.Entry<String, Blueprints> entry : dlcBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<AugBlueprint> augBlueprintList = blueprints.getAugBlueprint();
-				if ( augBlueprintList == null ) continue;
-				for ( AugBlueprint augment : augBlueprintList ) {
+
+				for ( AugBlueprint augment : blueprints.getAugBlueprints() ) {
 					dlcAugmentIdMap.put( augment.getId(), augment );
 				}
 			}
 
 			stdCrewIdMap = new LinkedHashMap<String, CrewBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : stdBlueprints.entrySet() ) {
+			for ( Map.Entry<String, Blueprints> entry : stdBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<CrewBlueprint> crewBlueprintList = blueprints.getCrewBlueprint();
-				if ( crewBlueprintList == null ) continue;
-				for ( CrewBlueprint crew : crewBlueprintList ) {
+
+				for ( CrewBlueprint crew : blueprints.getCrewBlueprints() ) {
 					stdCrewIdMap.put( crew.getId(), crew );
 				}
 			}
-			dlcCrewIdMap = new LinkedHashMap<String, CrewBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : dlcBlueprints.entrySet() ) {
+			dlcCrewIdMap = new LinkedHashMap<String, CrewBlueprint>( stdCrewIdMap );
+			for ( Map.Entry<String, Blueprints> entry : dlcBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<CrewBlueprint> crewBlueprintList = blueprints.getCrewBlueprint();
-				if ( crewBlueprintList == null ) continue;
-				for ( CrewBlueprint crew : crewBlueprintList ) {
+
+				for ( CrewBlueprint crew : blueprints.getCrewBlueprints() ) {
 					dlcCrewIdMap.put( crew.getId(), crew );
 				}
 			}
 
 			stdDroneIdMap = new LinkedHashMap<String, DroneBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : stdBlueprints.entrySet() ) {
+			for ( Map.Entry<String, Blueprints> entry : stdBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<DroneBlueprint> droneBlueprintList = blueprints.getDroneBlueprint();
-				if ( droneBlueprintList == null ) continue;
-				for ( DroneBlueprint drone : droneBlueprintList ) {
+
+				for ( DroneBlueprint drone : blueprints.getDroneBlueprints() ) {
 					stdDroneIdMap.put( drone.getId(), drone );
 				}
 			}
-			dlcDroneIdMap = new LinkedHashMap<String, DroneBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : dlcBlueprints.entrySet() ) {
+			dlcDroneIdMap = new LinkedHashMap<String, DroneBlueprint>( stdDroneIdMap );
+			for ( Map.Entry<String, Blueprints> entry : dlcBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<DroneBlueprint> droneBlueprintList = blueprints.getDroneBlueprint();
-				if ( droneBlueprintList == null ) continue;
-				for ( DroneBlueprint drone : droneBlueprintList ) {
+
+				for ( DroneBlueprint drone : blueprints.getDroneBlueprints() ) {
 					dlcDroneIdMap.put( drone.getId(), drone );
 				}
 			}
 
 			stdSystemIdMap = new LinkedHashMap<String, SystemBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : stdBlueprints.entrySet() ) {
+			for ( Map.Entry<String, Blueprints> entry : stdBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<SystemBlueprint> systemBlueprintList = blueprints.getSystemBlueprint();
-				if ( systemBlueprintList == null ) continue;
-				for ( SystemBlueprint system : systemBlueprintList ) {
+
+				for ( SystemBlueprint system : blueprints.getSystemBlueprints() ) {
 					stdSystemIdMap.put( system.getId(), system );
 				}
 			}
-			dlcSystemIdMap = new LinkedHashMap<String, SystemBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : dlcBlueprints.entrySet() ) {
+			dlcSystemIdMap = new LinkedHashMap<String, SystemBlueprint>( stdSystemIdMap );
+			for ( Map.Entry<String, Blueprints> entry : dlcBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<SystemBlueprint> systemBlueprintList = blueprints.getSystemBlueprint();
-				if ( systemBlueprintList == null ) continue;
-				for ( SystemBlueprint system : systemBlueprintList ) {
+
+				for ( SystemBlueprint system : blueprints.getSystemBlueprints() ) {
 					dlcSystemIdMap.put( system.getId(), system );
 				}
 			}
 
 			stdWeaponIdMap = new LinkedHashMap<String, WeaponBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : stdBlueprints.entrySet() ) {
+			for ( Map.Entry<String, Blueprints> entry : stdBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<WeaponBlueprint> weaponBlueprintList = blueprints.getWeaponBlueprint();
-				if ( weaponBlueprintList == null ) continue;
-				for ( WeaponBlueprint weapon : weaponBlueprintList ) {
+
+				for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprints() ) {
 					stdWeaponIdMap.put( weapon.getId(), weapon );
 				}
 			}
-			dlcWeaponIdMap = new LinkedHashMap<String, WeaponBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : dlcBlueprints.entrySet() ) {
+			dlcWeaponIdMap = new LinkedHashMap<String, WeaponBlueprint>( stdWeaponIdMap );
+			for ( Map.Entry<String, Blueprints> entry : dlcBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<WeaponBlueprint> weaponBlueprintList = blueprints.getWeaponBlueprint();
-				if ( weaponBlueprintList == null ) continue;
-				for ( WeaponBlueprint weapon : weaponBlueprintList ) {
+
+				for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprints() ) {
 					dlcWeaponIdMap.put( weapon.getId(), weapon );
 				}
 			}
 
 			stdShipIdMap = new LinkedHashMap<String, ShipBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : stdBlueprints.entrySet() ) {
+			for ( Map.Entry<String, Blueprints> entry : stdBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<ShipBlueprint> shipBlueprintList = blueprints.getShipBlueprint();
-				if ( shipBlueprintList == null ) continue;
-				for ( ShipBlueprint ship : shipBlueprintList ) {
+
+				for ( ShipBlueprint ship : blueprints.getShipBlueprints() ) {
 					stdShipIdMap.put( ship.getId(), ship );
 				}
 			}
-			dlcShipIdMap = new LinkedHashMap<String, ShipBlueprint>();
-			for ( Map.Entry<String, Blueprints> entry : dlcBlueprints.entrySet() ) {
+			dlcShipIdMap = new LinkedHashMap<String, ShipBlueprint>( stdShipIdMap );
+			for ( Map.Entry<String, Blueprints> entry : dlcBlueprintsFileMap.entrySet() ) {
 				Blueprints blueprints = entry.getValue();
-				List<ShipBlueprint> shipBlueprintList = blueprints.getShipBlueprint();
-				if ( shipBlueprintList == null ) continue;
-				for ( ShipBlueprint ship : shipBlueprintList ) {
+
+				for ( ShipBlueprint ship : blueprints.getShipBlueprints() ) {
 					dlcShipIdMap.put( ship.getId(), ship );
 				}
 			}
@@ -524,8 +532,7 @@ public class DefaultDataManager extends DataManager {
 			stdPlayerShipBaseIds.add( "PLAYER_SHIP_ENERGY" );
 			stdPlayerShipBaseIds.add( "PLAYER_SHIP_CRYSTAL" );
 
-			dlcPlayerShipBaseIds = new ArrayList<String>();
-			dlcPlayerShipBaseIds.addAll( stdPlayerShipBaseIds );
+			dlcPlayerShipBaseIds = new ArrayList<String>( stdPlayerShipBaseIds );
 			dlcPlayerShipBaseIds.add( "PLAYER_SHIP_ANAEROBIC" );
 
 			stdPlayerShipIds = new ArrayList<String>();
@@ -567,13 +574,13 @@ public class DefaultDataManager extends DataManager {
 				}
 			}
 
-			stdPlayerShipIdMap = new LinkedHashMap<String, ShipBlueprint>();
+			stdPlayerShipIdMap = new LinkedHashMap<String, ShipBlueprint>( stdPlayerShipIds.size() );
 			for ( String playerShipId : stdPlayerShipIds ) {
 				ShipBlueprint ship = stdShipIdMap.get( playerShipId );
 				if ( ship == null ) continue;
 				stdPlayerShipIdMap.put( playerShipId, ship );
 			}
-			dlcPlayerShipIdMap = new LinkedHashMap<String, ShipBlueprint>();
+			dlcPlayerShipIdMap = new LinkedHashMap<String, ShipBlueprint>( dlcPlayerShipIds.size() );
 			for ( String playerShipId : dlcPlayerShipIds ) {
 				ShipBlueprint ship = dlcShipIdMap.get( playerShipId );
 				if ( ship == null ) continue;
@@ -604,7 +611,7 @@ public class DefaultDataManager extends DataManager {
 				}
 				stdShipAchievementIdMap.put( entry.getValue(), shipAchs );
 			}
-			dlcShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>();
+			dlcShipAchievementIdMap = new HashMap<ShipBlueprint, List<Achievement>>( stdShipAchievementIdMap );
 			for ( Map.Entry<String, ShipBlueprint> entry : dlcPlayerShipIdMap.entrySet() ) {
 				List<Achievement> shipAchs = new ArrayList<Achievement>();
 				for ( Achievement ach : achievementIdMap.values() ) {
@@ -629,41 +636,55 @@ public class DefaultDataManager extends DataManager {
 				}
 			}
 
-			backgroundImageLists = new LinkedHashMap<String, BackgroundImageList>();
-			for ( BackgroundImageList imageList : imageLists ) {
-				backgroundImageLists.put( imageList.getId(), imageList );
-			}
-
-			stdEvents = new LinkedHashMap<String, Encounters>( stdEventsFileNames.size() );
-			dlcEvents = new LinkedHashMap<String, Encounters>( dlcEventsFileNames.size() + stdEventsFileNames.size() );
-			for ( String eventsFileName : stdEventsFileNames ) {
-				Encounters tmpEncounters = allEvents.get( eventsFileName );
-				if ( tmpEncounters == null ) continue;
-				stdEvents.put( eventsFileName, tmpEncounters );
-				dlcEvents.put( eventsFileName, tmpEncounters );
-			}
-			for ( String eventsFileName : dlcEventsFileNames ) {
-				Encounters tmpEncounters = allEvents.get( eventsFileName );
-				if ( tmpEncounters == null ) continue;
-				dlcEvents.put( eventsFileName, tmpEncounters );
+			backgroundImageListIdMap = new LinkedHashMap<String, BackgroundImageList>();
+			for ( BackgroundImageList imageList : tmpBgImageLists ) {
+				backgroundImageListIdMap.put( imageList.getId(), imageList );
 			}
 
 			stdShipEventIdMap = new LinkedHashMap<String, ShipEvent>();
-			for ( Map.Entry<String, Encounters> entry : stdEvents.entrySet() ) {
+			for ( Map.Entry<String, Encounters> entry : stdEventsFileMap.entrySet() ) {
 				Encounters tmpEncounters = entry.getValue();
 				List<ShipEvent> shipEventList = tmpEncounters.getShipEvents();
-				if ( shipEventList == null ) continue;
 				for ( ShipEvent shipEvent : shipEventList ) {
 					stdShipEventIdMap.put( shipEvent.getId(), shipEvent );
 				}
 			}
-			dlcShipEventIdMap = new LinkedHashMap<String, ShipEvent>();
-			for ( Map.Entry<String, Encounters> entry : dlcEvents.entrySet() ) {
+			dlcShipEventIdMap = new LinkedHashMap<String, ShipEvent>( stdShipEventIdMap );
+			for ( Map.Entry<String, Encounters> entry : dlcEventsFileMap.entrySet() ) {
 				Encounters tmpEncounters = entry.getValue();
 				List<ShipEvent> shipEventList = tmpEncounters.getShipEvents();
-				if ( shipEventList == null ) continue;
 				for ( ShipEvent shipEvent : shipEventList ) {
 					dlcShipEventIdMap.put( shipEvent.getId(), shipEvent );
+				}
+			}
+
+			stdAnimSheetIdMap = new LinkedHashMap<String, AnimSheet>();
+			stdAnimIdMap = new LinkedHashMap<String, Anim>();
+			stdWeaponAnimIdMap = new LinkedHashMap<String, WeaponAnim>();
+
+			for ( AnimSheet sheet : stdAnimations.getSheets() ) {
+				stdAnimSheetIdMap.put( sheet.getId(), sheet );
+			}
+			for ( Anim anim : stdAnimations.getAnims() ) {
+				stdAnimIdMap.put( anim.getId(), anim );
+			}
+			for ( WeaponAnim weaponAnim : stdAnimations.getWeaponAnims() ) {
+				stdWeaponAnimIdMap.put( weaponAnim.getId(), weaponAnim );
+			}
+
+			dlcAnimSheetIdMap = new LinkedHashMap<String, AnimSheet>( stdAnimSheetIdMap );
+			dlcAnimIdMap = new LinkedHashMap<String, Anim>( stdAnimIdMap );
+			dlcWeaponAnimIdMap = new LinkedHashMap<String, WeaponAnim>( stdWeaponAnimIdMap );
+
+			if ( dlcAnimations != null ) {
+				for ( AnimSheet sheet : dlcAnimations.getSheets() ) {
+					dlcAnimSheetIdMap.put( sheet.getId(), sheet );
+				}
+				for ( Anim anim : dlcAnimations.getAnims() ) {
+					dlcAnimIdMap.put( anim.getId(), anim );
+				}
+				for ( WeaponAnim weaponAnim : dlcAnimations.getWeaponAnims() ) {
+					dlcWeaponAnimIdMap.put( weaponAnim.getId(), weaponAnim );
 				}
 			}
 		}
@@ -1073,9 +1094,9 @@ public class DefaultDataManager extends DataManager {
 	public FTLEvent getEventById( String id, boolean dlcEnabled ) {
 		Map<String, Encounters> events = null;
 		if ( dlcEnabled ) {
-			events = dlcEvents;
+			events = dlcEventsFileMap;
 		} else {
-			events = stdEvents;
+			events = stdEventsFileMap;
 		}
 
 		FTLEvent result = null;
@@ -1097,9 +1118,9 @@ public class DefaultDataManager extends DataManager {
 	public FTLEventList getEventListById( String id, boolean dlcEnabled ) {
 		Map<String, Encounters> events = null;
 		if ( dlcEnabled ) {
-			events = dlcEvents;
+			events = dlcEventsFileMap;
 		} else {
-			events = stdEvents;
+			events = stdEventsFileMap;
 		}
 
 		FTLEventList result = null;
@@ -1119,9 +1140,9 @@ public class DefaultDataManager extends DataManager {
 	public Map<String, Encounters> getEncounters( boolean dlcEnabled ) {
 		Map<String, Encounters> events = null;
 		if ( dlcEnabled ) {
-			events = dlcEvents;
+			events = dlcEventsFileMap;
 		} else {
-			events = stdEvents;
+			events = stdEventsFileMap;
 		}
 
 		return events;
@@ -1217,16 +1238,27 @@ public class DefaultDataManager extends DataManager {
 	 */
 	@Override
 	public Map<String, BackgroundImageList> getBackgroundImageLists() {
-		return backgroundImageLists;
+		return backgroundImageListIdMap;
 	}
 
 	/**
 	 * Returns all Anims that appear in a given AnimSheet.
 	 */
 	@Override
-	public List<Anim> getAnimsBySheetId( String id ) {
-		List<Anim> results = animations.getAnimsBySheetId( id );
-		if ( results == null ) {
+	public List<Anim> getAnimsBySheetId( String id, boolean dlcEnabled ) {
+		Map<String, Anim> anims;
+		if ( dlcEnabled ) {
+			anims = dlcAnimIdMap;
+		} else {
+			anims = stdAnimIdMap;
+		}
+
+		List<Anim> results = new ArrayList<Anim>();
+		for ( Anim anim : anims.values() ) {
+			if ( anim.getSheetId().equals( id ) ) results.add( anim );
+		}
+
+		if ( results.isEmpty() ) {
 			log.error( "No Anims found for sheetId: "+ id );
 		}
 		return results;
@@ -1236,8 +1268,15 @@ public class DefaultDataManager extends DataManager {
 	 * Returns an Anim with a given id.
 	 */
 	@Override
-	public Anim getAnim( String id ) {
-		Anim result = animations.getAnimById( id );
+	public Anim getAnim( String id, boolean dlcEnabled ) {
+		Map<String, Anim> anims;
+		if ( dlcEnabled ) {
+			anims = dlcAnimIdMap;
+		} else {
+			anims = stdAnimIdMap;
+		}
+
+		Anim result = anims.get( id );
 		if ( result == null ) {
 			log.error( "No Anim found for id: "+ id );
 		}
@@ -1248,8 +1287,15 @@ public class DefaultDataManager extends DataManager {
 	 * Returns an AnimSheet with a given id.
 	 */
 	@Override
-	public AnimSheet getAnimSheet( String id ) {
-		AnimSheet result = animations.getSheetById( id );
+	public AnimSheet getAnimSheet( String id, boolean dlcEnabled ) {
+		Map<String, AnimSheet> sheets;
+		if ( dlcEnabled ) {
+			sheets = dlcAnimSheetIdMap;
+		} else {
+			sheets = stdAnimSheetIdMap;
+		}
+
+		AnimSheet result = sheets.get( id );
 		if ( result == null ) {
 			log.error( "No AnimSheet found for id: "+ id );
 		}

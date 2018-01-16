@@ -10,8 +10,8 @@ import javax.xml.bind.annotation.XmlTransient;
 import net.blerf.ftl.xml.DefaultDeferredText;
 
 
-@XmlRootElement(name = "achievement")
-@XmlAccessorType(XmlAccessType.FIELD)
+@XmlRootElement( name = "achievement" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class Achievement {
 
 	@XmlAttribute
@@ -19,19 +19,19 @@ public class Achievement {
 
 	private DefaultDeferredText name;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private DefaultDeferredText shortName;
 
-	@XmlElement(name = "desc")
+	@XmlElement( name = "desc" )
 	private DefaultDeferredText description;
 
-	@XmlElement(name = "img")
+	@XmlElement( name = "img" )
 	private String imagePath;
 
-	@XmlElement(name = "ship", required = false)
+	@XmlElement( name = "ship", required = false )
 	private String shipId;
 
-	@XmlElement(required = false)
+	@XmlElement( required = false )
 	private int multiDifficulty;
 
 	// Ship Victory achievements track *all* the variants which earned them.
