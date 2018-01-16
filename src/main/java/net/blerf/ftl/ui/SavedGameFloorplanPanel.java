@@ -1691,26 +1691,29 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void addDroneSprite( int centerX, int centerY, int slot, SpriteReference<DroneState> droneRef ) {
-		DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
-		DroneType droneType = DroneType.findById( droneBlueprint.getType() );
-
+		// Represent the slot whether or not there's a drone equipped in it.
 		DroneBoxSprite droneBoxSprite = new DroneBoxSprite( droneRef, slot );
 		droneBoxSprite.setSize( droneBoxSprite.getPreferredSize() );
 		droneBoxSprite.setLocation( centerX - droneBoxSprite.getPreferredSize().width/2, centerY - droneBoxSprite.getPreferredSize().height/2 );
 		droneBoxSprites.add( droneBoxSprite );
 		shipPanel.add( droneBoxSprite, DRONE_LAYER );
 
-		if ( DroneType.BATTLE.equals( droneType ) || DroneType.REPAIR.equals( droneType ) ) {
-			int bodySpriteX = originX + droneRef.get().getBodyX();
-			int bodySpriteY = originY + droneRef.get().getBodyY();
+		if ( droneRef.get() != null ) {
+			DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
+			DroneType droneType = DroneType.findById( droneBlueprint.getType() );
 
-			BufferedImage bodyImage = spriteImageProvider.getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
+			if ( DroneType.BATTLE.equals( droneType ) || DroneType.REPAIR.equals( droneType ) ) {
+				int bodySpriteX = originX + droneRef.get().getBodyX();
+				int bodySpriteY = originY + droneRef.get().getBodyY();
 
-			DroneBodySprite droneBodySprite = new DroneBodySprite( droneRef, bodyImage );
-			droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
-			droneBodySprite.setLocation( bodySpriteX - droneBodySprite.getPreferredSize().width/2, bodySpriteY - droneBodySprite.getPreferredSize().height/2 );
-			droneBodySprites.add( droneBodySprite );
-			shipPanel.add( droneBodySprite, DRONE_LAYER );
+				BufferedImage bodyImage = spriteImageProvider.getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
+
+				DroneBodySprite droneBodySprite = new DroneBodySprite( droneRef, bodyImage );
+				droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
+				droneBodySprite.setLocation( bodySpriteX - droneBodySprite.getPreferredSize().width/2, bodySpriteY - droneBodySprite.getPreferredSize().height/2 );
+				droneBodySprites.add( droneBodySprite );
+				shipPanel.add( droneBodySprite, DRONE_LAYER );
+			}
 		}
 	}
 
