@@ -5,7 +5,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
@@ -16,7 +15,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.Transparency;
 import java.awt.event.ActionEvent;
@@ -208,7 +206,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private DefaultSpriteImageProvider spriteImageProvider = new DefaultSpriteImageProvider();
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
-	private Map<BufferedImage, Map<Tint, BufferedImage>> cachedTintedImages = new HashMap<BufferedImage, Map<Tint, BufferedImage>>();
 
 	private JLayeredPane shipPanel = null;
 	private StatusViewport shipViewport = null;
@@ -576,15 +573,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else if ( source == resetBreachesBtn ) {
 					clearSidePanel();
-					for ( BreachSprite breachSprite : breachSprites )
+					for ( BreachSprite breachSprite : breachSprites ) {
 						shipPanel.remove( breachSprite );
+					}
 					breachSprites.clear();
 					shipViewport.repaint();
 				}
 				else if ( source == resetFiresBtn ) {
 					clearSidePanel();
-					for ( FireSprite fireSprite : fireSprites )
+					for ( FireSprite fireSprite : fireSprites ) {
 						shipPanel.remove( fireSprite );
+					}
 					fireSprites.clear();
 					shipViewport.repaint();
 				}
@@ -2137,6 +2136,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
 		if ( droneBodySprite != null ) {
+			droneRef.removeSprite( droneBodySprite );
 			droneBodySprites.remove( droneBodySprite );
 			shipPanel.remove( droneBodySprite );
 		}
@@ -2658,6 +2658,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						// Remove the old body. A new one might get placed below.
 						DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
 						if ( droneBodySprite != null ) {
+							droneRef.removeSprite( droneBodySprite );
 							droneBodySprites.remove( droneBodySprite );
 							shipPanel.remove( droneBodySprite );
 						}
