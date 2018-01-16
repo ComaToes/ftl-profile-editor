@@ -103,12 +103,15 @@ import net.blerf.ftl.ui.SpriteReference;
 import net.blerf.ftl.ui.StatusbarMouseListener;
 import net.blerf.ftl.ui.floorplan.AnimAtlas;
 import net.blerf.ftl.ui.floorplan.BreachSprite;
+import net.blerf.ftl.ui.floorplan.CrewSprite;
 import net.blerf.ftl.ui.floorplan.DefaultSpriteImageProvider;
 import net.blerf.ftl.ui.floorplan.DoorAtlas;
 import net.blerf.ftl.ui.floorplan.DoorSprite;
+import net.blerf.ftl.ui.floorplan.DroneBodySprite;
 import net.blerf.ftl.ui.floorplan.DroneBoxSprite;
 import net.blerf.ftl.ui.floorplan.FireSprite;
 import net.blerf.ftl.ui.floorplan.RoomSprite;
+import net.blerf.ftl.ui.floorplan.SpriteImageProvider;
 import net.blerf.ftl.ui.floorplan.SystemRoomSprite;
 import net.blerf.ftl.ui.floorplan.WeaponSprite;
 import net.blerf.ftl.ui.hud.SpriteSelector;
@@ -691,32 +694,39 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 		droneBodySprites.clear();
 
-		for ( WeaponSprite weaponSprite : weaponSprites )
+		for ( WeaponSprite weaponSprite : weaponSprites ) {
 			shipPanel.remove( weaponSprite );
+		}
 		weaponSprites.clear();
 
-		for ( RoomSprite roomSprite : roomSprites )
+		for ( RoomSprite roomSprite : roomSprites ) {
 			shipPanel.remove( roomSprite );
+		}
 		roomSprites.clear();
 
-		for ( SystemRoomSprite systemRoomSprite : systemRoomSprites )
+		for ( SystemRoomSprite systemRoomSprite : systemRoomSprites ) {
 			shipPanel.remove( systemRoomSprite );
+		}
 		systemRoomSprites.clear();
 
-		for ( BreachSprite breachSprite : breachSprites )
+		for ( BreachSprite breachSprite : breachSprites ) {
 			shipPanel.remove( breachSprite );
+		}
 		breachSprites.clear();
 
-		for ( FireSprite fireSprite : fireSprites )
+		for ( FireSprite fireSprite : fireSprites ) {
 			shipPanel.remove( fireSprite );
+		}
 		fireSprites.clear();
 
-		for ( DoorSprite doorSprite : doorSprites )
+		for ( DoorSprite doorSprite : doorSprites ) {
 			shipPanel.remove( doorSprite );
+		}
 		doorSprites.clear();
 
-		for ( CrewSprite crewSprite : crewSprites )
+		for ( CrewSprite crewSprite : crewSprites ) {
 			shipPanel.remove( crewSprite );
+		}
 		crewSprites.clear();
 
 		droneRefs.clear();
@@ -751,8 +761,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 			baseLbl.setIcon( null );
 			floorLbl.setIcon( null );
 
-			for ( JComponent roomDecor : roomDecorations )
+			for ( JComponent roomDecor : roomDecorations ) {
 				shipPanel.remove( roomDecor );
+			}
 			roomDecorations.clear();
 
 			wallLbl.setIcon( null );
@@ -919,8 +930,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 				catch ( IOException e ) {}
 			}
 
-			for ( JComponent roomDecor : roomDecorations )
+			for ( JComponent roomDecor : roomDecorations ) {
 				shipPanel.remove( roomDecor );
+			}
 			roomDecorations.clear();
 			for ( ShipBlueprint.SystemList.SystemRoom systemRoom : blueprintSystems.getSystemRooms() ) {
 				String roomImgPath = systemRoom.getImg();
@@ -1677,158 +1689,28 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible( true );
 	}
 
-	/**
-	 * Returns a default image of a drone body, possibly with a colored outline.
-	 *
-	 * @see #getCrewBodyImage( CrewType, boolean, boolean)
-	 */
-	public BufferedImage getDroneBodyImage( DroneType droneType, boolean playerControlled ) {
-		BufferedImage result = null;
-		String imgRace = "";
-		String originalSuffix = "";
-
-		// Drone bodies are unselectble in-game, hence no alternate color variants.
-
-		if ( DroneType.BATTLE.equals( droneType ) ) {  // Anti-personnel, always local to the ship.
-			imgRace = "battle";
-			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
-		}
-		else if ( DroneType.REPAIR.equals( droneType ) ) {  // Always local to the ship.
-			imgRace = "repair";
-			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
-		}
-		else {
-			throw new IllegalArgumentException( "Requested a body for a DroneType that doesn't need one: "+ droneType.getId() );
-		}
-
-		int offsetX = 0, offsetY = 0, w = 35, h = 35;
-		String basePath = "img/people/"+ imgRace +"_base.png";
-		String originalPath = "img/people/"+ imgRace + originalSuffix +".png";
-
-		if ( DataManager.get().hasResourceInputStream( basePath ) ) {
-			// FTL 1.5.4+
-			result = ImageUtilities.getCroppedImage( basePath, offsetX, offsetY, w, h, cachedImages );
-		}
-		else if ( DataManager.get().hasResourceInputStream( originalPath ) ) {
-			// FTL 1.01-1.03.3
-			result = ImageUtilities.getCroppedImage( originalPath, offsetX, offsetY, w, h, cachedImages );
-		}
-		else {
-			log.error( String.format( "No body image found for drone: %s, %s", droneType.getId(), (playerControlled ? "playerControlled" : "NPC") ) );
-
-			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
-			Graphics2D g2d = result.createGraphics();
-			g2d.setColor( new Color( 150, 150, 200 ) );
-			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
-			g2d.dispose();
-		}
-
-		return result;
-	}
-
-	/**
-	 * Returns a default image of crew, with a friend-or-foe colored outline.
-	 *
-	 * Generally the image name is related to the raceId, with two exceptions.
-	 * Humans have a separate female image. Ghost crew have human images (with
-	 * programmatically reduced opacity).
-	 *
-	 * Image names have varied:
-	 *   FTL 1.01: Drones had "X_sheet" / "X_enemy_sheet".
-	 *   FTL 1.01: Crew had "X_player_[green|yellow]" / "X_enemy_red".
-	 *   FTL 1.03.1: Drones could also be "X_player[no color]" / "X_enemy_red".
-	 *   FTL 1.5.4: Crew had "X_base" overlaid on a tinted mask "X_color".
-	 *   FTL 1.5.4: Drone had "X_base" with no color possibility.
-	 */
-	public BufferedImage getCrewBodyImage( CrewType crewType, boolean male, boolean playerControlled ) {
-		BufferedImage result = null;
-		String imgRace = "";
-		String originalSuffix = "";
-
-		if ( CrewType.HUMAN.equals( crewType ) ) {
-			imgRace = (( male ) ? CrewType.HUMAN.getId() : "female");
-
-			originalSuffix = (( playerControlled ) ? "_player_yellow" : "_enemy_red");
-		}
-		else if ( CrewType.GHOST.equals( crewType ) ) {
-			imgRace = (( male ) ? CrewType.HUMAN.getId() : "female");
-
-			originalSuffix = (( playerControlled ) ? "_player_yellow" : "_enemy_red");
-		}
-		else if ( CrewType.BATTLE.equals( crewType ) ) {  // Boarder, always foreign to the ship.
-			imgRace = "battle";
-			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
-		}
-		else {
-			imgRace = crewType.getId();
-			originalSuffix = (( playerControlled ) ? "_player_yellow" : "_enemy_red");
-		}
-
-		int offsetX = 0, offsetY = 0, w = 35, h = 35;
-		String basePath = "img/people/"+ imgRace +"_base.png";
-		String colorPath = "img/people/"+ imgRace +"_color.png";
-		String originalPath = "img/people/"+ imgRace + originalSuffix +".png";
-
-		if ( DataManager.get().hasResourceInputStream( basePath ) ) {
-			// FTL 1.5.4+
-			BufferedImage baseImage = ImageUtilities.getCroppedImage( basePath, offsetX, offsetY, w, h, cachedImages );
-
-			// Ghosts have reduced opacity.
-			if ( CrewType.GHOST.equals( crewType ) ) {
-				// Not an exact color match, but close enough.
-				Tint ghostTint = new Tint( new float[] { 1f, 1f, 1f, 0.6f }, new float[] { 0, 0, 0, 0 } );
-
-				// TODO: This may need to be moved when crew tint layers are
-				// implemented.
-				ImageUtilities.getTintedImage( baseImage, ghostTint, cachedTintedImages );
-			}
-
-			if ( DataManager.get().hasResourceInputStream( colorPath ) ) {
-				BufferedImage colorImage = ImageUtilities.getCroppedImage( colorPath, offsetX, offsetY, w, h, cachedImages );
-				float[] yellow = new float[] { 0.957f, 0.859f, 0.184f, 1f };
-				float[] red = new float[] { 1.0f, 0.286f, 0.145f, 1f };
-				Tint colorTint = new Tint( (playerControlled ? yellow: red), new float[] { 0, 0, 0, 0 } );
-				colorImage = ImageUtilities.getTintedImage( colorImage, colorTint, cachedTintedImages );
-
-				result = gc.createCompatibleImage( w, h, Transparency.TRANSLUCENT );
-				Graphics2D g2d = result.createGraphics();
-				g2d.drawImage( colorImage, 0, 0, null );
-				g2d.drawImage( baseImage, 0, 0, null );
-				g2d.dispose();
-			}
-			else {
-				result = baseImage;  // No colorImage to tint & outline the sprite, probably a drone.
-			}
-		}
-		else if ( DataManager.get().hasResourceInputStream( originalPath ) ) {
-			// FTL 1.01-1.03.3
-			result = ImageUtilities.getCroppedImage( originalPath, offsetX, offsetY, w, h, cachedImages );
-		}
-		else {
-			log.error( String.format( "No body image found for crew: %s, %s, %s", crewType.getId(), (male ? "male" : "female"), (playerControlled ? "playerControlled" : "NPC") ) );
-
-			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
-			Graphics2D g2d = result.createGraphics();
-			g2d.setColor( new Color( 150, 150, 200 ) );
-			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
-			g2d.dispose();
-		}
-
-		return result;
-	}
-
 	private void addDroneSprite( int centerX, int centerY, int slot, SpriteReference<DroneState> droneRef ) {
+		DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
+		DroneType droneType = DroneType.findById( droneBlueprint.getType() );
+
 		DroneBoxSprite droneBoxSprite = new DroneBoxSprite( droneRef, slot );
 		droneBoxSprite.setSize( droneBoxSprite.getPreferredSize() );
 		droneBoxSprite.setLocation( centerX - droneBoxSprite.getPreferredSize().width/2, centerY - droneBoxSprite.getPreferredSize().height/2 );
 		droneBoxSprites.add( droneBoxSprite );
 		shipPanel.add( droneBoxSprite, DRONE_LAYER );
 
-		DroneBodySprite droneBodySprite = new DroneBodySprite( droneRef );
-		droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
-		// Location?
-		droneBodySprites.add( droneBodySprite );
-		shipPanel.add( droneBodySprite, DRONE_LAYER );
+		if ( DroneType.BATTLE.equals( droneType ) || DroneType.REPAIR.equals( droneType ) ) {
+			int bodySpriteX = originX + droneRef.get().getBodyX();
+			int bodySpriteY = originY + droneRef.get().getBodyY();
+
+			BufferedImage bodyImage = spriteImageProvider.getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
+
+			DroneBodySprite droneBodySprite = new DroneBodySprite( droneRef, bodyImage );
+			droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
+			droneBodySprite.setLocation( bodySpriteX - droneBodySprite.getPreferredSize().width/2, bodySpriteY - droneBodySprite.getPreferredSize().height/2 );
+			droneBodySprites.add( droneBodySprite );
+			shipPanel.add( droneBodySprite, DRONE_LAYER );
+		}
 	}
 
 	private void addWeaponSprite( ShipChassis.WeaponMount weaponMount, int slot, SpriteReference<WeaponState> weaponRef ) {
@@ -1858,7 +1740,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void addSystemRoomSprite( int centerX, int centerY, SpriteReference<SystemState> systemRef ) {
-
 		BufferedImage overlayImage = spriteImageProvider.getSystemRoomImage( systemRef.get().getSystemType() );
 
 		SystemRoomSprite systemRoomSprite = new SystemRoomSprite( systemRef, overlayImage );
@@ -1889,7 +1770,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void addCrewSprite( int centerX, int centerY, SpriteReference<CrewState> crewRef ) {
-		CrewSprite crewSprite = new CrewSprite( crewRef );
+		CrewSprite crewSprite = new CrewSprite( crewRef, spriteImageProvider );
 		crewSprite.setSize( crewSprite.getPreferredSize() );
 		crewSprite.setLocation( centerX - crewSprite.getPreferredSize().width/2, centerY - crewSprite.getPreferredSize().height/2 );
 		crewSprites.add( crewSprite );
@@ -2223,6 +2104,186 @@ public class SavedGameFloorplanPanel extends JPanel {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Disarms a drone.
+	 *
+	 * This method will not notify that the reference has changed.
+	 *
+	 * This method will not update system power usage.
+	 *
+	 * TODO: Make this viable beyond FTL 1.03.3.
+	 */
+	private void disarmDrone( SpriteReference<DroneState> droneRef ) {
+		if ( droneRef.get() == null ) return;
+
+		droneRef.get().setArmed( false );
+
+		// Only meaningful for drone types with local bodies.
+		// Others should always have these values.
+		droneRef.get().setBodyRoomId( -1 );
+		droneRef.get().setBodyRoomSquare( -1 );
+		droneRef.get().setBodyX( -1 );
+		droneRef.get().setBodyY( -1 );
+
+		// TODO: Extended info, pods, etc.
+	}
+
+	private void unequipDrone( SpriteReference<DroneState> droneRef ) {
+		if ( droneRef.get() == null ) return;
+
+		DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
+		if ( droneBodySprite != null ) {
+			droneBodySprites.remove( droneBodySprite );
+			shipPanel.remove( droneBodySprite );
+		}
+
+		droneRef.set( null );
+	}
+
+	/**
+	 * Attempts to place an armed drone's body in a room.
+	 *
+	 * The DroneBodySprite will be added, if absent, and moved to match the
+	 * DroneState. If the DroneState doesn't have a roomId set, an unoccupied
+	 * square will be assigned first.
+	 *
+	 * This begins scanning the Drone_Ctrl room, then progressively expanding
+	 * through adjacent rooms. Squares are occupied by drone bodies and crew
+	 * (of the same playerControlled status, or mind controlled).
+	 *
+	 * Note: It is possible that the body will not be placed. Check the roomId
+	 * afterward, and disarm if necessary.
+	 *
+	 * Boarder bodies are crew on foreign ships. This method will not affect
+	 * them.
+	 *
+	 * TODO: Blocked squares.
+	 * TODO: Mimic FTL's algorithm.
+	 */
+	private void placeDroneBody( SpriteReference<DroneState> droneRef ) {
+		if ( droneRef.get() == null ) return;
+
+		DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
+		DroneType droneType = DroneType.findById( droneBlueprint.getType() );
+
+		// Don't bother if not a type that has a body.
+		if ( !DroneType.BATTLE.equals( droneType ) && !DroneType.REPAIR.equals( droneType ) ) {
+			return;
+		}
+
+		// Don't bother if not armed.
+		if ( !droneRef.get().isArmed() ) return;
+
+		if ( droneRef.get().getBodyRoomId() < 0 ) {
+
+			// Search for an empty square in DroneCtrl.
+			// This code assumes the room HAS an empty square, or it gives up and disarms.
+			// TODO: Rework this.
+
+			// FTL avoids squares with player-controlled crew/drones.
+			// FTL places bodies first in DroneCtrl, then in spatially
+			// nearby rooms. Possibly prioritizing station squares.
+			// RoomId does not seem relevant. Algorithm unknown.
+			// Presumably blocked squares are skipped.
+			// Need to account for mind controlled too.
+
+			boolean playerControlled = droneRef.get().isPlayerControlled();
+
+			List<Integer> candidateRoomIds = new ArrayList<Integer>();
+
+			int[] droneSystemRoomId = shipBlueprint.getSystemList().getRoomIdBySystemType( SystemType.DRONE_CTRL );
+			if ( droneSystemRoomId != null ) {
+				candidateRoomIds.add( droneSystemRoomId[0] );
+			}
+
+			for ( int i=0; i < candidateRoomIds.size(); i++ ) {
+				int roomId = candidateRoomIds.get( i );
+
+				ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
+				int squaresH = layoutRoom.squaresH;
+				int squaresV = layoutRoom.squaresV;
+				int roomCoordX = layoutRoom.locationX;
+				int roomCoordY = layoutRoom.locationY;
+				int roomX = layoutX + layoutRoom.locationX*squareSize;
+				int roomY = layoutY + layoutRoom.locationY*squareSize;
+
+				for ( int s=0; s < squaresH * squaresV; s++ ) {
+					boolean occupied = false;
+
+					// Check crew.
+					for ( SpriteReference<CrewState> crewRef : crewRefs ) {
+						if ( crewRef.get().getRoomId() == roomId
+							&& crewRef.get().getRoomSquare() == s
+							&& crewRef.get().getHealth() > 0
+							&& (crewRef.get().isPlayerControlled() == playerControlled
+								|| crewRef.get().isMindControlled()) ) {
+
+							occupied = true;
+							break;
+						}
+					}
+					// Check drone bodies.
+					if ( !occupied ) {
+						for ( SpriteReference<DroneState> otherDroneRef : droneRefs ) {
+							if ( otherDroneRef.get() != null
+								&& otherDroneRef.get().getBodyRoomId() == roomId
+								&& otherDroneRef.get().getBodyRoomSquare() == s
+								&& otherDroneRef.get().isArmed() ) {
+
+								occupied = true;
+								break;
+							}
+						}
+					}
+
+					// Place the body.
+					if ( !occupied ) {
+						int bodyX = shipLayout.getOffsetX()*squareSize + roomCoordX*squareSize + (s%squaresH)*squareSize + squareSize/2;
+						int bodyY = shipLayout.getOffsetY()*squareSize + roomCoordY*squareSize + (s/squaresH)*squareSize + squareSize/2;
+						droneRef.get().setBodyRoomId( roomId );
+						droneRef.get().setBodyRoomSquare( s );
+						droneRef.get().setBodyX( bodyX );
+						droneRef.get().setBodyY( bodyY );
+						break;
+					}
+				}
+
+				if ( droneRef.get().getBodyRoomId() >= 0 ) {
+					break;  // Done scanning rooms.
+				}
+				else {
+					// Add adjacent rooms to the candidates, while looping.
+					for ( Integer otherRoomId : shipLayout.getAdjacentRoomIds( roomId ) ) {
+						if ( !candidateRoomIds.contains( otherRoomId ) ) {
+							candidateRoomIds.add( otherRoomId );
+						}
+					}
+				}
+			}
+		}
+
+		if ( droneRef.get().getBodyRoomId() >= 0 ) {  // Place the body sprite.
+
+			DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
+
+			if ( droneBodySprite == null ) {
+				BufferedImage bodyImage = spriteImageProvider.getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
+
+				droneBodySprite = new DroneBodySprite( droneRef, bodyImage );
+				droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
+				droneBodySprites.add( droneBodySprite );
+				shipPanel.add( droneBodySprite, DRONE_LAYER );
+			}
+
+			int bodySpriteX = originX + droneRef.get().getBodyX();
+			int bodySpriteY = originY + droneRef.get().getBodyY();
+			droneBodySprite.setLocation( bodySpriteX - droneBodySprite.getPreferredSize().width/2, bodySpriteY - droneBodySprite.getPreferredSize().height/2 );
+		}
+		else {
+			log.warn( "Failed to place an armed drone's body in a room: "+ droneRef.get().getDroneId() );
+		}
 	}
 
 	private void showSidePanel() {
@@ -2580,16 +2641,44 @@ public class SavedGameFloorplanPanel extends JPanel {
 				Object blueprintObj = editorPanel.getCombo( ID ).getSelectedItem();
 
 				if ( blueprintObj instanceof DroneBlueprint ) {
-					String droneId = ((DroneBlueprint)blueprintObj).getId();
-					if ( droneRef.get() == null ) droneRef.set( new DroneState() );
+					DroneBlueprint droneBlueprint = ((DroneBlueprint)blueprintObj);
+
+					String droneId = droneBlueprint.getId();
+					DroneType droneType = DroneType.findById( droneBlueprint.getType() );
+					boolean blueprintChanged = false;
+
+					if ( droneRef.get() == null ) {
+						droneRef.set( new DroneState() );
+					}
+					else if ( !droneId.equals( droneRef.get().getDroneId() ) ) {
+						blueprintChanged = true;  // TODO: unequipDrone()?
+
+						// Remove the old body. A new one might get placed below.
+						DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
+						if ( droneBodySprite != null ) {
+							droneBodySprites.remove( droneBodySprite );
+							shipPanel.remove( droneBodySprite );
+						}
+					}
 					droneRef.get().setDroneId( droneId );
 
 					droneRef.get().setArmed( editorPanel.getBoolean( ARMED ).isSelected() );
 					droneRef.get().setPlayerControlled( editorPanel.getBoolean( PLAYER_CONTROLLED ).isSelected() );
 					droneRef.get().setHealth( editorPanel.getSlider( HEALTH ).getValue() );
+
+					if ( DroneType.BATTLE.equals( droneType ) || DroneType.REPAIR.equals( droneType ) ) {
+						if ( droneRef.get().isArmed() ) {
+							placeDroneBody( droneRef );
+
+							if ( droneRef.get().getBodyRoomId() < 0 ) {  // Body placement failed.
+								disarmDrone( droneRef );
+							}
+						}
+					}
+					// TODO: Extended info, Boarder drone crew on the other ship, etc.
 				}
 				else {
-					droneRef.set( null );
+					unequipDrone( droneRef );
 				}
 				droneRef.fireReferenceChange();
 
@@ -2626,7 +2715,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						}
 
 						if ( disarming ) {
-							otherDroneRef.get().setArmed( false );
+							disarmDrone( otherDroneRef );
 							otherDroneRef.fireReferenceChange();
 						}
 					}
@@ -3281,7 +3370,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					if ( systemRef.get().getCapacity() == 0 ) {
 						// When capacity is 0, nullify all drones.
 						for ( SpriteReference<DroneState> droneRef : droneRefs ) {
-							droneRef.set( null );
+							unequipDrone( droneRef );
 							droneRef.fireReferenceChange();
 						}
 					}
@@ -3292,7 +3381,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 							if ( droneRef.get() != null && droneRef.get().isArmed() ) {
 								dronePower += DataManager.get().getDrone( droneRef.get().getDroneId() ).getPower();
 								if ( dronePower > systemPower ) {
-									droneRef.get().setArmed( false );
+									disarmDrone( droneRef );
 									droneRef.fireReferenceChange();
 								}
 							}
@@ -3913,194 +4002,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		addSidePanelNote( notice );
 
 		showSidePanel();
-	}
-
-
-
-	public class DroneBodySprite extends JComponent implements ReferenceSprite<DroneState> {
-		private BufferedImage bodyImage = null;
-
-		private SpriteReference<DroneState> droneRef;
-
-
-		public DroneBodySprite( SpriteReference<DroneState> droneRef ) {
-			this.droneRef = droneRef;
-
-			this.setPreferredSize( new Dimension( 0, 0 ) );
-			this.setOpaque( false );
-
-			droneRef.addSprite( this );
-			referenceChanged();
-		}
-
-		@Override
-		public SpriteReference<DroneState> getReference() {
-			return droneRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-			BufferedImage newBodyImage = null;
-			boolean needsBody = false;
-			int bodyX = -1, bodyY = -1;
-
-			if ( droneRef.get() != null ) {
-				DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
-				DroneType droneType = DroneType.findById( droneBlueprint.getType() );
-
-				if ( DroneType.BATTLE.equals( droneType ) ) {
-					needsBody = true;
-				}
-				else if ( DroneType.REPAIR.equals( droneType ) ) {
-					needsBody = true;
-				}
-				else {
-					// TODO: Move this into the showDroneEditor() method.
-
-					// No body. And boarder bodies are crew on nearby ships.
-					droneRef.get().setBodyX( -1 );
-					droneRef.get().setBodyY( -1 );
-				}
-				bodyX = droneRef.get().getBodyX();
-				bodyY = droneRef.get().getBodyY();
-
-				if ( droneRef.get().isArmed() && needsBody && droneRef.get().getBodyRoomId() < 0 ) {
-					// Search for an empty square in DroneCtrl.
-					// This code assumes the room HAS an empty square, or it gives up and disarms.
-					// TODO: Rework this.
-
-					// FTL avoids squares with player-controlled crew/drones.
-					// FTL places bodies first in DroneCtrl, then in spatially
-					// nearby rooms. Possibly prioritizing station squares.
-					// RoomId does not seem relevant. Algorithm unknown.
-					// Presumably blocked squares are skipped.
-
-					int[] droneSystemRoomId = shipBlueprint.getSystemList().getRoomIdBySystemType( SystemType.DRONE_CTRL );
-					if ( droneSystemRoomId != null ) {
-						ShipLayoutRoom layoutRoom = shipLayout.getRoom( droneSystemRoomId[0] );
-						int squaresH = layoutRoom.squaresH;
-						int squaresV = layoutRoom.squaresV;
-						int roomCoordX = layoutRoom.locationX;
-						int roomCoordY = layoutRoom.locationY;
-						int roomX = layoutX + layoutRoom.locationX*squareSize;
-						int roomY = layoutY + layoutRoom.locationY*squareSize;
-
-						for ( int s=0; s < squaresH * squaresV; s++ ) {
-							int squareX = roomX + (s%squaresH)*squareSize;
-							int squareY = roomY + (s/squaresH)*squareSize;
-							Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
-
-							boolean occupied = false;
-							for ( DroneBodySprite otherBodySprite : droneBodySprites ) {
-								int otherBodyCenterX = otherBodySprite.getX() + otherBodySprite.getPreferredSize().width/2;
-								int otherBodyCenterY = otherBodySprite.getY() + otherBodySprite.getPreferredSize().height/2;
-								if ( squareRect.contains( otherBodyCenterX, otherBodyCenterY ) ) {
-									occupied = true;
-									break;
-								}
-							}
-							if ( occupied == false ) {
-								bodyX = shipLayout.getOffsetX()*squareSize + roomCoordX*squareSize + (s%squaresH)*squareSize + squareSize/2;
-								bodyY = shipLayout.getOffsetY()*squareSize + roomCoordY*squareSize + (s/squaresH)*squareSize + squareSize/2;
-								droneRef.get().setBodyX( bodyX );
-								droneRef.get().setBodyY( bodyY );
-								droneRef.get().setBodyRoomId( droneSystemRoomId[0] );
-								droneRef.get().setBodyRoomSquare( s );
-								break;
-							}
-						}
-					}
-				}
-				if ( droneRef.get().isArmed() && needsBody && droneRef.get().getBodyRoomId() < 0 ) {
-					log.warn( "Failed to place an armed drone's body in a room: "+ droneRef.get().getDroneId() );
-				}
-
-				if ( needsBody ) {
-					newBodyImage = getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
-				}
-			}
-
-			if ( newBodyImage != bodyImage ) {
-				int newW = newBodyImage.getWidth();
-				int newH = newBodyImage.getHeight();
-
-				this.setPreferredSize( new Dimension( newW, newH ) );
-
-				// TODO: Grr, bounds manipulation...
-				this.setSize( this.getPreferredSize() );
-
-				if ( droneRef.get().getBodyRoomId() >= 0 ) {
-					int bodySpriteX =  originX + bodyX;
-					int bodySpriteY =  originY + bodyY;
-					this.setLocation( bodySpriteX - newW/2, bodySpriteY - newH/2 );
-					this.setVisible( true );
-				}
-				else {
-					this.setLocation( 0, 0 );  // TODO: Pick a better drone hades point.
-					this.setVisible( false );
-				}
-
-				bodyImage = newBodyImage;
-			}
-
-			this.repaint();
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-
-			if ( bodyImage != null ) {
-				g2d.drawImage( bodyImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this );
-			}
-		}
-	}
-
-
-
-	public class CrewSprite extends JComponent implements ReferenceSprite<CrewState> {
-		private int w=35, h=35;
-		private BufferedImage crewImage;
-
-		private SpriteReference<CrewState> crewRef;
-
-
-		public CrewSprite( SpriteReference<CrewState> crewRef ) {
-			this.crewRef = crewRef;
-
-			this.setPreferredSize( new Dimension( w, h ) );
-			this.setOpaque( false );
-
-			crewRef.addSprite( this );
-			referenceChanged();
-		}
-
-		@Override
-		public SpriteReference<CrewState> getReference() {
-			return crewRef;
-		}
-
-		@Override
-		public void referenceChanged() {
-			crewImage = getCrewBodyImage( crewRef.get().getRace(), crewRef.get().isMale(), crewRef.get().isPlayerControlled() );
-
-			this.repaint();
-		}
-
-		@Override
-		public void paintComponent( Graphics g ) {
-			super.paintComponent( g );
-
-			Graphics2D g2d = (Graphics2D)g;
-			g2d.drawImage( crewImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this );
-		}
-
-		@Override
-		public String toString() {
-			return String.format( "%s (%s, %d HP)", crewRef.get().getName(), crewRef.get().getRace().getId(), crewRef.get().getHealth() );
-		}
 	}
 
 

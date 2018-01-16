@@ -38,7 +38,6 @@ public class BreachSprite extends JComponent {
 		this.roomId = roomId;
 		this.squareId = squareId;
 		this.health = health;
-		this.setOpaque( false );
 
 		int prefWidth = Math.max( breachAtlas.getFrameWidth(), 10 );
 		int prefHeight = Math.max( breachAtlas.getFrameHeight(), 10 );
@@ -52,6 +51,8 @@ public class BreachSprite extends JComponent {
 		else {
 			log.error( "Expected Anim not present in Atlas: "+ BREACH_ANIM );
 		}
+
+		this.setOpaque( false );
 	}
 
 	public void setRoomId( int n ) { roomId = n; }

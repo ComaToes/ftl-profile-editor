@@ -32,7 +32,6 @@ public class FireSprite extends JComponent {
 		this.roomId = roomId;
 		this.squareId = squareId;
 		this.health = health;
-		this.setOpaque( false );
 
 		int prefWidth = Math.max( fireAtlas.getFrameWidth(), 10 );
 		int prefHeight = Math.max( fireAtlas.getFrameHeight(), 10 );
@@ -46,6 +45,8 @@ public class FireSprite extends JComponent {
 		else {
 			log.error( "Expected Anim not present in Atlas: "+ FIRE_ANIM );
 		}
+
+		this.setOpaque( false );
 	}
 
 	public void setRoomId( int n ) { roomId = n; }
