@@ -58,12 +58,6 @@ public class DefaultDataManager extends DataManager {
 	
 	private static final Logger log = LoggerFactory.getLogger( DefaultDataManager.class );
 
-	private List<String> textLookupFileNames;
-
-	private List<String> stdBlueprintsFileNames;
-	private List<String> dlcBlueprintsFileNames;
-	private List<String> stdEventsFileNames;
-	private List<String> dlcEventsFileNames;
 	private List<String> stdPlayerShipBaseIds;
 	private List<String> dlcPlayerShipBaseIds;
 	private List<String> stdPlayerShipIds;
@@ -168,12 +162,12 @@ public class DefaultDataManager extends DataManager {
 
 			datParser = new DatParser();
 
-			// Central string lookups.
+			// Central string lookups (FTL 1.6.1+).
 			// Blank tags elsewhere can have an "id" attribute.
 			//   Look up a text tag with that "name" attribute.
 			//   Take that value, replace "\\n" with "\n".
 			//   Make that the value of the original tag.
-			textLookupFileNames = new ArrayList<String>();
+			List<String> textLookupFileNames = new ArrayList<String>();
 			// FTL 1.5.4-1.5.13.
 			textLookupFileNames.add( "misc.xml" );
 			// FTL 1.6.1.
@@ -210,12 +204,12 @@ public class DefaultDataManager extends DataManager {
 
 			log.info( "Reading Blueprints..." );
 
-			stdBlueprintsFileNames = new ArrayList<String>();
+			List<String> stdBlueprintsFileNames = new ArrayList<String>();
 			stdBlueprintsFileNames.add( "blueprints.xml" );
 			stdBlueprintsFileNames.add( "autoBlueprints.xml" );
 			stdBlueprintsFileNames.add( "bosses.xml" );  // FTL 1.5.4+
 
-			dlcBlueprintsFileNames = new ArrayList<String>();
+			List<String> dlcBlueprintsFileNames = new ArrayList<String>();
 			dlcBlueprintsFileNames.add( "dlcBlueprints.xml" );
 			dlcBlueprintsFileNames.add( "dlcBlueprintsOverwrite.xml" );
 			dlcBlueprintsFileNames.add( "dlcPirateBlueprints.xml" );
@@ -245,7 +239,7 @@ public class DefaultDataManager extends DataManager {
 
 			log.info( "Reading Events..." );
 
-			stdEventsFileNames = new ArrayList<String>();
+			List<String> stdEventsFileNames = new ArrayList<String>();
 			stdEventsFileNames.add( "events.xml" );
 			stdEventsFileNames.add( "newEvents.xml" );
 			stdEventsFileNames.add( "events_crystal.xml" );
@@ -262,7 +256,7 @@ public class DefaultDataManager extends DataManager {
 			stdEventsFileNames.add( "events_boss.xml" );
 			stdEventsFileNames.add( "events_ships.xml" );
 
-			dlcEventsFileNames = new ArrayList<String>();
+			List<String> dlcEventsFileNames = new ArrayList<String>();
 			dlcEventsFileNames.add( "dlcEvents.xml" );
 			dlcEventsFileNames.add( "dlcEventsOverwrite.xml" );
 			dlcEventsFileNames.add( "dlcEvents_anaerobic.xml" );

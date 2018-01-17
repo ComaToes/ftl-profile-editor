@@ -993,7 +993,7 @@ public class SavedGameParser extends Parser {
 
 			crew.setUnknownPhi( readBool( in ) );
 
-			if ( "crystal".equals( crew.getRace() ) ) {
+			if ( CrewType.CRYSTAL.equals( crew.getRace() ) ) {
 				crew.setLockdownRechargeTicks( readInt( in ) );
 				crew.setLockdownRechargeTicksGoal( readInt( in ) );
 				crew.setUnknownOmega( readInt( in ) );
