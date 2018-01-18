@@ -180,7 +180,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private Map<Rectangle, Integer> squareRegionRoomIdMap = new HashMap<Rectangle, Integer>();
 	private Map<Rectangle, Integer> squareRegionSquareIdMap = new HashMap<Rectangle, Integer>();
 	private List<RoomAndSquare> blockedRasList = new ArrayList<RoomAndSquare>();
-	private List<JComponent> roomDecorations = new ArrayList<JComponent>();
 
 	private List<SpriteReference<DroneState>> droneRefs = new ArrayList<SpriteReference<DroneState>>();
 	private List<SpriteReference<WeaponState>> weaponRefs = new ArrayList<SpriteReference<WeaponState>>();
@@ -210,6 +209,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private JLabel baseLbl = null;
 	private JLabel floorLbl = null;
 	private ShipInteriorComponent interiorComp = null;
+
 	private SpriteSelector defaultSelector = null;
 	private SpriteSelector miscSelector = null;
 	private SquareSelector squareSelector = null;
@@ -228,16 +228,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel = new JPanel();
 		sidePanel.setLayout( new BoxLayout( sidePanel, BoxLayout.Y_AXIS ) );
 		sidePanel.setBorder( BorderFactory.createEmptyBorder( 4, 4, 4, 6 ) );
-
-		baseLbl = new JLabel();
-		baseLbl.setOpaque( false );
-		baseLbl.setBounds( 0, 0, 50, 50 );
-		shipPanel.add( baseLbl, BASE_LAYER );
-
-		floorLbl = new JLabel();
-		floorLbl.setOpaque( false );
-		floorLbl.setBounds( 0, 0, 50, 50 );
-		shipPanel.add( floorLbl, FLOOR_LAYER );
 
 		defaultSelector = new SpriteSelector();
 		defaultSelector.addSpriteList( droneBoxSprites );
@@ -749,14 +739,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 			squareRegionRoomIdMap.clear();
 			squareRegionSquareIdMap.clear();
 			blockedRasList.clear();
-			baseLbl.setIcon( null );
-			floorLbl.setIcon( null );
 
-			for ( JComponent roomDecor : roomDecorations ) {
-				shipPanel.remove( roomDecor );
+			if ( baseLbl != null ) {
+				shipPanel.remove( baseLbl );
+				baseLbl = null;
 			}
-			roomDecorations.clear();
-
+			if ( floorLbl != null ) {
+				shipPanel.remove( floorLbl );
+				floorLbl = null;
+			}
 			if ( interiorComp != null ) {
 				shipPanel.remove( interiorComp );
 				interiorComp = null;
@@ -854,20 +845,29 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 
 			// Load the fuselage image.
+			if ( baseLbl != null ) shipPanel.remove( baseLbl );
+
+			baseLbl = new JLabel();
+			baseLbl.setOpaque( false );
+			baseLbl.setSize( shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
+			baseLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
+			shipPanel.add( baseLbl, BASE_LAYER );
+
 			BufferedImage baseImage = spriteImageProvider.getShipBaseImage( shipGfxBaseName, shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
 			baseLbl.setIcon( new ImageIcon( baseImage ) );
-			baseLbl.setSize( new Dimension( baseImage.getWidth(), baseImage.getHeight() ) );
-			baseLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
 
 			// Load the floor image.
-			floorLbl.setIcon( null );
-			floorLbl.setSize( 50, 50 );
+			if ( floorLbl != null ) shipPanel.remove( floorLbl );
+
+			floorLbl = new JLabel();
+			floorLbl.setOpaque( false );
 			floorLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
+			shipPanel.add( floorLbl, FLOOR_LAYER );
 
 			BufferedImage floorImage = spriteImageProvider.getShipFloorImage( shipGfxBaseName );
 			if ( floorImage != null ) {
 				floorLbl.setIcon( new ImageIcon( floorImage ) );
-				floorLbl.setSize( new Dimension( floorImage.getWidth(), floorImage.getHeight() ) );
+				floorLbl.setSize( floorImage.getWidth(), floorImage.getHeight() );
 
 				if ( shipChassis.getOffsets() != null ) {
 					Offset floorOffset = shipChassis.getOffsets().floorOffset;
@@ -877,20 +877,22 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 			}
 
+			// Floor cracks, decor, and walls.
+			if ( interiorComp != null ) shipPanel.remove( interiorComp );
 
-			for ( JComponent roomDecor : roomDecorations ) {
-				shipPanel.remove( roomDecor );
-			}
-			roomDecorations.clear();
+			interiorComp = new ShipInteriorComponent( shipLayout );
+			interiorComp.setSize( interiorComp.getPreferredSize() );
+			interiorComp.setLocation( layoutX - interiorComp.getLocationFudge(), originY - interiorComp.getLocationFudge() );
+			shipPanel.add( interiorComp, INTERIOR_LAYER );
+
 			for ( ShipBlueprint.SystemList.SystemRoom systemRoom : shipBlueprint.getSystemList().getSystemRooms() ) {
-				String decorName = systemRoom.getImg();
-
 				int roomId = systemRoom.getRoomId();
+
 				ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
 				int squaresH = layoutRoom.squaresH;
 				int squaresV = layoutRoom.squaresV;
-				int roomX = layoutX + layoutRoom.locationX*squareSize;
-				int roomY = layoutY + layoutRoom.locationY*squareSize;
+
+				String decorName = systemRoom.getImg();
 
 				// TODO: Looks like when medbay omits img, it's "room_medbay.png".
 
@@ -904,24 +906,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 					BufferedImage decorImage = spriteImageProvider.getRoomDecorImage( decorName, squaresH, squaresV );
 
 					if ( decorImage != null ) {
-						JLabel decorLbl = new JLabel( new ImageIcon( decorImage ) );
-						decorLbl.setOpaque( false );
-						decorLbl.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
-						roomDecorations.add( decorLbl );
-						shipPanel.add( decorLbl, DECOR_LAYER );
+						interiorComp.getDecorMap().put( roomId, decorImage );
 					}
 				}
 			}
-
-			// Draw walls and floor cracks.
-			if ( interiorComp != null ) {
-				shipPanel.remove( interiorComp );
-				interiorComp = null;
-			}
-			interiorComp = new ShipInteriorComponent( shipLayout, shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
-			interiorComp.setSize( interiorComp.getPreferredSize() );
-			interiorComp.setLocation( originX, originY );
-			shipPanel.add( interiorComp, INTERIOR_LAYER );
 		}
 
 		// Add Drones.
