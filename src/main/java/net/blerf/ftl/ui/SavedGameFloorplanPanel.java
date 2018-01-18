@@ -1,6 +1,5 @@
 package net.blerf.ftl.ui;
 
-import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -15,8 +14,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Stroke;
-import java.awt.Transparency;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -28,16 +25,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -67,6 +60,7 @@ import net.blerf.ftl.constants.AdvancedFTLConstants;
 import net.blerf.ftl.constants.FTLConstants;
 import net.blerf.ftl.constants.OriginalFTLConstants;
 import net.blerf.ftl.model.shiplayout.DoorCoordinate;
+import net.blerf.ftl.model.shiplayout.RoomAndSquare;
 import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.model.shiplayout.ShipLayoutDoor;
 import net.blerf.ftl.model.shiplayout.ShipLayoutRoom;
@@ -85,6 +79,7 @@ import net.blerf.ftl.parser.SavedGameParser.DroneType;
 import net.blerf.ftl.parser.SavedGameParser.ExtendedSystemInfo;
 import net.blerf.ftl.parser.SavedGameParser.RoomState;
 import net.blerf.ftl.parser.SavedGameParser.ShieldsInfo;
+import net.blerf.ftl.parser.SavedGameParser.ShipState;
 import net.blerf.ftl.parser.SavedGameParser.SquareState;
 import net.blerf.ftl.parser.SavedGameParser.StationDirection;
 import net.blerf.ftl.parser.SavedGameParser.SystemState;
@@ -108,6 +103,7 @@ import net.blerf.ftl.ui.floorplan.DroneBodySprite;
 import net.blerf.ftl.ui.floorplan.DroneBoxSprite;
 import net.blerf.ftl.ui.floorplan.FireSprite;
 import net.blerf.ftl.ui.floorplan.RoomSprite;
+import net.blerf.ftl.ui.floorplan.ShipInteriorComponent;
 import net.blerf.ftl.ui.floorplan.SpriteImageProvider;
 import net.blerf.ftl.ui.floorplan.SystemRoomSprite;
 import net.blerf.ftl.ui.floorplan.WeaponSprite;
@@ -138,7 +134,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final Integer FLOOR_LAYER = 11;
 	private static final Integer ROOM_LAYER = 12;
 	private static final Integer DECOR_LAYER = 13;
-	private static final Integer WALL_LAYER = 15;
+	private static final Integer INTERIOR_LAYER = 15;
 	private static final Integer SYSTEM_LAYER = 16;
 	private static final Integer BREACH_LAYER = 17;
 	private static final Integer FIRE_LAYER = 18;
@@ -150,7 +146,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final Integer SQUARE_SELECTION_LAYER = 60;
 	private static final int squareSize = 35;
 	private static final int tileEdge = 1;
-	private static final int jambLength = 5;
 
 	private GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 	private GraphicsDevice gs = ge.getDefaultScreenDevice();
@@ -184,7 +179,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private Map<Rectangle, Integer> roomRegionRoomIdMap = new HashMap<Rectangle, Integer>();
 	private Map<Rectangle, Integer> squareRegionRoomIdMap = new HashMap<Rectangle, Integer>();
 	private Map<Rectangle, Integer> squareRegionSquareIdMap = new HashMap<Rectangle, Integer>();
-	private List<Rectangle> blockedRegions = new ArrayList<Rectangle>();
+	private List<RoomAndSquare> blockedRasList = new ArrayList<RoomAndSquare>();
 	private List<JComponent> roomDecorations = new ArrayList<JComponent>();
 
 	private List<SpriteReference<DroneState>> droneRefs = new ArrayList<SpriteReference<DroneState>>();
@@ -214,7 +209,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private JLabel baseLbl = null;
 	private JLabel floorLbl = null;
-	private JLabel wallLbl = null;
+	private ShipInteriorComponent interiorComp = null;
 	private SpriteSelector defaultSelector = null;
 	private SpriteSelector miscSelector = null;
 	private SquareSelector squareSelector = null;
@@ -243,11 +238,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		floorLbl.setOpaque( false );
 		floorLbl.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( floorLbl, FLOOR_LAYER );
-
-		wallLbl = new JLabel();
-		wallLbl.setOpaque( false );
-		wallLbl.setBounds( 0, 0, 50, 50 );
-		shipPanel.add( wallLbl, WALL_LAYER );
 
 		defaultSelector = new SpriteSelector();
 		defaultSelector.addSpriteList( droneBoxSprites );
@@ -673,7 +663,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		fitViewToViewport();
 	}
 
-	public void setShipState( SavedGameParser.SavedGameState gameState, SavedGameParser.ShipState shipState ) {
+	public void setShipState( SavedGameParser.SavedGameState gameState, ShipState shipState ) {
 		String prevGfxBaseName = shipGfxBaseName;
 		defaultSelector.setVisible( false );
 		defaultSelector.setMousePoint( -1, -1 );
@@ -758,7 +748,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			roomRegionRoomIdMap.clear();
 			squareRegionRoomIdMap.clear();
 			squareRegionSquareIdMap.clear();
-			blockedRegions.clear();
+			blockedRasList.clear();
 			baseLbl.setIcon( null );
 			floorLbl.setIcon( null );
 
@@ -767,7 +757,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			}
 			roomDecorations.clear();
 
-			wallLbl.setIcon( null );
+			if ( interiorComp != null ) {
+				shipPanel.remove( interiorComp );
+				interiorComp = null;
+			}
 
 			fitViewToViewport();
 			shipPanel.revalidate();
@@ -785,6 +778,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
 		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
 		shipGfxBaseName = shipState.getShipGraphicsBaseName();
+
 		shipReserveCapacity = shipState.getReservePowerCapacity();
 		shipName = shipState.getShipName();
 		shipHull = shipState.getHullAmt();
@@ -799,7 +793,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		shipCloakAnimTicks = shipState.getCloakAnimTicks();
 		shipPlayerControlled = ( shipState == gameState.getPlayerShip() );
 		shipAugmentIdList.addAll( shipState.getAugmentIdList() );
-		ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
 		if ( shipPlayerControlled ) {
 			originX = 0;
@@ -841,8 +834,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			// TODO: Enemy ships don't have a blocked slot.
 			//   Dunno if that's from being in "autoBlueprints.xml" or non-player controlled.
 			//   Commandeer one and find out.
-			blockedRegions.clear();
-			ShipBlueprint.SystemList.SystemRoom medicalSystem = blueprintSystems.getMedicalRoom();
+			blockedRasList.clear();
+			ShipBlueprint.SystemList.SystemRoom medicalSystem = shipBlueprint.getSystemList().getMedicalRoom();
 			if ( medicalSystem != null ) {
 				ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
 				int badRoomId = medicalSystem.getRoomId();
@@ -855,61 +848,24 @@ public class SavedGameFloorplanPanel extends JPanel {
 				if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
 					log.trace( String.format( "Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId ) );
 
-					ShipLayoutRoom layoutRoom = shipLayout.getRoom( badRoomId );
-					int squaresH = layoutRoom.squaresH;
-					int roomX = layoutX + layoutRoom.locationX*squareSize;
-					int roomY = layoutY + layoutRoom.locationY*squareSize;
-
-					int squareX = roomX + (badSquareId%squaresH)*squareSize;
-					int squareY = roomY + (badSquareId/squaresH)*squareSize;
-					Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
-					blockedRegions.add( squareRect );
+					blockedRasList.add( new RoomAndSquare( badRoomId, badSquareId ) );
 				}
 			}
 
 
 			// Load the fuselage image.
-			baseLbl.setIcon( null );
-			InputStream in = null;
-			try {
-				String baseImagePath = null;
-				String[] candidatePaths = new String[2];
-				candidatePaths[0] = "img/ship/"+ shipGfxBaseName +"_base.png";  // FTL 1.01-1.03.3 (All ships), 1.5.4 (Player ships)
-				candidatePaths[1] = "img/ships_glow/"+ shipGfxBaseName +"_base.png";  // FTL 1.5.4 (Enemy ships)
-				for ( String candidatePath : candidatePaths ) {
-					if ( DataManager.get().hasResourceInputStream( candidatePath ) ) {
-						baseImagePath = candidatePath;
-					}
-				}
-				if ( baseImagePath == null ) {
-					throw new FileNotFoundException();
-				}
+			BufferedImage baseImage = spriteImageProvider.getShipBaseImage( shipGfxBaseName, shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
+			baseLbl.setIcon( new ImageIcon( baseImage ) );
+			baseLbl.setSize( new Dimension( baseImage.getWidth(), baseImage.getHeight() ) );
+			baseLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
 
-				in = DataManager.get().getResourceInputStream( baseImagePath );
-				BufferedImage baseImage = ImageIO.read( in );
-				in.close();
-				baseLbl.setIcon( new ImageIcon( baseImage ) );
-				baseLbl.setSize( new Dimension( baseImage.getWidth(), baseImage.getHeight() ) );
-				baseLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
-			}
-			catch ( FileNotFoundException e ) {
-				log.warn( "No ship base image for ("+ shipGfxBaseName +")" );
-			}
-			catch ( IOException e ) {
-				log.error( "Failed to load ship base image ("+ shipGfxBaseName +")", e );
-			}
-			finally {
-				try {if ( in != null ) in.close();}
-				catch ( IOException e ) {}
-			}
-
-			// Load the interior image.
+			// Load the floor image.
 			floorLbl.setIcon( null );
-			floorLbl.setBounds( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y, 50, 50 );
-			try {
-				in = DataManager.get().getResourceInputStream( "img/ship/"+ shipGfxBaseName +"_floor.png" );
-				BufferedImage floorImage = ImageIO.read( in );
-				in.close();
+			floorLbl.setSize( 50, 50 );
+			floorLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
+
+			BufferedImage floorImage = spriteImageProvider.getShipFloorImage( shipGfxBaseName );
+			if ( floorImage != null ) {
 				floorLbl.setIcon( new ImageIcon( floorImage ) );
 				floorLbl.setSize( new Dimension( floorImage.getWidth(), floorImage.getHeight() ) );
 
@@ -920,23 +876,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 					}
 				}
 			}
-			catch ( FileNotFoundException e ) {
-				log.debug( "No ship floor image for ("+ shipGfxBaseName +")" );
-			}
-			catch ( IOException e ) {
-				log.error( "Failed to load ship floor image ("+ shipGfxBaseName +")", e );
-			}
-			finally {
-				try {if ( in != null ) in.close();}
-				catch ( IOException e ) {}
-			}
+
 
 			for ( JComponent roomDecor : roomDecorations ) {
 				shipPanel.remove( roomDecor );
 			}
 			roomDecorations.clear();
-			for ( ShipBlueprint.SystemList.SystemRoom systemRoom : blueprintSystems.getSystemRooms() ) {
-				String roomImgPath = systemRoom.getImg();
+			for ( ShipBlueprint.SystemList.SystemRoom systemRoom : shipBlueprint.getSystemList().getSystemRooms() ) {
+				String decorName = systemRoom.getImg();
 
 				int roomId = systemRoom.getRoomId();
 				ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
@@ -947,42 +894,34 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				// TODO: Looks like when medbay omits img, it's "room_medbay.png".
 
-				if ( roomImgPath != null ) {
-					// Gotta scale because Zoltan #2's got a tall Doors image for a wide room. :/
-					// FTL 1.5.4+ reportedly no longer scales, and even lets decor extend beyond room walls.
-
-					BufferedImage decorImage = ImageUtilities.getScaledImage( "img/ship/interior/"+ roomImgPath +".png", squaresH*squareSize, squaresV*squareSize, cachedImages );
-					JLabel decorLbl = new JLabel( new ImageIcon( decorImage ) );
-					decorLbl.setOpaque( false );
-					decorLbl.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
-					roomDecorations.add( decorLbl );
-					shipPanel.add( decorLbl, DECOR_LAYER );
+				if ( decorName == null ) {
+					if ( systemRoom == shipBlueprint.getSystemList().getTeleporterRoom() ) {
+						decorName = "teleporter_off";  // Draw a teleporter pad on each square.
+					}
 				}
 
-				if ( systemRoom == blueprintSystems.getTeleporterRoom() ) {
-					for ( int s=0; s < squaresH * squaresV; s++ ) {
-						int decorX = roomX + (s%squaresH)*squareSize + squareSize/2;
-						int decorY = roomY + (s/squaresH)*squareSize + squareSize/2;
+				if ( decorName != null ) {
+					BufferedImage decorImage = spriteImageProvider.getRoomDecorImage( decorName, squaresH, squaresV );
 
-						BufferedImage decorImage = ImageUtilities.getScaledImage( "img/ship/interior/teleporter_off.png", 20, 20, cachedImages );
+					if ( decorImage != null ) {
 						JLabel decorLbl = new JLabel( new ImageIcon( decorImage ) );
 						decorLbl.setOpaque( false );
-						decorLbl.setSize( squaresH*squareSize, squaresV*squareSize );
-						placeSprite( decorX, decorY, decorLbl );
+						decorLbl.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
 						roomDecorations.add( decorLbl );
 						shipPanel.add( decorLbl, DECOR_LAYER );
 					}
 				}
 			}
 
-			// Draw walls and floor crevices.
-			BufferedImage wallImage = gc.createCompatibleImage( shipChassis.getImageBounds().w, shipChassis.getImageBounds().h, Transparency.BITMASK );
-			Graphics2D wallG = wallImage.createGraphics();
-			drawWalls( wallG, shipChassis.getImageBounds().x * -1, shipChassis.getImageBounds().y * -1, shipLayout );
-			wallG.dispose();
-			wallLbl.setIcon( new ImageIcon( wallImage ) );
-			wallLbl.setSize( new Dimension( wallImage.getWidth(), wallImage.getHeight() ) );
-			wallLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
+			// Draw walls and floor cracks.
+			if ( interiorComp != null ) {
+				shipPanel.remove( interiorComp );
+				interiorComp = null;
+			}
+			interiorComp = new ShipInteriorComponent( shipLayout, shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
+			interiorComp.setSize( interiorComp.getPreferredSize() );
+			interiorComp.setLocation( originX, originY );
+			shipPanel.add( interiorComp, INTERIOR_LAYER );
 		}
 
 		// Add Drones.
@@ -1542,7 +1481,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
-				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
+				for ( RoomAndSquare ras : blockedRasList ) {
+					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				}
 
 				for ( SpriteReference<CrewState> crewRef : crewRefs ) {
 					if ( crewRef.get().getRoomId() == roomId && crewRef.get().getRoomSquare() == squareId ) {
@@ -1591,7 +1533,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
-				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
+				for ( RoomAndSquare ras : blockedRasList ) {
+					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				}
 
 				for ( BreachSprite breachSprite : breachSprites ) {
 					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
@@ -1625,7 +1570,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
-				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
+				for ( RoomAndSquare ras : blockedRasList ) {
+					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				}
 
 				for ( FireSprite fireSprite : fireSprites ) {
 					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
@@ -1658,7 +1606,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			@Override
 			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
 				if ( roomId < 0 || squareId < 0 ) return false;
-				if ( blockedRegions.contains( squareSelector.getSquareRectangle() ) ) return false;
+
+				for ( RoomAndSquare ras : blockedRasList ) {
+					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				}
 
 				for ( SpriteReference<CrewState> crewRef : crewRefs ) {
 					if ( crewRef.get().getRoomId() == roomId && crewRef.get().getRoomSquare() == squareId ) {
@@ -1676,7 +1627,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				int oldSpriteRoomId = getSpriteRoomId( mobileSprite );  // Actual sprite location, if walking.
 
-				placeSprite( center.x, center.y, mobileSprite );
+				mobileSprite.setLocation( center.x - mobileSprite.getSize().width/2, center.y - mobileSprite.getSize().height/2 );
 				mobileRef.get().setRoomId( roomId );
 				mobileRef.get().setRoomSquare( squareId );
 				mobileRef.get().setSpriteX( center.x - originX );
@@ -1779,139 +1730,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		crewSprite.setLocation( centerX - crewSprite.getPreferredSize().width/2, centerY - crewSprite.getPreferredSize().height/2 );
 		crewSprites.add( crewSprite );
 		shipPanel.add( crewSprite, CREW_LAYER );
-	}
-
-	/** Relocates a JComponent within its parent's null layout. */
-	private void placeSprite( int centerX, int centerY, JComponent sprite ) {
-		Dimension spriteSize = sprite.getSize();
-		sprite.setLocation( centerX - spriteSize.width/2, centerY - spriteSize.height/2 );
-	}
-
-	/** Draws each room's walls, door openings, and floor crevices. */
-	private void drawWalls( Graphics2D wallG, int layoutX, int layoutY, ShipLayout shipLayout ) {
-
-		Color prevColor = wallG.getColor();
-		Stroke prevStroke = wallG.getStroke();
-		Color floorCrackColor = new Color( 125, 125, 125 );
-		Stroke floorCrackStroke = new BasicStroke( 1 );
-		Color roomBorderColor = new Color( 15, 15, 15 );
-		Stroke roomBorderStroke = new BasicStroke( 4 );
-		int fromX, fromY, toX, toY;
-
-		Map<DoorCoordinate, ShipLayoutDoor> layoutDoorMap = shipLayout.getDoorMap();
-		DoorCoordinate doorCoord = null;
-		ShipLayoutDoor layoutDoor = null;
-
-		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-			ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
-			int squaresH = layoutRoom.squaresH;
-			int squaresV = layoutRoom.squaresV;
-			int roomCoordX = layoutRoom.locationX;
-			int roomCoordY = layoutRoom.locationY;
-			int roomX = layoutX + layoutRoom.locationX*squareSize;
-			int roomY = layoutY + layoutRoom.locationY*squareSize;
-
-			// Draw floor lines within rooms.
-			wallG.setColor( floorCrackColor );
-			wallG.setStroke( floorCrackStroke );
-			for ( int n=1; n <= squaresV-1; n++ )  // H lines.
-				wallG.drawLine( roomX+1, roomY+n*squareSize, roomX+squaresH*squareSize-1, roomY+n*squareSize );
-			for ( int n=1; n <= squaresH-1; n++ )  // V lines.
-				wallG.drawLine( roomX+n*squareSize, roomY+1, roomX+n*squareSize, roomY+squaresV*squareSize-1 );
-
-			// Draw borders around rooms.
-			for ( int n=1; n <= squaresV; n++ ) {  // V lines.
-				// West side.
-				fromX = roomX;
-				fromY = roomY+(n-1)*squareSize;
-				toX = roomX;
-				toY = roomY+n*squareSize;
-				doorCoord = new DoorCoordinate( roomCoordX, roomCoordY+n-1, 1 );
-				layoutDoor = layoutDoorMap.get( doorCoord );
-
-				if ( layoutDoor != null ) {  // Must be a door there.
-					// Draw stubs around door.
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, toX, fromY+jambLength );
-					wallG.drawLine( fromX, toY-jambLength, toX, toY );
-				}
-				else {
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, toX, toY );
-				}
-
-				// East Side.
-				fromX = roomX+squaresH*squareSize;
-				fromY = roomY+(n-1)*squareSize;
-				toX = roomX+squaresH*squareSize;
-				toY = roomY+n*squareSize;
-				doorCoord = new DoorCoordinate( roomCoordX+squaresH, roomCoordY+n-1, 1 );
-				layoutDoor = layoutDoorMap.get( doorCoord );
-
-				if ( layoutDoor != null ) {  // Must be a door there.
-					// Draw stubs around door.
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, toX, fromY+jambLength );
-					wallG.drawLine( fromX, toY-jambLength, toX, toY );
-				}
-				else {
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, toX, toY );
-				}
-			}
-
-			wallG.setStroke( roomBorderStroke );
-			wallG.setColor( roomBorderColor );
-			for ( int n=1; n <= squaresH; n++ ) {  // H lines.
-				// North side.
-				fromX = roomX+(n-1)*squareSize;
-				fromY = roomY;
-				toX = roomX+n*squareSize;
-				toY = roomY;
-				doorCoord = new DoorCoordinate( roomCoordX+n-1, roomCoordY, 0 );
-				layoutDoor = layoutDoorMap.get( doorCoord );
-
-				if ( layoutDoor != null ) {  // Must be a door there.
-					// Draw stubs around door.
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, fromX+jambLength, fromY );
-					wallG.drawLine( toX-jambLength, fromY, toX, toY );
-				}
-				else {
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, toX, toY );
-				}
-
-				// South side.
-				fromX = roomX+(n-1)*squareSize;
-				fromY = roomY+squaresV*squareSize;
-				toX = roomX+n*squareSize;
-				toY = roomY+squaresV*squareSize;
-				doorCoord = new DoorCoordinate( roomCoordX+n-1, roomCoordY+squaresV, 0 );
-				layoutDoor = layoutDoorMap.get( doorCoord );
-
-				if ( layoutDoor != null ) {  // Must be a door there.
-					// Draw stubs around door.
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, fromX+jambLength, fromY );
-					wallG.drawLine( toX-jambLength, fromY, toX, toY );
-				}
-				else {
-					wallG.setStroke( roomBorderStroke );
-					wallG.setColor( roomBorderColor );
-					wallG.drawLine( fromX, fromY, toX, toY );
-				}
-			}
-		}
-		wallG.setColor( prevColor );
-		wallG.setStroke( prevStroke );
 	}
 
 	/**

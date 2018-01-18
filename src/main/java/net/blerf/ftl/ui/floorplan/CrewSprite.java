@@ -54,7 +54,7 @@ public class CrewSprite extends JComponent implements ReferenceSprite<CrewState>
 		super.paintComponent( g );
 
 		Graphics2D g2d = (Graphics2D)g;
-		g2d.drawImage( crewImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this );
+		g2d.drawImage( crewImage, 0, 0, this.getWidth(), this.getHeight(), this );
 	}
 
 	@Override

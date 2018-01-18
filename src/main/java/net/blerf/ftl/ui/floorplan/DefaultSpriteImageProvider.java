@@ -8,6 +8,7 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsConfiguration;
 import java.awt.Rectangle;
 import java.awt.Point;
+import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
@@ -40,6 +41,8 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 	private static final String BREACH_ANIM = "breach";
 	private static final String FIRE_ANIM = "fire_large";
 
+	private static final int squareSize = 35;
+
 	private static final Logger log = LoggerFactory.getLogger( DefaultSpriteImageProvider.class );
 
 	private final Color dummyColor = new Color( 150, 150, 200 );
@@ -60,7 +63,148 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 	}
 
 	/**
-	 * Returns a default image of a drone body, possibly with a colored outline.
+	 * Returns a ship's base image.
+	 *
+	 * FTL 1.01-1.03.3: "img/ship/[X]_base.png" (All ships).
+	 * FTL 1.5.4+: "img/ship/[X]_base.png" (Player ships).
+	 * FTL 1.5.4+: "img/ships_glow/[X]_base.png" (NPC ships).
+	 *
+	 * The result will NOT be cached.
+	 */
+	@Override
+	public BufferedImage getShipBaseImage( String shipGfxBaseName, int w, int h ) {
+		BufferedImage result = null;
+
+		String plainPath = "img/ship/"+ shipGfxBaseName +"_base.png";
+		String glowPath = "img/ships_glow/"+ shipGfxBaseName +"_base.png";
+
+		String basePath = null;
+		if ( DataManager.get().hasResourceInputStream( plainPath ) ) {
+			basePath = plainPath;
+		}
+		else if ( DataManager.get().hasResourceInputStream( glowPath ) ) {
+			basePath = glowPath;
+		}
+		else {
+			log.error( "Could not find base image for ship: "+ shipGfxBaseName );
+		}
+
+		if ( basePath != null ) {
+			try {
+				result = readResourceImage( basePath );
+			}
+			catch ( IOException e ) {
+				log.error( "Failed to read ship base image: "+ basePath, e );
+			}
+		}
+
+		if ( result == null ) {
+			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
+			Graphics2D g2d = result.createGraphics();
+			g2d.setColor( dummyColor );
+			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
+			g2d.dispose();
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns a ship's floor image, or null.
+	 *
+	 * The standard path is "img/ship/[X]_floor.png".
+	 *
+	 * NPC ships don't have floor images.
+	 *
+	 * The result will NOT be cached.
+	 *
+	 * TODO: Can modded NPC ships have floor images?
+	 */
+	@Override
+	public BufferedImage getShipFloorImage( String shipGfxBaseName ) {
+		BufferedImage result = null;
+
+		String floorPath = "img/ship/"+ shipGfxBaseName +"_floor.png";
+
+		try {
+			result = readResourceImage( floorPath );
+		}
+		catch ( FileNotFoundException e ) {
+			// Not worth logging.
+		}
+		catch ( IOException e ) {
+			log.error( "Failed to read ship floor image: "+ floorPath, e );
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns a room decoration image, or null.
+	 *
+	 * The standard path is "img/ship/interior/[X].png".
+	 *
+	 * The decorName comes from "shipBlueprint/systemList/". Each system tag
+	 * may have an optional "img" attribute.
+	 *
+	 * FTL 1.01-1.03.3: Would stretch the image to fit the room. Zoltan-B had a
+	 * tall Doors image for a wide room, which looked normal because of this.
+	 *
+	 * FTL 1.5.4: Would not stretch. It'd even extend the image beyond the
+	 * room's walls.
+	 *
+	 * This method will scale.
+	 *
+	 * The result will NOT be cached.
+	 */
+	@Override
+	public BufferedImage getRoomDecorImage( String decorName, int squaresH, int squaresV ) {
+		BufferedImage result = null;
+		BufferedImage decorImage = null;
+
+		String decorPath = "img/ship/interior/"+ decorName +".png";
+
+		try {
+			decorImage = readResourceImage( decorPath );
+		}
+		catch ( FileNotFoundException e ) {
+			log.error( "Could not find decor image innerPath: "+ decorPath );
+		}
+		catch ( IOException e ) {
+			log.error( "Failed to read decor image: "+ decorPath, e );
+		}
+
+		if ( decorImage != null ) {
+
+			result = gc.createCompatibleImage( squaresH*squareSize, squaresV*squareSize, Transparency.TRANSLUCENT );
+			Graphics2D g2d = result.createGraphics();
+			try {
+				if ( "teleporter_off".equals( decorName ) ) {
+					// Tile teleporter pads instead (20x20).
+
+					for ( int s=0; s < squaresH * squaresV; s++ ) {
+						int centerX = (s%squaresH)*squareSize + squareSize/2;
+						int centerY = (s/squaresH)*squareSize + squareSize/2;
+
+						g2d.drawImage( decorImage, centerX - decorImage.getWidth()/2, centerY - decorImage.getHeight()/2, null );
+					}
+				}
+				else {  // Fit the room.
+					g2d.setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
+					
+					g2d.drawImage( decorImage, 0, 0, squaresH*squareSize, squaresV*squareSize, null );
+				}
+			}
+			finally {
+				g2d.dispose();
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Returns the default image of a drone body, possibly with a colored outline.
 	 *
 	 * The result will be cached.
 	 *
@@ -103,7 +247,7 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
 			Graphics2D g2d = result.createGraphics();
-			g2d.setColor( new Color( 150, 150, 200 ) );
+			g2d.setColor( dummyColor );
 			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
 			g2d.dispose();
 		}
@@ -112,18 +256,23 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 	}
 
 	/**
-	 * Returns a default image of crew, with a friend-or-foe colored outline.
+	 * Returns the default image of crew, with a friend-or-foe colored outline.
 	 *
 	 * Generally the image name is related to the raceId, with two exceptions.
 	 * Humans have a separate female image. Ghost crew have human images (with
 	 * programmatically reduced opacity).
 	 *
 	 * Image names have varied:
-	 *   FTL 1.01: Drones had "X_sheet" / "X_enemy_sheet".
-	 *   FTL 1.01: Crew had "X_player_[green|yellow]" / "X_enemy_red".
-	 *   FTL 1.03.1: Drones could also be "X_player[no color]" / "X_enemy_red".
-	 *   FTL 1.5.4: Crew had "X_base" overlaid on a tinted mask "X_color".
-	 *   FTL 1.5.4: Drone had "X_base" with no color possibility.
+	 *   FTL 1.01: Drones had "[X]_sheet" / "[X]_enemy_sheet".
+	 *   FTL 1.01: Crew had "[X]_player_[green|yellow]" / "[X]_enemy_red".
+	 *   FTL 1.03.1: Drones could also be "[X]_player[no color]" / "[X]_enemy_red".
+	 *   FTL 1.5.4: Crew had "[X]_base" overlaid on a tinted mask "[X]_color".
+	 *   FTL 1.5.4: Drone had "[X]_base" with no color possibility.
+	 *
+	 * FTL 1.01's AnimSheet was green, but in-game, it was the yellow image.
+	 *
+	 * FTL 1.5.4's AnimSheet was base, but in-game, it added layers and
+	 * yellow-tinted outlines.
 	 *
 	 * The result will be cached.
 	 */
@@ -197,7 +346,7 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 
 			result = gc.createCompatibleImage( w, h, Transparency.OPAQUE );
 			Graphics2D g2d = result.createGraphics();
-			g2d.setColor( new Color( 150, 150, 200 ) );
+			g2d.setColor( dummyColor );
 			g2d.fillRect( 0, 0, result.getWidth()-1, result.getHeight()-1 );
 			g2d.dispose();
 		}

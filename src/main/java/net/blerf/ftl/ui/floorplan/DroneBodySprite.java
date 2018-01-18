@@ -65,7 +65,7 @@ public class DroneBodySprite extends JComponent implements ReferenceSprite<Drone
 		Graphics2D g2d = (Graphics2D)g;
 
 		if ( bodyImage != null ) {
-			g2d.drawImage( bodyImage, 0, 0, this.getWidth()-1, this.getHeight()-1, this );
+			g2d.drawImage( bodyImage, 0, 0, this.getWidth(), this.getHeight(), this );
 		}
 	}
 }

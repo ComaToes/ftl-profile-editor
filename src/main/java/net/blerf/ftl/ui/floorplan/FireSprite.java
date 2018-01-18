@@ -68,7 +68,7 @@ public class FireSprite extends JComponent {
 			int rY = currentFrame.y;
 			int rW = fireAtlas.getFrameWidth();
 			int rH = fireAtlas.getFrameHeight();
-			g2d.drawImage( fireAtlas.getSheetImage(), 0, 0, this.getWidth()-1, this.getHeight()-1, rX, rY, rX+rW-1, rY+rH-1, this );
+			g2d.drawImage( fireAtlas.getSheetImage(), 0, 0, this.getWidth(), this.getHeight(), rX, rY, rX+rW-1, rY+rH-1, this );
 		}
 		else {
 			Color prevColor = g2d.getColor();
