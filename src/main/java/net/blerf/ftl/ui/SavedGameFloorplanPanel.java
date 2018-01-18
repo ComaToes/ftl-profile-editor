@@ -1962,7 +1962,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 	 *
 	 * This begins scanning the Drone_Ctrl room, then progressively expanding
 	 * through adjacent rooms. Squares are occupied by drone bodies and crew
-	 * (of the same playerControlled status, or mind controlled).
+	 * (of the same playerControlled status, or mind controlled). Blocked
+	 * squares are considered occupied.
 	 *
 	 * Note: It is possible that the body will not be placed. Check the roomId
 	 * afterward, and disarm if necessary.
@@ -1989,16 +1990,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		if ( droneRef.get().getBodyRoomId() < 0 ) {
 
-			// Search for an empty square in DroneCtrl.
-			// This code assumes the room HAS an empty square, or it gives up and disarms.
-			// TODO: Rework this.
-
 			// FTL avoids squares with player-controlled crew/drones.
 			// FTL places bodies first in DroneCtrl, then in spatially
 			// nearby rooms. Possibly prioritizing station squares.
 			// RoomId does not seem relevant. Algorithm unknown.
-			// Presumably blocked squares are skipped.
-			// Need to account for mind controlled too.
+			// ShipLayout Door order (original or sorted)?
 
 			boolean playerControlled = droneRef.get().isPlayerControlled();
 
@@ -2023,16 +2019,25 @@ public class SavedGameFloorplanPanel extends JPanel {
 				for ( int s=0; s < squaresH * squaresV; s++ ) {
 					boolean occupied = false;
 
-					// Check crew.
-					for ( SpriteReference<CrewState> crewRef : crewRefs ) {
-						if ( crewRef.get().getRoomId() == roomId
-							&& crewRef.get().getRoomSquare() == s
-							&& crewRef.get().getHealth() > 0
-							&& (crewRef.get().isPlayerControlled() == playerControlled
-								|| crewRef.get().isMindControlled()) ) {
-
+					// Check blocked squares.
+					for ( RoomAndSquare ras : blockedRasList ) {
+						if ( ras.roomId == roomId && ras.squareId == s ) {
 							occupied = true;
 							break;
+						}
+					}
+					// Check crew.
+					if ( !occupied ) {
+						for ( SpriteReference<CrewState> crewRef : crewRefs ) {
+							if ( crewRef.get().getRoomId() == roomId
+								&& crewRef.get().getRoomSquare() == s
+								&& crewRef.get().getHealth() > 0
+								&& (crewRef.get().isPlayerControlled() == playerControlled
+									|| crewRef.get().isMindControlled()) ) {
+
+								occupied = true;
+								break;
+							}
 						}
 					}
 					// Check drone bodies.
