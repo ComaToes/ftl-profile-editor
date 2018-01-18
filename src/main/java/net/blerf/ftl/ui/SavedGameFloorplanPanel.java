@@ -882,7 +882,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			interiorComp = new ShipInteriorComponent( shipLayout );
 			interiorComp.setSize( interiorComp.getPreferredSize() );
-			interiorComp.setLocation( layoutX - interiorComp.getLocationFudge(), originY - interiorComp.getLocationFudge() );
+			interiorComp.setLocation( layoutX - interiorComp.getLocationFudge(), layoutY - interiorComp.getLocationFudge() );
 			shipPanel.add( interiorComp, INTERIOR_LAYER );
 
 			for ( ShipBlueprint.SystemList.SystemRoom systemRoom : shipBlueprint.getSystemList().getSystemRooms() ) {
