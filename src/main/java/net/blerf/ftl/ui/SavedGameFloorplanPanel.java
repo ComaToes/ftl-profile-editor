@@ -102,7 +102,9 @@ import net.blerf.ftl.ui.floorplan.DoorSprite;
 import net.blerf.ftl.ui.floorplan.DroneBodySprite;
 import net.blerf.ftl.ui.floorplan.DroneBoxSprite;
 import net.blerf.ftl.ui.floorplan.FireSprite;
+import net.blerf.ftl.ui.floorplan.FloorplanCoord;
 import net.blerf.ftl.ui.floorplan.RoomSprite;
+import net.blerf.ftl.ui.floorplan.ShipBundle;
 import net.blerf.ftl.ui.floorplan.ShipInteriorComponent;
 import net.blerf.ftl.ui.floorplan.SpriteImageProvider;
 import net.blerf.ftl.ui.floorplan.SystemRoomSprite;
@@ -144,6 +146,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private static final Integer DEFAULT_SELECTION_LAYER = 50;
 	private static final Integer MISC_SELECTION_LAYER = 55;
 	private static final Integer SQUARE_SELECTION_LAYER = 60;
+
+	private static final int PLAYER_ORIGIN_X = 0;
+	private static final int PLAYER_ORIGIN_Y = 0;
+	private static final int NEARBY_CENTER_X = 1075;
+	private static final int NEARBY_CENTER_Y = 322;
+
 	private static final int squareSize = 35;
 	private static final int tileEdge = 1;
 
@@ -154,49 +162,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private FTLFrame frame;
 
 	private FTLConstants ftlConstants = new OriginalFTLConstants();
-	private ShipBlueprint shipBlueprint = null;
-	private ShipLayout shipLayout = null;
-	private ShipChassis shipChassis = null;
-	private String shipGfxBaseName = null;
-	private int shipReserveCapacity = 0;
-	private String shipName = null;
-	private int shipHull = 0;
-	private int shipFuel = 0;
-	private int shipDroneParts = 0;
-	private int shipMissiles = 0;
-	private int shipScrap = 0;
-	private boolean shipHostile = false;
-	private int shipJumpChargeTicks = 0;
-	private boolean shipJumping = false;
-	private int shipJumpAnimTicks = 0;
-	private int shipCloakAnimTicks = 0;
-	private boolean shipPlayerControlled = false;
-	private List<String> shipAugmentIdList = new ArrayList<String>();
-	private List<ExtendedSystemInfo> extendedSystemInfoList = new ArrayList<ExtendedSystemInfo>();
-
-	private int originX = 0, originY = 0;
-	private int layoutX = 0, layoutY = 0;
-	private Map<Rectangle, Integer> roomRegionRoomIdMap = new HashMap<Rectangle, Integer>();
-	private Map<Rectangle, Integer> squareRegionRoomIdMap = new HashMap<Rectangle, Integer>();
-	private Map<Rectangle, Integer> squareRegionSquareIdMap = new HashMap<Rectangle, Integer>();
-	private List<RoomAndSquare> blockedRasList = new ArrayList<RoomAndSquare>();
-
-	private List<SpriteReference<DroneState>> droneRefs = new ArrayList<SpriteReference<DroneState>>();
-	private List<SpriteReference<WeaponState>> weaponRefs = new ArrayList<SpriteReference<WeaponState>>();
-	private List<SpriteReference<RoomState>> roomRefs = new ArrayList<SpriteReference<RoomState>>();
-	private List<SpriteReference<SystemState>> systemRefs = new ArrayList<SpriteReference<SystemState>>();
-	private List<SpriteReference<DoorState>> doorRefs = new ArrayList<SpriteReference<DoorState>>();
-	private List<SpriteReference<CrewState>> crewRefs = new ArrayList<SpriteReference<CrewState>>();
-
-	private List<DroneBoxSprite> droneBoxSprites = new ArrayList<DroneBoxSprite>();
-	private List<DroneBodySprite> droneBodySprites = new ArrayList<DroneBodySprite>();
-	private List<WeaponSprite> weaponSprites = new ArrayList<WeaponSprite>();
-	private List<RoomSprite> roomSprites = new ArrayList<RoomSprite>();
-	private List<SystemRoomSprite> systemRoomSprites = new ArrayList<SystemRoomSprite>();
-	private List<BreachSprite> breachSprites = new ArrayList<BreachSprite>();
-	private List<FireSprite> fireSprites = new ArrayList<FireSprite>();
-	private List<DoorSprite> doorSprites = new ArrayList<DoorSprite>();
-	private List<CrewSprite> crewSprites = new ArrayList<CrewSprite>();
+	private List<ShipBundle> shipBundles = new ArrayList( 2 );
+	private ShipBundle playerBundle = null;
+	private ShipBundle nearbyBundle = null;
 
 	private DefaultSpriteImageProvider spriteImageProvider = new DefaultSpriteImageProvider();
 	private Map<String, Map<Rectangle, BufferedImage>> cachedImages = new HashMap<String, Map<Rectangle, BufferedImage>>();
@@ -206,13 +174,9 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private JPanel sidePanel = null;
 	private JScrollPane sideScroll = null;
 
-	private JLabel baseLbl = null;
-	private JLabel floorLbl = null;
-	private ShipInteriorComponent interiorComp = null;
-
 	private SpriteSelector defaultSelector = null;
 	private SpriteSelector miscSelector = null;
-	private SquareSelector squareSelector = null;
+	private SquareSelector<FloorplanCoord> squareSelector = null;
 
 
 
@@ -230,9 +194,6 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.setBorder( BorderFactory.createEmptyBorder( 4, 4, 4, 6 ) );
 
 		defaultSelector = new SpriteSelector();
-		defaultSelector.addSpriteList( droneBoxSprites );
-		defaultSelector.addSpriteList( weaponSprites );
-		defaultSelector.addSpriteList( doorSprites );
 		defaultSelector.setOpaque( false );
 		defaultSelector.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( defaultSelector, DEFAULT_SELECTION_LAYER );
@@ -288,7 +249,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof DoorSprite ) {
 					SpriteReference<DoorState> doorRef = ((DoorSprite)sprite).getReference();
-					showDoorEditor( doorRef );
+
+					ShipBundle shipBundle = null;
+					for ( ShipBundle bundle : shipBundles ) {
+						if ( bundle.getDoorRefs().contains( doorRef ) ) {
+							shipBundle = bundle;
+							break;
+						}
+					}
+
+					showDoorEditor( shipBundle, doorRef );
 				}
 				else if ( sprite instanceof DroneBoxSprite ) {
 					if ( ftlConstants instanceof AdvancedFTLConstants ) {  // TODO: Remove this.
@@ -296,7 +266,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 					}
 					else {
 						SpriteReference<DroneState> droneRef = ((DroneBoxSprite)sprite).getReference();
-						showDroneEditor( droneRef );
+
+						ShipBundle shipBundle = null;
+						for ( ShipBundle bundle : shipBundles ) {
+							if ( bundle.getDroneRefs().contains( droneRef ) ) {
+								shipBundle = bundle;
+								break;
+							}
+						}
+
+						showDroneEditor( shipBundle, droneRef );
 					}
 				}
 				else if ( sprite instanceof WeaponSprite ) {
@@ -305,7 +284,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 					}
 					else {
 						SpriteReference<WeaponState> weaponRef = ((WeaponSprite)sprite).getReference();
-						showWeaponEditor( weaponRef );
+
+						ShipBundle shipBundle = null;
+						for ( ShipBundle bundle : shipBundles ) {
+							if ( bundle.getWeaponRefs().contains( weaponRef ) ) {
+								shipBundle = bundle;
+								break;
+							}
+						}
+
+						showWeaponEditor( shipBundle, weaponRef );
 					}
 				}
 
@@ -355,7 +343,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		miscSelector.addMouseListener( miscListener );
 		miscSelector.addMouseMotionListener( miscListener );
 
-		squareSelector = new SquareSelector( squareRegionRoomIdMap, squareRegionSquareIdMap );
+		squareSelector = new SquareSelector<FloorplanCoord>();
 		squareSelector.setOpaque( false );
 		squareSelector.setBounds( 0, 0, 50, 50 );
 		shipPanel.add( squareSelector, SQUARE_SELECTION_LAYER );
@@ -373,10 +361,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 					if ( !squareSelector.isCurrentSquareValid() ) return;
 					boolean keepSelecting = false;
 					SquareSelectionCallback callback = squareSelector.getCallback();
-					if ( callback != null )
-						keepSelecting = callback.squareSelected( squareSelector, squareSelector.getRoomId(), squareSelector.getSquareId() );
-					if ( keepSelecting == false )
+					if ( callback != null ) {
+						keepSelecting = callback.squareSelected( squareSelector, squareSelector.getSquareCoord() );
+					}
+					if ( keepSelecting == false ) {
 						squareSelector.reset();
+					}
 				}
 				else if ( e.getButton() != MouseEvent.NOBUTTON ) {
 					squareSelector.reset();
@@ -462,7 +452,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		JPanel otherPanel = new JPanel();
 		otherPanel.setLayout( new BoxLayout( otherPanel, BoxLayout.X_AXIS ) );
-		otherPanel.setBorder( BorderFactory.createTitledBorder( "Other" ) );
+		otherPanel.setBorder( BorderFactory.createTitledBorder( "Other (Select a ship)" ) );
 		final JButton otherGeneralBtn = new JButton( "General" );
 		otherGeneralBtn.setMargin( ctrlInsets );
 		otherPanel.add( otherGeneralBtn );
@@ -492,7 +482,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		ActionListener ctrlListener = new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
-				if ( shipBlueprint == null ) return;  // No ship to edit!
+				if ( shipBundles.isEmpty() ) return;  // No ship to edit!
 
 				Object source = e.getSource();
 				if ( source == selectRoomBtn ) {
@@ -514,7 +504,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else if ( source == resetOxygenBtn ) {
 					clearSidePanel();
-					for ( SpriteReference<RoomState> roomRef : roomRefs ) {
+					for ( SpriteReference<RoomState> roomRef : playerBundle.getRoomRefs() ) {
 						if ( roomRef.get().getOxygen() != 100 ) {
 							roomRef.get().setOxygen( 100 );
 							roomRef.fireReferenceChange();
@@ -524,7 +514,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else if ( source == resetSystemsBtn ) {
 					clearSidePanel();
-					for ( SpriteReference<SystemState> systemRef : systemRefs ) {
+					for ( SpriteReference<SystemState> systemRef : playerBundle.getSystemRefs() ) {
 						systemRef.get().setDamagedBars( 0 );
 						systemRef.get().setIonizedBars( 0 );
 						systemRef.get().setRepairProgress( 0 );
@@ -539,13 +529,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else if ( source == resetIntrudersBtn ) {
 					clearSidePanel();
-					for ( ListIterator<SpriteReference<CrewState>> it = crewRefs.listIterator(); it.hasNext(); ) {
+					for ( ListIterator<SpriteReference<CrewState>> it = playerBundle.getCrewRefs().listIterator(); it.hasNext(); ) {
 						SpriteReference<CrewState> crewRef = it.next();
 
 						if ( !crewRef.get().isPlayerControlled() ) {
 							CrewSprite crewSprite = crewRef.getSprite( CrewSprite.class );
 							shipPanel.remove( crewSprite );
-							crewSprites.remove( crewSprite );
+							playerBundle.getCrewSprites().remove( crewSprite );
 							it.remove();
 						}
 					}
@@ -553,24 +543,24 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else if ( source == resetBreachesBtn ) {
 					clearSidePanel();
-					for ( BreachSprite breachSprite : breachSprites ) {
+					for ( BreachSprite breachSprite : playerBundle.getBreachSprites() ) {
 						shipPanel.remove( breachSprite );
 					}
-					breachSprites.clear();
+					playerBundle.getBreachSprites().clear();
 					shipViewport.repaint();
 				}
 				else if ( source == resetFiresBtn ) {
 					clearSidePanel();
-					for ( FireSprite fireSprite : fireSprites ) {
+					for ( FireSprite fireSprite : playerBundle.getFireSprites() ) {
 						shipPanel.remove( fireSprite );
 					}
-					fireSprites.clear();
+					playerBundle.getFireSprites().clear();
 					shipViewport.repaint();
 				}
 				else if ( source == otherGeneralBtn ) {
-					showGeneralEditor();
+					selectGeneral();
 				} else if (source == otherAugmentsBtn ) {
-					showAugmentsEditor( shipAugmentIdList );
+					selectAugments();
 				}
 			}
 		};
@@ -653,264 +643,151 @@ public class SavedGameFloorplanPanel extends JPanel {
 		fitViewToViewport();
 	}
 
-	public void setShipState( SavedGameParser.SavedGameState gameState, ShipState shipState ) {
-		String prevGfxBaseName = shipGfxBaseName;
-		defaultSelector.setVisible( false );
-		defaultSelector.setMousePoint( -1, -1 );
-		miscSelector.reset();
-		squareSelector.reset();
-		shipViewport.setStatusString( null );
-		clearSidePanel();
+	private void addBundle( ShipBundle shipBundle, ShipState shipState, boolean playerControlled ) {
 
-		shipAugmentIdList.clear();
-		extendedSystemInfoList.clear();
+		ShipBlueprint shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
+		ShipLayout shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
+		ShipChassis shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
+		String shipGfxBaseName = shipState.getShipGraphicsBaseName();
 
-		for ( DroneBoxSprite droneBoxSprite : droneBoxSprites ) {
-			shipPanel.remove( droneBoxSprite );
-		}
-		droneBoxSprites.clear();
+		shipBundle.setShipBlueprint( shipBlueprint );
+		shipBundle.setShipLayout( shipLayout );
+		shipBundle.setShipChassis( shipChassis );
+		shipBundle.setShipGraphicsBaseName( shipGfxBaseName );
 
-		for ( DroneBodySprite droneBodySprite : droneBodySprites ) {
-			shipPanel.remove( droneBodySprite );
-		}
-		droneBodySprites.clear();
+		shipBundle.setReservePowerCapacity( shipState.getReservePowerCapacity() );
+		shipBundle.setShipName( shipState.getShipName() );
+		shipBundle.setHullAmt( shipState.getHullAmt() );
+		shipBundle.setFuelAmt( shipState.getFuelAmt() );
+		shipBundle.setDronePartsAmt( shipState.getDronePartsAmt() );
+		shipBundle.setMissilesAmt( shipState.getMissilesAmt() );
+		shipBundle.setScrapAmt( shipState.getScrapAmt() );
+		shipBundle.setHostile( shipState.isHostile() );
+		shipBundle.setJumpChargeTicks( shipState.getJumpChargeTicks() );
+		shipBundle.setJumping( shipState.isJumping() );
+		shipBundle.setJumpAnimTicks( shipState.getJumpAnimTicks() );
+		shipBundle.setCloakAnimTicks( shipState.getCloakAnimTicks() );
 
-		for ( WeaponSprite weaponSprite : weaponSprites ) {
-			shipPanel.remove( weaponSprite );
-		}
-		weaponSprites.clear();
+		shipBundle.setPlayerControlled( playerControlled );
+		shipBundle.getAugmentIdList().addAll( shipState.getAugmentIdList() );
 
-		for ( RoomSprite roomSprite : roomSprites ) {
-			shipPanel.remove( roomSprite );
-		}
-		roomSprites.clear();
-
-		for ( SystemRoomSprite systemRoomSprite : systemRoomSprites ) {
-			shipPanel.remove( systemRoomSprite );
-		}
-		systemRoomSprites.clear();
-
-		for ( BreachSprite breachSprite : breachSprites ) {
-			shipPanel.remove( breachSprite );
-		}
-		breachSprites.clear();
-
-		for ( FireSprite fireSprite : fireSprites ) {
-			shipPanel.remove( fireSprite );
-		}
-		fireSprites.clear();
-
-		for ( DoorSprite doorSprite : doorSprites ) {
-			shipPanel.remove( doorSprite );
-		}
-		doorSprites.clear();
-
-		for ( CrewSprite crewSprite : crewSprites ) {
-			shipPanel.remove( crewSprite );
-		}
-		crewSprites.clear();
-
-		droneRefs.clear();
-		weaponRefs.clear();
-		roomRefs.clear();
-		systemRefs.clear();
-		doorRefs.clear();
-		crewRefs.clear();
-
-		if ( gameState == null || shipState == null ) {
-			shipBlueprint = null;
-			shipLayout = null;
-			shipChassis = null;
-			shipGfxBaseName = null;
-			shipReserveCapacity = 0;
-			shipName = null;
-			shipHull = 0;
-			shipFuel = 0;
-			shipDroneParts = 0;
-			shipMissiles = 0;
-			shipScrap = 0;
-			shipHostile = false;
-			shipJumpChargeTicks = 0;
-			shipJumping = false;
-			shipJumpAnimTicks = 0;
-			shipCloakAnimTicks = 0;
-			shipPlayerControlled = false;
-			roomRegionRoomIdMap.clear();
-			squareRegionRoomIdMap.clear();
-			squareRegionSquareIdMap.clear();
-			blockedRasList.clear();
-
-			if ( baseLbl != null ) {
-				shipPanel.remove( baseLbl );
-				baseLbl = null;
-			}
-			if ( floorLbl != null ) {
-				shipPanel.remove( floorLbl );
-				floorLbl = null;
-			}
-			if ( interiorComp != null ) {
-				shipPanel.remove( interiorComp );
-				interiorComp = null;
-			}
-
-			fitViewToViewport();
-			shipPanel.revalidate();
-			shipViewport.repaint();
-			return;
-		}
-
-		if ( gameState.getFileFormat() == 2 ) {
-			ftlConstants = new OriginalFTLConstants();
-		} else {
-			ftlConstants = new AdvancedFTLConstants();
-		}
-
-		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
-		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
-		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
-		shipGfxBaseName = shipState.getShipGraphicsBaseName();
-
-		shipReserveCapacity = shipState.getReservePowerCapacity();
-		shipName = shipState.getShipName();
-		shipHull = shipState.getHullAmt();
-		shipFuel = shipState.getFuelAmt();
-		shipDroneParts = shipState.getDronePartsAmt();
-		shipMissiles = shipState.getMissilesAmt();
-		shipScrap = shipState.getScrapAmt();
-		shipHostile = shipState.isHostile();
-		shipJumpChargeTicks = shipState.getJumpChargeTicks();
-		shipJumping = shipState.isJumping();
-		shipJumpAnimTicks = shipState.getJumpAnimTicks();
-		shipCloakAnimTicks = shipState.getCloakAnimTicks();
-		shipPlayerControlled = ( shipState == gameState.getPlayerShip() );
-		shipAugmentIdList.addAll( shipState.getAugmentIdList() );
-
-		if ( shipPlayerControlled ) {
-			originX = 0;
-			originY = 0;
+		if ( shipBundle.isPlayerControlled() ) {  // Allow ship images their negative offsets.
+			shipBundle.setOriginX( PLAYER_ORIGIN_X + shipChassis.getImageBounds().x * -1 );
+			shipBundle.setOriginY( PLAYER_ORIGIN_Y + shipChassis.getImageBounds().y * -1 );
 		}
 		else {
-			originX = 100;
-			originY = 100;
+			// Hardcoded arbitrary offset.
+			shipBundle.setOriginX( NEARBY_CENTER_X + shipChassis.getImageBounds().x * -1 - shipChassis.getImageBounds().w/2 );
+			shipBundle.setOriginY( NEARBY_CENTER_Y + shipChassis.getImageBounds().y * -1 - shipChassis.getImageBounds().h/2 );
 		}
-		originX += shipChassis.getImageBounds().x * -1;  // Allow ship images their negative offsets.
-		originY += shipChassis.getImageBounds().y * -1;
-		layoutX = originX + shipLayout.getOffsetX() * squareSize;
-		layoutY = originY + shipLayout.getOffsetY() * squareSize;
+		shipBundle.setLayoutX( shipBundle.getOriginX() + shipLayout.getOffsetX() * squareSize );
+		shipBundle.setLayoutY( shipBundle.getOriginY() + shipLayout.getOffsetY() * squareSize );
 
-		if ( shipGfxBaseName != prevGfxBaseName ) {
-			// Associate graphical regions with roomIds and squareIds.
-			roomRegionRoomIdMap.clear();
-			squareRegionRoomIdMap.clear();
-			squareRegionSquareIdMap.clear();
-			for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
-				ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
-				int squaresH = layoutRoom.squaresH;
-				int squaresV = layoutRoom.squaresV;
-				int roomX = layoutX + layoutRoom.locationX*squareSize;
-				int roomY = layoutY + layoutRoom.locationY*squareSize;
 
-				Rectangle roomRect = new Rectangle( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
-				roomRegionRoomIdMap.put( roomRect, i );
+		for ( int roomId=0; roomId < shipLayout.getRoomCount(); roomId++ ) {
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
+			int squaresH = layoutRoom.squaresH;
+			int squaresV = layoutRoom.squaresV;
+			int roomX = shipBundle.getLayoutX() + layoutRoom.locationX*squareSize;
+			int roomY = shipBundle.getLayoutY() + layoutRoom.locationY*squareSize;
 
-				for ( int s=0; s < squaresH * squaresV; s++ ) {
-					int squareX = roomX + (s%squaresH)*squareSize;
-					int squareY = roomY + (s/squaresH)*squareSize;
-					Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
-					squareRegionRoomIdMap.put( squareRect, i );
-					squareRegionSquareIdMap.put( squareRect, s );
-				}
+			Rectangle roomRect = new Rectangle( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
+			shipBundle.getRoomRegionRoomIdMap().put( roomRect, roomId );
+
+			for ( int s=0; s < squaresH * squaresV; s++ ) {
+				int squareX = roomX + (s%squaresH)*squareSize;
+				int squareY = roomY + (s/squaresH)*squareSize;
+				Rectangle squareRect = new Rectangle( squareX, squareY, squareSize, squareSize );
+
+				FloorplanCoord squareCoord = new FloorplanCoord( (playerControlled ? 0 : 1), roomId, s );
+				shipBundle.getSquareRegionCoordMap().put( squareRect, squareCoord );
 			}
-			// Find squares that don't allow crew in them (medbay's slot, same as clonebay).
-			// TODO: Enemy ships don't have a blocked slot.
-			//   Dunno if that's from being in "autoBlueprints.xml" or non-player controlled.
-			//   Commandeer one and find out.
-			blockedRasList.clear();
-			ShipBlueprint.SystemList.SystemRoom medicalSystem = shipBlueprint.getSystemList().getMedicalRoom();
-			if ( medicalSystem != null ) {
-				ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
-				int badRoomId = medicalSystem.getRoomId();
-				int badSquareId = ftlConstants.getDefaultSystemRoomSlotSquare( SystemType.MEDBAY );
+		}
 
-				if ( medicalSlot != null ) {
-					badSquareId = medicalSlot.getNumber();
-				}
+		// Find squares that don't allow crew in them (medbay's slot, same as clonebay).
+		// TODO: Enemy ships don't have a blocked slot.
+		//   Dunno if that's from being in "autoBlueprints.xml" or non-player controlled.
+		//   Commandeer one and find out.
+		ShipBlueprint.SystemList.SystemRoom medicalSystem = shipBlueprint.getSystemList().getMedicalRoom();
+		if ( medicalSystem != null ) {
+			ShipBlueprint.SystemList.RoomSlot medicalSlot = medicalSystem.getSlot();
+			int badRoomId = medicalSystem.getRoomId();
 
-				if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
-					log.trace( String.format( "Found a blocked region: roomId: %2d, squareId: %d", badRoomId, badSquareId ) );
-
-					blockedRasList.add( new RoomAndSquare( badRoomId, badSquareId ) );
-				}
+			int badSquareId;
+			if ( medicalSlot != null ) {
+				badSquareId = medicalSlot.getNumber();
+			} else {
+				badSquareId = ftlConstants.getDefaultSystemRoomSlotSquare( SystemType.MEDBAY );
 			}
 
-
-			// Load the fuselage image.
-			if ( baseLbl != null ) shipPanel.remove( baseLbl );
-
-			baseLbl = new JLabel();
-			baseLbl.setOpaque( false );
-			baseLbl.setSize( shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
-			baseLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
-			shipPanel.add( baseLbl, BASE_LAYER );
-
-			BufferedImage baseImage = spriteImageProvider.getShipBaseImage( shipGfxBaseName, shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
-			baseLbl.setIcon( new ImageIcon( baseImage ) );
-
-			// Load the floor image.
-			if ( floorLbl != null ) shipPanel.remove( floorLbl );
-
-			floorLbl = new JLabel();
-			floorLbl.setOpaque( false );
-			floorLbl.setLocation( layoutX + shipChassis.getImageBounds().x, layoutY + shipChassis.getImageBounds().y );
-			shipPanel.add( floorLbl, FLOOR_LAYER );
-
-			BufferedImage floorImage = spriteImageProvider.getShipFloorImage( shipGfxBaseName );
-			if ( floorImage != null ) {
-				floorLbl.setIcon( new ImageIcon( floorImage ) );
-				floorLbl.setSize( floorImage.getWidth(), floorImage.getHeight() );
-
-				if ( shipChassis.getOffsets() != null ) {
-					Offset floorOffset = shipChassis.getOffsets().floorOffset;
-					if ( floorOffset != null ) {
-						floorLbl.setLocation( layoutX + shipChassis.getImageBounds().x + floorOffset.x, layoutY + shipChassis.getImageBounds().y + floorOffset.y );
-					}
-				}
+			if ( badSquareId >= 0 ) {  // When -2, there's no blocked square.
+				shipBundle.getBlockedRasList().add( new RoomAndSquare( badRoomId, badSquareId ) );
 			}
+		}
 
-			// Floor cracks, decor, and walls.
-			if ( interiorComp != null ) shipPanel.remove( interiorComp );
+		// Hull.
+		JLabel baseLbl = new JLabel();
+		baseLbl.setOpaque( false );
+		baseLbl.setSize( shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
+		baseLbl.setLocation( shipBundle.getLayoutX() + shipChassis.getImageBounds().x, shipBundle.getLayoutY() + shipChassis.getImageBounds().y );
+		shipPanel.add( baseLbl, BASE_LAYER );
 
-			interiorComp = new ShipInteriorComponent( shipLayout );
-			interiorComp.setSize( interiorComp.getPreferredSize() );
-			interiorComp.setLocation( layoutX - interiorComp.getLocationFudge(), layoutY - interiorComp.getLocationFudge() );
-			shipPanel.add( interiorComp, INTERIOR_LAYER );
+		BufferedImage baseImage = spriteImageProvider.getShipBaseImage( shipGfxBaseName, shipChassis.getImageBounds().w, shipChassis.getImageBounds().h );
+		baseLbl.setIcon( new ImageIcon( baseImage ) );
+		shipBundle.setBaseLbl( baseLbl );
 
-			for ( ShipBlueprint.SystemList.SystemRoom systemRoom : shipBlueprint.getSystemList().getSystemRooms() ) {
-				int roomId = systemRoom.getRoomId();
+		// Floor.
+		JLabel floorLbl = new JLabel();
+		floorLbl.setOpaque( false );
+		floorLbl.setLocation( shipBundle.getLayoutX() + shipChassis.getImageBounds().x, shipBundle.getLayoutY() + shipChassis.getImageBounds().y );
+		shipPanel.add( floorLbl, FLOOR_LAYER );
 
-				ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
-				int squaresH = layoutRoom.squaresH;
-				int squaresV = layoutRoom.squaresV;
+		BufferedImage floorImage = spriteImageProvider.getShipFloorImage( shipGfxBaseName );
+		if ( floorImage != null ) {
+			floorLbl.setIcon( new ImageIcon( floorImage ) );
+			floorLbl.setSize( floorImage.getWidth(), floorImage.getHeight() );
 
-				String decorName = systemRoom.getImg();
-
-				// TODO: Looks like when medbay omits img, it's "room_medbay.png".
-
-				if ( decorName == null ) {
-					if ( systemRoom == shipBlueprint.getSystemList().getTeleporterRoom() ) {
-						decorName = "teleporter_off";  // Draw a teleporter pad on each square.
-					}
-				}
-
-				if ( decorName != null ) {
-					BufferedImage decorImage = spriteImageProvider.getRoomDecorImage( decorName, squaresH, squaresV );
-
-					if ( decorImage != null ) {
-						interiorComp.getDecorMap().put( roomId, decorImage );
-					}
+			if ( shipChassis.getOffsets() != null ) {
+				Offset floorOffset = shipChassis.getOffsets().floorOffset;
+				if ( floorOffset != null ) {
+					floorLbl.setLocation( shipBundle.getLayoutX() + shipChassis.getImageBounds().x + floorOffset.x, shipBundle.getLayoutY() + shipChassis.getImageBounds().y + floorOffset.y );
 				}
 			}
 		}
+		shipBundle.setFloorLbl( floorLbl );
+
+		// Floor cracks, decor, and walls.
+		ShipInteriorComponent interiorComp = new ShipInteriorComponent( shipLayout );
+		interiorComp.setSize( interiorComp.getPreferredSize() );
+		interiorComp.setLocation( shipBundle.getLayoutX() - interiorComp.getLocationFudge(), shipBundle.getLayoutY() - interiorComp.getLocationFudge() );
+		shipPanel.add( interiorComp, INTERIOR_LAYER );
+
+		for ( ShipBlueprint.SystemList.SystemRoom systemRoom : shipBlueprint.getSystemList().getSystemRooms() ) {
+			int roomId = systemRoom.getRoomId();
+
+			ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
+			int squaresH = layoutRoom.squaresH;
+			int squaresV = layoutRoom.squaresV;
+
+			String decorName = systemRoom.getImg();
+
+			// TODO: Looks like when medbay omits img, it's "room_medbay.png".
+
+			if ( decorName == null ) {
+				if ( systemRoom == shipBlueprint.getSystemList().getTeleporterRoom() ) {
+					decorName = "teleporter_off";  // Draw a teleporter pad on each square.
+				}
+			}
+
+			if ( decorName != null ) {
+				BufferedImage decorImage = spriteImageProvider.getRoomDecorImage( decorName, squaresH, squaresV );
+
+				if ( decorImage != null ) {
+					interiorComp.getDecorMap().put( roomId, decorImage );
+				}
+			}
+		}
+		shipBundle.setInteriorComp( interiorComp );
 
 		// Add Drones.
 		List<DroneState> droneList = shipState.getDroneList();
@@ -927,7 +804,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 			// TODO: Magic number (when null: it's omitted in autoBlueprints.xml).
 			// In-game GUI shows 2 or 3.
 			int minDroneSlots = 3;
-			if ( droneList.size() > minDroneSlots && shipPlayerControlled ) {
+			if ( droneList.size() > minDroneSlots && shipBundle.isPlayerControlled() ) {
 				log.warn( String.format( "Ship state has %d drones, exceeding the default %d droneSlots when not set by its blueprint", droneList.size(), minDroneSlots ) );
 			}
 			actualDroneSlots = Math.max( minDroneSlots, droneList.size() );
@@ -938,12 +815,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 			SpriteReference<DroneState> droneRef = new SpriteReference<DroneState>( null );
 			if ( droneList.size() > i ) droneRef.set( new DroneState( droneList.get( i ) ) );
 
-			droneRefs.add( droneRef );
+			shipBundle.getDroneRefs().add( droneRef );
 
-			int droneBoxX = 100 + i*75;
-			int droneBoxY = layoutY + shipChassis.getImageBounds().y + shipChassis.getImageBounds().h;
+			int droneBoxX = shipBundle.getOriginX() + 50 + i*75;
+			int droneBoxY = shipBundle.getLayoutY() + shipChassis.getImageBounds().y + shipChassis.getImageBounds().h;
 
-			addDroneSprite( droneBoxX, droneBoxY, i, droneRef );
+			addDroneSprite( shipBundle, droneRef, droneBoxX, droneBoxY, i );
 		}
 
 		// Add Weapons.
@@ -972,14 +849,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 			SpriteReference<WeaponState> weaponRef = new SpriteReference<WeaponState>( null );
 			if ( weaponList.size() > i ) weaponRef.set( weaponList.get( i ) );
 
-			weaponRefs.add( weaponRef );
+			shipBundle.getWeaponRefs().add( weaponRef );
 
-			addWeaponSprite( weaponMount, i, weaponRef );
+			addWeaponSprite( shipBundle, weaponRef, weaponMount, i );
 		}
 
 		// Flagship has no Weapons system but it omits weaponSlots, so first 4 mounts are junk.
 		if ( shipBlueprint.getSystemList().getWeaponRoom() == null ) {
-			for ( WeaponSprite weaponSprite : weaponSprites ) {
+			for ( WeaponSprite weaponSprite : shipBundle.getWeaponSprites() ) {
 				weaponSprite.setVisible( false );
 			}
 		}
@@ -994,17 +871,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 			ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
 			int squaresH = layoutRoom.squaresH;
 			int squaresV = layoutRoom.squaresV;
-			int roomX = layoutX + layoutRoom.locationX*squareSize;
-			int roomY = layoutY + layoutRoom.locationY*squareSize;
+			int roomX = shipBundle.getLayoutX() + layoutRoom.locationX*squareSize;
+			int roomY = shipBundle.getLayoutY() + layoutRoom.locationY*squareSize;
 
 			int oxygen = shipState.getRoom( i ).getOxygen();
 
 			SpriteReference<RoomState> roomRef = new SpriteReference<RoomState>( new RoomState( shipState.getRoom( i ) ) );
-			roomRefs.add( roomRef );
+			shipBundle.getRoomRefs().add( roomRef );
 
 			RoomSprite roomSprite = new RoomSprite( roomRef, i );
 			roomSprite.setBounds( roomX, roomY, squaresH*squareSize, squaresV*squareSize );
-			roomSprites.add( roomSprite );
+			shipBundle.getRoomSprites().add( roomSprite );
 			shipPanel.add( roomSprite, ROOM_LAYER );
 		}
 
@@ -1016,8 +893,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 					ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
 					int squaresH = layoutRoom.squaresH;
 					int squaresV = layoutRoom.squaresV;
-					int roomX = layoutX + layoutRoom.locationX*squareSize;
-					int roomY = layoutY + layoutRoom.locationY*squareSize;
+					int roomX = shipBundle.getLayoutX() + layoutRoom.locationX*squareSize;
+					int roomY = shipBundle.getLayoutY() + layoutRoom.locationY*squareSize;
 
 					int systemX = roomX + squaresH*squareSize/2;
 					int systemY = roomY + squaresV*squareSize/2;
@@ -1026,39 +903,37 @@ public class SavedGameFloorplanPanel extends JPanel {
 					if ( systemState == null ) break;  // TODO: Support systems that aren't on the shipState.
 
 					SpriteReference<SystemState> systemRef = new SpriteReference<SystemState>( new SystemState( systemState ) );
-					systemRefs.add( systemRef );
+					shipBundle.getSystemRefs().add( systemRef );
 
-					addSystemRoomSprite( systemX, systemY, systemRef );
+					addSystemRoomSprite( shipBundle, systemRef, systemX, systemY );
 				}
 			}
 		}
 
 		// Add Extended System Info.
 		for ( ExtendedSystemInfo info : shipState.getExtendedSystemInfoList() ) {
-			extendedSystemInfoList.add( info.copy() );
+			shipBundle.getExtendedSystemInfoList().add( info.copy() );
 		}
 
 		// Add breaches.
 		for ( Map.Entry<XYPair, Integer> breachEntry : shipState.getBreachMap().entrySet() ) {
-			int breachCoordX = breachEntry.getKey().x - shipLayout.getOffsetX();
+			int breachCoordX = breachEntry.getKey().x - shipLayout.getOffsetX();  // Convert from goofy coords.
 			int breachCoordY = breachEntry.getKey().y - shipLayout.getOffsetY();
-			int breachX = layoutX + breachCoordX*squareSize + squareSize/2;
-			int breachY = layoutY + breachCoordY*squareSize + squareSize/2;
+			int breachX = shipBundle.getLayoutX() + breachCoordX*squareSize + squareSize/2;
+			int breachY = shipBundle.getLayoutY() + breachCoordY*squareSize + squareSize/2;
 
 			Rectangle squareRect = null;
 			int roomId = -1;
 			int squareId = -1;
-			for ( Map.Entry<Rectangle, Integer> regionEntry : squareRegionRoomIdMap.entrySet() ) {
+			for ( Map.Entry<Rectangle, FloorplanCoord> regionEntry : shipBundle.getSquareRegionCoordMap().entrySet() ) {
 				if ( regionEntry.getKey().contains( breachX, breachY ) ) {
 					squareRect = regionEntry.getKey();
-					roomId = regionEntry.getValue().intValue();
+					roomId = regionEntry.getValue().roomId;
+					squareId = regionEntry.getValue().squareId;
 					break;
 				}
 			}
-			if ( squareRegionSquareIdMap.containsKey( squareRect ) ) {
-				squareId = squareRegionSquareIdMap.get( squareRect ).intValue();
-			}
-			addBreachSprite( breachX, breachY, roomId, squareId, breachEntry.getValue().intValue() );
+			addBreachSprite( shipBundle, breachX, breachY, roomId, squareId, breachEntry.getValue().intValue() );
 		}
 
 		// Add fires.
@@ -1066,8 +941,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 			ShipLayoutRoom layoutRoom = shipLayout.getRoom( i );
 			int squaresH = layoutRoom.squaresH;
 			int squaresV = layoutRoom.squaresV;
-			int roomX = layoutX + layoutRoom.locationX*squareSize;
-			int roomY = layoutY + layoutRoom.locationY*squareSize;
+			int roomX = shipBundle.getLayoutX() + layoutRoom.locationX*squareSize;
+			int roomY = shipBundle.getLayoutY() + layoutRoom.locationY*squareSize;
 
 			RoomState roomState = shipState.getRoom( i );
 			for ( int s=0; s < squaresH * squaresV; s++ ) {
@@ -1075,47 +950,47 @@ public class SavedGameFloorplanPanel extends JPanel {
 				if ( fireHealth > 0 ) {
 					int fireX = roomX + (s%squaresH)*squareSize + squareSize/2;
 					int fireY = roomY + (s/squaresH)*squareSize + squareSize/2;
-					addFireSprite( fireX, fireY, i, s, fireHealth );
+					addFireSprite( shipBundle, fireX, fireY, i, s, fireHealth );
 				}
 			}
 		}
 
 		// Add doors.
-		int doorLevel = shipState.getSystem(SystemType.DOORS).getCapacity()-1;  // Convert to 0-based.
+		int doorLevel = shipState.getSystem( SystemType.DOORS ).getCapacity()-1;  // Convert to 0-based.
 		if ( doorLevel < 0 ) doorLevel = 0;  // Door subsystem was absent, 0-Capacity.
 		for ( Map.Entry<DoorCoordinate, DoorState> entry : shipState.getDoorMap().entrySet() ) {
 			DoorCoordinate doorCoord = entry.getKey();
 			DoorState doorState = entry.getValue();
-			int doorX = layoutX + doorCoord.x*squareSize + (doorCoord.v==1 ? 0 : squareSize/2);
-			int doorY = layoutY + doorCoord.y*squareSize + (doorCoord.v==1 ? squareSize/2 : 0);
+			int doorX = shipBundle.getLayoutX() + doorCoord.x*squareSize + (doorCoord.v==1 ? 0 : squareSize/2);
+			int doorY = shipBundle.getLayoutY() + doorCoord.y*squareSize + (doorCoord.v==1 ? squareSize/2 : 0);
 
 			SpriteReference<DoorState> doorRef = new SpriteReference<DoorState>( new DoorState( doorState ) );
-			doorRefs.add( doorRef );
+			shipBundle.getDoorRefs().add( doorRef );
 
-			addDoorSprite( doorX, doorY, doorLevel, doorCoord, doorRef );
+			addDoorSprite( shipBundle, doorRef, doorX, doorY, doorLevel, doorCoord );
 		}
 
 		// Add crew.
 		// TODO: Add dead crew at their spriteX/spriteY but toggle visibility?
-		int hadesX = 100 - (int)(squareSize * 1.5);
-		int hadesY = layoutY + shipChassis.getImageBounds().y + shipChassis.getImageBounds().h;
+		int hadesX = shipBundle.getOriginX() + 50 - (int)(squareSize * 1.5);
+		int hadesY = shipBundle.getLayoutY() + shipChassis.getImageBounds().y + shipChassis.getImageBounds().h;
 
 		for ( CrewState crewState : shipState.getCrewList() ) {
 			SpriteReference<CrewState> crewRef = new SpriteReference<CrewState>( new CrewState( crewState ) );
-			crewRefs.add( crewRef );
+			shipBundle.getCrewRefs().add( crewRef );
 
 			int crewX = 0, crewY = 0;
 			int goalX = 0, goalY = 0;
 
 			if ( crewState.getRoomId() != -1 ) {
-				crewX = originX + crewState.getSpriteX();
-				crewY = originY + crewState.getSpriteY();
+				crewX = shipBundle.getOriginX() + crewState.getSpriteX();
+				crewY = shipBundle.getOriginY() + crewState.getSpriteY();
 
 				// TODO: Draw lines to goal dots for walking crew?
 				ShipLayoutRoom layoutRoom = shipLayout.getRoom( crewState.getRoomId() );
 				int squaresH = layoutRoom.squaresH;
-				int roomX = layoutX + layoutRoom.locationX*squareSize;
-				int roomY = layoutY + layoutRoom.locationY*squareSize;
+				int roomX = shipBundle.getLayoutX() + layoutRoom.locationX*squareSize;
+				int roomY = shipBundle.getLayoutY() + layoutRoom.locationY*squareSize;
 
 				goalX = roomX + (crewState.getRoomSquare()%squaresH)*squareSize + squareSize/2;
 				goalY = roomY + (crewState.getRoomSquare()/squaresH)*squareSize + squareSize/2;
@@ -1124,11 +999,91 @@ public class SavedGameFloorplanPanel extends JPanel {
 				crewX = hadesX;
 				crewY = hadesY;
 			}
-			addCrewSprite( crewX, crewY, crewRef );
+			addCrewSprite( shipBundle, crewRef, crewX, crewY );
+		}
+	}
+
+	public void setGameState( SavedGameParser.SavedGameState gameState ) {
+		defaultSelector.setVisible( false );
+		defaultSelector.setMousePoint( -1, -1 );
+		defaultSelector.clearSpriteLists();
+
+		miscSelector.reset();
+		miscSelector.clearSpriteLists();
+
+		squareSelector.reset();
+		squareSelector.clearSquarsCoordMap();
+
+		shipViewport.setStatusString( null );
+		clearSidePanel();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			for ( DroneBoxSprite droneBoxSprite : bundle.getDroneBoxSprites() ) {
+				shipPanel.remove( droneBoxSprite );
+			}
+			for ( DroneBodySprite droneBodySprite : bundle.getDroneBodySprites() ) {
+				shipPanel.remove( droneBodySprite );
+			}
+			for ( WeaponSprite weaponSprite : bundle.getWeaponSprites() ) {
+				shipPanel.remove( weaponSprite );
+			}
+			for ( RoomSprite roomSprite : bundle.getRoomSprites() ) {
+				shipPanel.remove( roomSprite );
+			}
+			for ( SystemRoomSprite systemRoomSprite : bundle.getSystemRoomSprites() ) {
+				shipPanel.remove( systemRoomSprite );
+			}
+			for ( BreachSprite breachSprite : bundle.getBreachSprites() ) {
+				shipPanel.remove( breachSprite );
+			}
+			for ( FireSprite fireSprite : bundle.getFireSprites() ) {
+				shipPanel.remove( fireSprite );
+			}
+			for ( DoorSprite doorSprite : bundle.getDoorSprites() ) {
+				shipPanel.remove( doorSprite );
+			}
+			for ( CrewSprite crewSprite : bundle.getCrewSprites() ) {
+				shipPanel.remove( crewSprite );
+			}
+
+			shipPanel.remove( bundle.getBaseLbl() );
+			shipPanel.remove( bundle.getFloorLbl() );
+			shipPanel.remove( bundle.getInteriorComp() );
+		}
+		shipBundles.clear();
+
+		if ( gameState == null ) {
+			fitViewToViewport();
+			shipPanel.revalidate();
+			shipViewport.repaint();
+			return;
+		}
+
+		if ( gameState.getFileFormat() == 2 ) {
+			ftlConstants = new OriginalFTLConstants();
+		} else {
+			ftlConstants = new AdvancedFTLConstants();
+		}
+
+		playerBundle = new ShipBundle();
+		playerBundle.setFTLConstants( ftlConstants );
+		shipBundles.add( playerBundle );
+		addBundle( playerBundle, gameState.getPlayerShip(), true );
+
+		if ( gameState.getNearbyShip() != null ) {
+			nearbyBundle = new ShipBundle();
+			nearbyBundle.setFTLConstants( ftlConstants );
+			shipBundles.add( nearbyBundle );
+			addBundle( nearbyBundle, gameState.getNearbyShip(), false );
 		}
 
 		fitViewToViewport();
 
+		for ( ShipBundle bundle : shipBundles ) {
+			defaultSelector.addSpriteList( bundle.getDroneBoxSprites() );
+			defaultSelector.addSpriteList( bundle.getWeaponSprites() );
+			defaultSelector.addSpriteList( bundle.getDoorSprites() );
+		}
 		defaultSelector.setVisible( true );
 
 		shipPanel.revalidate();
@@ -1142,36 +1097,40 @@ public class SavedGameFloorplanPanel extends JPanel {
 		});
 	}
 
-	public void updateShipState( SavedGameParser.ShipState shipState ) {
+	public void updateShipState( ShipState shipState, ShipBundle shipBundle ) {
 		if ( shipState == null ) return;
 
-		shipBlueprint = DataManager.get().getShip( shipState.getShipBlueprintId() );
-		shipLayout = DataManager.get().getShipLayout( shipState.getShipLayoutId() );
-		shipChassis = DataManager.get().getShipChassis( shipState.getShipLayoutId() );
+		ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBundle.getShipBlueprint().getId() );
+		ShipLayout shipLayout = DataManager.get().getShipLayout( shipBundle.getShipBlueprint().getLayoutId() );
+		ShipChassis shipChassis = DataManager.get().getShipChassis( shipBundle.getShipBlueprint().getLayoutId() );
 
-		shipState.setReservePowerCapacity( shipReserveCapacity );
+		shipState.setShipBlueprintId( shipBundle.getShipBlueprint().getId() );
+		shipState.setShipLayoutId( shipBundle.getShipBlueprint().getLayoutId() );
+		shipState.setShipGraphicsBaseName( shipBundle.getShipGraphicsBaseName() );
+
+		shipState.setReservePowerCapacity( shipBundle.getReservePowerCapacity() );
 
 		// General.
-		shipState.setShipName( shipName );
-		shipState.setHullAmt( shipHull );
-		shipState.setFuelAmt( shipFuel );
-		shipState.setDronePartsAmt( shipDroneParts );
-		shipState.setMissilesAmt( shipMissiles );
-		shipState.setScrapAmt( shipScrap );
-		shipState.setHostile( shipHostile );
-		shipState.setJumpChargeTicks( shipJumpChargeTicks );
-		shipState.setJumping( shipJumping );
-		shipState.setJumpAnimTicks( shipJumpAnimTicks );
-		shipState.setCloakAnimTicks( shipCloakAnimTicks );
+		shipState.setShipName( shipBundle.getShipName() );
+		shipState.setHullAmt( shipBundle.getHullAmt() );
+		shipState.setFuelAmt( shipBundle.getFuelAmt() );
+		shipState.setDronePartsAmt( shipBundle.getDronePartsAmt() );
+		shipState.setMissilesAmt( shipBundle.getMissilesAmt() );
+		shipState.setScrapAmt( shipBundle.getScrapAmt() );
+		shipState.setHostile( shipBundle.isHostile() );
+		shipState.setJumpChargeTicks( shipBundle.getJumpChargeTicks() );
+		shipState.setJumping( shipBundle.isJumping() );
+		shipState.setJumpAnimTicks( shipBundle.getJumpAnimTicks() );
+		shipState.setCloakAnimTicks( shipBundle.getCloakAnimTicks() );
 
 		// Augments.
 		shipState.getAugmentIdList().clear();
-		shipState.getAugmentIdList().addAll( shipAugmentIdList );
+		shipState.getAugmentIdList().addAll( shipBundle.getAugmentIdList() );
 
 		// Drones.
 		List<DroneState> droneList = shipState.getDroneList();
 		droneList.clear();
-		for ( SpriteReference<DroneState> droneRef : droneRefs ) {
+		for ( SpriteReference<DroneState> droneRef : shipBundle.getDroneRefs() ) {
 			if ( droneRef.get() != null ) {
 				DroneState droneState = new DroneState( droneRef.get() );
 				droneList.add( droneState );
@@ -1181,17 +1140,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Weapons.
 		List<WeaponState> weaponList = shipState.getWeaponList();
 		weaponList.clear();
-		for ( SpriteReference<WeaponState> weaponRef : weaponRefs ) {
+		for ( SpriteReference<WeaponState> weaponRef : shipBundle.getWeaponRefs() ) {
 			if ( weaponRef.get() != null ) {
 				WeaponState weaponState = new WeaponState( weaponRef.get() );
 				weaponList.add( weaponState );
 			}
 		}
 
-		// Rooms (This must come before Fires to avoid clobbering).
+		// Rooms (Fires modify these rooms further).
 		List<RoomState> roomList = shipState.getRoomList();
 		roomList.clear();
-		for ( SpriteReference<RoomState> roomRef : roomRefs ) {
+		for ( SpriteReference<RoomState> roomRef : shipBundle.getRoomRefs() ) {
 			RoomState roomState = new RoomState( roomRef.get() );
 			roomList.add( roomState );
 		}
@@ -1199,7 +1158,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Systems.
 		shipState.getSystemsMap().clear();
 
-		for ( SpriteReference<SystemState> systemRef : systemRefs ) {
+		for ( SpriteReference<SystemState> systemRef : shipBundle.getSystemRefs() ) {
 			SystemState systemState = new SystemState( systemRef.get() );
 
 			shipState.addSystem( systemState );
@@ -1214,14 +1173,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Add Extended System Info.
 		List<ExtendedSystemInfo> infoList = shipState.getExtendedSystemInfoList();
 		infoList.clear();
-		for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
+		for ( ExtendedSystemInfo info : shipBundle.getExtendedSystemInfoList() ) {
 			infoList.add( info.copy() );
 		}
 
 		// Breaches.
 		Map<XYPair, Integer> breachMap = shipState.getBreachMap();
 		breachMap.clear();
-		for ( BreachSprite breachSprite : breachSprites ) {
+		for ( BreachSprite breachSprite : shipBundle.getBreachSprites() ) {
 			int roomId = breachSprite.getRoomId();
 			int squareId = breachSprite.getSquareId();
 
@@ -1234,14 +1193,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 			breachMap.put( goofyCoord, breachSprite.getHealth() );
 		}
 
-		// Fires.
-		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {
+		// Fires (modifying rooms added above).
+		for ( int i=0; i < shipLayout.getRoomCount(); i++ ) {  // Clear existing fires.
 			RoomState roomState = shipState.getRoom( i );
 			for ( SquareState squareState : roomState.getSquareList() ) {
 				squareState.setFireHealth( 0 );
 			}
 		}
-		for ( FireSprite fireSprite : fireSprites ) {
+		for ( FireSprite fireSprite : shipBundle.getFireSprites() ) {
 			RoomState roomState = shipState.getRoom( fireSprite.getRoomId() );
 			SquareState squareState = roomState.getSquareList().get( fireSprite.getSquareId() );
 			squareState.setFireHealth( fireSprite.getHealth() );
@@ -1250,7 +1209,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Doors.
 		Map<DoorCoordinate, DoorState> shipDoorMap = shipState.getDoorMap();
 		shipDoorMap.clear();
-		for ( SpriteReference<DoorState> doorRef : doorRefs ) {
+		for ( SpriteReference<DoorState> doorRef : shipBundle.getDoorRefs() ) {
 			DoorSprite doorSprite = doorRef.getSprite( DoorSprite.class );
 			DoorState doorState = new DoorState( doorRef.get() );
 			shipDoorMap.put( doorSprite.getCoordinate(), doorState );
@@ -1259,9 +1218,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// Crew.
 		List<CrewState> crewList = shipState.getCrewList();
 		crewList.clear();
-		for ( SpriteReference<CrewState> crewRef : crewRefs ) {
+		for ( SpriteReference<CrewState> crewRef : shipBundle.getCrewRefs() ) {
 			CrewState crewState = new CrewState( crewRef.get() );
 			crewList.add( crewState );
+		}
+	}
+
+	public void updateGameState( SavedGameParser.SavedGameState gameState ) {
+		updateShipState( gameState.getPlayerShip(), playerBundle );
+
+		if ( gameState.getNearbyShip() != null && nearbyBundle != null ) {
+			updateShipState( gameState.getNearbyShip(), nearbyBundle );
 		}
 	}
 
@@ -1303,17 +1270,20 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void selectRoom() {
 		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Select: Room";
 
 			@Override
 			public String getDescription() { return desc; }
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
-				SpriteReference<RoomState> roomRef = roomRefs.get( roomId );  // Nth room.
-				showRoomEditor( roomRef, squareId );
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
+				SpriteReference<RoomState> roomRef = shipBundle.getRoomRefs().get( squareCoord.roomId );  // Nth room.
+				showRoomEditor( shipBundle, roomRef, squareCoord.squareId );
 				return true;
 			}
 		});
@@ -1326,9 +1296,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 			return;
 		}
 
-		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList( systemRoomSprites );
 		miscSelector.reset();
+		miscSelector.clearSpriteLists();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			miscSelector.addSpriteList( bundle.getSystemRoomSprites() );
+		}
 
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: System";
@@ -1348,7 +1321,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof SystemRoomSprite ) {
 					SpriteReference<SystemState> systemRef = ((SystemRoomSprite)sprite).getReference();
-					showSystemEditor( systemRef );
+
+					ShipBundle shipBundle = null;
+					for ( ShipBundle bundle : shipBundles ) {
+						if ( bundle.getSystemRefs().contains( systemRef ) ) {
+							shipBundle = bundle;
+							break;
+						}
+					}
+
+					showSystemEditor( shipBundle, systemRef );
 				}
 				return true;
 			}
@@ -1357,9 +1339,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 	}
 
 	private void selectCrew() {
-		miscSelector.clearSpriteLists();
-		miscSelector.addSpriteList( crewSprites );
 		miscSelector.reset();
+		miscSelector.clearSpriteLists();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			miscSelector.addSpriteList( bundle.getCrewSprites() );
+		}
 
 		miscSelector.setCriteria(new SpriteCriteria() {
 			private final String desc = "Select: Crew";
@@ -1379,7 +1364,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public boolean spriteSelected( SpriteSelector spriteSelector, JComponent sprite ) {
 				if ( sprite instanceof CrewSprite ) {
 					SpriteReference<CrewState> crewRef = ((CrewSprite)sprite).getReference();
-					showCrewEditor( crewRef );
+
+					ShipBundle shipBundle = null;
+					for ( ShipBundle bundle : shipBundles ) {
+						if ( bundle.getCrewRefs().contains( crewRef ) ) {
+							shipBundle = bundle;
+							break;
+						}
+					}
+
+					showCrewEditor( shipBundle, crewRef );
 				}
 				return true;
 			}
@@ -1391,29 +1385,39 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void selectBreach() {
 		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Select: Breach";
 
 			@Override
 			public String getDescription() { return desc; }
 
 			@Override
-			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-				if ( roomId < 0 || squareId < 0 ) return false;
-				for ( BreachSprite breachSprite : breachSprites ) {
-					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
+				for ( BreachSprite breachSprite : shipBundle.getBreachSprites() ) {
+					if ( breachSprite.getRoomId() == squareCoord.roomId && breachSprite.getSquareId() == squareCoord.squareId ) {
 						return true;
 					}
 				}
 				return false;
 			}
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
-				for ( BreachSprite breachSprite : breachSprites ) {
-					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
-						showBreachEditor( breachSprite );
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
+				for ( BreachSprite breachSprite : shipBundle.getBreachSprites() ) {
+					if ( breachSprite.getRoomId() == squareCoord.roomId && breachSprite.getSquareId() == squareCoord.squareId ) {
+						showBreachEditor( shipBundle, breachSprite );
 						break;
 					}
 				}
@@ -1425,29 +1429,39 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void selectFire() {
 		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Select: Fire";
 
 			@Override
 			public String getDescription() { return desc; }
 
 			@Override
-			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-				if ( roomId < 0 || squareId < 0 ) return false;
-				for ( FireSprite fireSprite : fireSprites ) {
-					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
+				for ( FireSprite fireSprite : shipBundle.getFireSprites() ) {
+					if ( fireSprite.getRoomId() == squareCoord.roomId && fireSprite.getSquareId() == squareCoord.squareId ) {
 						return true;
 					}
 				}
 				return false;
 			}
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
-				for ( FireSprite fireSprite : fireSprites ) {
-					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
-						showFireEditor( fireSprite );
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
+				for ( FireSprite fireSprite : shipBundle.getFireSprites() ) {
+					if ( fireSprite.getRoomId() == squareCoord.roomId && fireSprite.getSquareId() == squareCoord.squareId ) {
+						showFireEditor( shipBundle, fireSprite );
 						break;
 					}
 				}
@@ -1460,48 +1474,59 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addCrew() {
 		clearSidePanel();
 		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Add: Crew";
 
 			@Override
 			public String getDescription() { return desc; }
 
 			@Override
-			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-				if ( roomId < 0 || squareId < 0 ) return false;
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
 
-				for ( RoomAndSquare ras : blockedRasList ) {
-					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				for ( RoomAndSquare ras : shipBundle.getBlockedRasList() ) {
+					if ( ras.roomId == squareCoord.roomId  && ras.squareId == squareCoord.squareId ) return false;
 				}
 
-				for ( SpriteReference<CrewState> crewRef : crewRefs ) {
-					if ( crewRef.get().getRoomId() == roomId && crewRef.get().getRoomSquare() == squareId ) {
+				// TODO: Check friendly drone body sprites.
+
+				for ( SpriteReference<CrewState> crewRef : shipBundle.getCrewRefs() ) {
+					if ( crewRef.get().getRoomId() == squareCoord.roomId && crewRef.get().getRoomSquare() == squareCoord.squareId ) {
 						return false;
 					}
 				}
 				return true;
 			}
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
 				Point center = squareSelector.getSquareCenter();
 				CrewState crewState = new CrewState();
 				crewState.setHealth( crewState.getRace().getMaxHealth() );
 				crewState.setPlayerControlled( true );
-				crewState.setRoomId( roomId );
-				crewState.setRoomSquare( squareId );
-				crewState.setSpriteX( center.x - originX );
-				crewState.setSpriteY( center.y - originY );
-				crewState.setSavedRoomId( roomId );
-				crewState.setSavedRoomSquare( squareId );
+				crewState.setRoomId( squareCoord.roomId );
+				crewState.setRoomSquare( squareCoord.squareId );
+				crewState.setSpriteX( center.x - shipBundle.getOriginX() );
+				crewState.setSpriteY( center.y - shipBundle.getOriginY() );
+				crewState.setSavedRoomId( squareCoord.roomId );
+				crewState.setSavedRoomSquare( squareCoord.squareId );
 				crewState.setMale( DataManager.get().getCrewSex() );
 				crewState.setName( DataManager.get().getCrewName( crewState.isMale() ) );
 
 				SpriteReference<CrewState> crewRef = new SpriteReference<CrewState>( crewState );
-				crewRefs.add( crewRef );
+				shipBundle.getCrewRefs().add( crewRef );
 
-				addCrewSprite( center.x, center.y, crewRef );
+				addCrewSprite( shipBundle, crewRef, center.x, center.y );
 				shipViewport.repaint();
 				return true;
 			}
@@ -1512,33 +1537,42 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addBreach() {
 		clearSidePanel();
 		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Add: Breach";
 
 			@Override
 			public String getDescription() { return desc; }
 
 			@Override
-			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-				if ( roomId < 0 || squareId < 0 ) return false;
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
 
-				for ( RoomAndSquare ras : blockedRasList ) {
-					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				for ( RoomAndSquare ras : shipBundle.getBlockedRasList() ) {
+					if ( ras.roomId == squareCoord.roomId  && ras.squareId == squareCoord.squareId ) return false;
 				}
 
-				for ( BreachSprite breachSprite : breachSprites ) {
-					if ( breachSprite.getRoomId() == roomId && breachSprite.getSquareId() == squareId ) {
+				for ( BreachSprite breachSprite : shipBundle.getBreachSprites() ) {
+					if ( breachSprite.getRoomId() == squareCoord.roomId && breachSprite.getSquareId() == squareCoord.squareId ) {
 						return false;
 					}
 				}
 				return true;
 			}
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
 				Point center = squareSelector.getSquareCenter();
-				addBreachSprite( center.x, center.y, roomId, squareId, 100 );
+				addBreachSprite( shipBundle, center.x, center.y, squareCoord.roomId, squareCoord.squareId, 100 );
 				shipViewport.repaint();
 				return true;
 			}
@@ -1549,33 +1583,42 @@ public class SavedGameFloorplanPanel extends JPanel {
 	private void addFire() {
 		clearSidePanel();
 		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Add: Fire";
 
 			@Override
 			public String getDescription() { return desc; }
 
 			@Override
-			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-				if ( roomId < 0 || squareId < 0 ) return false;
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
 
-				for ( RoomAndSquare ras : blockedRasList ) {
-					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				for ( RoomAndSquare ras : shipBundle.getBlockedRasList() ) {
+					if ( ras.roomId == squareCoord.roomId && ras.squareId == squareCoord.squareId ) return false;
 				}
 
-				for ( FireSprite fireSprite : fireSprites ) {
-					if ( fireSprite.getRoomId() == roomId && fireSprite.getSquareId() == squareId ) {
+				for ( FireSprite fireSprite : shipBundle.getFireSprites() ) {
+					if ( fireSprite.getRoomId() == squareCoord.roomId && fireSprite.getSquareId() == squareCoord.squareId ) {
 						return false;
 					}
 				}
 				return true;
 			}
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
 				Point center = squareSelector.getSquareCenter();
-				addFireSprite( center.x, center.y, roomId, squareId, 100 );
+				addFireSprite( shipBundle, center.x, center.y, squareCoord.roomId, squareCoord.squareId, 100 );
 				shipViewport.repaint();
 				return true;
 			}
@@ -1583,43 +1626,123 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible( true );
 	}
 
+	private void selectGeneral() {
+		clearSidePanel();
+		squareSelector.reset();
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
+			private final String desc = "Select: Ship (General)";
+
+			@Override
+			public String getDescription() { return desc; }
+
+			@Override
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				return true;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
+			@Override
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
+				showGeneralEditor( shipBundle );
+				return false;
+			}
+		});
+		squareSelector.setVisible( true );
+	}
+
+	private void selectAugments() {
+		clearSidePanel();
+		squareSelector.reset();
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
+			private final String desc = "Select: Ship (Augments)";
+
+			@Override
+			public String getDescription() { return desc; }
+
+			@Override
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				return true;
+			}
+		});
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
+			@Override
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
+				showAugmentsEditor( shipBundle );
+				return false;
+			}
+		});
+		squareSelector.setVisible( true );
+	}
+
 	private void moveCrew( final SpriteReference<CrewState> mobileRef ) {
 		squareSelector.reset();
-		squareSelector.setCriteria(new SquareCriteria() {
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			// Only move within their current ship.
+			if ( bundle.getCrewRefs().contains( mobileRef ) ) {
+				squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+			}
+		}
+
+		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Move: Crew";
 
 			@Override
 			public String getDescription() { return desc; }
 
 			@Override
-			public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-				if ( roomId < 0 || squareId < 0 ) return false;
+			public boolean isSquareValid( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				if ( squareCoord == null ) return false;
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
 
-				for ( RoomAndSquare ras : blockedRasList ) {
-					if ( ras.roomId == roomId  && ras.squareId == squareId ) return false;
+				for ( RoomAndSquare ras : shipBundle.getBlockedRasList() ) {
+					if ( ras.roomId == squareCoord.roomId  && ras.squareId == squareCoord.squareId ) return false;
 				}
 
-				for ( SpriteReference<CrewState> crewRef : crewRefs ) {
-					if ( crewRef.get().getRoomId() == roomId && crewRef.get().getRoomSquare() == squareId ) {
+				// TODO: Check friendly drone body sprites.
+
+				for ( SpriteReference<CrewState> crewRef : shipBundle.getCrewRefs() ) {
+					if ( crewRef.get().getRoomId() == squareCoord.roomId && crewRef.get().getRoomSquare() == squareCoord.squareId ) {
 						return false;
 					}
 				}
 				return true;
 			}
 		});
-		squareSelector.setCallback(new SquareSelectionCallback() {
+		squareSelector.setCallback(new SquareSelectionCallback<FloorplanCoord>() {
 			@Override
-			public boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId ) {
+			public boolean squareSelected( SquareSelector squareSelector, FloorplanCoord squareCoord ) {
+				ShipBundle shipBundle = shipBundles.get( squareCoord.bundleId );
+
 				Point center = squareSelector.getSquareCenter();
 				CrewSprite mobileSprite = mobileRef.getSprite( CrewSprite.class );
 
-				int oldSpriteRoomId = getSpriteRoomId( mobileSprite );  // Actual sprite location, if walking.
+				int oldSpriteRoomId = shipBundle.getSpriteRoomId( mobileSprite );  // Actual sprite location, if walking.
 
 				mobileSprite.setLocation( center.x - mobileSprite.getSize().width/2, center.y - mobileSprite.getSize().height/2 );
-				mobileRef.get().setRoomId( roomId );
-				mobileRef.get().setRoomSquare( squareId );
-				mobileRef.get().setSpriteX( center.x - originX );
-				mobileRef.get().setSpriteY( center.y - originY );
+				mobileRef.get().setRoomId( squareCoord.roomId );
+				mobileRef.get().setRoomSquare( squareCoord.squareId );
+				mobileRef.get().setSpriteX( center.x - shipBundle.getOriginX() );
+				mobileRef.get().setSpriteY( center.y - shipBundle.getOriginY() );
 				mobileRef.fireReferenceChange();
 
 				return false;
@@ -1629,12 +1752,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 		squareSelector.setVisible( true );
 	}
 
-	private void addDroneSprite( int centerX, int centerY, int slot, SpriteReference<DroneState> droneRef ) {
+	private void addDroneSprite( ShipBundle shipBundle, SpriteReference<DroneState> droneRef, int centerX, int centerY, int slot ) {
 		// Represent the slot whether or not there's a drone equipped in it.
 		DroneBoxSprite droneBoxSprite = new DroneBoxSprite( droneRef, slot );
 		droneBoxSprite.setSize( droneBoxSprite.getPreferredSize() );
 		droneBoxSprite.setLocation( centerX - droneBoxSprite.getPreferredSize().width/2, centerY - droneBoxSprite.getPreferredSize().height/2 );
-		droneBoxSprites.add( droneBoxSprite );
+		shipBundle.getDroneBoxSprites().add( droneBoxSprite );
 		shipPanel.add( droneBoxSprite, DRONE_LAYER );
 
 		if ( droneRef.get() != null ) {
@@ -1642,278 +1765,84 @@ public class SavedGameFloorplanPanel extends JPanel {
 			DroneType droneType = DroneType.findById( droneBlueprint.getType() );
 
 			if ( DroneType.BATTLE.equals( droneType ) || DroneType.REPAIR.equals( droneType ) ) {
-				int bodySpriteX = originX + droneRef.get().getBodyX();
-				int bodySpriteY = originY + droneRef.get().getBodyY();
+				int bodySpriteX = shipBundle.getOriginX() + droneRef.get().getBodyX();
+				int bodySpriteY = shipBundle.getOriginY() + droneRef.get().getBodyY();
 
 				BufferedImage bodyImage = spriteImageProvider.getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
 
 				DroneBodySprite droneBodySprite = new DroneBodySprite( droneRef, bodyImage );
 				droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
 				droneBodySprite.setLocation( bodySpriteX - droneBodySprite.getPreferredSize().width/2, bodySpriteY - droneBodySprite.getPreferredSize().height/2 );
-				droneBodySprites.add( droneBodySprite );
+				shipBundle.getDroneBodySprites().add( droneBodySprite );
 				shipPanel.add( droneBodySprite, DRONE_LAYER );
 			}
 		}
 	}
 
-	private void addWeaponSprite( ShipChassis.WeaponMount weaponMount, int slot, SpriteReference<WeaponState> weaponRef ) {
-		WeaponSprite weaponSprite = new WeaponSprite( weaponRef, slot, weaponMount.rotate );
+	private void addWeaponSprite( ShipBundle shipBundle, SpriteReference<WeaponState> weaponRef, ShipChassis.WeaponMount weaponMount, int slot ) {
+		ShipChassis shipChassis = shipBundle.getShipChassis();
 
+		WeaponSprite weaponSprite = new WeaponSprite( weaponRef, slot, weaponMount.rotate );
 		weaponSprite.setSize( weaponSprite.getPreferredSize() );
 
 		if ( weaponMount.rotate ) {
 			// Right of x,y and centered vertically.
-			weaponSprite.setLocation( layoutX + shipChassis.getImageBounds().x + weaponMount.x, layoutY + shipChassis.getImageBounds().y + weaponMount.y - weaponSprite.getPreferredSize().height/2 );
-		} else {
-			// Above x,y and centered horizontally.
-			weaponSprite.setLocation( layoutX + shipChassis.getImageBounds().x + weaponMount.x - weaponSprite.getPreferredSize().width/2, layoutY + shipChassis.getImageBounds().y + weaponMount.y - weaponSprite.getPreferredSize().height );
+			weaponSprite.setLocation( shipBundle.getLayoutX() + shipChassis.getImageBounds().x + weaponMount.x, shipBundle.getLayoutY() + shipChassis.getImageBounds().y + weaponMount.y - weaponSprite.getPreferredSize().height/2 );
 		}
-		weaponSprites.add( weaponSprite );
+		else {
+			// Above x,y and centered horizontally.
+			weaponSprite.setLocation( shipBundle.getLayoutX() + shipChassis.getImageBounds().x + weaponMount.x - weaponSprite.getPreferredSize().width/2, shipBundle.getLayoutY() + shipChassis.getImageBounds().y + weaponMount.y - weaponSprite.getPreferredSize().height );
+		}
+		shipBundle.getWeaponSprites().add( weaponSprite );
 		shipPanel.add( weaponSprite, WEAPON_LAYER );
 	}
 
-	private void addDoorSprite( int centerX, int centerY, int level, DoorCoordinate doorCoord, SpriteReference<DoorState> doorRef ) {
+	private void addDoorSprite( ShipBundle shipBundle, SpriteReference<DoorState> doorRef, int centerX, int centerY, int level, DoorCoordinate doorCoord ) {
 		DoorAtlas doorAtlas = spriteImageProvider.getDoorAtlas();
 
 		DoorSprite doorSprite = new DoorSprite( doorRef, doorAtlas, level, doorCoord );
 		doorSprite.setSize( doorSprite.getPreferredSize() );
 		doorSprite.setLocation( centerX - doorSprite.getPreferredSize().width/2, centerY - doorSprite.getPreferredSize().height/2 );
-		doorSprites.add( doorSprite );
+		shipBundle.getDoorSprites().add( doorSprite );
 		shipPanel.add( doorSprite, DOOR_LAYER );
 	}
 
-	private void addSystemRoomSprite( int centerX, int centerY, SpriteReference<SystemState> systemRef ) {
+	private void addSystemRoomSprite( ShipBundle shipBundle, SpriteReference<SystemState> systemRef, int centerX, int centerY ) {
 		BufferedImage overlayImage = spriteImageProvider.getSystemRoomImage( systemRef.get().getSystemType() );
 
 		SystemRoomSprite systemRoomSprite = new SystemRoomSprite( systemRef, overlayImage );
 		systemRoomSprite.setSize( systemRoomSprite.getPreferredSize() );
 		systemRoomSprite.setLocation( centerX - systemRoomSprite.getPreferredSize().width/2, centerY - systemRoomSprite.getPreferredSize().height/2 );
-		systemRoomSprites.add( systemRoomSprite );
+		shipBundle.getSystemRoomSprites().add( systemRoomSprite );
 		shipPanel.add( systemRoomSprite, SYSTEM_LAYER );
 	}
 
-	private void addBreachSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
+	private void addBreachSprite( ShipBundle shipBundle, int centerX, int centerY, int roomId, int squareId, int health ) {
 		AnimAtlas breachAtlas = spriteImageProvider.getBreachAtlas();
 
 		BreachSprite breachSprite = new BreachSprite( breachAtlas, roomId, squareId, health );
 		breachSprite.setSize( breachSprite.getPreferredSize() );
 		breachSprite.setLocation( centerX - breachSprite.getPreferredSize().width/2, centerY - breachSprite.getPreferredSize().height/2 );
-		breachSprites.add( breachSprite );
+		shipBundle.getBreachSprites().add( breachSprite );
 		shipPanel.add( breachSprite, BREACH_LAYER );
 	}
 
-	private void addFireSprite( int centerX, int centerY, int roomId, int squareId, int health ) {
+	private void addFireSprite( ShipBundle shipBundle, int centerX, int centerY, int roomId, int squareId, int health ) {
 		AnimAtlas fireAtlas = spriteImageProvider.getFireAtlas();
 
 		FireSprite fireSprite = new FireSprite( fireAtlas, roomId, squareId, health );
 		fireSprite.setSize( fireSprite.getPreferredSize() );
 		fireSprite.setLocation( centerX - fireSprite.getPreferredSize().width/2, centerY - fireSprite.getPreferredSize().height/2 );
-		fireSprites.add( fireSprite );
+		shipBundle.getFireSprites().add( fireSprite );
 		shipPanel.add( fireSprite, FIRE_LAYER );
 	}
 
-	private void addCrewSprite( int centerX, int centerY, SpriteReference<CrewState> crewRef ) {
+	private void addCrewSprite( ShipBundle shipBundle, SpriteReference<CrewState> crewRef, int centerX, int centerY ) {
 		CrewSprite crewSprite = new CrewSprite( crewRef, spriteImageProvider );
 		crewSprite.setSize( crewSprite.getPreferredSize() );
 		crewSprite.setLocation( centerX - crewSprite.getPreferredSize().width/2, centerY - crewSprite.getPreferredSize().height/2 );
-		crewSprites.add( crewSprite );
+		shipBundle.getCrewSprites().add( crewSprite );
 		shipPanel.add( crewSprite, CREW_LAYER );
-	}
-
-	/**
-	 * Returns the first extended system info of a given class, or null.
-	 */
-	private <T extends ExtendedSystemInfo> T getExtendedSystemInfo( Class<T> infoClass ) {
-		T result = null;
-		for ( ExtendedSystemInfo info : extendedSystemInfoList ) {
-			if ( infoClass.isInstance(info) ) {
-				result = infoClass.cast(info);
-				break;
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Returns the first system reference, or null.
-	 */
-	private SpriteReference<SystemState> getSystemRef( SystemType systemType ) {
-		SpriteReference<SystemState> result = null;
-
-		for ( SpriteReference<SystemState> systemRef : systemRefs ) {
-			if ( systemType.equals( systemRef.get().getSystemType() ) ) {
-				result = systemRef;
-				break;
-			}
-		}
-
-		return result;
-	}
-
-	/**
-	 * Returns the roomId which contains the center of a given sprite, or -1.
-	 */
-	private int getSpriteRoomId( Component c ) {
-		int result = -1;
-		int centerX = c.getBounds().x + c.getBounds().width/2;
-		int centerY = c.getBounds().y + c.getBounds().height/2;
-
-		for ( Map.Entry<Rectangle, Integer> regionEntry : roomRegionRoomIdMap.entrySet() ) {
-			if ( regionEntry.getKey().contains( centerX, centerY ) ) {
-				result = regionEntry.getValue().intValue();
-			}
-		}
-
-		return result;
-	}
-
-	/**
-	 * Returns available reserve power after limits are applied and systems'
-	 * demand is subtracted (min 0).
-	 *
-	 * Note: Plasma storms are not considered, due to limitations in the saved
-	 * game format. That info is buried in events and obscured by the random
-	 * sector layout seed.
-	 *
-	 * Overallocation will cause FTL to depower systems in-game.
-	 *
-	 * @param excludeRef count demand from all systems except one (may be null)
-	 */
-	private int getReservePool( SpriteReference<SystemState> excludeRef ) {
-		int result = shipReserveCapacity;
-
-		int systemsPower = 0;
-		for ( SpriteReference<SystemState> systemRef : systemRefs ) {
-			if ( SystemType.BATTERY.equals( systemRef.get().getSystemType() ) ) {
-				// TODO: Check if Battery system is currently being hack-disrupted,
-				// then subtract 2.
-			}
-
-			if ( systemRef == excludeRef ) continue;
-
-			if ( !systemRef.get().getSystemType().isSubsystem() ) {
-				systemsPower += systemRef.get().getPower();
-			}
-		}
-		result -= systemsPower;
-		result = Math.max( 0, result );
-
-		return result;
-	}
-
-	/**
-	 * Returns the total battery power produced by the Battery system.
-	 */
-	private int getBatteryPoolCapacity() {
-		int batteryPoolCapacity = 0;
-
-		BatteryInfo batteryInfo = getExtendedSystemInfo( BatteryInfo.class );
-		if ( batteryInfo != null && batteryInfo.isActive() ) {
-			SpriteReference<SystemState> batterySystemRef = getSystemRef( SystemType.BATTERY );
-			// This should not be null.
-			batteryPoolCapacity = ftlConstants.getBatteryPoolCapacity( batterySystemRef.get().getCapacity() );
-		}
-
-		return batteryPoolCapacity;
-	}
-
-	/**
-	 * Returns available battery power after systems' demand is subtracted
-	 * (min 0).
-	 *
-	 * @param excludeRef count demand from all systems except one (may be null)
-	 */
-	private int getBatteryPool( SpriteReference<SystemState> excludeRef ) {
-		int result = 0;
-
-		BatteryInfo batteryInfo = getExtendedSystemInfo( BatteryInfo.class );
-		if ( batteryInfo != null && batteryInfo.isActive() ) {
-			int batteryPoolCapacity = 0;
-			int systemsBattery = 0;
-			for ( SpriteReference<SystemState> systemRef : systemRefs ) {
-				if ( SystemType.BATTERY.equals( systemRef.get().getSystemType() ) ) {
-					batteryPoolCapacity = ftlConstants.getBatteryPoolCapacity( systemRef.get().getCapacity() );
-				}
-
-				if ( systemRef == excludeRef ) continue;
-
-				if ( !systemRef.get().getSystemType().isSubsystem() ) {
-					systemsBattery += systemRef.get().getBatteryPower();
-				}
-			}
-			result = batteryPoolCapacity - systemsBattery;
-			result = Math.max( 0, result );
-		}
-
-		return result;
-	}
-
-	private void updateBatteryPool() {
-		SpriteReference<SystemState> batterySystemRef = null;
-		int systemsBattery = 0;
-		for ( SpriteReference<SystemState> systemRef : systemRefs ) {
-			if ( SystemType.BATTERY.equals( systemRef.get().getSystemType() ) ) {
-				batterySystemRef = systemRef;
-			}
-
-			if ( !systemRef.get().getSystemType().isSubsystem() ) {
-				systemsBattery += systemRef.get().getBatteryPower();
-			}
-		}
-
-		BatteryInfo batteryInfo = getExtendedSystemInfo( BatteryInfo.class );
-		if ( batterySystemRef != null && batterySystemRef.get().getCapacity() > 0 ) {
-			if ( batteryInfo == null ) {
-				batteryInfo = new BatteryInfo();
-				extendedSystemInfoList.add( batteryInfo );
-			}
-			if ( !batteryInfo.isActive() ) {
-				batteryInfo.setActive( true );
-				batteryInfo.setDischargeTicks( 0 );
-			}
-			batteryInfo.setUsedBattery( systemsBattery );
-		}
-		else {
-			if ( batteryInfo != null ) {
-				batteryInfo.setActive( false );
-				batteryInfo.setDischargeTicks( 1000 );
-				extendedSystemInfoList.remove( batteryInfo );
-			}
-		}
-	}
-
-	/**
-	 * Returns the number of friendly Zoltan crew sprites in a room.
-	 */
-	private int getRoomZoltanEnergy( int roomId ) {
-		if ( roomId < 0 ) return 0;
-
-		int result = 0;
-		Rectangle roomRect = null;
-
-		for ( Map.Entry<Rectangle, Integer> regionEntry : roomRegionRoomIdMap.entrySet() ) {
-			if ( regionEntry.getValue().intValue() == roomId ) {
-				roomRect = regionEntry.getKey();
-				break;
-			}
-		}
-
-		if ( roomRect != null ) {
-			for ( SpriteReference<CrewState> crewRef : crewRefs ) {
-				if ( CrewType.ENERGY.equals( crewRef.get().getRace() ) ) {
-					if ( crewRef.get().isPlayerControlled() == shipPlayerControlled ) {
-						CrewSprite crewSprite = crewRef.getSprite( CrewSprite.class );
-						int centerX = crewSprite.getX() + crewSprite.getWidth()/2;
-						int centerY = crewSprite.getY() + crewSprite.getHeight()/2;
-						if ( roomRect.contains( centerX, centerY ) ) {
-							result++;
-						}
-					}
-				}
-			}
-		}
-
-		return result;
 	}
 
 	/**
@@ -1925,7 +1854,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	 *
 	 * TODO: Make this viable beyond FTL 1.03.3.
 	 */
-	private void disarmDrone( SpriteReference<DroneState> droneRef ) {
+	private void disarmDrone( ShipBundle shipBundle, SpriteReference<DroneState> droneRef ) {
 		if ( droneRef.get() == null ) return;
 
 		droneRef.get().setArmed( false );
@@ -1940,13 +1869,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 		// TODO: Extended info, pods, etc.
 	}
 
-	private void unequipDrone( SpriteReference<DroneState> droneRef ) {
+	private void unequipDrone( ShipBundle shipBundle, SpriteReference<DroneState> droneRef ) {
 		if ( droneRef.get() == null ) return;
 
 		DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
 		if ( droneBodySprite != null ) {
 			droneRef.removeSprite( droneBodySprite );
-			droneBodySprites.remove( droneBodySprite );
+			shipBundle.getDroneBodySprites().remove( droneBodySprite );
 			shipPanel.remove( droneBodySprite );
 		}
 
@@ -1974,7 +1903,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 	 * TODO: Blocked squares.
 	 * TODO: Mimic FTL's algorithm.
 	 */
-	private void placeDroneBody( SpriteReference<DroneState> droneRef ) {
+	private void placeDroneBody( ShipBundle shipBundle, SpriteReference<DroneState> droneRef ) {
 		if ( droneRef.get() == null ) return;
 
 		DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
@@ -2000,7 +1929,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 			List<Integer> candidateRoomIds = new ArrayList<Integer>();
 
-			int[] droneSystemRoomId = shipBlueprint.getSystemList().getRoomIdBySystemType( SystemType.DRONE_CTRL );
+			int[] droneSystemRoomId = shipBundle.getShipBlueprint().getSystemList().getRoomIdBySystemType( SystemType.DRONE_CTRL );
 			if ( droneSystemRoomId != null ) {
 				candidateRoomIds.add( droneSystemRoomId[0] );
 			}
@@ -2008,19 +1937,19 @@ public class SavedGameFloorplanPanel extends JPanel {
 			for ( int i=0; i < candidateRoomIds.size(); i++ ) {
 				int roomId = candidateRoomIds.get( i );
 
-				ShipLayoutRoom layoutRoom = shipLayout.getRoom( roomId );
+				ShipLayoutRoom layoutRoom = shipBundle.getShipLayout().getRoom( roomId );
 				int squaresH = layoutRoom.squaresH;
 				int squaresV = layoutRoom.squaresV;
 				int roomCoordX = layoutRoom.locationX;
 				int roomCoordY = layoutRoom.locationY;
-				int roomX = layoutX + layoutRoom.locationX*squareSize;
-				int roomY = layoutY + layoutRoom.locationY*squareSize;
+				int roomX = shipBundle.getLayoutX() + layoutRoom.locationX*squareSize;
+				int roomY = shipBundle.getLayoutY() + layoutRoom.locationY*squareSize;
 
 				for ( int s=0; s < squaresH * squaresV; s++ ) {
 					boolean occupied = false;
 
 					// Check blocked squares.
-					for ( RoomAndSquare ras : blockedRasList ) {
+					for ( RoomAndSquare ras : shipBundle.getBlockedRasList() ) {
 						if ( ras.roomId == roomId && ras.squareId == s ) {
 							occupied = true;
 							break;
@@ -2028,7 +1957,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					}
 					// Check crew.
 					if ( !occupied ) {
-						for ( SpriteReference<CrewState> crewRef : crewRefs ) {
+						for ( SpriteReference<CrewState> crewRef : shipBundle.getCrewRefs() ) {
 							if ( crewRef.get().getRoomId() == roomId
 								&& crewRef.get().getRoomSquare() == s
 								&& crewRef.get().getHealth() > 0
@@ -2042,11 +1971,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 					}
 					// Check drone bodies.
 					if ( !occupied ) {
-						for ( SpriteReference<DroneState> otherDroneRef : droneRefs ) {
+						for ( SpriteReference<DroneState> otherDroneRef : shipBundle.getDroneRefs() ) {
 							if ( otherDroneRef.get() != null
 								&& otherDroneRef.get().getBodyRoomId() == roomId
 								&& otherDroneRef.get().getBodyRoomSquare() == s
-								&& otherDroneRef.get().isArmed() ) {
+								&& otherDroneRef.get().isArmed()
+								&& otherDroneRef.get().isPlayerControlled() == playerControlled ) {
 
 								occupied = true;
 								break;
@@ -2056,8 +1986,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 					// Place the body.
 					if ( !occupied ) {
-						int bodyX = shipLayout.getOffsetX()*squareSize + roomCoordX*squareSize + (s%squaresH)*squareSize + squareSize/2;
-						int bodyY = shipLayout.getOffsetY()*squareSize + roomCoordY*squareSize + (s/squaresH)*squareSize + squareSize/2;
+						int bodyX = shipBundle.getShipLayout().getOffsetX()*squareSize + roomCoordX*squareSize + (s%squaresH)*squareSize + squareSize/2;
+						int bodyY = shipBundle.getShipLayout().getOffsetY()*squareSize + roomCoordY*squareSize + (s/squaresH)*squareSize + squareSize/2;
 						droneRef.get().setBodyRoomId( roomId );
 						droneRef.get().setBodyRoomSquare( s );
 						droneRef.get().setBodyX( bodyX );
@@ -2071,7 +2001,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				}
 				else {
 					// Add adjacent rooms to the candidates, while looping.
-					for ( Integer otherRoomId : shipLayout.getAdjacentRoomIds( roomId ) ) {
+					for ( Integer otherRoomId : shipBundle.getShipLayout().getAdjacentRoomIds( roomId ) ) {
 						if ( !candidateRoomIds.contains( otherRoomId ) ) {
 							candidateRoomIds.add( otherRoomId );
 						}
@@ -2089,12 +2019,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				droneBodySprite = new DroneBodySprite( droneRef, bodyImage );
 				droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
-				droneBodySprites.add( droneBodySprite );
+				shipBundle.getDroneBodySprites().add( droneBodySprite );
 				shipPanel.add( droneBodySprite, DRONE_LAYER );
 			}
 
-			int bodySpriteX = originX + droneRef.get().getBodyX();
-			int bodySpriteY = originY + droneRef.get().getBodyY();
+			int bodySpriteX = shipBundle.getOriginX() + droneRef.get().getBodyX();
+			int bodySpriteY = shipBundle.getOriginY() + droneRef.get().getBodyY();
 			droneBodySprite.setLocation( bodySpriteX - droneBodySprite.getPreferredSize().width/2, bodySpriteY - droneBodySprite.getPreferredSize().height/2 );
 		}
 		else {
@@ -2200,7 +2130,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		sidePanel.add( labelArea );
 	}
 
-	private void showGeneralEditor() {
+	private void showGeneralEditor( final ShipBundle shipBundle ) {
 		final String SHIP_NAME = "Ship Name";
 		final String HULL = "Hull";
 		final String FUEL = "Fuel";
@@ -2218,7 +2148,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( SHIP_NAME, FieldEditorPanel.ContentType.STRING );
 		editorPanel.addRow( HULL, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider( HULL ).setMaximum( shipBlueprint.getHealth().amount );
+		editorPanel.getSlider( HULL ).setMaximum( shipBundle.getShipBlueprint().getHealth().amount );
 		editorPanel.addRow( FUEL, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( DRONE_PARTS, FieldEditorPanel.ContentType.INTEGER );
 		editorPanel.addRow( MISSILES, FieldEditorPanel.ContentType.INTEGER );
@@ -2235,17 +2165,17 @@ public class SavedGameFloorplanPanel extends JPanel {
 		editorPanel.addRow( CLOAK_ANIM_TICKS, FieldEditorPanel.ContentType.SLIDER );
 		editorPanel.getSlider( CLOAK_ANIM_TICKS ).setMaximum( 500 );  // TODO: Magic number.
 
-		editorPanel.getString( SHIP_NAME ).setText( shipName );
-		editorPanel.getSlider( HULL ).setValue( shipHull );
-		editorPanel.getInt( FUEL ).setText( ""+shipFuel );
-		editorPanel.getInt( DRONE_PARTS ).setText( ""+shipDroneParts );
-		editorPanel.getInt( MISSILES ).setText( ""+shipMissiles );
-		editorPanel.getInt( SCRAP ).setText( ""+shipScrap );
-		editorPanel.getBoolean( HOSTILE ).setSelected( shipHostile );
-		editorPanel.getInt( JUMP_CHARGE_TICKS ).setText( ""+shipJumpChargeTicks );
-		editorPanel.getBoolean( JUMPING ).setSelected( shipJumping );
-		editorPanel.getSlider( JUMP_ANIM_TICKS ).setValue( shipJumpAnimTicks );
-		editorPanel.getSlider( CLOAK_ANIM_TICKS ).setValue( shipCloakAnimTicks );
+		editorPanel.getString( SHIP_NAME ).setText( shipBundle.getShipName() );
+		editorPanel.getSlider( HULL ).setValue( shipBundle.getHullAmt() );
+		editorPanel.getInt( FUEL ).setText( ""+ shipBundle.getFuelAmt() );
+		editorPanel.getInt( DRONE_PARTS ).setText( ""+ shipBundle.getDronePartsAmt() );
+		editorPanel.getInt( MISSILES ).setText( ""+ shipBundle.getMissilesAmt() );
+		editorPanel.getInt( SCRAP ).setText( ""+ shipBundle.getScrapAmt() );
+		editorPanel.getBoolean( HOSTILE ).setSelected( shipBundle.isHostile() );
+		editorPanel.getInt( JUMP_CHARGE_TICKS ).setText( ""+ shipBundle.getJumpChargeTicks() );
+		editorPanel.getBoolean( JUMPING ).setSelected( shipBundle.isJumping() );
+		editorPanel.getSlider( JUMP_ANIM_TICKS ).setValue( shipBundle.getJumpAnimTicks() );
+		editorPanel.getSlider( CLOAK_ANIM_TICKS ).setValue( shipBundle.getCloakAnimTicks() );
 
 		editorPanel.getBoolean( HOSTILE ).addMouseListener( new StatusbarMouseListener( frame, "Toggle hostile/neutral status (No effect on player ships)." ) );
 		editorPanel.getInt( JUMP_CHARGE_TICKS ).addMouseListener( new StatusbarMouseListener( frame, "Time elapsed waiting for the FTL to charge (Counts to 85000)." ) );
@@ -2258,32 +2188,32 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public void run() {
 				String newString;
 				newString = editorPanel.getString( SHIP_NAME ).getText();
-				if ( newString.length() > 0 ) shipName = newString;
+				if ( newString.length() > 0 ) shipBundle.setShipName( newString );
 
-				shipHull = editorPanel.getSlider( HULL ).getValue();
+				shipBundle.setHullAmt( editorPanel.getSlider( HULL ).getValue() );
 
-				try { shipFuel = editorPanel.parseInt( FUEL ); }
+				try { shipBundle.setFuelAmt( editorPanel.parseInt( FUEL ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipDroneParts = editorPanel.parseInt( DRONE_PARTS ); }
+				try { shipBundle.setDronePartsAmt( editorPanel.parseInt( DRONE_PARTS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipMissiles = editorPanel.parseInt( MISSILES ); }
+				try { shipBundle.setMissilesAmt( editorPanel.parseInt( MISSILES ) ); }
 				catch ( NumberFormatException e ) {}
 
-				try { shipScrap = editorPanel.parseInt( SCRAP ); }
+				try { shipBundle.setScrapAmt( editorPanel.parseInt( SCRAP ) ); }
 				catch ( NumberFormatException e ) {}
 
-				shipHostile = editorPanel.getBoolean( HOSTILE ).isSelected();
+				shipBundle.setHostile( editorPanel.getBoolean( HOSTILE ).isSelected() );
 
-				try { shipJumpChargeTicks = editorPanel.parseInt( JUMP_CHARGE_TICKS ); }
+				try { shipBundle.setJumpChargeTicks( editorPanel.parseInt( JUMP_CHARGE_TICKS ) ); }
 				catch ( NumberFormatException e ) {}
 
-				shipJumping = editorPanel.getBoolean( JUMPING ).isSelected();
+				shipBundle.setJumping( editorPanel.getBoolean( JUMPING ).isSelected() );
 
-				shipJumpAnimTicks = editorPanel.getSlider( JUMP_ANIM_TICKS ).getValue();
+				shipBundle.setJumpAnimTicks( editorPanel.getSlider( JUMP_ANIM_TICKS ).getValue() );
 
-				shipCloakAnimTicks = editorPanel.getSlider( CLOAK_ANIM_TICKS ).getValue();
+				shipBundle.setCloakAnimTicks( editorPanel.getSlider( CLOAK_ANIM_TICKS ).getValue() );
 
 				clearSidePanel();
 			}
@@ -2293,12 +2223,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showAugmentsEditor( final List<String> shipAugmentIdList ) {
+	private void showAugmentsEditor( final ShipBundle shipBundle ) {
 		final String DESC = "Desc";
 		final String ID_ONE = "#1";
 		final String ID_TWO = "#2";
 		final String ID_THREE = "#3";
 		final String[] augSlots = new String[] { ID_ONE, ID_TWO, ID_THREE };
+
+		final List<String> shipAugmentIdList = shipBundle.getAugmentIdList();
 
 		final Map<String, AugBlueprint> allAugmentsMap = DataManager.get().getAugments();
 
@@ -2370,7 +2302,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showDroneEditor( final SpriteReference<DroneState> droneRef ) {
+	private void showDroneEditor( final ShipBundle shipBundle, final SpriteReference<DroneState> droneRef ) {
 		final String AVAILABLE_POWER = "Available Power";
 		final String ID = "DroneId";
 		final String DESC = "Desc";
@@ -2381,14 +2313,14 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final Map<String, DroneBlueprint> allDronesMap = DataManager.get().getDrones();
 
-		SpriteReference<SystemState> droneSystemRef = getSystemRef( SystemType.DRONE_CTRL );
+		SpriteReference<SystemState> droneSystemRef = shipBundle.getSystemRef( SystemType.DRONE_CTRL );
 		if ( droneSystemRef == null || droneSystemRef.get().getCapacity() == 0 ) {
 			JOptionPane.showMessageDialog( frame, "A Drone Control system must be present with capacity > 0 before adding drones.", "System Not Installed", JOptionPane.WARNING_MESSAGE );
 			return;
 		}
 
 		int otherDronesDemand = 0;
-		for ( SpriteReference<DroneState> otherDroneRef : droneRefs ) {
+		for ( SpriteReference<DroneState> otherDroneRef : shipBundle.getDroneRefs() ) {
 			if ( otherDroneRef != droneRef && otherDroneRef.get() != null && otherDroneRef.get().isArmed() ) {
 				otherDronesDemand += allDronesMap.get( otherDroneRef.get().getDroneId() ).getPower();
 			}
@@ -2397,16 +2329,16 @@ public class SavedGameFloorplanPanel extends JPanel {
 		DroneBoxSprite droneBoxSprite = droneRef.getSprite( DroneBoxSprite.class );
 		int droneSystemCapacity = droneSystemRef.get().getCapacity();
 		int droneSystemDamage = droneSystemRef.get().getDamagedBars();
-		final int excludedReservePool = getReservePool( droneSystemRef );
-		final int excludedBatteryPool = getBatteryPool( droneSystemRef );
-		final int zoltanBars = getRoomZoltanEnergy( getSpriteRoomId( droneBoxSprite ) );
+		final int excludedReservePool = shipBundle.getReservePool( droneSystemRef );
+		final int excludedBatteryPool = shipBundle.getBatteryPool( droneSystemRef );
+		final int zoltanBars = shipBundle.getRoomZoltanEnergy( shipBundle.getSpriteRoomId( droneBoxSprite ) );
 		final int availablePower = Math.min( excludedReservePool + excludedBatteryPool + zoltanBars, droneSystemRef.get().getUsableCapacity() ) - otherDronesDemand;
 
 		String title = String.format("Drone %d", droneBoxSprite.getSlot()+1);
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( AVAILABLE_POWER, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider( AVAILABLE_POWER ).setMaximum( shipReserveCapacity );
+		editorPanel.getSlider( AVAILABLE_POWER ).setMaximum( shipBundle.getReservePowerCapacity() );
 		editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower );
 		editorPanel.getSlider( AVAILABLE_POWER ).setEnabled( false );
 		editorPanel.addBlankRow();
@@ -2473,7 +2405,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						DroneBodySprite droneBodySprite = droneRef.getSprite( DroneBodySprite.class );
 						if ( droneBodySprite != null ) {
 							droneRef.removeSprite( droneBodySprite );
-							droneBodySprites.remove( droneBodySprite );
+							shipBundle.getDroneBodySprites().remove( droneBodySprite );
 							shipPanel.remove( droneBodySprite );
 						}
 					}
@@ -2485,22 +2417,22 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 					if ( DroneType.BATTLE.equals( droneType ) || DroneType.REPAIR.equals( droneType ) ) {
 						if ( droneRef.get().isArmed() ) {
-							placeDroneBody( droneRef );
+							placeDroneBody( shipBundle, droneRef );
 
 							if ( droneRef.get().getBodyRoomId() < 0 ) {  // Body placement failed.
-								disarmDrone( droneRef );
+								disarmDrone( shipBundle, droneRef );
 							}
 						}
 					}
 					// TODO: Extended info, Boarder drone crew on the other ship, etc.
 				}
 				else {
-					unequipDrone( droneRef );
+					unequipDrone( shipBundle, droneRef );
 				}
 				droneRef.fireReferenceChange();
 
 				// Set the Drones system power based on all armed drones.
-				SpriteReference<SystemState> droneSystemRef = getSystemRef( SystemType.DRONE_CTRL );
+				SpriteReference<SystemState> droneSystemRef = shipBundle.getSystemRef( SystemType.DRONE_CTRL );
 				int usableCapacity = droneSystemRef.get().getUsableCapacity();
 				int prevSystemPower = droneSystemRef.get().getPower();
 				int prevSystemBattery = droneSystemRef.get().getBatteryPower();
@@ -2510,7 +2442,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				// Tally up demand from drones until bars are insufficient, allocate
 				// more bars if possible, then disarm the rest.
-				for ( SpriteReference<DroneState> otherDroneRef : droneRefs ) {
+				for ( SpriteReference<DroneState> otherDroneRef : shipBundle.getDroneRefs() ) {
 					if ( otherDroneRef.get() != null && otherDroneRef.get().isArmed() ) {
 						int demand = allDronesMap.get( otherDroneRef.get().getDroneId() ).getPower();
 
@@ -2532,7 +2464,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 						}
 
 						if ( disarming ) {
-							disarmDrone( otherDroneRef );
+							disarmDrone( shipBundle, otherDroneRef );
 							otherDroneRef.fireReferenceChange();
 						}
 					}
@@ -2556,7 +2488,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				droneSystemRef.get().setPower( newSystemPower );
 				droneSystemRef.get().setBatteryPower( newSystemBattery );
 				droneSystemRef.fireReferenceChange();
-				updateBatteryPool();
+				shipBundle.updateBatteryPool();
 
 				clearSidePanel();
 			}
@@ -2633,7 +2565,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showWeaponEditor( final SpriteReference<WeaponState> weaponRef ) {
+	private void showWeaponEditor( final ShipBundle shipBundle, final SpriteReference<WeaponState> weaponRef ) {
 		final String AVAILABLE_POWER = "Available Power";
 		final String ID = "WeaponId";
 		final String DESC = "Desc";
@@ -2643,22 +2575,22 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final Map<String, WeaponBlueprint> allWeaponsMap = DataManager.get().getWeapons();
 
-		SpriteReference<SystemState> weaponSystemRef = getSystemRef( SystemType.WEAPONS );
+		SpriteReference<SystemState> weaponSystemRef = shipBundle.getSystemRef( SystemType.WEAPONS );
 		if ( weaponSystemRef == null || weaponSystemRef.get().getCapacity() == 0 ) {
 			JOptionPane.showMessageDialog( frame, "A weapons system must be present with capacity > 0 before adding weapons.", "System Not Installed", JOptionPane.WARNING_MESSAGE );
 			return;
 		}
 
 		int otherWeaponsDemand = 0;
-		for ( SpriteReference<WeaponState> otherWeaponRef : weaponRefs ) {
+		for ( SpriteReference<WeaponState> otherWeaponRef : shipBundle.getWeaponRefs() ) {
 			if ( otherWeaponRef != weaponRef && otherWeaponRef.get() != null && otherWeaponRef.get().isArmed() ) {
 				otherWeaponsDemand += allWeaponsMap.get( otherWeaponRef.get().getWeaponId() ).getPower();
 			}
 		}
 
-		final int excludedReservePool = getReservePool( weaponSystemRef );
-		final int excludedBatteryPool = getBatteryPool( weaponSystemRef );
-		final int zoltanBars = getRoomZoltanEnergy( getSpriteRoomId( weaponSystemRef.getSprite( SystemRoomSprite.class ) ) );
+		final int excludedReservePool = shipBundle.getReservePool( weaponSystemRef );
+		final int excludedBatteryPool = shipBundle.getBatteryPool( weaponSystemRef );
+		final int zoltanBars = shipBundle.getRoomZoltanEnergy( shipBundle.getSpriteRoomId( weaponSystemRef.getSprite( SystemRoomSprite.class ) ) );
 		final int availablePower = Math.min( excludedReservePool + excludedBatteryPool + zoltanBars, weaponSystemRef.get().getUsableCapacity() ) - otherWeaponsDemand;
 
 		WeaponSprite weaponSprite = weaponRef.getSprite( WeaponSprite.class );
@@ -2667,7 +2599,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( AVAILABLE_POWER, FieldEditorPanel.ContentType.SLIDER );
-		editorPanel.getSlider( AVAILABLE_POWER ).setMaximum( shipReserveCapacity );
+		editorPanel.getSlider( AVAILABLE_POWER ).setMaximum( shipBundle.getReservePowerCapacity() );
 		editorPanel.getSlider( AVAILABLE_POWER ).setValue( availablePower );
 		editorPanel.getSlider( AVAILABLE_POWER ).setEnabled( false );
 		editorPanel.addBlankRow();
@@ -2684,7 +2616,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		editorPanel.getCombo( ID ).addItem( "" );
 		for ( WeaponBlueprint weaponBlueprint : allWeaponsMap.values() )
-			editorPanel.getCombo( ID ).addItem(weaponBlueprint);
+			editorPanel.getCombo( ID ).addItem( weaponBlueprint );
 
 		if ( weaponRef.get() != null ) {
 			WeaponBlueprint selectedBlueprint = allWeaponsMap.get( weaponRef.get().getWeaponId() );
@@ -2721,7 +2653,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				weaponRef.fireReferenceChange();
 
 				// Set the Weapons system power based on all armed weapons.
-				SpriteReference<SystemState> weaponSystemRef = getSystemRef( SystemType.WEAPONS );
+				SpriteReference<SystemState> weaponSystemRef = shipBundle.getSystemRef( SystemType.WEAPONS );
 				int usableCapacity = weaponSystemRef.get().getUsableCapacity();
 				int prevSystemPower = weaponSystemRef.get().getPower();
 				int prevSystemBattery = weaponSystemRef.get().getBatteryPower();
@@ -2731,7 +2663,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 				// Tally up demand from weapons until bars are insufficient, allocate
 				// more bars if possible, then disarm the rest.
-				for ( SpriteReference<WeaponState> otherWeaponRef : weaponRefs ) {
+				for ( SpriteReference<WeaponState> otherWeaponRef : shipBundle.getWeaponRefs() ) {
 					if ( otherWeaponRef.get() != null && otherWeaponRef.get().isArmed() ) {
 						int demand = allWeaponsMap.get( otherWeaponRef.get().getWeaponId() ).getPower();
 
@@ -2778,7 +2710,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				weaponSystemRef.get().setPower( newSystemPower );
 				weaponSystemRef.get().setBatteryPower( newSystemBattery );
 				weaponSystemRef.fireReferenceChange();
-				updateBatteryPool();
+				shipBundle.updateBatteryPool();
 
 				clearSidePanel();
 			}
@@ -2845,7 +2777,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showRoomEditor( final SpriteReference<RoomState> roomRef, final int squareId ) {
+	private void showRoomEditor( final ShipBundle shipBundle, final SpriteReference<RoomState> roomRef, final int squareId ) {
 		final String OXYGEN = "Oxygen";
 		final String STATION_HERE = "Station Here";
 		final String STATION_DIR = "Station Direction";
@@ -2853,7 +2785,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final String EXTINGUISHMENT = "Extinguishment Progress";
 
 		RoomSprite roomSprite = roomRef.getSprite( RoomSprite.class );
-		String title = String.format("Room %2d (Square %d)", roomSprite.getRoomId(), squareId);
+		String title = String.format( "Room %2d (Square %d)", roomSprite.getRoomId(), squareId );
 
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( OXYGEN, FieldEditorPanel.ContentType.SLIDER );
@@ -2926,7 +2858,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showSystemEditor( final SpriteReference<SystemState> systemRef ) {
+	private void showSystemEditor( final ShipBundle shipBundle, final SpriteReference<SystemState> systemRef ) {
 		final String RESERVE_CAPACITY = "Reserve Capacity";
 		final String RESERVE_POWER = "Reserve Power";
 		final String CAPACITY = "System Capacity";
@@ -2941,15 +2873,15 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final SystemBlueprint systemBlueprint = DataManager.get().getSystem( systemRef.get().getSystemType().getId() );
 
 		int maxSystemCapacity = systemBlueprint.getMaxPower();
-		Integer maxPowerOverride = shipBlueprint.getSystemList().getSystemRoom( systemRef.get().getSystemType() )[0].getMaxPower();
+		Integer maxPowerOverride = shipBundle.getShipBlueprint().getSystemList().getSystemRoom( systemRef.get().getSystemType() )[0].getMaxPower();
 		if ( maxPowerOverride != null ) {
 			maxSystemCapacity = maxPowerOverride.intValue();
 		}
 
-		final int batteryCapacity = getBatteryPoolCapacity();
-		final int excludedReservePool = getReservePool( systemRef );
-		final int excludedBatteryPool = getBatteryPool( systemRef );
-		final int zoltanBars = getRoomZoltanEnergy( getSpriteRoomId( systemRef.getSprite( SystemRoomSprite.class ) ) );
+		final int batteryCapacity = shipBundle.getBatteryPoolCapacity();
+		final int excludedReservePool = shipBundle.getReservePool( systemRef );
+		final int excludedBatteryPool = shipBundle.getBatteryPool( systemRef );
+		final int zoltanBars = shipBundle.getRoomZoltanEnergy( shipBundle.getSpriteRoomId( systemRef.getSprite( SystemRoomSprite.class ) ) );
 
 		// Subsystems ignore the reserve, and power can't be directly changed.
 		final boolean isSubsystem = systemRef.get().getSystemType().isSubsystem();
@@ -2985,8 +2917,8 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		editorPanel.getSlider( RESERVE_CAPACITY ).setMaximum( ftlConstants.getMaxReservePoolCapacity() );
 		editorPanel.getSlider( RESERVE_CAPACITY ).setMinimum( ftlConstants.getMaxReservePoolCapacity() - excludedReservePool );  // otherSystemsPower
-		editorPanel.getSlider( RESERVE_CAPACITY ).setValue( shipReserveCapacity );
-		editorPanel.getSlider( RESERVE_POWER ).setMaximum( shipReserveCapacity );
+		editorPanel.getSlider( RESERVE_CAPACITY ).setValue( shipBundle.getReservePowerCapacity() );
+		editorPanel.getSlider( RESERVE_POWER ).setMaximum( shipBundle.getReservePowerCapacity() );
 		// Reserve power's value is set later.
 		editorPanel.getSlider( RESERVE_POWER ).setEnabled( false );
 		editorPanel.getSlider( CAPACITY ).setMaximum( maxSystemCapacity );
@@ -3135,7 +3067,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		final Runnable applyCallback = new Runnable() {
 			@Override
 			public void run() {
-				shipReserveCapacity = editorPanel.getSlider( RESERVE_CAPACITY ).getValue();
+				shipBundle.setReservePowerCapacity( editorPanel.getSlider( RESERVE_CAPACITY ).getValue() );
 
 				systemRef.get().setCapacity( editorPanel.getSlider( CAPACITY ).getValue() );
 
@@ -3157,7 +3089,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				if ( SystemType.WEAPONS.equals( systemRef.get().getSystemType() ) ) {
 					if ( systemRef.get().getCapacity() == 0 ) {
 						// When capacity is 0, nullify all weapons.
-						for ( SpriteReference<WeaponState> weaponRef : weaponRefs ) {
+						for ( SpriteReference<WeaponState> weaponRef : shipBundle.getWeaponRefs() ) {
 							weaponRef.set( null );
 							weaponRef.fireReferenceChange();
 						}
@@ -3165,7 +3097,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 					else {
 						// Disarm everything rightward of first underpowered weapon.
 						int weaponPower = 0;
-						for ( SpriteReference<WeaponState> weaponRef : weaponRefs ) {
+						for ( SpriteReference<WeaponState> weaponRef : shipBundle.getWeaponRefs() ) {
 							if ( weaponRef.get() != null && weaponRef.get().isArmed() ) {
 								weaponPower += DataManager.get().getWeapon( weaponRef.get().getWeaponId() ).getPower();
 								if ( weaponPower > systemPower ) weaponRef.get().setArmed( false );
@@ -3173,57 +3105,57 @@ public class SavedGameFloorplanPanel extends JPanel {
 						}
 						// Re-calc system power based on all armed weapons.
 						systemPower = 0;
-						for ( SpriteReference<WeaponState> weaponRef : weaponRefs ) {
+						for ( SpriteReference<WeaponState> weaponRef : shipBundle.getWeaponRefs() ) {
 							if ( weaponRef.get() != null && weaponRef.get().isArmed() ) {
 								systemPower += DataManager.get().getWeapon( weaponRef.get().getWeaponId() ).getPower();
 							}
 						}
 						systemRef.get().setPower( systemPower );
 						systemRef.get().setBatteryPower( systemBattery );
-						updateBatteryPool();
+						shipBundle.updateBatteryPool();
 					}
 				}
 				else if ( SystemType.DRONE_CTRL.equals( systemRef.get().getSystemType() ) ) {
 					if ( systemRef.get().getCapacity() == 0 ) {
 						// When capacity is 0, nullify all drones.
-						for ( SpriteReference<DroneState> droneRef : droneRefs ) {
-							unequipDrone( droneRef );
+						for ( SpriteReference<DroneState> droneRef : shipBundle.getDroneRefs() ) {
+							unequipDrone( shipBundle, droneRef );
 							droneRef.fireReferenceChange();
 						}
 					}
 					else {
 						// Disarm everything rightward of first underpowered drone.
 						int dronePower = 0;
-						for ( SpriteReference<DroneState> droneRef : droneRefs ) {
+						for ( SpriteReference<DroneState> droneRef : shipBundle.getDroneRefs() ) {
 							if ( droneRef.get() != null && droneRef.get().isArmed() ) {
 								dronePower += DataManager.get().getDrone( droneRef.get().getDroneId() ).getPower();
 								if ( dronePower > systemPower ) {
-									disarmDrone( droneRef );
+									disarmDrone( shipBundle, droneRef );
 									droneRef.fireReferenceChange();
 								}
 							}
 						}
 						// Re-calc system power based on all armed drones.
 						systemPower = 0;
-						for ( SpriteReference<DroneState> droneRef : droneRefs ) {
+						for ( SpriteReference<DroneState> droneRef : shipBundle.getDroneRefs() ) {
 							if ( droneRef.get() != null && droneRef.get().isArmed() ) {
 								systemPower += DataManager.get().getDrone( droneRef.get().getDroneId() ).getPower();
 							}
 						}
 						systemRef.get().setPower( systemPower );
 						systemRef.get().setBatteryPower( systemBattery );
-						updateBatteryPool();
+						shipBundle.updateBatteryPool();
 					}
 				}
 				else {
 					systemRef.get().setPower( systemPower );
 					systemRef.get().setBatteryPower( systemBattery );
-					updateBatteryPool();
+					shipBundle.updateBatteryPool();
 				}
 				systemRef.fireReferenceChange();
 
 				if ( SystemType.DOORS.equals( systemRef.get().getSystemType() ) ) {
-					for ( SpriteReference<DoorState> doorRef : doorRefs ) {
+					for ( SpriteReference<DoorState> doorRef : shipBundle.getDoorRefs() ) {
 						// TODO: Test if doorState is ordinary, then change its health values.
 
 						doorRef.fireReferenceChange();
@@ -3267,7 +3199,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showBreachEditor( final BreachSprite breachSprite ) {
+	private void showBreachEditor( final ShipBundle shipBundle, final BreachSprite breachSprite ) {
 		final String HEALTH = "Health";
 
 		String title = "Breach";
@@ -3291,13 +3223,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		JButton removeBtn = new JButton( "Remove" );
 		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		sidePanel.add(removeBtn);
+		sidePanel.add( removeBtn );
 
 		removeBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
-				breachSprites.remove( breachSprite );
+				shipBundle.getBreachSprites().remove( breachSprite );
 				shipPanel.remove( breachSprite );
 			}
 		});
@@ -3305,7 +3237,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showFireEditor( final FireSprite fireSprite ) {
+	private void showFireEditor( final ShipBundle shipBundle, final FireSprite fireSprite ) {
 		final String HEALTH = "Health";
 
 		String title = "Fire";
@@ -3329,13 +3261,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		JButton removeBtn = new JButton( "Remove" );
 		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		sidePanel.add(removeBtn);
+		sidePanel.add( removeBtn );
 
 		removeBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
-				fireSprites.remove( fireSprite );
+				shipBundle.getFireSprites().remove( fireSprite );
 				shipPanel.remove( fireSprite );
 			}
 		});
@@ -3343,7 +3275,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showDoorEditor( final SpriteReference<DoorState> doorRef ) {
+	private void showDoorEditor( final ShipBundle shipBundle, final SpriteReference<DoorState> doorRef ) {
 		final String OPEN = "Open";
 		final String WALKING_THROUGH = "Walking Through";
 		final String MAX_HEALTH = "Current Max Health?";
@@ -3373,11 +3305,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		editorPanel.getBoolean( OPEN ).setSelected( doorRef.get().isOpen() );
 		editorPanel.getBoolean( WALKING_THROUGH ).setSelected( doorRef.get().isWalkingThrough() );
-		editorPanel.getInt( MAX_HEALTH ).setText( ""+doorRef.get().getCurrentMaxHealth() );
-		editorPanel.getInt( HEALTH ).setText( ""+doorRef.get().getHealth() );
-		editorPanel.getInt( NOMINAL_HEALTH ).setText( ""+doorRef.get().getNominalHealth() );
-		editorPanel.getInt( DELTA ).setText( ""+doorRef.get().getUnknownDelta() );
-		editorPanel.getInt( EPSILON ).setText( ""+doorRef.get().getUnknownEpsilon() );
+		editorPanel.getInt( MAX_HEALTH ).setText( ""+ doorRef.get().getCurrentMaxHealth() );
+		editorPanel.getInt( HEALTH ).setText( ""+ doorRef.get().getHealth() );
+		editorPanel.getInt( NOMINAL_HEALTH ).setText( ""+ doorRef.get().getNominalHealth() );
+		editorPanel.getInt( DELTA ).setText( ""+ doorRef.get().getUnknownDelta() );
+		editorPanel.getInt( EPSILON ).setText( ""+ doorRef.get().getUnknownEpsilon() );
 
 		final Runnable applyCallback = new Runnable() {
 			@Override
@@ -3415,10 +3347,12 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		String title = "Select Crew";
 
+		final ShipBundle shipBundle = playerBundle;  // TODO: Select ship!
+
 		final FieldEditorPanel editorPanel = new FieldEditorPanel( false );
 		editorPanel.addRow( CREW, FieldEditorPanel.ContentType.COMBO );
 
-		for ( SpriteReference<CrewState> crewRef : crewRefs ) {
+		for ( SpriteReference<CrewState> crewRef : shipBundle.getCrewRefs() ) {
 			CrewSprite crewSprite = crewRef.getSprite( CrewSprite.class );
 			editorPanel.getCombo( CREW ).addItem( crewSprite );
 		}
@@ -3429,7 +3363,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 				Object crewObj = editorPanel.getCombo( CREW ).getSelectedItem();
 				if ( crewObj instanceof CrewSprite ) {
 					SpriteReference<CrewState> crewRef = ((CrewSprite)crewObj).getReference();
-					showCrewEditor( crewRef );
+					showCrewEditor( shipBundle, crewRef );
 				}
 			}
 		};
@@ -3446,7 +3380,7 @@ public class SavedGameFloorplanPanel extends JPanel {
 		showSidePanel();
 	}
 
-	private void showCrewEditor( final SpriteReference<CrewState> crewRef ) {
+	private void showCrewEditor( final ShipBundle shipBundle, final SpriteReference<CrewState> crewRef ) {
 		final String NAME = "Name";
 		final String RACE = "Race";
 		final String HEALTH = "Health";
@@ -3781,13 +3715,13 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 		JButton moveBtn = new JButton( "Move To..." );
 		moveBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		sidePanel.add(moveBtn);
+		sidePanel.add( moveBtn );
 
 		sidePanel.add( Box.createVerticalStrut( 6 ) );
 
 		JButton removeBtn = new JButton( "Remove" );
 		removeBtn.setAlignmentX( Component.CENTER_ALIGNMENT );
-		sidePanel.add(removeBtn);
+		sidePanel.add( removeBtn );
 
 		moveBtn.addActionListener(new ActionListener() {
 			@Override
@@ -3801,11 +3735,10 @@ public class SavedGameFloorplanPanel extends JPanel {
 			public void actionPerformed( ActionEvent e ) {
 				clearSidePanel();
 				CrewSprite crewSprite = crewRef.getSprite( CrewSprite.class );
-				int spriteRoomId = getSpriteRoomId( crewSprite );
 
 				shipPanel.remove( crewSprite );
-				crewSprites.remove( crewSprite );
-				crewRefs.remove( crewRef );
+				shipBundle.getCrewSprites().remove( crewSprite );
+				shipBundle.getCrewRefs().remove( crewRef );
 			}
 		});
 

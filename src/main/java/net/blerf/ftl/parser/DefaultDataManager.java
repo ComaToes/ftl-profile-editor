@@ -104,8 +104,8 @@ public class DefaultDataManager extends DataManager {
 	private Map<ShipBlueprint, List<Achievement>> dlcShipAchievementIdMap;
 	private List<Achievement> generalAchievements;
 
-	private Map<String, ShipLayout> shipLayouts;
-	private Map<String, ShipChassis> shipChassisMap;
+	private Map<String, ShipLayout> shipLayoutIdMap;
+	private Map<String, ShipChassis> shipChassisIdMap;
 	private List<CrewNameList.CrewName> crewNamesMale;
 	private List<CrewNameList.CrewName> crewNamesFemale;
 
@@ -617,8 +617,8 @@ public class DefaultDataManager extends DataManager {
 			}
 
 			// These'll populate as files are requested.
-			shipLayouts = new HashMap<String, ShipLayout>();
-			shipChassisMap = new HashMap<String, ShipChassis>();
+			shipLayoutIdMap = new HashMap<String, ShipLayout>();
+			shipChassisIdMap = new HashMap<String, ShipChassis>();
 
 			crewNamesMale = new ArrayList<CrewNameList.CrewName>();
 			crewNamesFemale = new ArrayList<CrewNameList.CrewName>();
@@ -1020,14 +1020,14 @@ public class DefaultDataManager extends DataManager {
 
 	@Override
 	public ShipLayout getShipLayout( String id ) {
-		ShipLayout result = shipLayouts.get( id );
+		ShipLayout result = shipLayoutIdMap.get( id );
 
 		if ( result == null ) {  // Wasn't cached; try parsing it.
 			InputStream in = null;
 			try {
-				in = getResourceInputStream("data/"+ id +".txt");
-				result = datParser.readLayout(in, id +".txt");
-				shipLayouts.put( id, result );
+				in = getResourceInputStream( "data/"+ id +".txt" );
+				result = datParser.readLayout( in, id +".txt" );
+				shipLayoutIdMap.put( id, result );
 			}
 			catch ( FileNotFoundException e ) {
 				log.error( "No ShipLayout found for id: "+ id );
@@ -1044,17 +1044,24 @@ public class DefaultDataManager extends DataManager {
 		return result;
 	}
 
+	/**
+	 * Returns a ShipChassis with a given id.
+	 *
+	 * Should be the same as layoutId.
+	 *
+	 * @see net.blerf.ftl.xml.ShipBlueprint.getLayoutId()
+	 */
 	@Override
 	public ShipChassis getShipChassis( String id ) {
-		ShipChassis result = shipChassisMap.get( id );
+		ShipChassis result = shipChassisIdMap.get( id );
 
 		if ( result == null ) {  // Wasn't cached; try parsing it.
 			InputStream in = null;
 			try {
 				log.debug( String.format( "Reading ship chassis (data/%s.xml)...", id ) );
 				in = getResourceInputStream( "data/"+ id +".xml" );
-				result = datParser.readChassis(in, id +".xml");
-				shipChassisMap.put( id, result );
+				result = datParser.readChassis( in, id +".xml" );
+				shipChassisIdMap.put( id, result );
 			}
 			catch ( JDOMException e ) {
 				log.error( "Parsing XML failed for ShipChassis id: "+ id, e );
@@ -1079,10 +1086,11 @@ public class DefaultDataManager extends DataManager {
 
 	/**
 	 * Returns an Event with a given id.
+	 *
 	 * All event xml files are searched.
 	 *
-	 * Events and EventLists share a namespace,
-	 * so an id could belong to either.
+	 * Events and EventLists share a namespace, so an id could belong to
+	 * either.
 	 */
 	@Override
 	public FTLEvent getEventById( String id, boolean dlcEnabled ) {

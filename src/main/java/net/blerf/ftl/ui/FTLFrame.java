@@ -107,8 +107,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 	private static final String SAVE_DUMP = "Dump";
 	private static final String SAVE_GENERAL = "General";
-	private static final String SAVE_PLAYER_SHIP = "Player Ship";
-	private static final String SAVE_NEARBY_SHIP = "Nearby Ship";
+	private static final String SAVE_FLOORPLAN = "Floorplan";
 	private static final String SAVE_CHANGE_SHIP = "Change Ship";
 	private static final String SAVE_SECTOR_MAP = "Sector Map";
 	private static final String SAVE_SECTOR_TREE = "Sector Tree";
@@ -169,8 +168,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 	private JTabbedPane savedGameTabsPane;
 	private DumpPanel savedGameDumpPanel;
 	private SavedGameGeneralPanel savedGameGeneralPanel;
-	private SavedGameFloorplanPanel savedGamePlayerFloorplanPanel;
-	private SavedGameFloorplanPanel savedGameNearbyFloorplanPanel;
+	private SavedGameFloorplanPanel savedGameFloorplanPanel;
 	private SavedGameHangarPanel savedGameHangarPanel;
 	private SavedGameSectorMapPanel savedGameSectorMapPanel;
 	private SavedGameSectorTreePanel savedGameSectorTreePanel;
@@ -278,8 +276,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 		savedGameDumpPanel = new DumpPanel();
 		savedGameGeneralPanel = new SavedGameGeneralPanel( this );
-		savedGamePlayerFloorplanPanel = new SavedGameFloorplanPanel( this );
-		savedGameNearbyFloorplanPanel = new SavedGameFloorplanPanel( this );
+		savedGameFloorplanPanel = new SavedGameFloorplanPanel( this );
 		savedGameHangarPanel = new SavedGameHangarPanel( this );
 		savedGameSectorMapPanel = new SavedGameSectorMapPanel( this );
 		savedGameSectorTreePanel = new SavedGameSectorTreePanel( this );
@@ -294,8 +291,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 
 		savedGameTabsPane.addTab( SAVE_DUMP, savedGameDumpPanel );
 		savedGameTabsPane.addTab( SAVE_GENERAL, savedGameGeneralScroll );
-		savedGameTabsPane.addTab( SAVE_PLAYER_SHIP, savedGamePlayerFloorplanPanel );
-		savedGameTabsPane.addTab( SAVE_NEARBY_SHIP, savedGameNearbyFloorplanPanel );
+		savedGameTabsPane.addTab( SAVE_FLOORPLAN, savedGameFloorplanPanel );
 		savedGameTabsPane.addTab( SAVE_CHANGE_SHIP, savedGameHangarPanel );
 		savedGameTabsPane.addTab( SAVE_SECTOR_MAP, savedGameSectorMapPanel );
 		savedGameTabsPane.addTab( SAVE_SECTOR_TREE, savedGameSectorTreeScroll );
@@ -1314,16 +1310,14 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 		if ( gs == null ) {
 			savedGameDumpPanel.setText( "" );
 			savedGameGeneralPanel.setGameState( null );
-			savedGamePlayerFloorplanPanel.setShipState( null, null );
-			savedGameNearbyFloorplanPanel.setShipState( null, null );
+			savedGameFloorplanPanel.setGameState( null );
 			savedGameHangarPanel.setGameState( null );
 			savedGameSectorMapPanel.setGameState( null );
 			savedGameSectorTreePanel.setGameState( null );
 			savedGameStateVarsPanel.setGameState( null );
 
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_GENERAL ), false );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_PLAYER_SHIP ), false );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_NEARBY_SHIP ), false );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_FLOORPLAN ), false );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_CHANGE_SHIP ), false );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_MAP ), false );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_TREE ), false );
@@ -1338,16 +1332,14 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9, 11}, gs.getFileFormat() ) >= 0 ) {
 			savedGameDumpPanel.setText( gs.toString() );
 			savedGameGeneralPanel.setGameState( gs );
-			savedGamePlayerFloorplanPanel.setShipState( gs, gs.getPlayerShip() );
-			savedGameNearbyFloorplanPanel.setShipState( gs, gs.getNearbyShip() );
+			savedGameFloorplanPanel.setGameState( gs );
 			savedGameHangarPanel.setGameState( gs );
 			savedGameSectorMapPanel.setGameState( gs );
 			savedGameSectorTreePanel.setGameState( gs );
 			savedGameStateVarsPanel.setGameState( gs );
 
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_GENERAL ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_PLAYER_SHIP ), true );
-			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_NEARBY_SHIP ), true );
+			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_FLOORPLAN ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_CHANGE_SHIP ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_MAP ), true );
 			savedGameTabsPane.setEnabledAt( savedGameTabsPane.indexOfTab( SAVE_SECTOR_TREE ), true );
@@ -1374,8 +1366,7 @@ public class FTLFrame extends JFrame implements ActionListener, Statusbar, Threa
 		else if ( Arrays.binarySearch( new int[] {2, 7, 8, 9, 11}, gs.getFileFormat() ) >= 0 ) {
 			// savedGameDumpPanel doesn't modify anything.
 			savedGameGeneralPanel.updateGameState( gs );
-			savedGamePlayerFloorplanPanel.updateShipState( gs.getPlayerShip() );
-			savedGameNearbyFloorplanPanel.updateShipState( gs.getNearbyShip() );
+			savedGameFloorplanPanel.updateGameState( gs );
 			// savedGameHangarPanel doesn't modify anything.
 			savedGameSectorMapPanel.updateGameState( gs );
 			savedGameSectorTreePanel.updateGameState( gs );

@@ -64,7 +64,9 @@ public class ShipLayout {
 		shieldEllipse = new Rectangle( x, y, w, h );
 	}
 
-	public Rectangle getShieldEllipse() { return shieldEllipse; }
+	public Rectangle getShieldEllipse() {
+		return shieldEllipse;
+	}
 
 	/**
 	 * Sets a room's info.
@@ -91,6 +93,13 @@ public class ShipLayout {
 		catch ( NoSuchElementException e ) {
 			return 0;
 		}
+	}
+
+	/**
+	 * Returns the map containing this layout's room info.
+	 */
+	public Map<Integer, ShipLayoutRoom> getRoomMap() {
+		return roomMap;
 	}
 
 	/**

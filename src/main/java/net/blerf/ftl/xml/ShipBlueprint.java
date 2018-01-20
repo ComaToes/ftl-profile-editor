@@ -20,8 +20,8 @@ public class ShipBlueprint {
 	@XmlAttribute( name = "name" )
 	private String id;
 
-	@XmlAttribute
-	private String layout;
+	@XmlAttribute( name = "layout" )
+	private String layoutId;
 
 	@XmlAttribute( name = "img" )
 	private String gfxBaseName;
@@ -504,12 +504,12 @@ public class ShipBlueprint {
 		return id;
 	}
 
-	public void setLayout( String layout ) {
-		this.layout = layout;
+	public void setLayout( String layoutId ) {
+		this.layoutId = layoutId;
 	}
 
-	public String getLayout() {
-		return layout;
+	public String getLayoutId() {
+		return layoutId;
 	}
 
 	public void setGraphicsBaseName( String gfxBaseName ) {

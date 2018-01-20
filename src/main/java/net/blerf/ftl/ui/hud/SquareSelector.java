@@ -6,6 +6,7 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.font.LineMetrics;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.swing.JComponent;
 
@@ -16,12 +17,11 @@ import javax.swing.JComponent;
  * Usage: setVisible(), setCriteria(), setCallback()
  * To cancel selection, call reset();
  */
-public class SquareSelector extends JComponent {
+public class SquareSelector<T> extends JComponent {
 
 	private SquareCriteria defaultCriteria = new SquareCriteria();
 
-	private Map<Rectangle, Integer> squareRegionRoomIdMap;
-	private Map<Rectangle, Integer> squareRegionSquareIdMap;
+	private Map<Rectangle, T> squareRegionCoordMap = new LinkedHashMap<Rectangle, T>();
 	private SquareCriteria squareCriteria = defaultCriteria;
 	private SquareSelectionCallback callback = null;
 	private Point mousePoint = new Point( -1, -1 );
@@ -29,9 +29,16 @@ public class SquareSelector extends JComponent {
 	private boolean paintDescription = false;
 
 
-	public SquareSelector( Map<Rectangle, Integer> squareRegionRoomIdMap, Map<Rectangle, Integer> squareRegionSquareIdMap ) {
-		this.squareRegionRoomIdMap = squareRegionRoomIdMap;
-		this.squareRegionSquareIdMap = squareRegionSquareIdMap;
+	public SquareSelector() {
+	}
+
+	public void clearSquarsCoordMap() {
+		currentRect = null;
+		squareRegionCoordMap.clear();
+	}
+
+	public void putSquareRegionCoordMap( Map<Rectangle, T> squareRegionCoordMap ) {
+		this.squareRegionCoordMap.putAll( squareRegionCoordMap );
 	}
 
 	public void setMousePoint( int x, int y ) {
@@ -41,9 +48,9 @@ public class SquareSelector extends JComponent {
 
 			Rectangle newRect = null;
 			if ( mousePoint.x > 0 && mousePoint.y > 0 ) {
-				for ( Map.Entry<Rectangle, Integer> entry : squareRegionSquareIdMap.entrySet() ) {
-					if ( entry.getKey().contains( mousePoint ) ) {
-						newRect = entry.getKey();
+				for ( Rectangle k : squareRegionCoordMap.keySet() ) {
+					if ( k.contains( mousePoint ) ) {
+						newRect = k;
 						break;
 					}
 				}
@@ -56,20 +63,12 @@ public class SquareSelector extends JComponent {
 		}
 	}
 
-	public int getRoomId() {
-		int roomId = -1;
-		if ( squareRegionRoomIdMap.containsKey( currentRect ) ) {
-			roomId = squareRegionRoomIdMap.get( currentRect ).intValue();
+	public T getSquareCoord() {
+		T squareCoord = null;
+		if ( squareRegionCoordMap.containsKey( currentRect ) ) {
+			squareCoord = squareRegionCoordMap.get( currentRect );
 		}
-		return roomId;
-	}
-
-	public int getSquareId() {
-		int squareId = -1;
-		if ( squareRegionSquareIdMap.containsKey( currentRect ) ) {
-			squareId = squareRegionSquareIdMap.get( currentRect ).intValue();
-		}
-		return squareId;
+		return squareCoord;
 	}
 
 	public Rectangle getSquareRectangle() {
@@ -98,7 +97,7 @@ public class SquareSelector extends JComponent {
 	public SquareCriteria getCriteria() { return squareCriteria; }
 
 	public boolean isCurrentSquareValid() {
-		return squareCriteria.isSquareValid( this, getRoomId(), getSquareId() );
+		return squareCriteria.isSquareValid( this, getSquareCoord() );
 	}
 
 	public void setCallback( SquareSelectionCallback cb ) {
@@ -143,7 +142,7 @@ public class SquareSelector extends JComponent {
 		}
 
 		if ( currentRect != null ) {
-			Color squareColor = squareCriteria.getSquareColor( this, getRoomId(), getSquareId() );
+			Color squareColor = squareCriteria.getSquareColor( this, getSquareCoord() );
 			if ( squareColor != null ) {
 				g2d.setColor( squareColor );
 				g2d.drawRect( currentRect.x, currentRect.y, (currentRect.width-1), (currentRect.height-1) );
@@ -157,7 +156,7 @@ public class SquareSelector extends JComponent {
 
 
 
-	public static class SquareCriteria {
+	public static class SquareCriteria<T> {
 		private Color validColor = Color.GREEN.darker();
 		private Color invalidColor = Color.RED.darker();
 
@@ -167,25 +166,26 @@ public class SquareSelector extends JComponent {
 		}
 
 		/** Returns a highlight color when hovering over a square, or null for none. */
-		public Color getSquareColor( SquareSelector squareSelector, int roomId, int squareId ) {
-			if ( roomId < 0 || squareId < 0 ) return null;
-			if ( isSquareValid( squareSelector, roomId, squareId ) )
+		public Color getSquareColor( SquareSelector squareSelector, T squareCoord ) {
+			if ( squareCoord == null ) return null;
+			if ( isSquareValid( squareSelector, squareCoord ) ) {
 				return validColor;
-			else
+			} else {
 				return invalidColor;
+			}
 		}
 
 		/** Returns true if a square can be selected, false otherwise. */
-		public boolean isSquareValid( SquareSelector squareSelector, int roomId, int squareId ) {
-			if ( roomId < 0 || squareId < 0 ) return false;
+		public boolean isSquareValid( SquareSelector squareSelector, T squareCoord ) {
+			if ( squareCoord == null ) return false;
 			return true;
 		}
 	}
 
 
 
-	public interface SquareSelectionCallback {
+	public interface SquareSelectionCallback<T> {
 		/** Responds to a clicked square, returning true to continue selecting. */
-		boolean squareSelected( SquareSelector squareSelector, int roomId, int squareId );
+		boolean squareSelected( SquareSelector squareSelector, T squareCoord );
 	}
 }

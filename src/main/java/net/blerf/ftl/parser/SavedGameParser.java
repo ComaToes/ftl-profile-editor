@@ -473,15 +473,15 @@ public class SavedGameParser extends Parser {
 		String shipName = readString( in );
 		String shipGfxBaseName = readString( in );
 
-		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+		ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintId );
 		if ( shipBlueprint == null ) {
 			throw new RuntimeException( String.format( "Could not find blueprint for%s ship: %s", (auto ? " auto" : ""), shipName ) );
 		}
 
-		String shipLayoutId = shipBlueprint.getLayout();
+		String shipLayoutId = shipBlueprint.getLayoutId();
 
 		// Use this for room and door info later.
-		ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
+		ShipLayout shipLayout = DataManager.get().getShipLayout( shipLayoutId );
 		if ( shipLayout == null ) {
 			throw new RuntimeException( String.format( "Could not find layout for%s ship: %s", (auto ? " auto" : ""), shipName ) );
 		}
@@ -697,13 +697,13 @@ public class SavedGameParser extends Parser {
 	public void writeShip( OutputStream out, ShipState shipState, int fileFormat ) throws IOException {
 		String shipBlueprintId = shipState.getShipBlueprintId();
 
-		ShipBlueprint shipBlueprint = DataManager.get().getShip(shipBlueprintId);
+		ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintId );
 		if ( shipBlueprint == null )
 			throw new RuntimeException( String.format( "Could not find blueprint for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName() ) );
 
-		String shipLayoutId = shipBlueprint.getLayout();
+		String shipLayoutId = shipBlueprint.getLayoutId();
 
-		ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
+		ShipLayout shipLayout = DataManager.get().getShipLayout( shipLayoutId );
 		if ( shipLayout == null )
 			throw new RuntimeException( String.format( "Could not find layout for%s ship: %s", (shipState.isAuto() ? " auto" : ""), shipState.getShipName() ) );
 
@@ -2934,9 +2934,12 @@ public class SavedGameParser extends Parser {
 
 
 	public static class ShipState {
-		private boolean auto = false;  // Is autoShip.
-		private String shipName, shipBlueprintId, shipLayoutId;
-		private String shipGfxBaseName;
+		private String shipName = null;
+		private String shipBlueprintId = null;
+		private String shipLayoutId = null;
+		private String shipGfxBaseName = null;
+		private boolean auto = false;
+
 		private List<StartingCrewState> startingCrewList = new ArrayList<StartingCrewState>();
 		private boolean hostile = false;
 		private int jumpChargeTicks = 0;
@@ -2964,7 +2967,7 @@ public class SavedGameParser extends Parser {
 		 * It will need systems, reserve power, rooms, doors, and supplies.
 		 */
 		public ShipState( String shipName, ShipBlueprint shipBlueprint, boolean auto ) {
-			this( shipName, shipBlueprint.getId(), shipBlueprint.getLayout(), shipBlueprint.getGraphicsBaseName(), auto );
+			this( shipName, shipBlueprint.getId(), shipBlueprint.getLayoutId(), shipBlueprint.getGraphicsBaseName(), auto );
 		}
 
 		/**
@@ -2992,7 +2995,7 @@ public class SavedGameParser extends Parser {
 		 */
 		public void refit() {
 			ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintId );
-			ShipLayout shipLayout = DataManager.get().getShipLayout( shipBlueprint.getLayout() );
+			ShipLayout shipLayout = DataManager.get().getShipLayout( shipBlueprint.getLayoutId() );
 
 			// Systems.
 			systemsMap.clear();
@@ -3120,13 +3123,16 @@ public class SavedGameParser extends Parser {
 			getStandaloneDroneList().clear();
 		}
 
-
 		public void setShipName( String s ) { shipName = s; }
-
 		public String getShipName() { return shipName; }
+
+		public void setShipBlueprintId( String shipBlueprintId ) {
+			this.shipBlueprintId = shipBlueprintId;
+		}
 		public String getShipBlueprintId() { return shipBlueprintId; }
+
+		public void setShipLayoutId( String shipLayoutId ) { this.shipLayoutId = shipLayoutId; }
 		public String getShipLayoutId() { return shipLayoutId; }
-		public boolean isAuto() { return auto; }
 
 		/**
 		 * Sets the basename to use when loading ship images.
@@ -3157,6 +3163,11 @@ public class SavedGameParser extends Parser {
 		}
 		public String getShipGraphicsBaseName() { return shipGfxBaseName; }
 
+		/**
+		 * Sets whether this is a randomized NPC ship or player ship.
+		 */
+		public void setAuto( boolean b ) { auto = b; }
+		public boolean isAuto() { return auto; }
 
 		/**
 		 * Toggles whether this ship is hostile or neutral.
@@ -3455,7 +3466,7 @@ public class SavedGameParser extends Parser {
 			ShipBlueprint shipBlueprint = DataManager.get().getShip( shipBlueprintId );
 			ShipBlueprint.SystemList blueprintSystems = shipBlueprint.getSystemList();
 
-			ShipLayout shipLayout = DataManager.get().getShipLayout(shipLayoutId);
+			ShipLayout shipLayout = DataManager.get().getShipLayout( shipLayoutId );
 			if ( shipLayout == null )
 				throw new RuntimeException( String.format( "Could not find layout for%s ship: %s", (auto ? " auto" : ""), shipName ) );
 
