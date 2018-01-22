@@ -1,5 +1,5 @@
-// Copied from a snapshot of Slipstream Mod Manager after 1.9.
-// https://github.com/Vhati/Slipstream-Mod-Manager/blob/baa60a1b577a5a3006c70a9202b60e4099184d24/src/main/java/net/vhati/ftldat/PkgPack.java
+// Copied from a snapshot of Slipstream Mod Manager after 1.9.1.
+// https://github.com/Vhati/Slipstream-Mod-Manager/blob/19233266d0da2b56eb3e8e9d94604dc7838d2955/src/main/java/net/vhati/ftldat/PkgPack.java
 
 package net.vhati.ftldat;
 
@@ -422,7 +422,7 @@ public class PkgPack extends AbstractPack {
 			entry.dataSize = readBigUInt();
 			entry.unpackedSize = readBigUInt();
 
-			if ( entry.dataSize == 0 ) {  // Null entry, dat wasn't repacked.
+			if ( entry.dataOffset == 0 ) {  // Null entry, dat wasn't repacked.
 				entryList.add( null );
 			} else {
 				entryList.add( entry );
@@ -437,6 +437,7 @@ public class PkgPack extends AbstractPack {
 
 		for ( int i=0; i < entryCount; i++ ) {
 			PkgEntry entry = entryList.get( i );
+			if ( entry == null ) continue;
 
 			bigByteBuf.position( entry.innerPathOffset );
 			entry.innerPath = readNullTerminatedString( bigByteBuf );
