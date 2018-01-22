@@ -1270,6 +1270,11 @@ public class SavedGameFloorplanPanel extends JPanel {
 
 	private void selectRoom() {
 		squareSelector.reset();
+		squareSelector.clearSquarsCoordMap();
+
+		for ( ShipBundle bundle : shipBundles ) {
+			squareSelector.putSquareRegionCoordMap( bundle.getSquareRegionCoordMap() );
+		}
 
 		squareSelector.setCriteria(new SquareCriteria<FloorplanCoord>() {
 			private final String desc = "Select: Room";
