@@ -68,6 +68,7 @@ import net.blerf.ftl.model.XYPair;
 import net.blerf.ftl.parser.DataManager;
 import net.blerf.ftl.parser.SavedGameParser;
 import net.blerf.ftl.parser.SavedGameParser.BatteryInfo;
+import net.blerf.ftl.parser.SavedGameParser.BoarderDronePodInfo;
 import net.blerf.ftl.parser.SavedGameParser.CloakingInfo;
 import net.blerf.ftl.parser.SavedGameParser.ClonebayInfo;
 import net.blerf.ftl.parser.SavedGameParser.CrewState;
@@ -76,6 +77,8 @@ import net.blerf.ftl.parser.SavedGameParser.DoorState;
 import net.blerf.ftl.parser.SavedGameParser.DronePodState;
 import net.blerf.ftl.parser.SavedGameParser.DroneState;
 import net.blerf.ftl.parser.SavedGameParser.DroneType;
+import net.blerf.ftl.parser.SavedGameParser.ExtendedDroneInfo;
+import net.blerf.ftl.parser.SavedGameParser.ExtendedDronePodInfo;
 import net.blerf.ftl.parser.SavedGameParser.ExtendedSystemInfo;
 import net.blerf.ftl.parser.SavedGameParser.RoomState;
 import net.blerf.ftl.parser.SavedGameParser.ShieldsInfo;
@@ -1075,6 +1078,48 @@ public class SavedGameFloorplanPanel extends JPanel {
 			nearbyBundle.setFTLConstants( ftlConstants );
 			shipBundles.add( nearbyBundle );
 			addBundle( nearbyBundle, gameState.getNearbyShip(), false );
+
+			// Boarder drone body sprites from opposing ships (FTL 1.5.4+).
+			// In FTL 1.01-1.03.3, they would've been actual crew.
+			for ( ShipBundle bundle : shipBundles ) {
+				for ( ShipBundle otherBundle : shipBundles ) {
+					if ( bundle == otherBundle ) continue;
+
+					for ( SpriteReference<DroneState> droneRef : bundle.getDroneRefs() ) {
+						if ( droneRef.get() == null ) continue;
+
+						DroneBlueprint droneBlueprint = DataManager.get().getDrone( droneRef.get().getDroneId() );
+						DroneType droneType = DroneType.findById( droneBlueprint.getType() );
+						if ( !DroneType.BOARDER.equals( droneType ) ) continue;
+
+						ExtendedDroneInfo droneInfo = droneRef.get().getExtendedDroneInfo();
+						if ( droneInfo == null ) continue;
+
+						DronePodState dronePod = droneInfo.getDronePod();
+						if ( dronePod == null ) {
+							log.warn( "Boarder drone has extended info but lacks a drone pod!?" );
+							continue;
+						}
+
+						BoarderDronePodInfo boarderPodInfo = dronePod.getExtendedInfo( BoarderDronePodInfo.class );
+						if ( dronePod == null ) {
+							log.warn( "Boarder drone has extended info and a pod but lacks extended pod info!?" );
+							continue;
+						}
+
+						int bodySpriteX = otherBundle.getOriginX() + boarderPodInfo.getBodyX();
+						int bodySpriteY = otherBundle.getOriginY() + boarderPodInfo.getBodyY();
+
+						BufferedImage bodyImage = spriteImageProvider.getDroneBodyImage( droneType, droneRef.get().isPlayerControlled() );
+
+						DroneBodySprite droneBodySprite = new DroneBodySprite( droneRef, bodyImage );
+						droneBodySprite.setSize( droneBodySprite.getPreferredSize() );
+						droneBodySprite.setLocation( bodySpriteX - droneBodySprite.getPreferredSize().width/2, bodySpriteY - droneBodySprite.getPreferredSize().height/2 );
+						otherBundle.getDroneBodySprites().add( droneBodySprite );
+						shipPanel.add( droneBodySprite, DRONE_LAYER );
+					}
+				}
+			}
 		}
 
 		fitViewToViewport();

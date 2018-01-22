@@ -9237,6 +9237,9 @@ public class SavedGameParser extends Parser {
 	 * Boarder drones exclusively store body info in ExtendedDronePodInfo.
 	 * The traditional DroneState's body fields remain at inoperative defaults.
 	 *
+	 * In FTL 1.01-1.03.3, Boarder drone bodies were actual crew on foreign
+	 * ships.
+	 *
 	 * @see DroneState
 	 */
 	public static class BoarderDronePodInfo extends ExtendedDronePodInfo {

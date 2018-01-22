@@ -7,8 +7,12 @@ import java.awt.image.BufferedImage;
 import javax.swing.JComponent;
 
 import net.blerf.ftl.parser.DataManager;
+import net.blerf.ftl.parser.SavedGameParser.BoarderDronePodInfo;
 import net.blerf.ftl.parser.SavedGameParser.DroneState;
+import net.blerf.ftl.parser.SavedGameParser.DronePodState;
 import net.blerf.ftl.parser.SavedGameParser.DroneType;
+import net.blerf.ftl.parser.SavedGameParser.ExtendedDroneInfo;
+import net.blerf.ftl.parser.SavedGameParser.ExtendedDronePodInfo;
 import net.blerf.ftl.ui.ReferenceSprite;
 import net.blerf.ftl.ui.SpriteReference;
 import net.blerf.ftl.xml.DroneBlueprint;
@@ -49,6 +53,20 @@ public class DroneBodySprite extends JComponent implements ReferenceSprite<Drone
 
 				if ( droneRef.get().getBodyRoomId() >= 0 ) {
 					bodyVisible = true;
+				}
+			}
+			else if ( DroneType.BOARDER.equals( droneType ) ) {
+				ExtendedDroneInfo droneInfo = droneRef.get().getExtendedDroneInfo();
+				if ( droneInfo != null ) {
+					DronePodState dronePod = droneInfo.getDronePod();
+					if ( dronePod != null ) {
+						BoarderDronePodInfo boarderPodInfo = dronePod.getExtendedInfo( BoarderDronePodInfo.class );
+						if ( boarderPodInfo != null ) {
+							if ( boarderPodInfo.getBodyRoomId() >= 0 ) {
+								bodyVisible = true;
+							}
+						}
+					}
 				}
 			}
 		}

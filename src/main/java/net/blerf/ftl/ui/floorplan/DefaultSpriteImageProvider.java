@@ -222,6 +222,10 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 			imgRace = "battle";
 			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
 		}
+		if ( DroneType.BOARDER.equals( droneType ) ) {  // Boarder, always foreign to the ship.
+			imgRace = "battle";
+			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
+		}
 		else if ( DroneType.REPAIR.equals( droneType ) ) {  // Always local to the ship.
 			imgRace = "repair";
 			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
@@ -261,6 +265,9 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 	 * Generally the image name is related to the raceId, with two exceptions.
 	 * Humans have a separate female image. Ghost crew have human images (with
 	 * programmatically reduced opacity).
+	 *
+	 * In FTL 1.01-1.03.3, Boarder drones' bodies were actually crew on the
+	 * foreign ship.
 	 *
 	 * Image names have varied:
 	 *   FTL 1.01: Drones had "[X]_sheet" / "[X]_enemy_sheet".
