@@ -222,7 +222,7 @@ public class DefaultSpriteImageProvider implements SpriteImageProvider {
 			imgRace = "battle";
 			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
 		}
-		if ( DroneType.BOARDER.equals( droneType ) ) {  // Boarder, always foreign to the ship.
+		else if ( DroneType.BOARDER.equals( droneType ) ) {  // Boarder, always foreign to the ship.
 			imgRace = "battle";
 			originalSuffix = (( playerControlled ) ? "_sheet" : "_enemy_sheet");
 		}
