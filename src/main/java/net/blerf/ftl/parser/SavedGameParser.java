@@ -88,7 +88,7 @@ public class SavedGameParser extends Parser {
 				gameState.setDLCEnabled( false );  // Not present before FTL 1.5.4.
 			}
 			else if ( fileFormat == 7 || fileFormat == 8 || fileFormat == 9 || fileFormat == 11 ) {
-				// FTL 1.5.4-1.5.10, 1.5.12, 1.5.13, or 1.6.1-1.6.2.
+				// FTL 1.5.4-1.5.10, 1.5.12, 1.5.13, or 1.6.1.
 				gameState.setDLCEnabled( readBool( in ) );
 			}
 			else {
@@ -242,7 +242,7 @@ public class SavedGameParser extends Parser {
 
 				int projectileCount = readInt( in );
 				for ( int i=0; i < projectileCount; i++ ) {
-					gameState.addProjectile( readProjectile( in ) );
+					gameState.addProjectile( readProjectile( in, fileFormat ) );
 				}
 
 				readExtendedShipInfo( in, gameState.getPlayerShip(), fileFormat );
@@ -435,7 +435,7 @@ public class SavedGameParser extends Parser {
 
 			writeInt( out, gameState.getProjectileList().size() );
 			for ( ProjectileState projectile : gameState.getProjectileList() ) {
-				writeProjectile( out, projectile );
+				writeProjectile( out, projectile, fileFormat );
 			}
 
 			writeExtendedShipInfo( out, gameState.getPlayerShip(), fileFormat );
@@ -1721,7 +1721,7 @@ public class SavedGameParser extends Parser {
 		writeInt( out, anim.getY() );
 	}
 
-	private ProjectileState readProjectile( FileInputStream in ) throws IOException {
+	private ProjectileState readProjectile( FileInputStream in, int fileFormat ) throws IOException {
 		//log.debug( String.format( "Projectile: @%d", in.getChannel().position() ) );
 
 		ProjectileState projectile = new ProjectileState();
@@ -1745,6 +1745,9 @@ public class SavedGameParser extends Parser {
 		}
 		else if ( projectileTypeFlag == 5 ) {
 			projectile.setProjectileType( ProjectileType.BEAM );
+		}
+		else if ( projectileTypeFlag == 6 && fileFormat == 11 ) {
+			projectile.setProjectileType( ProjectileType.PDS );
 		}
 		else {
 			throw new IOException( String.format( "Unsupported projectileType flag: %d", projectileTypeFlag ) );
@@ -1814,12 +1817,17 @@ public class SavedGameParser extends Parser {
 			// getType() is always 5?
 			extendedInfo = readBeamProjectileInfo( in );
 		}
+		else if ( ProjectileType.PDS.equals( projectile.getProjectileType() ) ) {
+			// PDS (12)
+			// getType() is always 5?
+			extendedInfo = readPDSProjectileInfo( in );
+		}
 		projectile.setExtendedInfo( extendedInfo );
 
 		return projectile;
 	}
 
-	public void writeProjectile( OutputStream out, ProjectileState projectile ) throws IOException {
+	public void writeProjectile( OutputStream out, ProjectileState projectile, int fileFormat ) throws IOException {
 
 		int projectileTypeFlag = 0;
 		if ( ProjectileType.INVALID.equals( projectile.getProjectileType() ) ) {
@@ -1839,6 +1847,9 @@ public class SavedGameParser extends Parser {
 		}
 		else if ( ProjectileType.BEAM.equals( projectile.getProjectileType() ) ) {
 			projectileTypeFlag = 5;
+		}
+		else if ( ProjectileType.PDS.equals( projectile.getProjectileType() ) && fileFormat == 11 ) {
+			projectileTypeFlag = 6;
 		}
 		else {
 			throw new IOException( String.format( "Unsupported projectileType: %s", projectile.getProjectileType().toString() ) );
@@ -1902,6 +1913,9 @@ public class SavedGameParser extends Parser {
 		}
 		else if ( extendedInfo instanceof LaserProjectileInfo ) {
 			writeLaserProjectileInfo( out, projectile.getExtendedInfo( LaserProjectileInfo.class ) );
+		}
+		else if ( extendedInfo instanceof PDSProjectileInfo ) {
+			writePDSProjectileInfo( out, projectile.getExtendedInfo( PDSProjectileInfo.class ) );
 		}
 		else if ( extendedInfo instanceof EmptyProjectileInfo ) {
 			// No-op.
@@ -2055,6 +2069,28 @@ public class SavedGameParser extends Parser {
 		writeInt( out, laserInfo.getSpin() );
 	}
 
+	private PDSProjectileInfo readPDSProjectileInfo( FileInputStream in ) throws IOException {
+		PDSProjectileInfo pdsInfo = new PDSProjectileInfo();
+
+		pdsInfo.setUnknownAlpha( readInt( in ) );
+		pdsInfo.setUnknownBeta( readInt( in ) );
+		pdsInfo.setUnknownGamma( readInt( in ) );
+		pdsInfo.setUnknownDelta( readInt( in ) );
+		pdsInfo.setUnknownEpsilon( readInt( in ) );
+		pdsInfo.setUnknownZeta( readAnim( in ) );
+
+		return pdsInfo;
+	}
+
+	public void writePDSProjectileInfo( OutputStream out, PDSProjectileInfo pdsInfo ) throws IOException {
+		writeInt( out, pdsInfo.getUnknownAlpha() );
+		writeInt( out, pdsInfo.getUnknownBeta() );
+		writeInt( out, pdsInfo.getUnknownGamma() );
+		writeInt( out, pdsInfo.getUnknownDelta() );
+		writeInt( out, pdsInfo.getUnknownEpsilon() );
+		writeAnim( out, pdsInfo.getUnknownZeta() );
+	}
+
 
 
 	/**
@@ -2169,7 +2205,7 @@ public class SavedGameParser extends Parser {
 		 *   7 = Saved Game, FTL 1.5.4-1.5.10
 		 *   8 = Saved Game, FTL 1.5.12
 		 *   9 = Saved Game, FTL 1.5.13
-		 *  11 = Saved Game, FTL 1.6.1-1.6.2
+		 *  11 = Saved Game, FTL 1.6.1
 		 */
 		public void setFileFormat( int n ) { fileFormat = n; }
 		public int getFileFormat() { return fileFormat; }
@@ -2791,7 +2827,7 @@ public class SavedGameParser extends Parser {
 				case( 7 ): formatDesc = "Saved Game, FTL 1.5.4-1.5.10"; break;
 				case( 8 ): formatDesc = "Saved Game, FTL 1.5.12"; break;
 				case( 9 ): formatDesc = "Saved Game, FTL 1.5.13"; break;
-				case( 11 ): formatDesc = "Saved Game, FTL 1.6.1-1.6.2"; break;
+				case( 11 ): formatDesc = "Saved Game, FTL 1.6.1"; break;
 				default: formatDesc = "???"; break;
 			}
 
@@ -7373,7 +7409,7 @@ public class SavedGameParser extends Parser {
 
 
 	public static enum ProjectileType {
-		BEAM, BOMB, LASER_OR_BURST, MISSILE, ROCK_OR_EXPLOSION, INVALID
+		BEAM, BOMB, LASER_OR_BURST, MISSILE, ROCK_OR_EXPLOSION, PDS, INVALID
 	}
 
 
@@ -8494,6 +8530,125 @@ public class SavedGameParser extends Parser {
 			result.append( String.format( "Type:               Laser/Burst Info\n" ) );
 			result.append( String.format( "Alpha?:             %7d\n", unknownAlpha ) );
 			result.append( String.format( "Spin:               %7d\n", spin ) );
+
+			return result.toString();
+		}
+	}
+
+
+
+	/**
+	 * Extended info for PDS projectiles (called ASB in-game).
+	 *
+	 * This was introduced in FTL 1.6.1.
+	 */
+	public static class PDSProjectileInfo extends ExtendedProjectileInfo {
+		private int unknownAlpha = 0;
+		private int unknownBeta = 0;
+		private int unknownGamma = 0;
+		private int unknownDelta = 0;
+		private int unknownEpsilon = 0;
+		private AnimState unknownZeta = new AnimState();
+
+		// This class represents projectiles from PDS hazards.
+
+		/**
+		 * Constructor.
+		 */
+		public PDSProjectileInfo() {
+			super();
+		}
+
+		/**
+		 * Copy constructor.
+		 */
+		protected PDSProjectileInfo( PDSProjectileInfo srcInfo ) {
+			super( srcInfo );
+			unknownAlpha = srcInfo.getUnknownAlpha();
+			unknownBeta = srcInfo.getUnknownBeta();
+			unknownGamma = srcInfo.getUnknownGamma();
+			unknownDelta = srcInfo.getUnknownDelta();
+			unknownEpsilon = srcInfo.getUnknownEpsilon();
+			unknownZeta = srcInfo.getUnknownZeta();
+		}
+
+		@Override
+		public PDSProjectileInfo copy() { return new PDSProjectileInfo( this ); }
+
+		/**
+		 * Unknown.
+		 *
+		 * Seems to be the spawn X position relative to ship space?
+		 *
+		 * This is a pseudo-float.
+		 */
+		public void setUnknownAlpha( int n ) { unknownAlpha = n; }
+		public int getUnknownAlpha() { return unknownAlpha; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Seems to be the spawn Y position relative to ship space?
+		 *
+		 * This is a pseudo-float.
+		 */
+		public void setUnknownBeta( int n ) { unknownBeta = n; }
+		public int getUnknownBeta() { return unknownBeta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 1, 0.
+		 */
+		public void setUnknownGamma( int n ) { unknownGamma = n; }
+		public int getUnknownGamma() { return unknownGamma; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Always matches the projectile's flightAnim scale.
+		 *
+		 * Observed values: 10277; 11438, 15690, 19896, 26832, 34719; 1139.
+		 */
+		public void setUnknownDelta( int n ) { unknownDelta = n; }
+		public int getUnknownDelta() { return unknownDelta; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values: 0.
+		 */
+		public void setUnknownEpsilon( int n ) { unknownEpsilon = n; }
+		public int getUnknownEpsilon() { return unknownEpsilon; }
+
+		/**
+		 * Unknown.
+		 *
+		 * Observed values:
+		 *   Looping: 0.
+		 *   Frame: 0, 2, 4, 5, 8.
+		 *   Progress Ticks: 0, 245, 467, 648, 892.
+		 *   Scale: 1.0
+		 *   Position: (0, 0), (213000, 213000).
+		 */
+		public void setUnknownZeta( AnimState anim ) { unknownZeta = anim; }
+		public AnimState getUnknownZeta() { return unknownZeta; }
+
+		@Override
+		public String toString() {
+			StringBuilder result = new StringBuilder();
+
+			result.append( String.format( "Type:               PDS Info\n" ) );
+			result.append( String.format( "Alpha?:             %7d\n", unknownAlpha ) );
+			result.append( String.format( "Beta?:              %7d\n", unknownBeta ) );
+			result.append( String.format( "Gamma?:             %7d\n", unknownGamma ) );
+			result.append( String.format( "Delta?:             %7d\n", unknownDelta ) );
+			result.append( String.format( "Epsilon?:           %7d\n", unknownEpsilon ) );
+
+			result.append( "\nZeta? Anim...\n" );
+			if ( unknownZeta != null) {
+				result.append( unknownZeta.toString().replaceAll( "(^|\n)(.+)", "$1  $2" ) );
+			}
 
 			return result.toString();
 		}
@@ -10586,7 +10741,7 @@ public class SavedGameParser extends Parser {
 		int pendingProjectilesCount = readInt( in );
 		List<ProjectileState> pendingProjectiles = new ArrayList<ProjectileState>();
 		for ( int i=0; i < pendingProjectilesCount; i++ ) {
-			pendingProjectiles.add( readProjectile( in ) );
+			pendingProjectiles.add( readProjectile( in, fileFormat ) );
 		}
 		weaponMod.setPendingProjectiles( pendingProjectiles );
 
@@ -10631,7 +10786,7 @@ public class SavedGameParser extends Parser {
 
 		writeInt( out, weaponMod.getPendingProjectiles().size() );
 		for ( ProjectileState projectile : weaponMod.getPendingProjectiles() ) {
-			writeProjectile( out, projectile );
+			writeProjectile( out, projectile, fileFormat );
 		}
 	}
 
