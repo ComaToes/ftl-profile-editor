@@ -77,6 +77,9 @@ public class SavedGameParser extends Parser {
 			int fileFormat = readInt( in );
 			gameState.setFileFormat( fileFormat );
 
+			// FTL 1.6.1 introduced UTF-8 strings.
+			super.setUnicode( fileFormat >= 11 );
+
 			if ( fileFormat == 11 ) {
 				gameState.setRandomNative( readBool( in ) );
 			} else {
@@ -298,6 +301,9 @@ public class SavedGameParser extends Parser {
 
 		int fileFormat = gameState.getFileFormat();
 		writeInt( out, fileFormat );
+
+		// FTL 1.6.1 introduced UTF-8 strings.
+		super.setUnicode( fileFormat >= 11 );
 
 		if ( fileFormat == 11 ) {
 			writeBool( out, gameState.isRandomNative() );
@@ -2206,6 +2212,13 @@ public class SavedGameParser extends Parser {
 		 *   8 = Saved Game, FTL 1.5.12
 		 *   9 = Saved Game, FTL 1.5.13
 		 *  11 = Saved Game, FTL 1.6.1
+		 *
+		 * Unicode strings were introduced in FTL 1.6.1. Unlike
+		 * profiles, saved games DO have a magic number to detect
+		 * that version, so US-ASCII characters can be enforced for
+		 * earlier FTL versions.
+		 *
+		 * @see net.blerf.ftl.parser.Parser#setUnicode(boolean)
 		 */
 		public void setFileFormat( int n ) { fileFormat = n; }
 		public int getFileFormat() { return fileFormat; }

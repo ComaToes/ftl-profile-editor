@@ -10,6 +10,8 @@ import java.io.OutputStream;
 public class Parser {
 
 	private byte[] intbuf = new byte[4];
+	protected boolean unicodeStrings = false;
+
 
 	/**
 	 * Reads a little-endian int from a stream, as a boolean.
@@ -64,7 +66,11 @@ public class Parser {
 	}
 
 	/**
-	 * Reads a little-endian int length + ascii string from a stream.
+	 * Reads a little-endian int bytecount + string from a stream.
+	 *
+	 * Note: In unicode, bytecount != string length.
+	 *
+	 * @see #setUnicode(boolean)
 	 */
 	protected String readString( InputStream in ) throws IOException {
 		int length = readInt( in );
@@ -101,11 +107,37 @@ public class Parser {
 			throw new IOException( String.format( "End of stream reached before reading enough bytes for string of length %d", length ) );
 		}
 
-		return new String( strBytes, "US-ASCII" );
+		if ( unicodeStrings ) {
+			return new String( strBytes, "UTF-8" );
+		} else {
+			return new String( strBytes, "US-ASCII" );
+		}
 	}
 
 	protected void writeString( OutputStream out, String str ) throws IOException {
-		writeInt( out, str.length() );
-		out.write( str.getBytes( "US-ASCII" ) );
+		byte[] strBytes;
+		if ( unicodeStrings ) {
+			strBytes = str.getBytes( "UTF-8" );
+		} else {
+			strBytes = str.getBytes( "US-ASCII" );
+		}
+
+		writeInt( out, strBytes.length );
+		out.write( strBytes );
+	}
+
+	/**
+	 * Toggles string encoding between US-ASCII (default) and UTF-8.
+	 *
+	 * Set this before reading/writing any strings.
+	 *
+	 * Unicode strings were introduced in FTL 1.6.1.
+	 */
+	protected void setUnicode( boolean b ) {
+		unicodeStrings = b;
+	}
+
+	protected boolean isUnicode() {
+		return unicodeStrings;
 	}
 }

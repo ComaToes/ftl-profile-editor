@@ -53,6 +53,14 @@ public class ProfileParser extends Parser {
 		Profile p = new Profile();
 
 		int fileFormat = readInt( in );
+
+		// FTL 1.6.1 introduced UTF-8 strings.
+		// There's no magic number for that version, so all
+		// AE Profiles will be assumed unicode instead of US-ASCII.
+		// This is fine for reading, but safety can't be enforced
+		// when writing profiles meant for earlier FTL 1.5.4+.
+		super.setUnicode( fileFormat >= 9 );
+
 		if ( fileFormat == 4 ) {
 			// FTL 1.03.3 and earlier.
 			p.setFileFormat( fileFormat );
@@ -90,6 +98,13 @@ public class ProfileParser extends Parser {
 
 	public void writeProfile( OutputStream out, Profile p ) throws IOException {
 		writeInt( out, p.getFileFormat() );
+
+		// FTL 1.6.1 introduced UTF-8 strings.
+		// There's no magic number for that version, so all
+		// AE Profiles will be assumed unicode instead of US-ASCII.
+		// This is fine for reading, but safety can't be enforced
+		// when writing profiles meant for earlier FTL 1.5.4+.
+		super.setUnicode( p.getFileFormat() >= 9 );
 
 		if ( p.getFileFormat() == 9 ) {
 			int newbieFlag = 0;

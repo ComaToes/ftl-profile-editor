@@ -54,6 +54,17 @@ public class Profile {
 	 * Observed values:
 	 *   4 = Profile, FTL 1.01-1.03.3
 	 *   9 = AE Profile, FTL 1.5.4+
+	 *
+	 * Unicode strings were introduced in FTL 1.6.1. There's no
+	 * magic number to detect that version. Assuming UTF-8 for all
+	 * AE profiles is safe for writing. However, when writing a
+	 * profile meant for earlier FTL 1.5.4+, US-ASCII characters
+	 * cannot be enforced, because the file itself will be valid.
+	 *
+	 * Essentially, if exotic strings are written, certain old FTLs
+	 * will read garbled text from the profile.
+	 *
+	 * @see net.blerf.ftl.parser.Parser#setUnicode(boolean)
 	 */
 	public void setFileFormat( int n ) {
 		fileFormat = n;
