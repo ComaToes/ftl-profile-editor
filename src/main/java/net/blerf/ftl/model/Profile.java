@@ -55,14 +55,24 @@ public class Profile {
 	 *   4 = Profile, FTL 1.01-1.03.3
 	 *   9 = AE Profile, FTL 1.5.4+
 	 *
+	 * Originally, strings in FTL profiles were windows-1252.
+	 *
 	 * Unicode strings were introduced in FTL 1.6.1. There's no
 	 * magic number to detect that version. Assuming UTF-8 for all
-	 * AE profiles is safe for writing. However, when writing a
-	 * profile meant for earlier FTL 1.5.4+, US-ASCII characters
-	 * cannot be enforced, because the file itself will be valid.
+	 * AE profiles is reasonably safe. However, when reading/writing
+	 * a profile meant for earlier FTL 1.5.4+, exotic windows-1252
+	 * characters will be a problem, albeit an unlikely one.
 	 *
-	 * Essentially, if exotic strings are written, certain old FTLs
-	 * will read garbled text from the profile.
+	 * There's no way to warn about such characters because the file
+	 * format would technically be valid, just inappropriate for
+	 * FTL 1.5.4+. Only ASCII will be safe.
+	 *
+	 * TODO: With FTL 1.5.4+ using ANSI and the editor using unicode,
+	 * it's unknown how FTL will react: crash or garbled text. This
+	 * editor will likely throw an exception if it sees ANSI accents.
+	 *
+	 * TODO: A workaround would be to make corner-case FTL versions
+	 * user-selectable when opening/saving,
 	 *
 	 * @see net.blerf.ftl.parser.Parser#setUnicode(boolean)
 	 */

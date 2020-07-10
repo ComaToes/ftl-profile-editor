@@ -2214,8 +2214,8 @@ public class SavedGameParser extends Parser {
 		 *  11 = Saved Game, FTL 1.6.1
 		 *
 		 * Unicode strings were introduced in FTL 1.6.1. Unlike
-		 * profiles, saved games DO have a magic number to detect
-		 * that version, so US-ASCII characters can be enforced for
+		 * profiles, saved games DO have a magic number to detect that
+		 * version, so windows-1252 characters can be enforced for
 		 * earlier FTL versions.
 		 *
 		 * @see net.blerf.ftl.parser.Parser#setUnicode(boolean)

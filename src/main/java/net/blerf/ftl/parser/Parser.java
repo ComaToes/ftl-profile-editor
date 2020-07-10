@@ -110,7 +110,7 @@ public class Parser {
 		if ( unicodeStrings ) {
 			return new String( strBytes, "UTF-8" );
 		} else {
-			return new String( strBytes, "US-ASCII" );
+			return new String( strBytes, "windows-1252" );
 		}
 	}
 
@@ -119,7 +119,7 @@ public class Parser {
 		if ( unicodeStrings ) {
 			strBytes = str.getBytes( "UTF-8" );
 		} else {
-			strBytes = str.getBytes( "US-ASCII" );
+			strBytes = str.getBytes( "windows-1252" );
 		}
 
 		writeInt( out, strBytes.length );
@@ -127,7 +127,7 @@ public class Parser {
 	}
 
 	/**
-	 * Toggles string encoding between US-ASCII (default) and UTF-8.
+	 * Toggles string encoding between windows-1252 (default) and UTF-8.
 	 *
 	 * Set this before reading/writing any strings.
 	 *

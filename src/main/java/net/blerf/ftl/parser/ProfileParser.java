@@ -55,10 +55,12 @@ public class ProfileParser extends Parser {
 		int fileFormat = readInt( in );
 
 		// FTL 1.6.1 introduced UTF-8 strings.
+		//
 		// There's no magic number for that version, so all
-		// AE Profiles will be assumed unicode instead of US-ASCII.
-		// This is fine for reading, but safety can't be enforced
-		// when writing profiles meant for earlier FTL 1.5.4+.
+		// AE Profiles will be assumed unicode instead of windows-1252.
+		// When reading/writing exotic characters in FTL 1.5.4+ profiles,
+		// this will be a problem. Only ASCII will be safe... unless
+		// the FTL version were manually selectable when opening/saving.
 		super.setUnicode( fileFormat >= 9 );
 
 		if ( fileFormat == 4 ) {
@@ -100,10 +102,12 @@ public class ProfileParser extends Parser {
 		writeInt( out, p.getFileFormat() );
 
 		// FTL 1.6.1 introduced UTF-8 strings.
+		//
 		// There's no magic number for that version, so all
-		// AE Profiles will be assumed unicode instead of US-ASCII.
-		// This is fine for reading, but safety can't be enforced
-		// when writing profiles meant for earlier FTL 1.5.4+.
+		// AE Profiles will be assumed unicode instead of windows-1252.
+		// When reading/writing exotic characters in FTL 1.5.4+ profiles,
+		// this will be a problem. Only ASCII will be safe... unless
+		// the FTL version were manually selectable when opening/saving.
 		super.setUnicode( p.getFileFormat() >= 9 );
 
 		if ( p.getFileFormat() == 9 ) {
