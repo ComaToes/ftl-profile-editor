@@ -6,133 +6,113 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name="systemBlueprint")
-@XmlAccessorType(XmlAccessType.FIELD)
+import net.blerf.ftl.xml.DefaultDeferredText;
+
+
+@XmlRootElement( name = "systemBlueprint" )
+@XmlAccessorType( XmlAccessType.FIELD )
 public class SystemBlueprint {
 
-	public static final String ID_PILOT = "pilot";
-	public static final String ID_DOORS = "doors";
-	public static final String ID_SENSORS = "sensors";
-	public static final String ID_MEDBAY = "medbay";
-	public static final String ID_OXYGEN = "oxygen";
-	public static final String ID_SHIELDS = "shields";
-	public static final String ID_ENGINES = "engines";
-	public static final String ID_WEAPONS = "weapons";
-	public static final String ID_DRONE_CTRL = "drones";
-	public static final String ID_TELEPORTER = "teleporter";
-	public static final String ID_CLOAKING = "cloaking";
-	public static final String ID_ARTILLERY = "artillery";
-
-	public static boolean isSubsystem( String systemId ) {
-		if ( systemId == null ) return false;
-		if ( systemId.equals(ID_PILOT) ) return true;
-		if ( systemId.equals(ID_DOORS) ) return true;
-		if ( systemId.equals(ID_SENSORS) ) return true;
-		return false;
-	}
-
-	@XmlAttribute(name="name")
+	@XmlAttribute( name = "name" )
 	private String id;
-	private String type, title, desc;
-	private int startPower, maxPower, rarity;
-	private UpgradeCost upgradeCost;
+
+	private String type;
+	private DefaultDeferredText title;
+	private DefaultDeferredText desc;
+	private int startPower;  // Initial system capacity.
+	private int maxPower;    // Highest possible capacity attainable by upgrading.
+	private int rarity;
+
+	@XmlElementWrapper( name = "upgradeCost" )
+	@XmlElement( name = "level" )
+	private List<Integer> upgradeCosts;
+
 	private int cost;
-	@XmlElement(required=false)
-	private int locked;
-	
-	@XmlRootElement(name="upgradeCost")
-	@XmlAccessorType(XmlAccessType.FIELD)
-	public static class UpgradeCost {
-		private List<Integer> level;
 
-		public List<Integer> getLevel() {
-			return level;
-		}
+	@XmlElement( required = false )
+	private Integer locked;
 
-		public void setLevel(List<Integer> level) {
-			this.level = level;
-		}
+
+	public void setId( String id ) {
+		this.id = id;
 	}
 
 	public String getId() {
 		return id;
 	}
 
-	public void setId(String id) {
-		this.id = id;
+	public void setType( String type ) {
+		this.type = type;
 	}
 
 	public String getType() {
 		return type;
 	}
 
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
+	public void setTitle( DefaultDeferredText title ) {
 		this.title = title;
 	}
 
-	public String getDescription() {
+	public DefaultDeferredText getTitle() {
+		return title;
+	}
+
+	public void setDescription( DefaultDeferredText desc ) {
+		this.desc = desc;
+	}
+
+	public DefaultDeferredText getDescription() {
 		return desc;
 	}
 
-	public void setDescription(String desc) {
-		this.type = desc;
+	public void setStartPower( int startPower ) {
+		this.startPower = startPower;
 	}
 
 	public int getStartPower() {
 		return startPower;
 	}
 
-	public void setStartPower(int startPower) {
-		this.startPower = startPower;
+	public void setMaxPower( int maxPower ) {
+		this.maxPower = maxPower;
 	}
 
 	public int getMaxPower() {
 		return maxPower;
 	}
 
-	public void setMaxPower(int maxPower) {
-		this.maxPower = maxPower;
+	public void setRarity( int rarity ) {
+		this.rarity = rarity;
 	}
 
 	public int getRarity() {
 		return rarity;
 	}
 
-	public void setRarity(int rarity) {
-		this.rarity = rarity;
+	public void setUpgradeCosts( List<Integer> upgradeCosts ) {
+		this.upgradeCosts = upgradeCosts;
 	}
 
-	public UpgradeCost getUpgradeCost() {
-		return upgradeCost;
+	public List<Integer> getUpgradeCosts() {
+		return upgradeCosts;
 	}
 
-	public void setUpgradeCost(UpgradeCost upgradeCost) {
-		this.upgradeCost = upgradeCost;
+	public void setCost( int cost ) {
+		this.cost = cost;
 	}
 
 	public int getCost() {
 		return cost;
 	}
 
-	public void setCost(int cost) {
-		this.cost = cost;
-	}
-
-	public int getLocked() {
-		return locked;
-	}
-
-	public void setLocked(int locked) {
+	public void setLocked( Integer locked ) {
 		this.locked = locked;
+	}
+
+	public Integer getLocked() {
+		return locked;
 	}
 }

@@ -2,269 +2,384 @@ package net.blerf.ftl.parser;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.JAXBException;
-
-import net.blerf.ftl.model.ShipLayout;
+import net.blerf.ftl.model.shiplayout.ShipLayout;
 import net.blerf.ftl.xml.Achievement;
+import net.blerf.ftl.xml.Anim;
+import net.blerf.ftl.xml.AnimSheet;
+import net.blerf.ftl.xml.AugBlueprint;
+import net.blerf.ftl.xml.BackgroundImageList;
 import net.blerf.ftl.xml.Blueprints;
+import net.blerf.ftl.xml.CrewBlueprint;
+import net.blerf.ftl.xml.CrewNameList;
+import net.blerf.ftl.xml.DroneBlueprint;
+import net.blerf.ftl.xml.Encounters;
+import net.blerf.ftl.xml.FTLEvent;
+import net.blerf.ftl.xml.FTLEventList;
+import net.blerf.ftl.xml.SectorDescription;
+import net.blerf.ftl.xml.SectorType;
 import net.blerf.ftl.xml.ShipBlueprint;
+import net.blerf.ftl.xml.ShipEvent;
+import net.blerf.ftl.xml.ShipEvents;
 import net.blerf.ftl.xml.ShipChassis;
 import net.blerf.ftl.xml.SystemBlueprint;
 import net.blerf.ftl.xml.WeaponBlueprint;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+public abstract class DataManager implements Closeable {
 
-public class DataManager implements Closeable {
-	
-	private static final Logger log = LogManager.getLogger(DataManager.class);
+	private static DataManager instance = null;
 
-	private static DataManager instance;
-	
+	protected boolean dlcEnabledByDefault = false;
+
+
+	public static void setInstance( DataManager dataManager ) {
+		instance = dataManager;
+	}
+
+	public static DataManager getInstance() {
+		return instance;
+	}
+
 	public static DataManager get() {
 		return instance;
 	}
-	
-	public static void init(File ftlFolder) throws IOException, JAXBException {
-		instance = new DataManager(ftlFolder);	
-	}
 
-	private List<Achievement> achievements;
-	private List<Achievement> generalAchievements;
-	private Blueprints blueprints;
-	private Blueprints autoBlueprints;
 
-	private Map<String, SystemBlueprint> systems;
-	private Map<String, WeaponBlueprint> weapons;	
-	private Map<String, ShipBlueprint> ships;
-	private Map<String, ShipBlueprint> autoShips;
-	private List<ShipBlueprint> playerShips; // Type A's
-	private Map<ShipBlueprint, List<Achievement>> shipAchievements;
-	private Map<String, ShipLayout> shipLayouts;
-	private Map<String, ShipChassis> shipChassisMap;
-	
-	private	MappedDatParser dataParser = null;
-	private	MappedDatParser resourceParser = null;
-	
-	private DataManager(File ftlFolder) throws IOException, JAXBException {
-		
-		log.trace("DataManager initialising");
-		
-		boolean meltdown = false;
-		InputStream achStream = null;
-		InputStream blueStream = null;
-		InputStream autoBlueStream = null;
-		
-		try {
-			dataParser = new MappedDatParser( new File(ftlFolder, "resources/data.dat") );
-	 		resourceParser = new MappedDatParser( new File(ftlFolder, "resources/resource.dat") );
-
-			log.debug("Reading 'data/achievements.xml'");
-			achStream = dataParser.getInputStream( "data/achievements.xml" );
-			achievements = dataParser.readAchievements( achStream );
-
-			log.debug("Reading 'data/blueprints.xml'");
-			blueStream = dataParser.getInputStream( "data/blueprints.xml" );
-			blueprints = dataParser.readBlueprints( blueStream );
-
-			log.debug("Reading 'data/autoBlueprints.xml'");
-			autoBlueStream = dataParser.getInputStream( "data/autoBlueprints.xml" );
-			autoBlueprints = dataParser.readBlueprints( autoBlueStream );
-
-			generalAchievements = new ArrayList<Achievement>();
-			for( Achievement ach : achievements )
-				if ( ach.getShipId() == null )
-					generalAchievements.add(ach);
-
-			systems = new HashMap<String, SystemBlueprint>();
-			for ( SystemBlueprint system : blueprints.getSystemBlueprint() )
-				systems.put( system.getId(), system );
-
-			weapons = new LinkedHashMap<String, WeaponBlueprint>();
-			for ( WeaponBlueprint weapon : blueprints.getWeaponBlueprint() )
-				weapons.put( weapon.getId(), weapon );
-
-			ships = new HashMap<String, ShipBlueprint>();
-			for ( ShipBlueprint ship : blueprints.getShipBlueprint() )
-				ships.put( ship.getId(), ship );
-
-			autoShips = new HashMap<String, ShipBlueprint>();
-			for ( ShipBlueprint ship : autoBlueprints.getShipBlueprint() )
-				autoShips.put( ship.getId(), ship );
-
-			playerShips = new ArrayList<ShipBlueprint>();
-			playerShips.add( ships.get("PLAYER_SHIP_HARD") );
-			playerShips.add( ships.get("PLAYER_SHIP_STEALTH") );
-			playerShips.add( ships.get("PLAYER_SHIP_MANTIS") );
-			playerShips.add( ships.get("PLAYER_SHIP_CIRCLE") );
-			playerShips.add( ships.get("PLAYER_SHIP_FED") );
-			playerShips.add( ships.get("PLAYER_SHIP_JELLY") );
-			playerShips.add( ships.get("PLAYER_SHIP_ROCK") );
-			playerShips.add( ships.get("PLAYER_SHIP_ENERGY") );
-			playerShips.add( ships.get("PLAYER_SHIP_CRYSTAL") );
-
-			shipAchievements = new HashMap<ShipBlueprint, List<Achievement>>();
-			for (ShipBlueprint ship: playerShips) {
-				List<Achievement> shipAchs = new ArrayList<Achievement>();
-				for ( Achievement ach : achievements )
-					if ( ship.getId().equals( ach.getShipId() ) )
-						shipAchs.add(ach);
-				shipAchievements.put( ship, shipAchs );
-			}
-
-			// These'll populate as files are requested.
-			shipLayouts = new HashMap<String, ShipLayout>();
-			shipChassisMap = new HashMap<String, ShipChassis>();
-
-		} catch (JAXBException e) {
-			meltdown = true;
-			throw e;
-
-		} catch (IOException e) {
-			meltdown = true;
-			throw e;
-
-		} finally {
-			ArrayList<InputStream> streams = new ArrayList<InputStream>();
-			streams.add(achStream);
-			streams.add(blueStream);
-			streams.add(autoBlueStream);
-
-			for (InputStream stream : streams) {
-				try {if (stream != null) achStream.close();}
-				catch (IOException f) {}
-			}
-
-			if ( meltdown ) this.close();
-		}
-	}
-
+	@Override
 	public void close() {
-		try {if (dataParser != null) dataParser.close();}
-		catch (IOException e) {}
+	}
 
-		try {if (resourceParser != null) resourceParser.close();}
-		catch (IOException e) {}
+	public void setDLCEnabledByDefault( boolean b ) {
+		dlcEnabledByDefault = b;
 	}
-	
-	public InputStream getDataInputStream( String innerPath ) throws IOException {
-		return dataParser.getInputStream( innerPath );
+
+	public boolean isDLCEnabledByDefault() {
+		return dlcEnabledByDefault;
 	}
-	
+
+	public boolean hasResourceInputStream( String innerPath ) {
+		throw new UnsupportedOperationException();
+	}
+
 	public InputStream getResourceInputStream( String innerPath ) throws IOException {
-		return resourceParser.getInputStream( innerPath );
-	}
-	
-	public void unpackData( File outFolder ) throws IOException {
-		dataParser.unpackDat( outFolder );
+		throw new UnsupportedOperationException();
 	}
 
-	public void unpackResources( File outFolder ) throws IOException {
-		resourceParser.unpackDat( outFolder );
-	}
-	
-	public List<Achievement> getAchievements() {
-		return achievements;
+	public void extractResources( File extractDir ) throws IOException {
+		throw new UnsupportedOperationException();
 	}
 
+	public Achievement getAchievement( String id ) {
+		throw new UnsupportedOperationException();
+	}
+
+	public Map<String, Achievement> getAchievements() {
+		throw new UnsupportedOperationException();
+	}
+
+	public AugBlueprint getAugment( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public AugBlueprint getAugment( String id ) {
+		return getAugment( id, dlcEnabledByDefault );
+	}
+
+	public Map<String, AugBlueprint> getAugments( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, AugBlueprint> getAugments() {
+		return getAugments( dlcEnabledByDefault );
+	}
+
+	public CrewBlueprint getCrew( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public CrewBlueprint getCrew( String id ) {
+		return getCrew( id, dlcEnabledByDefault );
+	}
+
+	public Map<String, CrewBlueprint> getCrews( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, CrewBlueprint> getCrews() {
+		return getCrews( dlcEnabledByDefault );
+	}
+
+	public DroneBlueprint getDrone( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public DroneBlueprint getDrone( String id ) {
+		return getDrone( id, dlcEnabledByDefault );
+	}
+
+	public Map<String, DroneBlueprint> getDrones( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, DroneBlueprint> getDrones() {
+		return getDrones( dlcEnabledByDefault );
+	}
+
+	public SystemBlueprint getSystem( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
 	public SystemBlueprint getSystem( String id ) {
-		SystemBlueprint result = systems.get(id);
-		if ( result == null )
-			log.error( "No SystemBlueprint found for id: "+ id );
-		return result;
+		return getSystem( id, dlcEnabledByDefault );
 	}
 
+	public WeaponBlueprint getWeapon( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
 	public WeaponBlueprint getWeapon( String id ) {
-		WeaponBlueprint result = weapons.get(id);
-		if ( result == null )
-			log.error( "No WeaponBlueprint found for id: "+ id );
-		return result;
+		return getWeapon( id, dlcEnabledByDefault );
+	}
+
+	public Map<String, WeaponBlueprint> getWeapons( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
 	}
 
 	public Map<String, WeaponBlueprint> getWeapons() {
-		return weapons;
+		return getWeapons( dlcEnabledByDefault );
 	}
 
+	public ShipBlueprint getShip( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
 	public ShipBlueprint getShip( String id ) {
-		ShipBlueprint result = ships.get(id);
-		if ( result == null )  // TODO: Auto ships might need their own method.
-			result = autoShips.get(id);
-		if ( result == null )
-			log.error( "No ShipBlueprint found for id: "+ id );
-		return result;
+		return getShip( id, dlcEnabledByDefault );
 	}
-	
-	public List<ShipBlueprint> getPlayerShips() {
-		return playerShips;
+
+	public Map<String, ShipBlueprint> getShips( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
 	}
-	
-	public List<Achievement> getShipAchievements(ShipBlueprint ship) {
-		return shipAchievements.get(ship);
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, ShipBlueprint> getShips() {
+		return getShips( dlcEnabledByDefault );
 	}
-	
+
+	public Map<String, ShipBlueprint> getAutoShips( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, ShipBlueprint> getAutoShips() {
+		return getAutoShips( dlcEnabledByDefault );
+	}
+
+	public Map<String, ShipBlueprint> getPlayerShips( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, ShipBlueprint> getPlayerShips() {
+		return getPlayerShips( dlcEnabledByDefault );
+	}
+
+	public List<String> getPlayerShipBaseIds( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public List<String> getPlayerShipBaseIds() {
+		return getPlayerShipBaseIds( dlcEnabledByDefault );
+	}
+
+	public ShipBlueprint getPlayerShipVariant( String baseId, int n, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public ShipBlueprint getPlayerShipVariant( String baseId, int n ) {
+		return getPlayerShipVariant( baseId, n, dlcEnabledByDefault );
+	}
+
+	public List<Achievement> getShipAchievements( ShipBlueprint ship, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public List<Achievement> getShipAchievements( ShipBlueprint ship ) {
+		return getShipAchievements( ship, dlcEnabledByDefault );
+	}
+
 	public List<Achievement> getGeneralAchievements() {
-		return generalAchievements;
+		throw new UnsupportedOperationException();
 	}
 
-	public ShipLayout getShipLayout(String id) {
-		ShipLayout result = shipLayouts.get(id);
-
-		if ( result == null ) {  // Wasn't cached; try parsing it.
-			InputStream in = null;
-			try {
-				in = getDataInputStream("data/"+ id +".txt");
-				result = dataParser.readLayout(in);
-				shipLayouts.put( id, result );
-
-			} catch (FileNotFoundException e) {
-				log.error( "No ShipLayout found for id: "+ id );
-
-			} catch (IOException e) {
-				log.error( "An error occurred while parsing ShipLayout: "+ id, e );
-
-			} finally {
-				try {if (in != null) in.close();}
-				catch (IOException f) {}
-			}
-		}
-
-		return result;
+	public ShipLayout getShipLayout( String id ) {
+		throw new UnsupportedOperationException();
 	}
 
-	public ShipChassis getShipChassis(String id) {
-		ShipChassis result = shipChassisMap.get(id);
+	public ShipChassis getShipChassis( String id ) {
+		throw new UnsupportedOperationException();
+	}
 
-		if ( result == null ) {  // Wasn't cached; try parsing it.
-			InputStream in = null;
-			try {
-				in = getDataInputStream("data/"+ id +".xml");
-				result = dataParser.readChassis(in);
-				shipChassisMap.put( id, result );
+	public FTLEvent getEventById( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
 
-			} catch (JAXBException e) {
-				log.error( "Parsing XML failed for ShipChassis id: "+ id );
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public FTLEvent getEventById( String id ) {
+		return getEventById( id, dlcEnabledByDefault );
+	}
 
-			} catch (FileNotFoundException e) {
-				log.error( "No ShipChassis found for id: "+ id );
+	public FTLEventList getEventListById( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
 
-			} catch (IOException e) {
-				log.error( "An error occurred while parsing ShipChassis: "+ id, e );
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public FTLEventList getEventListById( String id ) {
+		return getEventListById( id, dlcEnabledByDefault );
+	}
 
-			} finally {
-				try {if (in != null) in.close();}
-				catch (IOException f) {}
-			}
-		}
+	public Map<String, Encounters> getEncounters( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
 
-		return result;
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, Encounters> getEncounters() {
+		return getEncounters( dlcEnabledByDefault );
+	}
+
+	public ShipEvent getShipEventById( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public ShipEvent getShipEventById( String id ) {
+		return getShipEventById( id, dlcEnabledByDefault );
+	}
+
+	public Map<String, ShipEvent> getShipEvents( boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Map<String, ShipEvent> getShipEvents() {
+		return getShipEvents( dlcEnabledByDefault );
+	}
+
+	public boolean getCrewSex() {
+		throw new UnsupportedOperationException();
+	}
+
+	public String getCrewName( boolean isMale ) {
+		throw new UnsupportedOperationException();
+	}
+
+	public SectorType getSectorTypeById( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public SectorType getSectorTypeById( String id ) {
+		return getSectorTypeById( id, dlcEnabledByDefault );
+	}
+
+	public SectorDescription getSectorDescriptionById( String id ) {
+		throw new UnsupportedOperationException();
+	}
+
+	public Map<String, BackgroundImageList> getBackgroundImageLists() {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public List<Anim> getAnimsBySheetId( String id ) {
+		return getAnimsBySheetId( id, dlcEnabledByDefault );
+	}
+
+	public List<Anim> getAnimsBySheetId( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public Anim getAnim( String id ) {
+		return getAnim( id, dlcEnabledByDefault );
+	}
+
+	public Anim getAnim( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * A frontend using the global DLC default.
+	 */
+	public AnimSheet getAnimSheet( String id ) {
+		return getAnimSheet( id, dlcEnabledByDefault );
+	}
+
+	public AnimSheet getAnimSheet( String id, boolean dlcEnabled ) {
+		throw new UnsupportedOperationException();
 	}
 }

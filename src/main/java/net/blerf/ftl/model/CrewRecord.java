@@ -1,49 +1,56 @@
 package net.blerf.ftl.model;
 
-public class CrewRecord {
 
-	private String name, race;
-	private int score, unknownFlag;
-	
-	public CrewRecord(String name, String race, int score, int unknownFlag) {
+public class CrewRecord implements Comparable<CrewRecord> {
+
+	private String name;
+	private String race;
+	private boolean male;
+	private int value;
+
+
+	public CrewRecord( String name, String race, boolean male, int value ) {
 		this.name = name;
 		this.race = race;
-		this.score = score;
-		this.unknownFlag = unknownFlag;
+		this.male = male;
+		this.value = value;
 	}
 
-	public String getName() {
-		return name;
+	/**
+	 * Copy constructor.
+	 */
+	public CrewRecord( CrewRecord srcRec ) {
+		name = srcRec.getName();
+		race = srcRec.getRace();
+		male = srcRec.isMale();
+		value = srcRec.getValue();
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setName( String s ) { name = s; }
+	public void setRace( String s ) { race = s; }
+	public void setMale( boolean b ) { male = b; }
+	public void setValue( int n ) { value = n; }
+
+	public String getName() { return name; }
+	public String getRace() { return race; }
+	public boolean isMale() { return male; }
+	public int getValue() { return value; }
+
+
+	@Override
+	public int compareTo( CrewRecord other ) {
+		if ( this.getValue() > other.getValue() ) return 1;
+		if ( this.getValue() < other.getValue() ) return -1;
+		return 0;
 	}
 
-	public String getRace() {
-		return race;
-	}
 
-	public void setRace(String race) {
-		this.race = race;
-	}
+	@Override
+	public String toString() {
+		StringBuilder result = new StringBuilder();
 
-	public int getScore() {
-		return score;
-	}
+		result.append( String.format( "Name: %-20s  Race: %-9s  Sex: %s  Score: %4d\n", name, race, (male ? "M" : "F"), value ) );
 
-	public void setScore(int score) {
-		this.score = score;
+		return result.toString();
 	}
-
-	public int getUnknownFlag() {
-		return unknownFlag;
-	}
-
-	public void setUnknownFlag(int unknownFlag) {
-		this.unknownFlag = unknownFlag;
-	}
-	
-	
-	
 }

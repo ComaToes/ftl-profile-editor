@@ -1,130 +1,142 @@
 package net.blerf.ftl.model;
+
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Stats {
 
-	private List<Score> topScores;
-	private List<Score> shipBest;
-	
-	private int mostShipsDefeated;
-	private int totalShipsDefeated;
-	private int mostBeaconsExplored;
-	private int totalBeaconsExplored;
-	private int mostScrapCollected;
-	private int totalScrapCollected;
-	private int mostCrewHired;
-	private int totalCrewHired;
-	private int totalGamesPlayed;
-	private int totalVictories;
-	
-	private CrewRecord mostRepairs;
-	private CrewRecord mostKills;
-	private CrewRecord mostEvasions;
-	private CrewRecord mostJumps;
-	private CrewRecord mostSkills;
-	
-	public List<Score> getTopScores() {
-		return topScores;
+	private static final Logger log = LoggerFactory.getLogger( Stats.class );
+
+	public static enum StatType {
+		// IntRecords
+		MOST_SHIPS_DEFEATED   ( "Most Ships Defeated" ),
+		MOST_BEACONS_EXPLORED ( "Most Beacons Explored" ),
+		MOST_SCRAP_COLLECTED  ( "Most Scrap Collected" ),
+		MOST_CREW_HIRED       ( "Most Crew Hired" ),
+
+		// CrewRecords
+		MOST_REPAIRS          ( "Most Repairs" ),
+		MOST_COMBAT_KILLS     ( "Most Combat Kills" ),
+		MOST_PILOTED_EVASIONS ( "Most Piloted Evasions" ),
+		MOST_JUMPS_SURVIVED   ( "Most Jumps Survived" ),
+		MOST_SKILL_MASTERIES  ( "Most Skill Masteries" ),
+
+		// IntRecords
+		TOTAL_SHIPS_DEFEATED  ( "Total Ships Defeated" ),
+		TOTAL_BEACONS_EXPLORED( "Total Beacons Explored" ),
+		TOTAL_SCRAP_COLLECTED ( "Total Scrap Collected" ),
+		TOTAL_CREW_HIRED      ( "Total Crew Hired" ),
+		TOTAL_GAMES_PLAYED    ( "Total Games Played" ),
+		TOTAL_VICTORIES       ( "Total Victories" );
+
+		private String name;
+		private StatType( String name ) {
+			this.name = name;
+		}
+		public String getName() { return name; }
+		public String toString() { return name; }
 	}
-	public void setTopScores(List<Score> topScores) {
-		this.topScores = topScores;
+
+	private List<Score> topScores = new ArrayList<Score>();
+	private List<Score> shipBest = new ArrayList<Score>();
+
+	private Map<StatType, CrewRecord> crewMap = new EnumMap<StatType, CrewRecord>( StatType.class );
+	private Map<StatType, Integer> intMap = new EnumMap<StatType, Integer>( StatType.class );
+
+
+	public Stats() {
 	}
-	public List<Score> getShipBest() {
-		return shipBest;
+
+	/**
+	 * Copy constructor.
+	 *
+	 * Each Score and CrewRecord will be copy-constructed as well.
+	 */
+	public Stats( Stats srcStats ) {
+		for ( Score s : srcStats.getTopScores() ) {
+			topScores.add( new Score( s ) );
+		}
+
+		for ( Score s : srcStats.getShipBest() ) {
+			shipBest.add( new Score( s ) );
+		}
+
+		for ( Map.Entry<StatType, CrewRecord> entry : srcStats.getCrewRecordMap().entrySet() ) {
+			crewMap.put( entry.getKey(), new CrewRecord( entry.getValue() ) );
+		}
+
+		for ( Map.Entry<StatType, Integer> entry : srcStats.getIntRecordMap().entrySet() ) {
+			// Integer wrapper is immutable, no need for defensive copying.
+			intMap.put( entry.getKey(), entry.getValue() );
+		}
 	}
-	public void setShipBest(List<Score> shipBest) {
-		this.shipBest = shipBest;
+
+	public void setTopScores( List<Score> topScores ) { this.topScores = topScores; }
+	public void setShipBest( List<Score> shipBest ) { this.shipBest = shipBest; }
+
+	public List<Score> getTopScores() { return topScores; }
+	public List<Score> getShipBest() { return shipBest; }
+
+	public Map<StatType, CrewRecord> getCrewRecordMap() { return crewMap; }
+	public Map<StatType, Integer> getIntRecordMap() { return intMap; }
+
+	public void setCrewRecord( StatType type, CrewRecord r ) {
+		crewMap.put( type, r );
 	}
-	public int getMostShipsDefeated() {
-		return mostShipsDefeated;
+	public CrewRecord getCrewRecord( StatType  type ) {
+		if ( !crewMap.containsKey( type ) )
+			log.error( "No crew record found for type: "+ type );
+		return crewMap.get( type );
 	}
-	public void setMostShipsDefeated(int mostShipsDefeated) {
-		this.mostShipsDefeated = mostShipsDefeated;
+
+	public void setIntRecord( StatType type, int n ) {
+		intMap.put( type, n );
 	}
-	public int getTotalShipsDefeated() {
-		return totalShipsDefeated;
+	public int getIntRecord( StatType type ) {
+		if ( !intMap.containsKey( type ) )
+			log.error( "No int record found for type: "+ type );
+		return intMap.get( type ).intValue();
 	}
-	public void setTotalShipsDefeated(int totalShipsDefeated) {
-		this.totalShipsDefeated = totalShipsDefeated;
-	}
-	public int getMostBeaconsExplored() {
-		return mostBeaconsExplored;
-	}
-	public void setMostBeaconsExplored(int mostBeaconsExplored) {
-		this.mostBeaconsExplored = mostBeaconsExplored;
-	}
-	public int getTotalBeaconsExplored() {
-		return totalBeaconsExplored;
-	}
-	public void setTotalBeaconsExplored(int totalBeaconsExplored) {
-		this.totalBeaconsExplored = totalBeaconsExplored;
-	}
-	public int getMostScrapCollected() {
-		return mostScrapCollected;
-	}
-	public void setMostScrapCollected(int mostScrapCollected) {
-		this.mostScrapCollected = mostScrapCollected;
-	}
-	public int getTotalScrapCollected() {
-		return totalScrapCollected;
-	}
-	public void setTotalScrapCollected(int totalScrapCollected) {
-		this.totalScrapCollected = totalScrapCollected;
-	}
-	public int getMostCrewHired() {
-		return mostCrewHired;
-	}
-	public void setMostCrewHired(int mostCrewHired) {
-		this.mostCrewHired = mostCrewHired;
-	}
-	public int getTotalCrewHired() {
-		return totalCrewHired;
-	}
-	public void setTotalCrewHired(int totalCrewHired) {
-		this.totalCrewHired = totalCrewHired;
-	}
-	public int getTotalGamesPlayed() {
-		return totalGamesPlayed;
-	}
-	public void setTotalGamesPlayed(int totalGamesPlayed) {
-		this.totalGamesPlayed = totalGamesPlayed;
-	}
-	public int getTotalVictories() {
-		return totalVictories;
-	}
-	public void setTotalVictories(int totalVictories) {
-		this.totalVictories = totalVictories;
-	}
-	public CrewRecord getMostRepairs() {
-		return mostRepairs;
-	}
-	public void setMostRepairs(CrewRecord mostRepairs) {
-		this.mostRepairs = mostRepairs;
-	}
-	public CrewRecord getMostKills() {
-		return mostKills;
-	}
-	public void setMostKills(CrewRecord mostKills) {
-		this.mostKills = mostKills;
-	}
-	public CrewRecord getMostEvasions() {
-		return mostEvasions;
-	}
-	public void setMostEvasions(CrewRecord mostEvasions) {
-		this.mostEvasions = mostEvasions;
-	}
-	public CrewRecord getMostJumps() {
-		return mostJumps;
-	}
-	public void setMostJumps(CrewRecord mostJumps) {
-		this.mostJumps = mostJumps;
-	}
-	public CrewRecord getMostSkills() {
-		return mostSkills;
-	}
-	public void setMostSkills(CrewRecord mostSkills) {
-		this.mostSkills = mostSkills;
-	}
-	
+
+	public void setMostShipsDefeated( int n ) { setIntRecord( StatType.MOST_SHIPS_DEFEATED, n ); }
+	public void setMostBeaconsExplored( int n ) { setIntRecord( StatType.MOST_BEACONS_EXPLORED, n ); }
+	public void setMostScrapCollected( int n ) { setIntRecord( StatType.MOST_SCRAP_COLLECTED, n ); }
+	public void setMostCrewHired( int n ) { setIntRecord( StatType.MOST_CREW_HIRED, n ); }
+
+	public int getMostShipsDefeated() { return getIntRecord( StatType.MOST_SHIPS_DEFEATED ); }
+	public int getMostBeaconsExplored() { return getIntRecord( StatType.MOST_BEACONS_EXPLORED ); }
+	public int getMostScrapCollected() { return getIntRecord( StatType.MOST_SCRAP_COLLECTED ); }
+	public int getMostCrewHired() { return getIntRecord( StatType.MOST_CREW_HIRED ); }
+
+	public void setTotalShipsDefeated( int n ) { setIntRecord( StatType.TOTAL_SHIPS_DEFEATED, n ); }
+	public void setTotalBeaconsExplored( int n ) { setIntRecord( StatType.TOTAL_BEACONS_EXPLORED, n ); }
+	public void setTotalScrapCollected( int n ) { setIntRecord( StatType.TOTAL_SCRAP_COLLECTED, n ); }
+	public void setTotalCrewHired( int n ) { setIntRecord( StatType.TOTAL_CREW_HIRED, n ); }
+	public void setTotalGamesPlayed( int n ) { setIntRecord( StatType.TOTAL_GAMES_PLAYED, n ); }
+	public void setTotalVictories( int n ) { setIntRecord( StatType.TOTAL_VICTORIES, n ); }
+
+	public int getTotalShipsDefeated() { return getIntRecord( StatType.TOTAL_SHIPS_DEFEATED ); }
+	public int getTotalBeaconsExplored() { return getIntRecord( StatType.TOTAL_BEACONS_EXPLORED ); }
+	public int getTotalScrapCollected() { return getIntRecord( StatType.TOTAL_SCRAP_COLLECTED ); }
+	public int getTotalCrewHired() { return getIntRecord( StatType.TOTAL_CREW_HIRED ); }
+	public int getTotalGamesPlayed() { return getIntRecord( StatType.TOTAL_GAMES_PLAYED ); }
+	public int getTotalVictories() { return getIntRecord( StatType.TOTAL_VICTORIES ); }
+
+	public void setMostRepairs( CrewRecord record ) { setCrewRecord( StatType.MOST_REPAIRS, record ); }
+	public void setMostKills( CrewRecord record ) { setCrewRecord(StatType.MOST_COMBAT_KILLS, record ); }
+	public void setMostEvasions( CrewRecord record ) { setCrewRecord( StatType.MOST_PILOTED_EVASIONS, record); }
+	public void setMostJumps( CrewRecord record ) { setCrewRecord( StatType.MOST_JUMPS_SURVIVED, record ); }
+	public void setMostSkills( CrewRecord record ) { setCrewRecord( StatType.MOST_SKILL_MASTERIES, record ); }
+
+	public CrewRecord getMostRepairs() { return getCrewRecord( StatType.MOST_REPAIRS ); }
+	public CrewRecord getMostKills() { return getCrewRecord( StatType.MOST_COMBAT_KILLS ); }
+	public CrewRecord getMostEvasions() { return getCrewRecord( StatType.MOST_PILOTED_EVASIONS ); }
+	public CrewRecord getMostJumps() { return getCrewRecord( StatType.MOST_JUMPS_SURVIVED ); }
+	public CrewRecord getMostSkills() { return getCrewRecord( StatType.MOST_SKILL_MASTERIES ); }
 }
